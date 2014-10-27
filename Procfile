@@ -1,1 +1,1 @@
-web: gunicorn trulii:app
+web: gunicorn trulii.wsgi
