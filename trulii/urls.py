@@ -10,7 +10,5 @@ urlpatterns = patterns('',
      	{'next_page': '/'}),
 
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^', include('users.urls')),
     url(r'^users/', include('allauth.urls')),
-
 )

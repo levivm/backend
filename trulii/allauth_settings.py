@@ -23,6 +23,8 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 # The user is required to hand over an e-mail address when signing up.
 ACCOUNT_EMAIL_REQUIRED = True
 
+
+
 # Determines the e-mail verification method during signup. When set to
 # "mandatory" the user is blocked from logging in until the email
 # address is verified. Choose "optional" or "none" to allow logins
@@ -39,13 +41,13 @@ ACCOUNT_EMAIL_REQUIRED = True
 # that is used during signup to ask the user for additional input
 # (e.g. newsletter signup, birth date). This class should implement a
 # 'save' method, accepting the newly signed up user as its only parameter.
-# ACCOUNT_SIGNUP_FORM_CLASS = None
+#ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.UserCreateForm' 
 
 # When signing up, let the user type in their password twice to avoid typ-o's.
 ACCOUNT_SIGNUP_PASSWORD_VERIFICATION = False
 
 # Enforce uniqueness of e-mail addresses.
-# ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_UNIQUE_EMAIL = True
 
 # A callable (or string of the form 'some.module.callable_name') that takes
 # a user as its only argument and returns the display name of the user. The
@@ -59,7 +61,7 @@ ACCOUNT_SIGNUP_PASSWORD_VERIFICATION = False
 # user will be asked to do so even if ACCOUNT_AUTHENTICATION_METHOD is set
 # to email. Set to False when you do not wish to prompt the user to enter a
 # username.
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 
 # render_value parameter as passed to PasswordInput fields.
 # ACCOUNT_PASSWORD_INPUT_RENDER_VALUE = False
