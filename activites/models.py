@@ -57,6 +57,7 @@ class Activity(models.Model):
     youtube_video_url = models.CharField(max_length = 200)
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     #attendant = models.ForeignKey(Relación) * 
+    active = models.NullBooleanField()
 
 class ActivityPhoto(models.Model):
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
@@ -92,10 +93,10 @@ class Review(models.Model):
 # class ReturnPolicy(models.Model):
 #     activity    = models.ForeignKey(Activity)
 #     description = models.TextField()
-    #activity_name = models.ForeignKey(Activity)
-    #amount = models.IntegerField()
-    #transaction_number = models.IntegerField()
-    #date = models.DateField()
+#activity_name = models.ForeignKey(Activity)
+#amount = models.IntegerField()
+#transaction_number = models.IntegerField()
+#date = models.DateField()
 
 
 class Categories(models.Model):
