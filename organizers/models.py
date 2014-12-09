@@ -6,7 +6,7 @@ _ = lambda x: x
 
 class Organizer(models.Model):
 
-    user   = models.OneToOneField(User, related_name='profile')
+    user   = models.OneToOneField(User, related_name='organizer_profile')
     name   = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     photo      = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)

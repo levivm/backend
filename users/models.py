@@ -1,10 +1,28 @@
 from django.db import models
-from django.auth.models import User
+from django.contrib.auth.models import User
+from allauth.account.signals import user_signed_up
+from django.dispatch import receiver
 
 
+_ = lambda x:x
 
-# Create your models here.
+#handler for signal after user singed up
+@receiver(user_signed_up)
+def after_sign_up(sender, **kwargs):
+    request = kwargs['request']
+    user = kwargs['user']
+    import pdb
+    pdb.set_trace()
+    profile = UserProfile.objects.create(user=user)
+    user_type = request.POST.get('user_type',None) 
+    if user_type:
+        print "EL Usuario es",user_type
+        print "EL Usuario es",user_type
+        print "EL Usuario es",user_type
+        #profile.user_type = request.POST.get('user_type')
 
+    #profile.display_name = user.first_name + ' ' + user.last_name
+    #profile.save()
 
 
 class UserProfile(models.Model):

@@ -45,11 +45,17 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'activities',    
+    'users',
+    'organizers',
+    'students',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.facebook',
-    'rest_framework'
+
+
 )
 
 

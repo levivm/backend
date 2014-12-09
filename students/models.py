@@ -1,5 +1,5 @@
 from django.db import models
-from django.auth.models import User
+from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -17,7 +17,7 @@ class Student(models.Model):
         (FEMALE, _('Mujer'))
     )
 
-    user = models.OneToOneField(User, related_name='profile')
+    user = models.OneToOneField(User, related_name='student_profile')
     gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -15,6 +15,9 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/', include('allauth.urls')),
+    url(r'^organizers/', include('organizers.urls')),
+    #url(r'^organizers/', include('allauth.urls')),
+
 
     #create the views for the detail activity and lists
     #API
