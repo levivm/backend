@@ -18,6 +18,9 @@ urlpatterns = patterns('',
     url(r'^organizers/', include('organizers.urls')),
     #url(r'^organizers/', include('allauth.urls')),
 
+    ## create the view for the activities
+    url(r'^activities/', ),
+
 
     #create the views for the detail activity and lists
     #API
@@ -30,7 +33,6 @@ urlpatterns = patterns('',
 
     ## create the view for the instructor
     url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
-
 
 )
 
