@@ -1,10 +1,10 @@
 from .models import Organizer
 from .models import Instructor
 
-from .serializers import OrginizersSerializer
-from .serializers import InstructorsSerializer
+from .serializer import OrganizersSerializer
+from .serializer import InstructorsSerializer
 
-from django.htto import Http404
+from django.http import Http404
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ class OrganizerDetail(APIView):
 			raise Http404
 
 	def get(self, request, pk, format = None):
-		organizer = self.get_object(pk):
+		organizer = self.get_object(pk)
 		serilized_organizers = OrganizersSerializer(organizer)
 		return Response(serilized_organizers.data)
 
@@ -31,7 +31,7 @@ class InstructorDetail(APIView):
 			raise Http404
 
 	def get(self, request, pk, format = None):
-		instructor = self.get_object(pk):
+		instructor = self.get_object(pk)
 		serilized_instructors = (instructor)
 		return Response(serilized_instructors.data)
 

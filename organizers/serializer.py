@@ -1,5 +1,5 @@
-from .model import Organizer
-from .model import Instructor
+from .models import Organizer
+from .models import Instructor
 
 from rest_framework import serializers
 

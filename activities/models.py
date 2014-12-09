@@ -1,5 +1,7 @@
 from django.db import models
 from organizers.models import Organizer,Instructor
+from django.utils.translation import ugettext_lazy as _
+
 
 # Create your models here.
 
@@ -10,10 +12,6 @@ class Category(models.Model):
 class SubCategory(models.Model):
     name = models.CharField(max_length = 100)
     category = models.ForeignKey(Category)
-    
-
-
-
 
 class Activity(models.Model):
 
@@ -44,19 +42,19 @@ class Activity(models.Model):
     large_description = models.TextField()
     short_description = models.CharField(max_length = 100)
     level = models.CharField(choices = LEVEL_CHOICES, max_length = 1)
-    goals = models.TextField(required=False)
+    goals = models.TextField()
     methodology = models.TextField()
     requirements = models.TextField()
     return_policy = models.TextField()
     #return_policy = models.ForeignKey(Return_Policies) *
     extra_info = models.TextField()
-    #instructors = models.ForeignKey(Relación)
-    #activities_-Contenido(Relación) -> Para después
-    #sponsors = models.ForeignKey(Relación)
-    #pictures = models.ForeignKey(Relación)
+    #instructors = models.ForeignKey(Relacion)
+    #activities_-Contenido(Relacion) -> Para despues
+    #sponsors = models.ForeignKey(Relacion)
+    #pictures = models.ForeignKey(Relacion)
     youtube_video_url = models.CharField(max_length = 200)
     instructors = models.ManyToManyField(Instructor,related_name="activities")
-    #attendant = models.ForeignKey(Relación) * 
+    #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
 
 class ActivityPhoto(models.Model):
@@ -99,12 +97,6 @@ class Review(models.Model):
 #date = models.DateField()
 
 
-class Categories(models.Model):
-    name = models.CharField(max_length = 200)
-
-
-class SubCategories(models.Model):
-    name = models.CharField(max_length = 200)
 
 
 
@@ -122,4 +114,4 @@ class SubCategories(models.Model):
 
 
 
-
+# Create your models here.

@@ -1,5 +1,5 @@
-from .models import Student
-from .serializers import StudentSerializer
+from models import Student
+from serializers import StudentSerializer
 
 from django.htto import Http404
 

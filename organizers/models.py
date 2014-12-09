@@ -1,15 +1,13 @@
 from django.db import models
-from activities.models import Activity
-from django.auth.models import User
+from django.contrib.auth.models import User
 
-
-
+_ = lambda x: x
 
 
 class Organizer(models.Model):
 
     user   = models.OneToOneField(User, related_name='profile')
-	name   = models.CharField(max_length=100)
+    name   = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     photo      = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
     telephone  = models.CharField(max_length=100)

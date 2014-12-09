@@ -1,4 +1,4 @@
-from .model import Activity
+from models import Activity
 from rest_framework import serializers
 
 class StudentSerializer(serializers.ModelSerializer):
