@@ -19,7 +19,7 @@ urlpatterns = patterns('',
     #url(r'^organizers/', include('allauth.urls')),
 
     ## create the view for the activities
-    url(r'^activities/', ),
+    url(r'^activities/', include('activities.urls')),
 
 
     #create the views for the detail activity and lists
