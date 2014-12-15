@@ -1,12 +1,34 @@
+{% load staticfiles%}
 {% load url from future %}
 <!DOCTYPE html>
-<html>
+<html ng-app="trulii">
   <head>
+
+    <base href="/">
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-route.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-cookies.js"></script>
+
+
+    <script type="text/javascript" src="{% static 'js/lib/ui-bootstrap-tpls-0.12.0.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/trulii.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/trulii.config.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/trulii.routes.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/authentication/authentication.module.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/authentication/services/authentication.service.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/authentication/controllers/register.controller.js' %}"></script>
+
+
     <title>{% block head_title %}{% endblock %}</title>
     {% block extra_head %}
     {% endblock %}
   </head>
-  <body>
+  <body >
     {% block body %}
 
     {% if messages %}
@@ -19,8 +41,8 @@
       </ul>
     </div>
     {% endif %}
-
-    <div>
+    <div ng-view></div>
+    <div >
       <strong>Menu:</strong>
       <ul>
 	{% if user.is_authenticated %}

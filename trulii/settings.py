@@ -135,6 +135,15 @@ LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
+
+
+#STATIC_ROOT = 
 STATIC_URL = '/static/'
+
+#STATIC_ROOT = '/static/'
+
+STATICFILES_DIRS = (
+ os.path.join(PROJECT_PATH, 'static') ,
+)
 
 from allauth_settings import *
