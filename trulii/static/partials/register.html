@@ -1,4 +1,29 @@
-<div class="row" >
+<fieldset>
+  <legend>Login</legend>
+
+  <label>Username</label>
+  <input type="text" ng-model="formObject.username" placeholder="Your Username" required/>
+
+  <label>Password</label>
+  <input type="password" ng-model="formObject.password" placeholder="Your Password" required/>
+</fieldset>
+
+
+<!-- <div ng-controller="someController">
+  ...
+  <a href="#" form-modal
+              template="sessions/login.js"
+              title="Login"
+              ok-button-text="Login"
+              form-submit="login()"
+              form-object="user">
+    Login
+  </a>
+  ...
+</div> -->
+
+
+<!-- <div class="row" >
   <div class="col-md-4 col-md-offset-4">
     <h1>Register</h1>
 
@@ -23,7 +48,7 @@
   </div>
 </div>
 
-<div ng-controller="ModalDemoCtrl">
+<div >
     <script type="text/ng-template" id="myModalContent.html">
         <div class="modal-header">
             <h3 class="modal-title">Im a modal!</h3>
@@ -71,4 +96,4 @@
     <button class="btn btn-default" ng-click="open('lg')">Large modal</button>
     <button class="btn btn-default" ng-click="open('sm')">Small modal</button>
     <div ng-show="selected">Selection from a modal: {{ selected }}</div>
-</div>
+</div> -->

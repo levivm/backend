@@ -11,16 +11,32 @@
     .module('trulii.authentication.controllers') 
     .controller('RegisterController', RegisterController);
 
-  RegisterController.$inject = ['$location', '$scope', 'Authentication'];
+  RegisterController.$inject = ['$location', '$scope', 'Authentication','$modal'];
 
   /**
   * @namespace RegisterController
   */
-  function RegisterController($location, $scope, Authentication) {
+  function RegisterController($location, $scope, Authentication,$modal) {
     var vm = this;
 
+    vm.items = ['item1', 'item2', 'item3'];
 
     vm.register = register;
+    console.log(vm.$templateUrl);
+    console.log(vm.$templateUrl);
+    var size='lg';
+    vm.open = $modal.open({
+      templateUrl: 'myModalContent.html',
+      controller: 'ModalInstanceCtrl',
+      size: size,
+      resolve: {
+        items: function () {
+          return vm.items;
+        },
+        
+      }
+    });
+
 
     /**
     * @name register
@@ -34,20 +50,21 @@
 
 
 
-  // angular.module('ui.bootstrap.demo').controller('ModalInstanceCtrl', function ($scope, $modalInstance, items) {
+    angular
+    .module('trulii.authentication.controllers').controller('ModalInstanceCtrl', function ($scope, $modalInstance, items) {
 
-  //   $scope.items = items;
-  //   $scope.selected = {
-  //     item: $scope.items[0]
-  //   };
+    $scope.items = items;
+    $scope.selected = {
+      item: $scope.items[0]
+    };
 
-  //   $scope.ok = function () {
-  //     $modalInstance.close($scope.selected.item);
-  //   };
+    $scope.ok = function () {
+      $modalInstance.close($scope.selected.item);
+    };
 
-  //   $scope.cancel = function () {
-  //     $modalInstance.dismiss('cancel');
-  //   };
-  // });
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+  });
 
 })();

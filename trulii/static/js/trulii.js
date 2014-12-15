@@ -5,9 +5,11 @@
 
 	angular
 	.module('trulii', [
+	  'ui.bootstrap',
 	  'trulii.config',
 	  'trulii.routes',
-	  'trulii.authentication'
+	  'trulii.authentication',
+
 	]);
 
 

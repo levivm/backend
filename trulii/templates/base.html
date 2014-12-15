@@ -51,6 +51,16 @@
 	{% else %}
 	<li><a href="{% url 'account_login' %}">Sign In</a></li>
 	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
+
+  <a href="#" form-modal
+              template="sessions/login.js"
+              title="Login"
+              ok-button-text="Login"
+              form-submit="login()"
+              form-object="user">
+    Login
+  </a>
+  
 	{% endif %}
       </ul>
     </div>
