@@ -4,6 +4,15 @@
 <html ng-app="trulii">
   <head>
 
+    <style>
+      .modal {
+        display: block;
+      }
+      .hide {
+        display: block;
+      }
+
+    </style>
     <base href="/">
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -20,8 +29,12 @@
     <script type="text/javascript" src="{% static 'js/trulii.config.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/trulii.routes.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/authentication.module.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/authentication/directives/authentication.directive.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/services/authentication.service.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/controllers/register.controller.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/authentication/directives/authentication.directive.js' %}"></script>
+
+
 
 
     <title>{% block head_title %}{% endblock %}</title>
@@ -41,7 +54,13 @@
       </ul>
     </div>
     {% endif %}
-    <div ng-view></div>
+    <div ng-view>
+      
+
+
+
+
+    </div>
     <div >
       <strong>Menu:</strong>
       <ul>
@@ -52,15 +71,19 @@
 	<li><a href="{% url 'account_login' %}">Sign In</a></li>
 	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
 
-  <a href="#" form-modal
-              template="sessions/login.js"
-              title="Login"
-              ok-button-text="Login"
-              form-submit="login()"
-              form-object="user">
-    Login
-  </a>
-  
+  {% verbatim %}
+  <div ng-controller="RegisterController">
+    <a href="#" form-modal  
+                template="/static/partials/register.html"
+                title="Login"
+                ok-button-text="Login"
+                form-submit="vm.register()"
+                form-object="vm.user">
+      Login
+    </a>
+  </div>
+  {% endverbatim %}
+
 	{% endif %}
       </ul>
     </div>

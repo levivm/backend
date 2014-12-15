@@ -1,0 +1,2 @@
+ORGANIZER_TYPE = 'O'
+STUDENT_TYPE   = 'S'
