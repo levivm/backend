@@ -7,6 +7,7 @@ from .models import Organizer
 #class OrganizerSignUpForm(forms.ModelForm):
 
 
+
 class OrganizerForm(forms.ModelForm):
     name = forms.CharField()
     photo = forms.CharField(required=False)

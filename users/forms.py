@@ -14,6 +14,15 @@ class UserCreateForm(forms.Form):
     user_type = forms.ChoiceField(choices=USER_TYPES,
                                   required=True)
 
+    first_name = forms.CharField(required=True)
+    last_name  = forms.CharField(required=True)
+
+    def signup(self, request, user):
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name  = self.cleaned_data['last_name']
+        user.user_type  = self.cleaned_data['user_type']
+        user.save()
+
     #error_messages = {
     #    'duplicate_email': _('A user with that email already exists.'),
     #    'password_mismatch': _('The two password fields didn\'t match.'),

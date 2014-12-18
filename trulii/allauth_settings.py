@@ -41,12 +41,12 @@ ACCOUNT_EMAIL_REQUIRED = True
 # that is used during signup to ask the user for additional input
 # (e.g. newsletter signup, birth date). This class should implement a
 # 'save' method, accepting the newly signed up user as its only parameter.
-#ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.UserCreateForm' 
+ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.UserCreateForm' 
 
 # When signing up, let the user type in their password twice to avoid typ-o's.
 ACCOUNT_SIGNUP_PASSWORD_VERIFICATION = False
 
-# Enforce uniqueness of e-mail addresses.
+# Enforce uniqueness of e-mail addresses. 
 ACCOUNT_UNIQUE_EMAIL = True
 
 # A callable (or string of the form 'some.module.callable_name') that takes

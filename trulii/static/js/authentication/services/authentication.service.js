@@ -39,13 +39,16 @@
     * @returns {Promise}
     * @memberOf thinkster.authentication.services.Authentication
     */
-    function register(email, password) {
+    function register(email, password,first_name,last_name,user_type) {
 
 
-     return $http.post('/users/signup/', {
+      return $http.post('/users/signup/', {
         //username: username,
         password1: password,
-        email: email
+        email: email,
+        first_name: first_name,
+        last_name: last_name,
+        user_type: user_type
       });
      // .success(function(data, status, headers, config) {
      //               //console.log(data);

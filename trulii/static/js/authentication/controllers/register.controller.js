@@ -1,4 +1,4 @@
-/**
+-/**
 * Register controller
 * @namespace thinkster.authentication.controllers
 */
@@ -177,8 +177,18 @@
     
     //vm.user = {};
 
+
+    $scope.set_usertype = function function_name(user_type) {
+      $scope.user_type = user_type;
+    }
+
     $scope.user = {};
     $scope.errors = {};
+    $scope.user.user_type = $scope.user_type;
+    
+    $scope.$watch("user_type", function(){
+      $scope.user.user_type = $scope.user_type;
+    });
 
     $scope.register = register;
     //vm.register = register;
@@ -224,7 +234,9 @@
     */
     function register() {
       _clearErrors();
-      return Authentication.register($scope.user.email, $scope.user.password1)
+      return Authentication.register($scope.user.email, $scope.user.password1,
+                                     $scope.user.first_name, $scope.user.last_name,
+                                     $scope.user.user_type)
             .error(_errored)
             .success(function(data){
 

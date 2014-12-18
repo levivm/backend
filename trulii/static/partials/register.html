@@ -3,9 +3,27 @@
     <div>
       <fieldset>
        <!--  <input type="email" class="form-control" name="email" ng-model="formObject.email"  server-error novalidate/> -->
+        
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" class="form-control" name="first_name" ng-model="formObject.first_name"  server-error placeholder="Tu nombre">
+          <div class="errors" ng-show="generic_form.first_name.$invalid">
+            <span ng-show="generic_form.first_name.$error.server">{{ formErrors.first_name }}</span>
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label>Apellido</label>
+          <input type="text" class="form-control" name="last_name" ng-model="formObject.last_name"  server-error placeholder="Tu apellido">
+          <div class="errors" ng-show="generic_form.last_name.$invalid">
+            <span ng-show="generic_form.last_name.$error.server">{{ formErrors.last_name }}</span>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Email</label>
-          <input type="text" class="form-control" name="email" ng-model="formObject.email"  server-error placeholder="Your Email">
+          <input type="text" class="form-control" name="email" ng-model="formObject.email"  server-error placeholder="Tu Correo">
           <div class="errors" ng-show="generic_form.email.$invalid">
             <span ng-show="generic_form.email.$error.server">{{ formErrors.email }}</span>
           </div>
@@ -13,7 +31,7 @@
 
         <div class="form-group">
           <label>Password</label>
-          <input type="password"  class="form-control" name="password1" ng-model="formObject.password1" server-error placeholder="Your Password" >
+          <input type="password"  class="form-control" name="password1" ng-model="formObject.password1" server-error placeholder="Introduce una contraseña" >
           <div class="errors" ng-show="generic_form.password1.$invalid">
             <span ng-show="generic_form.password1.$error.server">{{ formErrors.password1 }}</span>
           </div>

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up
 from django.dispatch import receiver
-
+from .forms import UserCreateForm
 
 _ = lambda x:x
 
@@ -14,9 +14,7 @@ def after_sign_up(sender, **kwargs):
     profile = UserProfile.objects.create(user=user)
     user_type = request.POST.get('user_type',None) 
     if user_type:
-        print "EL Usuario es",user_type
-        print "EL Usuario es",user_type
-        print "EL Usuario es",user_type
+        profile.user_type = user_type
         #profile.user_type = request.POST.get('user_type')
 
     #profile.display_name = user.first_name + ' ' + user.last_name
@@ -34,12 +32,13 @@ class UserProfile(models.Model):
     )
 
     user   = models.OneToOneField(User, related_name='profile')
+    user_type = models.CharField(max_length=1,choices=UserCreateForm.USER_TYPES)
     gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
     created_at = models.DateTimeField(auto_now_add=True)
-    photo     = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
-    birthday  = models.DateField()
-    telephone = models.CharField(max_length=100)
-    bio = models.TextField()
+    photo      = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
+    birthday   = models.DateField(null=True,blank=True)
+    telephone  = models.CharField(max_length=100,null=True,blank=True)
+    bio = models.TextField(null=True,blank=True)
 
 
 
