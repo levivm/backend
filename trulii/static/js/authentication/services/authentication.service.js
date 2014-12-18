@@ -20,9 +20,7 @@
     * @name Authentication
     * @desc The Factory to be returned
     */
-    console.log($cookies.csrftoken);
-    console.log($cookies.csrftoken);
-    $http.defaults.headers.post['X-CSRFToken'] = $cookies.csrftoken;
+
 
     var Authentication = {
       register: register
@@ -41,12 +39,42 @@
     * @returns {Promise}
     * @memberOf thinkster.authentication.services.Authentication
     */
-    function register(email, password, username) {
-      return $http.post('/users/login/', {
+    function register(email, password) {
+
+
+     return $http.post('/users/signup/', {
         //username: username,
-        password: password,
+        password1: password,
         email: email
       });
+     // .success(function(data, status, headers, config) {
+     //               //console.log(data);
+     //               //console.log(data.form_errors);
+     //               //return data
+     //  }).error(function(data, status, headers, config) {
+     //                console.log("mirame");
+     //                console.log(data["form_errors"]);
+                    
+     //  });
+
     }
+
+    /**
+     * @name login
+     * @desc Try to log in with email `email` and password `password`
+     * @param {string} email The email entered by the user
+     * @param {string} password The password entered by the user
+     * @returns {Promise}
+     * @memberOf thinkster.authentication.services.Authentication
+     */
+    function login(email, password) {
+      return $http.post('/users/login/', {
+        email: email, password: password
+      });
+    }
+
   }
+
+
+
 })();

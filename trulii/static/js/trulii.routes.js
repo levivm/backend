@@ -18,8 +18,8 @@
       controller: 'RegisterController', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/register.html'
-    })
-    .otherwise({redirectTo: '/'});
+    });
+    //.otherwise({redirectTo: '/'});
 
   }
 })();

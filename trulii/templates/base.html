@@ -4,35 +4,29 @@
 <html ng-app="trulii">
   <head>
 
-    <style>
-      .modal {
-        display: block;
-      }
-      .hide {
-        display: block;
-      }
-
-    </style>
     <base href="/">
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
-
+    <script type="text/javascript" src="{% static 'js/lib/ui-bootstrap-tpls-0.12.0.min.js' %}"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-route.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-cookies.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
 
-    <script type="text/javascript" src="{% static 'js/lib/ui-bootstrap-tpls-0.12.0.min.js' %}"></script>
+
+
     <script type="text/javascript" src="{% static 'js/trulii.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/trulii.config.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/trulii.routes.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/authentication.module.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/authentication/directives/authentication.directive.js' %}"></script>
+
     <script type="text/javascript" src="{% static 'js/authentication/services/authentication.service.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/controllers/register.controller.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/authentication/directives/authentication.directive.js' %}"></script>
+
 
 
 
@@ -48,18 +42,13 @@
     <div>
       <strong>Messages:</strong>
       <ul>
-	{% for message in messages %}
+	{% for message in messages %}s
 	<li>{{message}}</li>
 	{% endfor %}
       </ul>
     </div>
     {% endif %}
     <div ng-view>
-      
-
-
-
-
     </div>
     <div >
       <strong>Menu:</strong>
@@ -71,20 +60,21 @@
 	<li><a href="{% url 'account_login' %}">Sign In</a></li>
 	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
 
-  {% verbatim %}
+
   <div ng-controller="RegisterController">
     <a href="#" form-modal  
                 template="/static/partials/register.html"
-                title="Login"
-                ok-button-text="Login"
-                form-submit="vm.register()"
-                form-object="vm.user">
+                title="Register"
+                ok-button-text="Register"
+                form-submit="register()"
+                form-object="user"
+                form-errors="errors">
       Login
     </a>
   </div>
-  {% endverbatim %}
 
 	{% endif %}
+
       </ul>
     </div>
     {% block content %}

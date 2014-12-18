@@ -11,8 +11,6 @@ _ = lambda x:x
 def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']
-    import pdb
-    pdb.set_trace()
     profile = UserProfile.objects.create(user=user)
     user_type = request.POST.get('user_type',None) 
     if user_type:
