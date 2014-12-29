@@ -10,11 +10,13 @@ _ = lambda x:x
 @receiver(user_signed_up)
 def after_sign_up(sender, **kwargs):
     request = kwargs['request']
-    user = kwargs['user']
-    profile = UserProfile.objects.create(user=user)
+    user = kwargs['user']    
     user_type = request.POST.get('user_type',None) 
+    print "User type",user_type
     if user_type:
-        profile.user_type = user_type
+        print "User type",user_type
+        profile = UserProfile.objects.create(user=user,user_type=user_type)
+        #profile.save()
         #profile.user_type = request.POST.get('user_type')
 
     #profile.display_name = user.first_name + ' ' + user.last_name

@@ -21,72 +21,12 @@
     .module('trulii.authentication.controllers')
     
 
-  // angular
-  //   .module('trulii.authentication.controllers')
-  //   .directive('serverError',serverError);
-    
-  //   .directive('formModal', ['$http','$compile',function() {
-  //   return {
-  //     scope: {
-  //       formObject: '=',
-  //       formErrors: '=',
-  //       title: '@',
-  //       template: '@',
-  //       okButtonText: '@',
-  //       formSubmit: '&'
-  //     },
-  //     compile: function(element, cAtts){
-  //       var template,
-  //         $element,
-  //         loader;
-
-  //       loader = $http.get('partials/form_modal.html')
-  //         .success(function(data) {
-  //           template = data;
-  //         });
-
-  //       //return the Link function
-  //       return function(scope, element, lAtts) {
-  //         loader.then(function() {
-  //           //compile templates/form_modal.html and wrap it in a jQuery object
-  //           $element = $( $compile(template)(scope) );
-  //         });
-
-  //         //called by form_modal.html cancel button
-  //         scope.close = function() {
-  //           $element.modal('hide');
-  //         };
-
-  //         //called by form_modal.html form ng-submit
-  //         scope.submit = function() {
-  //           var result = scope.formSubmit();
-
-  //           if (Object.isObject(result)) {
-  //             result.success(function() {
-  //               $element.modal('hide');
-  //             });
-  //           } else if (result === false) {
-  //             //noop
-  //           } else {
-  //             $element.modal('hide');
-  //           }
-  //         };
-
-  //         element.on('click', function(e) {
-  //           e.preventDefault();
-  //           $element.modal('show');
-  //         });
-  //       };
-  //     }
-  //   }
-  // }]);
 
   
   formModal.$inject  = ['$http','$compile','$modal'];
 
   function formModal($http,$compile,$modal) { 
 
-    //.directive('formModal', ['$http','$compile','$modal',function($http,$compile,$modal) {
       return {
         scope: {
           formObject: '=',
@@ -110,14 +50,29 @@
               template = data;
 
 
+
+
+
             });
+            console.log("template",element);
+
+
+
 
           //return the Link function
           return function(scope, element, lAtts) {
 
+
+
+
             loader.then(function() {
               //compile templates/form_modal.html and wrap it in a jQuery object
+
               $element = $( $compile(template)(scope) );
+              $element.on('hide.bs.modal',function(res){
+                scope.formErrors = {};
+              });
+
             });
 
             //called by form_modal.html cancel button
@@ -127,24 +82,28 @@
 
             //called by form_modal.html form ng-submit
             scope.submit = function() {
+
               var result = scope.formSubmit();
+              
+
 
               if (angular.isObject(result)) {
                 result.success(function() {
                   $element.modal('hide');
                 }).error(function(){
-
                   angular.forEach(scope.formErrors, function(errors, field) {
 
-                    scope.generic_form[field].$setValidity('server', false);
+                    if (field!='__all__')
+                      scope.generic_form[field].$setValidity('server', false);
 
 
                   });
+                  
 
                 }).success(function(data){
 
 
-                  console.log(data);
+                  
 
                 });
               } else if (result === false) {
@@ -155,11 +114,13 @@
               }
             };
 
-            element.on('click', function(e) {
+            element.bind('click', function(e) {
 
               e.preventDefault();
               $element.modal('show');
             });
+
+
           };
         }
       }
@@ -176,7 +137,7 @@
 
     
     //vm.user = {};
-
+    console.log('calling the controller');
 
     $scope.set_usertype = function function_name(user_type) {
       $scope.user_type = user_type;
@@ -247,6 +208,10 @@
   }
 
 
+
+
+
+
   //serverError.$inject = [''];
 
   function serverError(){
@@ -258,9 +223,8 @@
         element.on('change',function(event){
 
           scope.$apply(function () {
-            console.log("control");
-            console.log(ctrl);
-            ctrl.$setValidity('server', false);
+            console.log("aqui");
+            ctrl.$setValidity('server', true);
 
           });
 

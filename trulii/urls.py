@@ -16,7 +16,7 @@ urlpatterns = patterns('',
 	# (r'^users/logout/$', 'django.contrib.auth.views.logout',
  #     	{'next_page': '/'}),
 
- #    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', include(admin.site.urls)),
  	
    ## url(r'^users/signup/', SignUpAjax.as_view()),
     url(r'^users/', include('allauth.urls')),

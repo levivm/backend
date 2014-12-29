@@ -53,6 +53,19 @@
     </a>
   </div>
 
+  <div ng-controller="LoginController">
+    <a href="#" form-modal  
+                template="/static/partials/login.html"
+                title="Login"
+                ok-button-text="Login"
+                form-submit="login()"
+                form-object="user"
+                form-errors="errors"
+                ng-click='click()'>
+      Login
+    </a>
+  </div>
+
 	{% endif %}
 
       </ul>
@@ -62,6 +75,11 @@
     {% endblock %}
     {% block extra_body %}
     {% endblock %}
+
+
+    <script type="text/ng-template" id="modalContainer">
+        
+    </script>
 
   {%include 'javascripts.html'%}
   </body>

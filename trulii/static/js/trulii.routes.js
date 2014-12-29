@@ -18,6 +18,12 @@
       controller: 'RegisterController', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/register.html'
+    })
+    .when('/confirm-email/:confirmation_key', {
+      controller: 'EmailConfirmCtrl', 
+      //controllerAs: 'vm',
+      //templateUrl: 'static/partials/email_confirm.html'
+      templateUrl: 'modalContainer' 
     });
     //.otherwise({redirectTo: '/'});
 
