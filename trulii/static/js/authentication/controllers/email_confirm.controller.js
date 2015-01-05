@@ -1,4 +1,4 @@
--/**
+/**
 * Register controller
 * @namespace thinkster.authentication.controllers
 */
@@ -20,31 +20,10 @@
     Authentication.confirm_email($routeParams.confirmation_key);
 
     var modalInstance = $modal.open({
-      templateUrl: 'static/partials/email_confirm.html',
+      templateUrl: 'static/partials/authentication/email_confirm.html',
       controller: 'ModalInstanceCtrl',
-      // size: size,
-      // resolve: {
-      //   items: function () {
-      //     return $scope.items;
-      //   }
-      // }
     });
 
   };
-
- //  	angular
-	// .module('trulii.authentication.controllers')
-	// .controller('ModalInstanceCtrl', function ($scope, $modalInstance) {
-
-
-	//   $scope.ok = function () {
-	//     $modalInstance.close();
-	//   };
-
-	//   $scope.cancel = function () {
-	//   };
-	// });
-
-
 
   })();

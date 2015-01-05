@@ -21,7 +21,7 @@
     if ($routeParams.confirmation_key_done){
 
       var modalInstance = $modal.open({
-        templateUrl: 'static/partials/password_reset_key_done.html',
+        templateUrl: 'static/partials/authentication/password_reset_key_done.html',
         controller: 'ModalInstanceCtrl',
       });
     }
@@ -101,7 +101,7 @@
       console.log($scope.user);
 
       var modalInstance = $modal.open({
-        templateUrl: 'static/partials/password_reset_done.html',
+        templateUrl: 'static/partials/authentication/password_reset_done.html',
         controller: 'ModalInstanceCtrl',
         // size: size,
         // resolve: {

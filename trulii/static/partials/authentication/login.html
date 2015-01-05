@@ -2,6 +2,11 @@
   <div class="col-md-12">
     <div>
       <fieldset>
+
+        
+      
+        <a title="Facebook" class="socialaccount_provider facebook" href="javascript:allauth.facebook.login('', 'authenticate', 'login')">Facebook</a>
+
        <!--  <input type="email" class="form-control" name="email" ng-model="formObject.email"  server-error novalidate/> -->
         <div class="form-group">
           <label>Email</label>
@@ -22,7 +27,7 @@
         </div>
         <div ng-controller="ForgotPasswordCtrl">
           <a href="#" form-modal  
-                      template="/static/partials/forgot_password.html"
+                      template="/static/partials/authentication/forgot_password.html"
                       title="Resetear Contraseña"
                       ok-button-text="Resetear Contraseña"
                       form-submit="forgotPassword()"

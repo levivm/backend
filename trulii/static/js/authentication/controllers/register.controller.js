@@ -44,13 +44,10 @@
             loader;
 
 
-          loader = $http.get('/static/partials/form_modal.html')
+          loader = $http.get('/static/partials/utils/form_modal.html')
             .success(function(data) {
 
               template = data;
-
-
-
 
 
             });

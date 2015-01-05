@@ -34,7 +34,7 @@
       <ul>
 	{% if user.is_authenticated %}
 	<li><a href="{% url 'account_email' %}">Change E-mail</a></li>
-	<li><a href="{% url 'account_logout' %}">Sign Out</a></li>
+	<li><a ng-href="{% url 'account_logout' %}">Sign Out</a></li>
 	{% else %}
 	<li><a href="{% url 'account_login' %}">Sign In</a></li>
 	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
@@ -42,7 +42,7 @@
 
   <div ng-controller="RegisterController">
     <a href="#" form-modal  
-                template="/static/partials/register.html"
+                template="/static/partials/authentication/register.html"
                 title="Register"
                 ok-button-text="Register"
                 form-submit="register()"
@@ -55,7 +55,7 @@
 
   <div ng-controller="LoginController">
     <a href="#" form-modal  
-                template="/static/partials/login.html"
+                template="/static/partials/authentication/login.html"
                 title="Login"
                 ok-button-text="Login"
                 form-submit="login()"
@@ -81,7 +81,7 @@
     <script type="text/ng-template" id="modalContainer">
         
     </script>
-
+  {% include "socialaccount/snippets/login_extra.html" %}
   {%include 'javascripts.html'%}
   </body>
 </html>
