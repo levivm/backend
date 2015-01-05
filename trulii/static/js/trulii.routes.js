@@ -22,9 +22,15 @@
     .when('/confirm-email/:confirmation_key', {
       controller: 'EmailConfirmCtrl', 
       //controllerAs: 'vm',
-      //templateUrl: 'static/partials/email_confirm.html'
+      //templateUrl: 'static/partials/email_confirm.html' url(r"^
       templateUrl: 'modalContainer' 
-    });
+    })
+    .when('/password/reset/', {
+      //ontroller: 'ForgotPasswordCtrl', 
+      //controllerAs: 'vm',
+      //templateUrl: 'static/partials/email_confirm.html' url(r"^
+      templateUrl: 'modalContainer' 
+    });;
     //.otherwise({redirectTo: '/'});
 
   }

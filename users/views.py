@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from allauth.account.views import SignupView
+from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin
 # Create your views here.
 import json
 from utils.form_utils import ajax_response
@@ -43,6 +43,44 @@ from django.http import HttpResponse
 #                         content_type='application/json')
 
 
+ #ret = super(PasswordResetView, self).get_context_data(**kwargs)
+ 
+class ResetPassword(PasswordResetView):
+
+
+
+    def post(self, request, *args, **kwargs):
+
+        _super =  super(ResetPassword, self)
+
+        form_class = _super.get_form_class()
+        form = _super.get_form(form_class)
+        if form.is_valid():
+            response = _super.form_valid(form)
+        else:
+            response = _super.form_invalid(form)
+        return _ajax_response(request, response, form=form)
+
+        # #super(ResetPassword, self).post(request, *args, **kwargs)
+        # print s.__attr__
+        # #print _s
+        # #print super(super(ResetPassword, self).__class__,self)
+        # #print super(ResetPassword, self).get_context_data(**kwargs)
+        # form_class =  super(ResetPassword, self).get_form_class()
+        # form = super(ResetPassword, self).get_form(form_class)
+        # print form.errors
+        #print "eror",_ajax_response(self.request, response, form=form)
+        #print "eror",ajax_response(form._errors)
+        #print "eror",form.is_valid()
+
+
+    # def get_context_data(self, **kwargs):
+    #     ret = super(ResetPassword, self).get_context_data(**kwargs)
+    #     print "re",ret
+    #     # NOTE: For backwards compatibility
+    #     ret['password_reset_form'] = super(ResetPassword, self).get_form_class()
+    #     # (end NOTE)
+    #     return ret
 
 # class SignUpAjax(SignupView):
 

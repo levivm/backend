@@ -34,7 +34,7 @@
           title: '@',
           template: '@',
           okButtonText: '@',
-          formSubmit: '&formSubmit'
+          formSubmit: '&formSubmit',
         },
         compile: function(element, cAtts){
 
@@ -69,7 +69,8 @@
               //compile templates/form_modal.html and wrap it in a jQuery object
 
               $element = $( $compile(template)(scope) );
-              $element.on('hide.bs.modal',function(res){
+
+              $element.bind('hide.bs.modal',function(res){
                 scope.formErrors = {};
               });
 
@@ -78,6 +79,8 @@
             //called by form_modal.html cancel button
             scope.close = function() {
               $element.modal('hide');
+              console.log('estoy cerrando por cancel')
+              //return;
             };
 
             //called by form_modal.html form ng-submit
@@ -100,11 +103,6 @@
                   });
                   
 
-                }).success(function(data){
-
-
-                  
-
                 });
               } else if (result === false) {
                 //noop
@@ -117,7 +115,9 @@
             element.bind('click', function(e) {
 
               e.preventDefault();
+              $('.modal').modal('hide');
               $element.modal('show');
+
             });
 
 

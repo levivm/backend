@@ -113,7 +113,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+#LANGUAGE_CODE = 'en-us'
+
 
 
 
@@ -128,8 +129,10 @@ USE_TZ = True
 
 
 ugettext = lambda s : s
+LANGUAGE_CODE = 'es-ES'
 LANGUAGES = (
-    ('en', ugettext('English')),
+    #('en', ugettext('English')),
+    ('es', ugettext('Spanish')),
 )
 LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
 

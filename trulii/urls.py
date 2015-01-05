@@ -5,6 +5,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 #from users.views import SignUpAjax
+from users.views import ResetPassword
 
 urlpatterns = patterns('',
     # Examples:
@@ -17,9 +18,11 @@ urlpatterns = patterns('',
  #     	{'next_page': '/'}),
 
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^users/password/reset/', ResetPassword.as_view()),
+ 	url(r'^users/', include('allauth.urls')),
  	
-   ## url(r'^users/signup/', SignUpAjax.as_view()),
-    url(r'^users/', include('allauth.urls')),
+
+    
  #    url(r'^organizers/', include('organizers.urls')),
  #    #url(r'^organizers/', include('allauth.urls')),
 

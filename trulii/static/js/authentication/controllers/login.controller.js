@@ -19,6 +19,7 @@
 
     $scope.user = {};
 
+
     $scope.errors = {};
     $scope.login = login;
     $scope.is_new = true;
@@ -113,7 +114,8 @@
      * @desc Log "Epic failure!" to the console
      */
     function loginErrorFn(data, status, headers, config) {
-      _errored();
+      _errored(data);
+
     }
 
 

@@ -20,7 +20,17 @@
         <div class="alert alert-error" ng-show="formErrors.__all__">
           <strong>{{formErrors.__all__}}</strong>
         </div>
-        <a href="">Olvidaste tu contraseña</a>
+        <div ng-controller="ForgotPasswordCtrl">
+          <a href="#" form-modal  
+                      template="/static/partials/forgot_password.html"
+                      title="Resetear Contraseña"
+                      ok-button-text="Resetear Contraseña"
+                      form-submit="forgotPassword()"
+                      form-object="user"
+                      form-errors="errors">
+            Olvidé mi contraseña
+          </a>
+        </div>
       </fieldset>
     </div>
   </div>

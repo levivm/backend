@@ -28,6 +28,7 @@
       getAuthenticatedAccount: getAuthenticatedAccount,
       isAuthenticated: isAuthenticated,
       login: login,
+      reset_password:reset_password,
       setAuthenticatedAccount: setAuthenticatedAccount,
       unauthenticate: unauthenticate
     };
@@ -102,6 +103,16 @@
 
       });
     }
+
+    function reset_password(email) { 
+
+      return $http.post('/users/password/reset/',{'email':email}).success( function(response) {
+        console.log('password reset');
+        console.log(response);
+
+      });
+    }
+
 
 
     /**
