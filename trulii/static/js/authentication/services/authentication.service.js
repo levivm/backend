@@ -106,7 +106,7 @@
 
     function reset_password(email) { 
 
-      return $http.post('/users/password/reset/',{'email':email}).success( function(response) {
+      return $http.post('/password/reset/',{'email':email}).success( function(response) {
         console.log('password reset');
         console.log(response);
 

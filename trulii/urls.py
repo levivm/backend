@@ -18,8 +18,8 @@ urlpatterns = patterns('',
  #     	{'next_page': '/'}),
 
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^password/reset/', ResetPassword.as_view()),
  	url(r'^users/', include('allauth.urls')),
-    url(r'^users/password/reset/', ResetPassword.as_view()),
  	
 
     
