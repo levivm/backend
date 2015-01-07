@@ -9,6 +9,7 @@
 	  'trulii.config',
 	  'trulii.routes',
 	  'trulii.authentication',
+	  'trulii.organizers',
     'trulii.utils'
 
 	]);

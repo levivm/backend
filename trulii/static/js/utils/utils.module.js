@@ -4,8 +4,8 @@
   angular
     .module('trulii.utils', [
       'trulii.utils.controllers',
-      //'trulii.utils.services',
-      //'trulii.authentication.directives'
+      'trulii.utils.services',
+      'trulii.utils.directives'
     ]);
 
 
@@ -13,7 +13,10 @@
   angular
     .module('trulii.utils.controllers',[]);
 
-  // angular
-  //  .module('trulii.authentication.directives',[]);
+  angular
+   .module('trulii.utils.services',[]);
+
+  angular
+   .module('trulii.utils.directives',[]);
 
 })();

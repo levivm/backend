@@ -4,10 +4,18 @@ from django.contrib import admin
 from rest_framework.urlpatterns import format_suffix_patterns
 from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
+from django.conf import settings
 #from users.views import SignUpAjax
 from users.views import ResetPassword
 
-urlpatterns = patterns('',
+
+
+if settings.DEBUG :
+    urlpatterns = patterns('',
+        (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
+    )
+
+urlpatterns += patterns('',
     # Examples:
     url(r'^home$', 'landing.views.landing', name='home'),
     url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
@@ -21,6 +29,7 @@ urlpatterns = patterns('',
     url(r'^password/reset/', ResetPassword.as_view()),
 	url(r'^users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
  	url(r'^users/', include('allauth.urls')),
+ 	url(r'^api/users/', include('users.urls')),
  	
 
     
@@ -44,5 +53,7 @@ urlpatterns = patterns('',
 
 
 )
+
+
 
 urlpatterns = format_suffix_patterns(urlpatterns)

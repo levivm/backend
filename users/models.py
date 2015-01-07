@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up
 from django.dispatch import receiver
 from .forms import UserCreateForm
+from organizers.models import Organizer
+from students.models import Student
 
 _ = lambda x:x
 
@@ -12,10 +14,16 @@ def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']    
     user_type = request.POST.get('user_type',None) 
-    print "User type",user_type
-    if user_type:
-        print "User type",user_type
-        profile = UserProfile.objects.create(user=user,user_type=user_type)
+    if user_type == 'S':
+        profile = Student.objects.create(user=user)
+        profile.save()
+    elif user_type == 'O':
+        profile = Organizer.objects.create(user=user)
+        profile.save()
+
+
+
+
         #profile.save()
         #profile.user_type = request.POST.get('user_type')
 

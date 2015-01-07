@@ -97,11 +97,7 @@
      * @memberOf thinkster.authentication.services.Authentication
      */
     function confirm_email(confirmation_key) {
-      return $http.post('/users/confirm-email/'+confirmation_key, {}).success( function(response) {
-        console.log('confirm-email');
-        console.log(response);
-
-      });
+      return $http.post('/users/confirm-email/6767657efsadasd', {})
     }
 
     function reset_password(email) { 

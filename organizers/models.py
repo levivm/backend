@@ -9,7 +9,7 @@ class Organizer(models.Model):
     user   = models.OneToOneField(User, related_name='organizer_profile')
     name   = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    photo      = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
+    photo      = models.ImageField(null=True, blank=True,upload_to="avatars")
     telephone  = models.CharField(max_length=100)
     youtube_video_url = models.CharField(max_length=100)
     website = models.CharField(max_length=100)

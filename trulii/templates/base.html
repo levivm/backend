@@ -32,43 +32,42 @@
     <div >
       <strong>Menu:</strong>
       <ul>
-	{% if user.is_authenticated %}
-	<li><a href="{% url 'account_email' %}">Change E-mail</a></li>
-	<li><a ng-href="{% url 'account_logout' %}">Sign Out</a></li>
-	{% else %}
-	<li><a href="{% url 'account_login' %}">Sign In</a></li>
-	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
+      	{% if user.is_authenticated %}
+      	<li><a href="{% url 'account_email' %}">Change E-mail</a></li>
+      	<li><a ng-href="{% url 'account_logout' %}">Sign Out</a></li>
+      	{% else %}
+      	<li><a href="{% url 'account_login' %}">Sign In</a></li>
+      	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
 
 
-  <div ng-controller="RegisterController">
-    <a href="#" form-modal  
-                template="/static/partials/authentication/register.html"
-                title="Register"
-                ok-button-text="Register"
-                form-submit="register()"
-                form-object="user"
-                form-errors="errors"
-                ng-init="user_type='S';">
-      Registrarse
-    </a>
-  </div>
+        <div ng-controller="RegisterController">
+          <a href="#" form-modal  
+                      template="/static/partials/authentication/register.html"
+                      title="Register"
+                      ok-button-text="Registarme"
+                      form-submit="register()"
+                      form-object="user"
+                      form-errors="errors"
+                      ng-init="user_type='S';">
+            Registrarse
+          </a>
+        </div>
 
-  <div ng-controller="LoginController">
-    <a href="#" form-modal  
-                template="/static/partials/authentication/login.html"
-                title="Login"
-                ok-button-text="Login"
-                form-submit="login()"
-                form-object="user"
-                form-errors="errors"
-                ng-click='click()'>
-      Iniciar Sesión
-    </a>
-  </div>
+        <div ng-controller="LoginController">
+          <a href="#" form-modal  
+                      template="/static/partials/authentication/login.html"
+                      title="Login"
+                      ok-button-text="Iniciar Sesión"
+                      form-submit="login()"
+                      form-object="user"
+                      form-errors="errors"
+                      ng-click='click()'>
+            Iniciar Sesión
+          </a>
+        </div>
 
 
-	{% endif %}
-
+      	{% endif %}
       </ul>
     </div>
     {% block content %}
@@ -81,6 +80,7 @@
     <script type="text/ng-template" id="modalContainer">
         
     </script>
+  
   {% include "socialaccount/snippets/login_extra.html" %}
   {%include 'javascripts.html'%}
   </body>

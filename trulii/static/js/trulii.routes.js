@@ -36,6 +36,12 @@
       //controllerAs: 'vm',
       //templateUrl: 'static/partials/email_confirm.html' url(r"
       templateUrl: 'modalContainer' 
+    })
+    .when('/organizer/dashboard/', {
+      controller: 'OrganizerDashboardCtrl', 
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/organizers/dashboard.html',
+      //templateUrl: 'modalContainer' 
     });
     //.otherwise({redirectTo: '/'});
 

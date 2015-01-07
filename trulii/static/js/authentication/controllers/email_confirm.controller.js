@@ -16,7 +16,7 @@
   */
   function EmailConfirmCtrl($scope, Authentication,$modal,$http,$routeParams) {
 
-
+    var error = false;
     Authentication.confirm_email($routeParams.confirmation_key);
 
     var modalInstance = $modal.open({

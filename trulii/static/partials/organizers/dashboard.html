@@ -1,0 +1,85 @@
+  <tabset justified="true">
+    <tab heading="Perfil">
+  
+<!--   	<div class='row'>
+	  <tabset class='sidebar-nav' vertical="true" type="pills">
+	    <tab heading="Editar">Editar</tab>
+	    <tab heading="Foto y Video">F</tab>
+	    <tab heading="Comentarios">F</tab>
+	  </tabset>
+	</div> -->
+	<div class="container">
+		<div class="col-sm-2">
+		    <nav class="nav-sidebar">
+				<ul class="nav tabs">
+		          <li class="active"><a href="#tab1" data-toggle="tab">Editar</a></li>
+		          <li class=""><a href="#tab2" data-toggle="tab">Foto y Video</a></li>
+		          <li class=""><a href="#tab3" data-toggle="tab">Comentarios</a></li>                               
+				</ul>
+			</nav>
+				<div><h2 class="add">Place for your add!</h2></div>
+		</div>
+		<div class="tab-content">
+			<div class="tab-pane active text-style" id="tab1">
+			  <h2>Información</h2>
+			    <fieldset>
+			      	<div class="form-group">
+			          <label>Nombre Completo</label>
+			          <input type="text" class="form-control" name="full_name" >
+			        </div>
+			      	<div class="form-group">
+			          <label>Biografía</label>
+			          <textarea class="form-control" name="bio">  </textarea>
+			        </div>
+			      	<div class="form-group">
+			          <label>Ciudad</label>
+			          <input type="text" class="form-control" name="city" >
+			        </div>
+		        </fieldset>
+		       <hr>
+			</div>
+			<div class="tab-pane text-style" id="tab2">
+			  <h2>Foto de Perfíl</h2>
+			    <fieldset>
+			      	<div class="form-group">
+
+
+			        <label>Foto</label>
+					<div ng-file-drop="" ng-file-select="" ng-model="$parent.$parent.organizer.photo" class="drop-box" drag-over-class="{accept:'dragover', reject:'dragover-err', delay:100}" ng-multiple="false" allow-dir="true" accept="image/*">
+							Drop Images or PDFs<div>here</div>
+					</div>
+					{{$parent.$parent.organizer.photo_path}}
+					<div ng-no-file-drop="" class="drop-box">File Farg&amp;Drop not supported on your browser</div>
+					<img ng-src="{{$parent.$parent.photo_path}}" /> 
+					<div ng-thumb="{ file: $parent.$parent.organizer.photo, height: 100 }"></div>
+
+			        </div>
+			      	<div class="form-group">
+			          <label>Vídeo</label>
+			          <input type="text" class="form-control" name="video" >
+			        </div>
+		        </fieldset>
+		       <hr>
+			</div>
+			<div class="tab-pane text-style" id="tab3">
+			  <h2>Stet clita</h2>
+			  <p>Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum 
+			    iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla 
+			    facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit 
+			    augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet,</p>
+			    <hr>
+			</div>
+		</div>
+	</div>
+
+
+
+
+
+
+
+
+    </tab>
+    <tab heading="Cuenta">Cuenta</tab>
+    <tab heading="Mis Actividades">Mis Actividades</tab>
+  </tabset>

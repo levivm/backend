@@ -9,7 +9,8 @@ class OrganizersSerializer(serializers.ModelSerializer):
 		fields = (
 			'user',
 			'name',
-			'website'
+			'website',
+			'photo'
 			)
 
 class InstructorsSerializer(serializers.ModelSerializer):

@@ -4,6 +4,16 @@ from allauth.account.views import SignupView,PasswordResetView,_ajax_response,Aj
 import json
 from utils.form_utils import ajax_response
 from django.http import HttpResponse
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.contrib.auth.models import User
+from organizers.models import Organizer
+from organizers.serializer import OrganizersSerializer
+from students.serializer import StudentsSerializer 
+from students.models import Student
+from rest_framework.renderers import JSONRenderer
+
 
 
 
@@ -44,7 +54,58 @@ from django.http import HttpResponse
 
 
  #ret = super(PasswordResetView, self).get_context_data(**kwargs)
- 
+
+class PhotoUploadView(APIView):
+    parser_classes = (FileUploadParser,)
+    renderer_classes = (JSONRenderer,)
+
+
+    def post(self, request):
+        user_id  = request.POST.get('user_id',None)
+        user     = User.objects.get(id=user_id)
+        print request.FILES
+        profile  = None
+        try:
+            profile = Organizer.objects.get(user=user)
+        except Organizer.DoesNotExist:
+            profile = Student.objects.get(user=user)
+
+        profile.photo = request.FILES['file']
+        profile.save()
+
+        print profile.photo
+        print profile.photo.__dict__
+
+
+        # ...
+        # do some staff with uploaded file
+        # ...
+        print StudentsSerializer(profile).data
+
+        return Response(StudentsSerializer(profile).data)
+
+    # def put(self, request):
+    #     print request.data
+    #     print "AquII"
+    #     file_obj = request.data['file']
+    #     user_id  = request.data['user_id']
+    #     user     = User.objects.get(id=user_id)
+
+    #     try:
+    #        x = user.organizer_profile.get()
+    #     except User.DoesNotExist:
+    #        x = user.student_profile.get()
+
+    #     print "USUARIO x",x
+
+
+
+        
+        # ...
+        # do some staff with uploaded file
+        # ...
+        return Response(status=204)
+
 class ResetPassword(PasswordResetView):
 
 
