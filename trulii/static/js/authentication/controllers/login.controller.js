@@ -103,9 +103,12 @@
      */
     function loginSuccessFn(data, status, headers, config) {
       console.log('data to store');
+      console.log(data);
+      console.log(headers);
+      console.log(config);
       console.log($scope.user);
-      Authentication.setAuthenticatedAccount($scope.user);
-
+      Authentication.updateAuthenticatedAccount();
+      
       //window.location = '/';
     }
 

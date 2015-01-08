@@ -154,3 +154,4 @@ STATICFILES_DIRS = (
 )
 
 from allauth_settings import *
+from constants import *

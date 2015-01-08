@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin
+from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin,LoginView
 # Create your views here.
 import json
 from utils.form_utils import ajax_response
@@ -12,7 +12,9 @@ from organizers.models import Organizer
 from organizers.serializer import OrganizersSerializer
 from students.serializer import StudentsSerializer 
 from students.models import Student
-from rest_framework.renderers import JSONRenderer
+from .forms import FileUploadForm
+from utils.form_utils import ajax_response
+from rest_framework import status
 
 
 
@@ -55,34 +57,75 @@ from rest_framework.renderers import JSONRenderer
 
  #ret = super(PasswordResetView, self).get_context_data(**kwargs)
 
-class PhotoUploadView(APIView):
-    parser_classes = (FileUploadParser,)
-    renderer_classes = (JSONRenderer,)
 
+class UsersView(APIView):
+    queryset = User.objects.all()
 
-    def post(self, request):
-        user_id  = request.POST.get('user_id',None)
-        user     = User.objects.get(id=user_id)
-        print request.FILES
+    def get(self, request):
+        user = self.request.user
+        if  user.is_anonymous():
+            return Response(status=status.HTTP_403_FORBIDDEN)
         profile  = None
+        data     = None
+
         try:
             profile = Organizer.objects.get(user=user)
+            data    = OrganizersSerializer(profile).data
         except Organizer.DoesNotExist:
             profile = Student.objects.get(user=user)
+            data    = StudentsSerializer(profile).data
 
-        profile.photo = request.FILES['file']
-        profile.save()
-
-        print profile.photo
-        print profile.photo.__dict__
 
 
         # ...
         # do some staff with uploaded file
         # ...
-        print StudentsSerializer(profile).data
 
-        return Response(StudentsSerializer(profile).data)
+        return Response(data)
+
+
+class PhotoUploadView(APIView):
+    parser_classes = (FileUploadParser,)
+
+
+    def post(self, request):
+        user = self.request.user
+        if not user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        profile  = None
+        data     = None
+        photo    = None
+
+        file_form = FileUploadForm(request.POST,request.FILES)
+        if file_form.is_valid():
+            photo = request.FILES['file']
+        else:
+            return Response(ajax_response(file_form),status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        try:
+            profile = Organizer.objects.get(user=user)
+            profile.photo = photo
+            profile.save()
+            data    = OrganizersSerializer(profile).data
+        except Organizer.DoesNotExist:
+            profile = Student.objects.get(user=user)
+            profile.photo = photo
+            profile.save()
+            data    = StudentsSerializer(profile).data
+
+
+
+        # ...
+        # do some staff with uploaded file
+        # ...
+        #print "foot",profile.photo.__dict__
+        #data['photo'] = profile.photo
+        # print data
+        # data = {
+
+        #     'photo':profile.photo.name
+        # }
+        return Response(data)
 
     # def put(self, request):
     #     print request.data
@@ -105,6 +148,8 @@ class PhotoUploadView(APIView):
         # do some staff with uploaded file
         # ...
         return Response(status=204)
+
+
 
 class ResetPassword(PasswordResetView):
 

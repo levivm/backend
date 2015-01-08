@@ -10,10 +10,10 @@ class Organizer(models.Model):
     name   = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     photo      = models.ImageField(null=True, blank=True,upload_to="avatars")
-    telephone  = models.CharField(max_length=100)
-    youtube_video_url = models.CharField(max_length=100)
-    website = models.CharField(max_length=100)
-    bio     = models.TextField()
+    telephone  = models.CharField(max_length=100,blank=True)
+    youtube_video_url = models.CharField(max_length=100,blank=True)
+    website = models.CharField(max_length=100,blank=True)
+    bio     = models.TextField(blank=True)
 
     
 

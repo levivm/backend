@@ -9,13 +9,13 @@
     .module('trulii.utils.services')
     .factory('UploadFile', UploadFile);
 
-  UploadFile.$inject = ['$cookies', '$http','$upload'];
+  UploadFile.$inject = ['$cookies', '$http','$upload','$window','Authentication'];
 
   /**
   * @namespace Authentication
   * @returns {Factory}
   */
-  function UploadFile($cookies, $http,$upload) {
+  function UploadFile($cookies, $http,$upload,$window,Authentication) {
     /**
     * @name UploadFile
     * @desc The Factory to be returned
@@ -24,11 +24,33 @@
 
     var UploadFile = {
       upload_file: upload_file,
+      check_file: check_file,
     };
 
 
 
     return UploadFile;
+
+
+    function check_file(file){
+
+      var helper = {
+            //support: !!($window.FileReader && $window.CanvasRenderingContext2D),
+            isFile: function(item) {
+                return angular.isObject(item) && item instanceof $window.File;
+            },
+            isImage: function(file) {
+                var type =  '|' + file.type.slice(file.type.lastIndexOf('/') + 1) + '|';
+                return '|jpg|png|jpeg|bmp|gif|'.indexOf(type) !== -1;
+            },
+            correctSize: function(file){
+                return file.size < 2621440
+            }
+        };
+
+      return helper.isFile(file[0]) && helper.isImage(file[0]) && helper.correctSize(file[0])
+
+    }
 
     ////////////////////
 
@@ -41,7 +63,8 @@
     * @returns {Promise}
     * @memberOf thinkster.authentication.services.Authentication
     */
-    function upload_file(file,user_id) {
+    function upload_file(file) {
+
 
 
 
@@ -51,7 +74,6 @@
         //method: 'POST' or 'PUT',
         //headers: {'Authorization': 'xxx'}, // only for html5
         //withCredentials: true,
-        data: {user_id: 2},
         file: file, // single file or a list of files. list is only for html5
         //fileName: 'doc.jpg' or ['1.jpg', '2.jpg', ...] // to modify the name of the file(s)
         //fileFormDataName: myFile, // file formData name ('Content-Disposition'), server side request form name
@@ -59,7 +81,7 @@
         //formDataAppender: function(formData, key, val){}  // customize how data is added to the formData. 
                                                             // See #40#issuecomment-28612000 for sample code
 
-      });
+      })
 
      //  return $http.post('/api/users/upload/photo/', {
      //    //username: username,

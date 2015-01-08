@@ -29,8 +29,9 @@
       isAuthenticated: isAuthenticated,
       login: login,
       reset_password:reset_password,
-      setAuthenticatedAccount: setAuthenticatedAccount,
-      unauthenticate: unauthenticate
+      updateAuthenticatedAccount: updateAuthenticatedAccount,
+      unauthenticate: unauthenticate,
+      getCurrentUser:getCurrentUser
     };
 
 
@@ -97,7 +98,7 @@
      * @memberOf thinkster.authentication.services.Authentication
      */
     function confirm_email(confirmation_key) {
-      return $http.post('/users/confirm-email/6767657efsadasd', {})
+      return $http.post('/users/confirm-email/'+confirmation_key, {})
     }
 
     function reset_password(email) { 
@@ -109,6 +110,12 @@
       });
     }
 
+    function getCurrentUser(){
+
+      return $http.get('api/users/current/');
+      
+
+    }
 
 
     /**
@@ -137,15 +144,22 @@
 
 
     /**
-     * @name setAuthenticatedAccount
+     * @name updateAuthenticatedAccount
      * @desc Stringify the account object and store it in a cookie
      * @param {Object} user The account object to be stored
      * @returns {undefined}
      * @memberOf thinkster.authentication.services.Authentication
      */
-    function setAuthenticatedAccount(account) {
-      $cookies.authenticatedAccount = JSON.stringify(account);
+    function updateAuthenticatedAccount() {
+
+      getCurrentUser().success(function(response){
+
+         $cookies.authenticatedAccount = JSON.stringify(response);
+
+      });
+      
     }
+
 
     /**
      * @name unauthenticate

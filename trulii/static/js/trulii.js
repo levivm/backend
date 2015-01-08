@@ -28,7 +28,7 @@
 	  .module('trulii')
 	  .run(run);
 
-	run.$inject = ['$http','$cookies'];
+	run.$inject = ['$rootScope','$http','$cookies','Authentication'];
 
 
 
@@ -41,10 +41,17 @@
 	* @name run
 	* @desc Update xsrf $http headers to align with Django's defaults
 	*/
-	function run($http,$cookies) {
+	function run($rootScope,$http,$cookies,Authentication) {
 
 
 		//$http.defaults.headers.post['X-CSRFToken'] = $cookies['csrftoken'];
+
+	    $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue) {
+	    	if ($cookies.authenticatedAccount == null)
+	    		console.log('hacer loggout');
+	        console.log('Cookie string: ' + $cookies.authenticatedAccount)
+	    });
+
 	  $http.defaults.xsrfHeaderName = 'X-CSRFToken';
 	  $http.defaults.xsrfCookieName = 'csrftoken';
 	}

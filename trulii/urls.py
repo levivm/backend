@@ -27,9 +27,10 @@ urlpatterns += patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^password/reset/', ResetPassword.as_view()),
-	url(r'^users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
+    url(r'^users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
  	url(r'^users/', include('allauth.urls')),
- 	url(r'^api/users/', include('users.urls')),
+    url(r'^api/users/', include('users.urls')),
+ 	url(r'^api/organizers/', include('organizers.urls')),
  	
 
     

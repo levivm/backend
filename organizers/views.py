@@ -2,22 +2,40 @@ from django.shortcuts import render
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Organizer
+from .serializer import OrganizersSerializer
+
 
 
 # Create your views here.
 
 def signup(request):
-	return render(request,'organizers/signup.html',{})
+    return render(request,'organizers/signup.html',{})
 
 
-class PhotoUploadView(APIView):
-    parser_classes = (FileUploadParser,)
 
-    def put(self, request, filename, format=None):
-        file_obj = request.data['file']
-        user_id  = request.data['user_id']
+
+class OrganizerViewSet(viewsets.ModelViewSet):
+    """
+    A viewset that provides the standard actions
+    """
+    queryset = Organizer.objects.all()
+    serializer_class = OrganizersSerializer
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    # def partial_update(self, request, pk=None):
+    #     print "REEE",request.POST
+
+    #     return Response(status=200)
         
-        # ...
-        # do some staff with uploaded file
-        # ...
-        return Response(status=204)
+
+
+
+
+
+
