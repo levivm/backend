@@ -28,10 +28,12 @@
       getAuthenticatedAccount: getAuthenticatedAccount,
       isAuthenticated: isAuthenticated,
       login: login,
+      logout:logout,
       reset_password:reset_password,
       updateAuthenticatedAccount: updateAuthenticatedAccount,
       unauthenticate: unauthenticate,
       getCurrentUser:getCurrentUser
+
     };
 
 
@@ -52,23 +54,28 @@
     function register(email, password,first_name,last_name,user_type) {
 
 
-      return $http.post('/users/signup/', {
-        //username: username,
-        password1: password,
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
-        user_type: user_type
+      // return $http.post('/users/signup/', {
+      //   //username: username,
+      //   password1: password,
+      //   email: email,
+      //   first_name: first_name,
+      //   last_name: last_name,
+      //   user_type: user_type
+      // });
+
+      var request = $http({
+        method: 'post',
+        url: '/users/signup/',
+        data:{
+          password1: password,
+          email: email,
+          first_name: first_name,
+          last_name: last_name,
+          user_type: user_type
+        }
       });
-     // .success(function(data, status, headers, config) {
-     //               //console.log(data);
-     //               //console.log(data.form_errors);
-     //               //return data
-     //  }).error(function(data, status, headers, config) {
-     //                console.log("mirame");
-     //                console.log(data["form_errors"]);
-                    
-     //  });
+
+      return request
 
     }
 
@@ -84,6 +91,16 @@
       return $http.post('/users/login/', {
         login: email, password: password
       });
+    }
+
+    function logout() {
+
+      var request = $http({
+        method: 'post',
+        url: '/users/logout/',
+      }).success(unauthenticate);
+
+      return request
     }
 
 
@@ -168,6 +185,7 @@
      * @memberOf thinkster.authentication.services.Authentication
      */
     function unauthenticate() {
+      console.log('loggout');
       delete $cookies.authenticatedAccount;
     }
 

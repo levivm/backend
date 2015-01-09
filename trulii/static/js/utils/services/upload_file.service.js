@@ -24,49 +24,12 @@
 
     var UploadFile = {
       upload_file: upload_file,
-      check_file: check_file,
     };
-
-
-
+    
     return UploadFile;
 
 
-    function check_file(file){
-
-      var helper = {
-            //support: !!($window.FileReader && $window.CanvasRenderingContext2D),
-            isFile: function(item) {
-                return angular.isObject(item) && item instanceof $window.File;
-            },
-            isImage: function(file) {
-                var type =  '|' + file.type.slice(file.type.lastIndexOf('/') + 1) + '|';
-                return '|jpg|png|jpeg|bmp|gif|'.indexOf(type) !== -1;
-            },
-            correctSize: function(file){
-                return file.size < 2621440
-            }
-        };
-
-      return helper.isFile(file[0]) && helper.isImage(file[0]) && helper.correctSize(file[0])
-
-    }
-
-    ////////////////////
-
-    /**
-    * @name upload_file
-    * @desc Try to upload_file a new user
-    * @param {string} username The username entered by the user
-    * @param {string} password The password entered by the user
-    * @param {string} email The email entered by the user
-    * @returns {Promise}
-    * @memberOf thinkster.authentication.services.Authentication
-    */
     function upload_file(file) {
-
-
-
 
 
       return $upload.upload({
@@ -82,22 +45,6 @@
                                                             // See #40#issuecomment-28612000 for sample code
 
       })
-
-     //  return $http.post('/api/users/upload/photo/', {
-     //    //username: username,
-     //    photo: file,
-     //    user_id: 2,
-     //  })
-     // .success(function(data, status, headers, config) {
-     //                console.log('entre');
-     //               //console.log(data);
-     //               //console.log(data.form_errors);
-     //               //return data
-     //  }).error(function(data, status, headers, config) {
-     //                console.log("mirame");
-     //                console.log(data);
-                    
-     //  });
 
     }
 

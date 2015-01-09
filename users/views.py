@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin,LoginView
+from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin,LoginView,EmailView
 # Create your views here.
 import json
 from utils.form_utils import ajax_response
@@ -15,6 +15,8 @@ from students.models import Student
 from .forms import FileUploadForm
 from utils.form_utils import ajax_response
 from rest_framework import status
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
 
 
 
@@ -56,6 +58,24 @@ from rest_framework import status
 
 
  #ret = super(PasswordResetView, self).get_context_data(**kwargs)
+
+
+
+
+
+def _set_ajax_response(_super):
+    form_class = _super.get_form_class()
+    form = _super.get_form(form_class)
+    print 'formm,',form
+    response = None
+    if form.is_valid():
+        response = _super.form_valid(form)
+    else:
+        response = _super.form_invalid(form)
+
+    return response,form
+
+
 
 
 class UsersView(APIView):
@@ -113,41 +133,60 @@ class PhotoUploadView(APIView):
             profile.save()
             data    = StudentsSerializer(profile).data
 
-
-
-        # ...
-        # do some staff with uploaded file
-        # ...
-        #print "foot",profile.photo.__dict__
-        #data['photo'] = profile.photo
-        # print data
-        # data = {
-
-        #     'photo':profile.photo.name
-        # }
         return Response(data)
 
-    # def put(self, request):
-    #     print request.data
-    #     print "AquII"
-    #     file_obj = request.data['file']
-    #     user_id  = request.data['user_id']
-    #     user     = User.objects.get(id=user_id)
 
-    #     try:
-    #        x = user.organizer_profile.get()
-    #     except User.DoesNotExist:
-    #        x = user.student_profile.get()
 
-    #     print "USUARIO x",x
+class ChangeEmailView(EmailView):
 
 
 
-        
-        # ...
-        # do some staff with uploaded file
-        # ...
-        return Response(status=204)
+
+
+
+    def post(self, request, *args, **kwargs):
+        res = None
+        if "action_add" in request.POST:
+            _super =  super(ChangeEmailView, self)
+            response,form = _set_ajax_response(_super)
+            res = super(ChangeEmailView, self).post(request, *args, **kwargs)
+            return _ajax_response(request, response, form=form)
+        elif request.POST.get("email"):
+            if "action_send" in request.POST:
+                res = super(ChangeEmailView, self)._action_send(request)
+            elif "action_remove" in request.POST:
+                res = super(ChangeEmailView, self)._action_remove(request)
+            elif "action_primary" in request.POST:
+                res = super(ChangeEmailView, self)._action_primary(request)
+            res = res or HttpResponseRedirect(reverse('account_email'))
+
+        return _ajax_response(request, res)
+
+
+
+
+
+
+    # def post(self, request, *args, **kwargs):
+
+       
+    #     _response = super(ChangeEmailView, self).post(request, *args, **kwargs)
+    #     _super_response = super(ChangeEmailView, self)
+
+    #     print _super_response
+    #     #print "es un post"
+    #     response,form = set_ajax_response(_response)
+    #     #print response,form
+    #     return _ajax_response(request, response, form=form)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -157,14 +196,11 @@ class ResetPassword(PasswordResetView):
 
     def post(self, request, *args, **kwargs):
 
-        _super =  super(ResetPassword, self)
-
-        form_class = _super.get_form_class()
-        form = _super.get_form(form_class)
-        if form.is_valid():
-            response = _super.form_valid(form)
-        else:
-            response = _super.form_invalid(form)
+        _super_response =  super(ResetPassword, self)
+        
+        
+        
+        response,form = _set_ajax_response(_super_response)
         return _ajax_response(request, response, form=form)
 
         # #super(ResetPassword, self).post(request, *args, **kwargs)

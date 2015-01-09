@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
-from allauth.account.signals import user_signed_up
+from allauth.account.signals import user_signed_up,email_added
 from django.dispatch import receiver
 from .forms import UserCreateForm
 from organizers.models import Organizer
 from students.models import Student
+from allauth.account.models import EmailAddress
 
 _ = lambda x:x
 
@@ -23,12 +24,14 @@ def after_sign_up(sender, **kwargs):
 
 
 
-
-        #profile.save()
-        #profile.user_type = request.POST.get('user_type')
-
-    #profile.display_name = user.first_name + ' ' + user.last_name
-    #profile.save()
+@receiver(email_added)
+def after_email_added(sender, **kwargs):
+    new_email = kwargs['email_address']
+    request = kwargs['request']
+    user    = kwargs['user']  
+    old_email = EmailAddress.objects.filter(user=user,primary=True).get()
+    if old_email:
+        new_email.set_as_primary()
 
 
 class UserProfile(models.Model):

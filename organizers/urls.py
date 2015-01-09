@@ -9,7 +9,7 @@ from rest_framework.routers import DefaultRouter
 urlpatterns = patterns('',
 
     url(r'^signup/$', signup),
-    url(r'^(?P<pk>\d+)/$', OrganizerViewSet.as_view({'post': 'partial_update'})),
+    url(r'^(?P<pk>\d+)/$', OrganizerViewSet.as_view({'put': 'partial_update'})),
 	)
 
 

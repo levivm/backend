@@ -1,4 +1,4 @@
-from allauth.account.signals import user_signed_up
+from allauth.account.signals import user_signed_up,email_confirmation_sent
 from django.dispatch import receiver
 from students.models import Student
 
@@ -17,3 +17,12 @@ def after_sign_up(sender, **kwargs):
 
     # profile.display_name = user.first_name + ' ' + user.last_name
     # profile.save()
+
+
+
+
+@receiver(email_confirmation_sent)
+def after_confirmation_sent(sender, **kwargs):
+    request = kwargs['request']
+    user = kwargs['user']
+    print "AFTER SIGN UPPP",user

@@ -46,10 +46,15 @@
 
 		//$http.defaults.headers.post['X-CSRFToken'] = $cookies['csrftoken'];
 
-	    $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue) {
-	    	if ($cookies.authenticatedAccount == null)
-	    		console.log('hacer loggout');
-	        console.log('Cookie string: ' + $cookies.authenticatedAccount)
+	    $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue,oldValue) {
+	    	if ($cookies.authenticatedAccount == null){
+	    		if (newValue!=oldValue){  
+		    		Authentication.logout();
+		    		console.log('aqui hago logout');
+
+	    		}
+
+	    	}
 	    });
 
 	  $http.defaults.xsrfHeaderName = 'X-CSRFToken';

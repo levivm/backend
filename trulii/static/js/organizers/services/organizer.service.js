@@ -16,10 +16,7 @@
   * @returns {Factory}
   */
   function OrganizerService($cookies, $http,Authentication) {
-    /**
-    * @name UploadFile
-    * @desc The Factory to be returned
-    */
+
 
 
     var OrganizerService = {
@@ -30,24 +27,17 @@
 
     return OrganizerService;
 
-    ////////////////////
 
-    /**
-    * @name update
-    * @desc Try to update a new user
-    * @param {string} username The username entered by the user
-    * @param {string} password The password entered by the user
-    * @param {string} email The email entered by the user
-    * @returns {Promise}
-    * @memberOf thinkster.authentication.services.Authentication
-    */
     function update(organizer) {
-      //var organizer    = Authentication.getAuthenticatedAccount();
-      //console.log('rr',{'name':'levis'});
-      //var organizer_id = organizer.id;
 
-      //console.log('/api/organizers/'+organizer_id);
-      return $http.post('/api/organizers/'+organizer.id+'/', organizer)
+      var request = $http({
+        method: 'put',
+        url:'/api/organizers/'+organizer.id+'/',
+        data: organizer,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+      });
+
+      return request
     }
 
 

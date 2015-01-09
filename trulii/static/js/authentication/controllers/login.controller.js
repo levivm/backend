@@ -83,14 +83,6 @@
     function login() {
       _clearErrors();
 
-     // return  Authentication.login($scope.user.login, $scope.user.password)
-     //          .error(_errored)
-     //          .success(function(data){
-
-     //            console.log("success");
-     //            console.log(data);
-     //          });
-
      return  Authentication.login($scope.user.login, $scope.user.password)
               .error(loginErrorFn)
               .success(loginSuccessFn);
@@ -102,14 +94,10 @@
      * @desc Set the authenticated account and redirect to index
      */
     function loginSuccessFn(data, status, headers, config) {
-      console.log('data to store');
-      console.log(data);
-      console.log(headers);
-      console.log(config);
-      console.log($scope.user);
+
       Authentication.updateAuthenticatedAccount();
       
-      //window.location = '/';
+      window.location = '/';
     }
 
     /**
