@@ -14,9 +14,10 @@ class OrganizersSerializer(serializers.ModelSerializer):
 			'website',
 			'youtube_video_url',
 			'telephone',
-			'photo'
+			'photo',
 			)
-		read_only_fields = ('id','user','photo',)
+		read_only_fields = ('id','photo',)
+		depth = 1
 
 class InstructorsSerializer(serializers.ModelSerializer):
 	class Meta:

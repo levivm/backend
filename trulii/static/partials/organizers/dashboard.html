@@ -1,3 +1,4 @@
+
   <tabset justified="true">
     <tab heading="Perfil">
 		<div class="container">
@@ -11,7 +12,7 @@
 				</nav>
 					<div><h2 class="add">Place for your add!</h2></div>
 			</div>
-			<div class="tab-content" ng-controller='OrganizerDashboardPerfilCtrl'>
+			<div class="tab-content" ng-controller='OrganizerProfileCtrl'>
 				<div class="tab-pane active text-style" id="tab1">
 				  <h2>Información</h2>
 				  	<form name='profile_form_info' ng-submit="submit_info()">
@@ -75,7 +76,7 @@
     </tab>
     <tab heading="Cuenta">
 
-<!-- 		<div class="container">
+		<div class="container">
 				<div class="col-sm-2">
 				    <nav class="nav-sidebar">
 						<ul class="nav tabs">
@@ -86,23 +87,51 @@
 					</nav>
 						<div><h2 class="add">Place for your add!</h2></div>
 				</div>
-				<div class="tab-content">
+				<div class="tab-content" ng-controller='OrganizerAccountCtrl'>
 					<div class="tab-pane active text-style" id="tab1">
 					  <h2>Información</h2>
-					  	<form name='profile_form_info' ng-submit="submit_info()">
+
+					  	<form name='account_form_email' ng-submit="changeEmail()">
 						    <fieldset>
 						      	<div class="form-group">
-						          <label>Nombre completo</label>
-						          <input type="text" class="form-control" ng-model='organizer.name' name="full_name" >
+						          <label>Correo</label>
+						          <input class="form-control" name="email" ng-model="organizer.user.email" type="email">
 						        </div>
-						      	<div class="form-group">
-						          <label>Biografía</label>
-						          <textarea class="form-control" ng-model='organizer.bio' name="bio">  </textarea>
-						        </div>
+					          	<div class="errors" ng-show="account_form_email.email.$invalid">
+		            				<span>{{ errors.email }}</span> 
+		          				</div>
 						        <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
 					        	<div collapse="isCollapsed">
 									Guardado
 								</div>
+					        </fieldset>
+				    	</form>
+				    	<hr>
+					  	<form name='account_form_password' ng-submit="changePassword()">
+						    <fieldset>
+						      	<div class="form-group">
+									<label>Contraseña actual</label>
+									<input id="id_oldpassword" class="form-control" name="oldpassword" ng-model="password_data.oldpassword" placeholder="Contraseña" type="password">
+	  					          	<div class="errors" ng-show="account_form_password.oldpassword.$invalid">
+			            				<span>{{ errors.oldpassword }}</span> 
+			          				</div>
+						        </div>
+						      	<div class="form-group">
+						            <label>Nueva contraseña</label>
+						            <input class="form-control" name="password1" ng-model="password_data.password1" placeholder="Contraseña" type="password">
+	  					          	<div class="errors" ng-show="account_form_password.password1.$invalid">
+			            				<span>{{ errors.password1 }}</span> 
+			          				</div>
+						        </div>
+						      	<div class="form-group">
+						            <label>Nueva contraseña (de nuevo)</label>
+						            <input class="form-control" name="password2" ng-model="password_data.password2" placeholder="Contraseña" type="password">
+	  					          	<div class="errors" ng-show="account_form_password.password2.$invalid">
+			            				<span>{{ errors.password2 }}</span> 
+			          				</div>
+						        </div>
+						        
+						        <input type="submit" id="submit" class="btn btn-primary" value="Cambiar Contraseña"/>
 					        </fieldset>
 				    	</form>
 				       <hr>
@@ -146,7 +175,7 @@
 					    <hr>
 					</div>
 				</div>
-		</div> -->
+		</div>
 
 
     </tab>

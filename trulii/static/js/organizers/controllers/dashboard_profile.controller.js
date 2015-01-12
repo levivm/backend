@@ -8,19 +8,20 @@
 
   angular
     .module('trulii.organizers.controllers')
-    .controller('OrganizerDashboardPerfilCtrl', OrganizerDashboardPerfilCtrl);
+    .controller('OrganizerProfileCtrl', OrganizerProfileCtrl);
 
-  OrganizerDashboardPerfilCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','UploadFile','OrganizerService'];
+  OrganizerProfileCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','UploadFile','Organizer'];
   /**
   * @namespace RegisterController
   */
-  function OrganizerDashboardPerfilCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile,OrganizerService) {
+  function OrganizerProfileCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile,Organizer) {
 
 
     activate();
-    //var organizer = {}
 
-    $scope.organizer  = Authentication.getAuthenticatedAccount();
+    var cache_organizer = Authentication.getAuthenticatedAccount();
+    $scope.organizer    = new Organizer(cache_organizer);
+
     $scope.photo_path = $scope.organizer.photo;
     $scope.errors = {};
     $scope.photo_invalid = false;
@@ -29,7 +30,8 @@
 
     $scope.$watch('organizer.photo', function(old_value,new_value) {
 
-      if (old_value!=new_value){ 
+      console.log(old_value,new_value);
+      if (old_value!=new_value && old_value && new_value){ 
         
         $scope.upload = UploadFile.upload_file($scope.organizer.photo)
           .progress(_progressUpload)
@@ -45,20 +47,14 @@
     $scope.submit_video =  _update_video;
     
 
-
+   
 
 
     //Private functions
 
     function _update_info() {
 
-      var data_info = {
-        'name':$scope.organizer.name,
-        'bio' :$scope.organizer.bio,
-        'id'  :$scope.organizer.id
-      }
-
-      OrganizerService.update(data_info)
+      $scope.organizer.update()
         .success(_updateSuccess)
         .error(_updateFail);
       
@@ -67,12 +63,8 @@
 
     function _update_video() {
 
-      var data_info = {
-        'youtube_video_url':$scope.organizer.youtube_video_url,
-        'id'  :$scope.organizer.id
-      }
 
-      OrganizerService.update(data_info)
+      $scope.organizer.update()
         .success(_updateSuccess)
         .error(_updateFail);
       
@@ -136,7 +128,6 @@
     }
 
     function _successUploaded(data){
-
       Authentication.updateAuthenticatedAccount();
 
       $scope.photo_path    = data.photo;
@@ -146,6 +137,7 @@
     }
 
     function _toggleMessage(){
+
 
       $scope.isCollapsed   = false;
       var timer = $timeout(function() {

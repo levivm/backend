@@ -6,7 +6,7 @@ from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax
-from users.views import ResetPassword,ChangeEmailView
+from users.views import ResetPassword,ChangeEmailView,PasswordChange
 
 
 
@@ -27,6 +27,7 @@ urlpatterns += patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/email/', ChangeEmailView.as_view()),
+    url(r'^users/password/change/', PasswordChange.as_view()),
     url(r'^password/reset/', ResetPassword.as_view()),
     url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
  	url(r'^users/', include('allauth.urls')),

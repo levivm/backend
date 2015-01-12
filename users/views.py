@@ -1,9 +1,10 @@
 from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,AjaxCapableProcessFormViewMixin,LoginView,EmailView
+from allauth.account.views import SignupView,PasswordResetView,_ajax_response,PasswordChangeView,LoginView,EmailView
 # Create your views here.
 import json
 from utils.form_utils import ajax_response
 from django.http import HttpResponse
+from rest_framework import viewsets
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -78,10 +79,10 @@ def _set_ajax_response(_super):
 
 
 
-class UsersView(APIView):
+class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
-    def get(self, request):
+    def retrieve(self, request):
         user = self.request.user
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -94,6 +95,7 @@ class UsersView(APIView):
         except Organizer.DoesNotExist:
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
+
 
 
 
@@ -141,9 +143,6 @@ class ChangeEmailView(EmailView):
 
 
 
-
-
-
     def post(self, request, *args, **kwargs):
         res = None
         if "action_add" in request.POST:
@@ -179,14 +178,19 @@ class ChangeEmailView(EmailView):
     #     #print response,form
     #     return _ajax_response(request, response, form=form)
 
+class PasswordChange(PasswordChangeView):
 
 
 
+    def post(self, request, *args, **kwargs):
 
-
-
-
-
+        _super_response =  super(PasswordChange, self)
+        _super_response.post(request, *args, **kwargs)
+        
+        
+        
+        response,form = _set_ajax_response(_super_response)
+        return _ajax_response(request, response, form=form)
 
 
 
