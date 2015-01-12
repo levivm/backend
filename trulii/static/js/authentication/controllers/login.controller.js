@@ -97,7 +97,8 @@
 
       Authentication.updateAuthenticatedAccount();
       
-      window.location = '/';
+      $location.path('/');
+      //window.location = '/';
     }
 
     /**

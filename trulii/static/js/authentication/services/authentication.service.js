@@ -171,6 +171,7 @@
 
       getCurrentUser().success(function(response){
 
+          console.log('loggeddddddd',response);
          $cookies.authenticatedAccount = JSON.stringify(response);
 
       });

@@ -20,7 +20,9 @@
     activate();
 
     var cache_organizer = Authentication.getAuthenticatedAccount();
+    console.log(cache_organizer);
     $scope.organizer    = new Organizer(cache_organizer);
+
 
     $scope.photo_path = $scope.organizer.photo;
     $scope.errors = {};
@@ -86,7 +88,7 @@
     function activate() {
       // If the user is authenticated, they should not be here.
       if (!(Authentication.isAuthenticated())) {
-        $location.url('/');
+        //$location.url('/');
       }
     }
 
