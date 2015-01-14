@@ -40,7 +40,7 @@
         if(value instanceof Array) {
           for(i=0; i<value.length; ++i) {
             subValue = value[i];
-            fullSubName = name + '[' + i + ']';
+            fullSubName = name + '[]';
             innerObj = {};
             innerObj[fullSubName] = subValue;
             query += param(innerObj) + '&';

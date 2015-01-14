@@ -47,9 +47,9 @@
     .module('trulii.organizers.services')
     .factory('Organizer', Organizer);
 
-  Organizer.$inject = ['$http'];
+  Organizer.$inject = ['$http','Authentication'];
 
-  function Organizer($http) {  
+  function Organizer($http,Authentication) {  
       
       function Organizer(organizerData) {
           if (organizerData) {
@@ -64,6 +64,7 @@
           },
           load: function(id) {
               var scope = this;
+
               $http.get('/api/organizers/' + id).success(function(organizerData) {
                   console.log('response');
                   console.log(organizerData);

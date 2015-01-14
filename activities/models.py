@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from organizers.models import Organizer,Instructor
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
+from django.db.models import F
 
 
 # Create your models here.
@@ -8,10 +11,38 @@ from django.utils.translation import ugettext_lazy as _
 class Category(models.Model):
     name = models.CharField(max_length = 100)
 
+    def __unicode__(self):
+        return self.name
+
 
 class SubCategory(models.Model):
     name = models.CharField(max_length = 100)
     category = models.ForeignKey(Category)
+
+class Tags(models.Model):
+    name  = models.CharField(max_length = 100,unique=True)
+    occurrences = models.IntegerField(default=1) 
+
+
+    @classmethod
+    def update_or_create(cls,tags_name):
+        _tags = []
+        for name in tags_name:
+            tag,created = cls.objects.get_or_create(name=name)
+            if not created:
+                #print "tagggggggg",tag
+                tag.occurrences +=1
+                tag.save()
+                #tag.update(occurrences= F('occurrences') + 1)
+            
+            _tags.append(tag)
+        return _tags
+
+
+
+    @classmethod
+    def ready_to_use(cls):
+        return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
 
 class Activity(models.Model):
 
@@ -19,6 +50,7 @@ class Activity(models.Model):
         ('P','Principiante'),
         ('I','Intermedio'),
         ('A','Avanzado'),
+        ('N','No Aplica')
         )
 
     DAY_CHOICES = (
@@ -30,14 +62,30 @@ class Activity(models.Model):
         )
 
     TYPE_CHOICES = (
-        ('C','Clase'),
+        ('CU',u'Curso'),
+        ('CE',u'Certificación'),
+        ('CL',u'Clase'),
+        ('DP',u'Diplomado'),
+        ('SE',u'Seminario'),
+        ('TA',u'Taller'),
         )
 
 
-    type = models.CharField(max_length = 100,choices=TYPE_CHOICES,default='C')
+
+
+    # //     { label: 'Certificación', value: 1 },
+    # //     { label: 'Curso', value: 2 },
+    # //     { label: 'Clase', value: 3 },
+    # //     { label: 'Diplomado', value: 4 },
+    # //     { label: 'Seminario', value: 5 },
+    # //     { label: 'Taller', value: 6 }
+
+
+
+    type = models.CharField(max_length = 2,choices=TYPE_CHOICES,default='C')
     sub_category = models.ForeignKey(SubCategory) 
     organizer = models.ForeignKey(Organizer)
-    #tags = models.ForeignKey()
+    tags = models.ManyToManyField(Tags,null=True)
     title = models.CharField(max_length = 100) 
     large_description = models.TextField()
     short_description = models.CharField(max_length = 100)
@@ -56,6 +104,29 @@ class Activity(models.Model):
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
+
+    @classmethod
+    def get_types(cls):
+        _types  = cls.TYPE_CHOICES
+        types   = []
+        for _type in _types:
+            types.append({
+                'code':_type[0],
+                'value':_type[1],
+                })
+        return types
+
+    @classmethod
+    def get_levels(cls):
+        _levels  = cls.LEVEL_CHOICES
+        levels   = []
+        for _level in _levels:
+            levels.append({
+                'code':_level[0],
+                'value':_level[1],
+                })
+        return levels
+
 
 class ActivityPhoto(models.Model):
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)

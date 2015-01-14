@@ -42,6 +42,12 @@
       //controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard.html',
       //templateUrl: 'modalContainer' 
+    })
+    .when('/activities/new/', {
+      controller: 'ActivityCreationCtrl', 
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/new_activitie.html',
+      //templateUrl: 'modalContainer' 
     });
     //.otherwise({redirectTo: '/'});
 

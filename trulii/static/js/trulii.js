@@ -10,6 +10,7 @@
 	  'trulii.routes',
 	  'trulii.authentication',
 	  'trulii.organizers',
+	  'trulii.activities',
     'trulii.utils'
 
 	]);

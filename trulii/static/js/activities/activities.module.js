@@ -8,15 +8,9 @@
     ]);
 
   angular
-    .module('trulii.activities.controllers',[])
-    .controller('CreateActivitiesController', function(){
+    .module('trulii.activities.controllers',['ngTagsInput'])
 
 
-        alert('ejecut');
-
-    });
-
-    console.log(angular.module('trulii.activities.controllers'));
 
   angular
     .module('trulii.activities.services', ['ngCookies']);

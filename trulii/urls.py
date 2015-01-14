@@ -32,7 +32,8 @@ urlpatterns += patterns('',
     url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
  	url(r'^users/', include('allauth.urls')),
     url(r'^api/users/', include('users.urls')),
- 	url(r'^api/organizers/', include('organizers.urls')),
+    url(r'^api/organizers/', include('organizers.urls')),
+ 	url(r'^api/activities/', include('activities.urls')),
  	
 
     
