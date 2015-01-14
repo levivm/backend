@@ -46,14 +46,23 @@
           <div class="form-group">
             <label>Título</label>
             <input class="form-control" ng-model='activity.title' name="title"/>
+            <div class="errors" ng-show="activity_create_form.title.$invalid">
+              <span>{{ errors.title }}</span> 
+            </div>
           </div>
           <div class="form-group">
             <label>Descripción Corta</label>
             <textarea class="form-control" ng-model='activity.large_description' name="large_description">  </textarea>
+            <div class="errors" ng-show="activity_create_form.large_description.$invalid">
+              <span>{{ errors.large_description }}</span> 
+            </div>
           </div>
           <div class="form-group">
             <label>Descripción Detallada</label>
             <textarea class="form-control" ng-model='activity.short_description' name="short_description">  </textarea>
+            <div class="errors" ng-show="activity_create_form.short_description.$invalid">
+              <span>{{ errors.short_description }}</span> 
+            </div>
           </div>
           <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
           <div collapse="isCollapsed">

@@ -18,7 +18,7 @@
 
     activate();
 
-
+    $scope.errors = {};
 
     $scope.activity = new Activity(); 
 
@@ -31,9 +31,11 @@
 
 
     function _create() {
+        _clearErrors();
         _updateTags();
         _updateSelectedValues();
-        $scope.activity.create();
+        $scope.activity.create()
+            .error(_errored);
     }
     
 
@@ -169,40 +171,36 @@
 
 
 
-    // function _clearErrors(){
-    //   $scope.errors = null;
-    //   $scope.errors = {};
-    // }
+    function _clearErrors(){
+      $scope.errors = null;
+      $scope.errors = {};
+    }
 
 
 
-    // function _addError(field, message) {
+    function _addError(field, message) {
 
-    //   $scope.errors[field] = message;
+      $scope.errors[field] = message;
+      $scope.activity_create_form[field].$setValidity(message, false);
 
-    // };
+    };
 
     // function _progressUpload(){
     //   $scope.photo_loading = true;
     // };
 
 
-    // function _erroredUpload(response) {
+    function _errored(errors) {
+        console.log(errors);
+        console.log(errors);
+        angular.forEach(errors, function(message,field) {
 
 
-    //   if (response['errors']) {
-    //     $scope.photo_invalid = true;
-        
-        
+          _addError(field,message[0]);   
 
-    //     angular.forEach(response['errors'], function(errors) {
+        });
 
-    //       _addError(errors.field,errors.errors[0]);   
-
-    //     });
-
-    //   }
-    // }
+    }
 
     // function _successUploaded(data){
 
