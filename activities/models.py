@@ -30,10 +30,8 @@ class Tags(models.Model):
         for name in tags_name:
             tag,created = cls.objects.get_or_create(name=name)
             if not created:
-                #print "tagggggggg",tag
                 tag.occurrences +=1
                 tag.save()
-                #tag.update(occurrences= F('occurrences') + 1)
             
             _tags.append(tag)
         return _tags
@@ -82,7 +80,7 @@ class Activity(models.Model):
 
 
 
-    type = models.CharField(max_length = 2,choices=TYPE_CHOICES,default='C')
+    type = models.CharField(max_length = 2,choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory) 
     organizer = models.ForeignKey(Organizer)
     tags = models.ManyToManyField(Tags,null=True)

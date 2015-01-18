@@ -10,64 +10,121 @@
     .module('trulii.activities.controllers')
     .controller('ActivityCreationCtrl', ActivityCreationCtrl);
 
-  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','$q','Authentication','UploadFile','Categories','Activity'];
+  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','Activity'];
   /**
   * @namespace RegisterController
   */
-  function ActivityCreationCtrl($scope,$modal,$http,$location,$timeout,$q,Authentication,UploadFile,Categories,Activity) {
+  function ActivityCreationCtrl($scope,$modal,$http,$location,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
 
     activate();
+    $scope.activity = new Activity();
+
+
+    var activity_id = $stateParams.activity_id;
+
+    if (activity_id)
+        _setUpdate(activity_id);
+    else
+        _setCreate();
+        
 
     $scope.errors = {};
 
-    $scope.activity = new Activity(); 
-
-    $scope.new_activity = _create
-
-    _setPreSaveInfo($scope.activity); 
-
-
     _setWatchers();
 
+    $scope.isCollapsed = true;
+
+
+    function _setUpdate(activity_id){
+        $scope.activity.load(activity_id)
+            .then($scope.activity.generalInfo)
+            .then(_setPreSaveInfo)
+            .then(_successLoadActivity);
+        $scope.save_activity = _update;
+        $scope.creating = false;
+        //$scope.isCollapsed = true;
+    }
+
+
+    function _setCreate(){
+
+        $scope.save_activity = _create;
+        $scope.creating = true;
+        $scope.activity.generalInfo().then(_setPreSaveInfo);
+
+
+    }
 
     function _create() {
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
         $scope.activity.create()
+            .success(_successCreation)
             .error(_errored);
     }
     
-
+    function _update() {
+        _clearErrors();
+        _updateTags();
+        _updateSelectedValues();
+        $scope.activity.update()
+            .success(function(response){
+                $scope.isCollapsed = false;
+            })
+            .error(_errored);
+    }
 
 
 
     // //Private functions
 
-    function _setPreSaveInfo(activity) {
+    function _setPreSaveInfo(response) {
+        $scope.selected_category = {};
+        $scope.selected_sub_category = null;
+        $scope.selected_type = {};
+        $scope.selected_level = {};
 
-        activity.generalInfo().success(function(response){
-            var categories = new Categories(response.categories);
-            $scope.activity_categories = categories;
-            $scope.activity_types  = response.types;
-            $scope.activity_levels = response.levels; 
-            //console.log($scope.activity_levels);
+        var data = response.data;
+            
+        var categories = new Categories(data.categories);
+        $scope.activity_sub_categories = data.subcategories;
+        $scope.activity_categories = categories;
+        $scope.activity_types  = data.types;
+        $scope.activity_levels = data.levels;
 
-            $scope.loadTags = function(){
-                var deferred = $q.defer();
-                    deferred.resolve(response.tags);
-                return deferred.promise;
-            };
 
-        });
+        $scope.selected_sub_category = data.subcategories[0];
+
+        $scope.loadTags = function(){
+            var deferred = $q.defer();
+                deferred.resolve(data.tags);
+            return deferred.promise;
+        };
+
+
+        var deferred = $q.defer();
+            deferred.resolve($scope.activity);
+        return deferred.promise;
+
       
+    }
+
+
+    function _successLoadActivity(response){
+
+        $scope.selected_level = filterFilter($scope.activity_levels,{code:response.level})[0];
+        $scope.selected_type  = filterFilter($scope.activity_types,{code:response.type})[0];
+        $scope.selected_category = filterFilter($scope.activity_categories,{id:response.category_id})[0];
+        $scope.activity_tags = response.tags;
+    
     }
 
     function _updateTags(){
 
+        $scope.activity.tags = [];
         angular.forEach($scope.activity_tags,function(value,index){
 
-            console.log(value,index);
             $scope.activity.tags.push(value.name);
         })
     }
@@ -87,8 +144,10 @@
 
         $scope.$watch('selected_category', function (newCategory,oldCategory) {
             if (oldCategory!=newCategory){
-
                 $scope.activity_sub_categories = newCategory.subcategories;
+                if (!$scope.creating){
+                     $scope.selected_sub_category = filterFilter(newCategory.subcategories,{id:$scope.activity.sub_category})[0];
+                }
             }
         });
 
@@ -121,46 +180,6 @@
 
     }
 
-    // function _update_info() {
-
-    //   var data_info = {
-    //     'name':$scope.organizer.name,
-    //     'bio' :$scope.organizer.bio,
-    //     'id'  :$scope.organizer.id
-    //   }
-
-    //   OrganizerService.update(data_info)
-    //     .success(_updateSuccess)
-    //     .error(_updateFail);
-      
-    // }
-
-
-    // function _update_video() {
-
-    //   var data_info = {
-    //     'youtube_video_url':$scope.organizer.youtube_video_url,
-    //     'id'  :$scope.organizer.id
-    //   }
-
-    //   OrganizerService.update(data_info)
-    //     .success(_updateSuccess)
-    //     .error(_updateFail);
-      
-    // }
-
-    // function _updateSuccess(response){
-
-    //   Authentication.updateAuthenticatedAccount();
-    //   _toggleMessage();
-
-
-    // }
-
-    // function _updateFail(response){
-    //     console.log(response);
-    // }
-
     
     function activate() {
       // If the user is authenticated, they should not be here.
@@ -169,30 +188,27 @@
       }
     }
 
+    function _loadActivityFail(){
+        $location.path('/');
+    }
+
 
 
     function _clearErrors(){
-      $scope.errors = null;
-      $scope.errors = {};
+        $scope.activity_create_form.$setPristine();
+        $scope.errors = null;
+        $scope.errors = {};
     }
 
 
 
     function _addError(field, message) {
-
       $scope.errors[field] = message;
       $scope.activity_create_form[field].$setValidity(message, false);
 
     };
 
-    // function _progressUpload(){
-    //   $scope.photo_loading = true;
-    // };
-
-
     function _errored(errors) {
-        console.log(errors);
-        console.log(errors);
         angular.forEach(errors, function(message,field) {
 
 
@@ -202,23 +218,13 @@
 
     }
 
-    // function _successUploaded(data){
-
-    //   Authentication.updateAuthenticatedAccount();
-
-    //   $scope.photo_path    = data.photo;
-    //   $scope.photo_invalid = false;
-    //   $scope.photo_loading = false;
-
-    // }
+    function _successCreation(response){
+        $location.path('/activities/edit/'+response.id);
+    }
 
     // function _toggleMessage(){
 
-    //   $scope.isCollapsed   = false;
-    //   var timer = $timeout(function() {
-    //     $scope.isCollapsed = true;
-    //   }, 1000);
-    // }
+
 
   };
 

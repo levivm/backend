@@ -12,61 +12,81 @@
   </div>
   <div class="tab-content">
     <div class="tab-pane active text-style" id="tab1">
-      <h2>Información</h2>
-      <form name='activity_create_form' ng-submit="new_activity()">
+     
+      <form name='activity_create_form' ng-submit="save_activity()">
         <fieldset>
-          <div class="form-group">
-            <label>Tipo</label>
-            <!-- <select ng-model="selected_type" -->
-            <select ng-model="selected_type"
-                ng-options="type as type.value for type in activity_types">
-            </select>
-            <label>Nivel</label>
-            <select ng-model="selected_level"
-                ng-options="level as level.value for level in activity_levels">
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Categoria</label>
-            <select ng-model="selected_category"
-                ng-options="category as category.name for (index,category) in activity_categories">
-            </select>
-            <label>Sub-Categoria</label>
-            <select ng-model="selected_sub_category"
-                ng-options="category as category.name for (index,category) in activity_sub_categories">
-            </select>
-          </div>
-          <label>Tags</label>
-          <tags-input ng-model="activity_tags" display-property="name"> 
-            <!-- <auto-complete source="loadTags($query)"></auto-complete> -->
-            <auto-complete source="loadTags()"></auto-complete>
-          </tags-input>
-          <hr>
           <h2>Descripción</h2>
           <div class="form-group">
             <label>Título</label>
             <input class="form-control" ng-model='activity.title' name="title"/>
-            <div class="errors" ng-show="activity_create_form.title.$invalid">
+            <div class="errors" ng-show="activity_create_form.title.$invalid && !activity_create_form.title.$dirty">
               <span>{{ errors.title }}</span> 
             </div>
           </div>
           <div class="form-group">
             <label>Descripción Corta</label>
             <textarea class="form-control" ng-model='activity.large_description' name="large_description">  </textarea>
-            <div class="errors" ng-show="activity_create_form.large_description.$invalid">
+            <div class="errors" ng-show="activity_create_form.large_description.$invalid && !activity_create_form.large_description.$dirty">
               <span>{{ errors.large_description }}</span> 
             </div>
           </div>
           <div class="form-group">
             <label>Descripción Detallada</label>
             <textarea class="form-control" ng-model='activity.short_description' name="short_description">  </textarea>
-            <div class="errors" ng-show="activity_create_form.short_description.$invalid">
+            <div class="errors" ng-show="activity_create_form.short_description.$invalid && !activity_create_form.short_description.$dirty">
               <span>{{ errors.short_description }}</span> 
             </div>
+
           </div>
+          <hr>
+          <h2>Información</h2>
+          <div class="form-group">
+            <label>Tipo</label>
+            <!-- <select ng-model="selected_type" -->
+            <select ng-model="selected_type"
+                ng-options="type as type.value for type in activity_types" name="type">
+                <option value="" selected>Seleccione Tipo</option>
+            </select>
+            <!-- <input class="form-control" ng-model="selected_type" name="selected_type" type="hidden"/> -->
+            <span class="errors" ng-show="activity_create_form.type.$invalid && !activity_create_form.type.$dirty">
+              <span>{{ errors.type }}</span> 
+            </span>
+            <label>Nivel</label>
+            <select ng-model="selected_level"
+                ng-options="level as level.value for level in activity_levels" name="level">
+                <option value="" selected>Seleccione Nivel</option>
+            </select>
+            <span class="errors" ng-show="activity_create_form.level.$invalid && !activity_create_form.level.$dirty">
+              <span>{{ errors.level }}</span> 
+            </span>
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select ng-model="selected_category"
+                ng-options="category as category.name for (index,category) in activity_categories" name="category">
+                <option value="" selected>Seleccione Categoria</option>
+            </select>
+            <span class="errors" ng-show="activity_create_form.category.$invalid && !activity_create_form.category.$dirty">
+              <span>{{ errors.category }}</span> 
+            </span>
+            <label>Sub-Categoria</label>
+            <select ng-model="selected_sub_category" 
+                ng-options="sub_category as sub_category.name for (index,sub_category) in activity_sub_categories" name="sub_category">
+                <option value="" selected>Seleccione Sub-categoria</option>
+            </select>
+            <span class="errors" ng-show="activity_create_form.sub_category.$invalid && !activity_create_form.sub_category.$dirty">
+              <span>{{ errors.sub_category }}</span> 
+            </span>
+          </div>
+          <label>Tags</label>
+          <tags-input ng-model="activity_tags" display-property="name"> 
+            <!-- <auto-complete source="loadTags($query)"></auto-complete> -->
+            <auto-complete source="loadTags()"></auto-complete>
+          </tags-input> 
+
           <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
-          <div collapse="isCollapsed">
-            Guardado
+          <div ng-savedmessage message="Guardado" ng-model="isCollapsed" collapse="isCollapsed">
+            
           </div>
 
           </fieldset>

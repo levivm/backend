@@ -72,14 +72,25 @@
               var scope = this;
               return $http.get('/api/activities/info/');
           },
-          // update: function() {
-          //   return $http({
-          //     method: 'put',
-          //     url:'/api/activities/' + this.id,
-          //     data: this,
-          //     headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-          //   });
+          load: function(id){
+            var scope = this;
+            console.log('idddd',id);
+            return $http.get('/api/activities/'+id)
+              .success(function(activityData) {
+                scope.setData(activityData);
+              }).error(function(response){
 
+                console.log(response);
+              });
+          },
+          update: function() {
+            return $http({
+              method: 'put',
+              url:'/api/activities/' + this.id,
+              data: this,
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            });
+          }
           //   //$http.put('/api/activities/' + this.id, this);
           // },
           // change_email: function() {

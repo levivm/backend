@@ -20,7 +20,7 @@
   	.module('trulii.config',[]);
 
 	angular
-	.module('trulii.routes',['ngRoute']);
+	.module('trulii.routes',['ui.router']);
 
 
 

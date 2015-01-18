@@ -38,6 +38,7 @@
         value = obj[name];
           
         if(value instanceof Array) {
+          console.log(name,value);
           for(i=0; i<value.length; ++i) {
             subValue = value[i];
             fullSubName = name + '[]';

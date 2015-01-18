@@ -10,14 +10,14 @@
     .module('trulii.authentication.controllers')
     .controller('EmailConfirmCtrl', EmailConfirmCtrl);
 
-  EmailConfirmCtrl.$inject = ['$scope', 'Authentication','$modal','$http','$routeParams'];
+  EmailConfirmCtrl.$inject = ['$scope', 'Authentication','$modal','$http','$stateParams'];
   /**
   * @namespace RegisterController
   */
-  function EmailConfirmCtrl($scope, Authentication,$modal,$http,$routeParams) {
+  function EmailConfirmCtrl($scope, Authentication,$modal,$http,$stateParams) {
 
     var error = false;
-    Authentication.confirm_email($routeParams.confirmation_key);
+    Authentication.confirm_email($stateParams.confirmation_key);
 
     var modalInstance = $modal.open({
       templateUrl: 'static/partials/authentication/email_confirm.html',

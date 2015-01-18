@@ -9,16 +9,16 @@
     .module('trulii.authentication.controllers')
     .controller('ForgotPasswordCtrl', ForgotPasswordCtrl);
 
-  ForgotPasswordCtrl.$inject = ['$location', '$scope', 'Authentication','$modal','$routeParams'];
+  ForgotPasswordCtrl.$inject = ['$location', '$scope', 'Authentication','$modal','$stateParams'];
 
   /**
   * @namespace ForgotPasswordCtrl
   */
-  function ForgotPasswordCtrl($location, $scope, Authentication,$modal,$routeParams) {
+  function ForgotPasswordCtrl($location, $scope, Authentication,$modal,$stateParams) {
     var vm = this;
 
 
-    if ($routeParams.confirmation_key_done){
+    if ($stateParams.confirmation_key_done){
 
       var modalInstance = $modal.open({
         templateUrl: 'static/partials/authentication/password_reset_key_done.html',
