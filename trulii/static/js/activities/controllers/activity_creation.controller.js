@@ -36,14 +36,24 @@
     $scope.isCollapsed = true;
 
 
-    $scope.setOverElement = setOverElement;
+    $scope.setOverElement = _setOverElement;
+
+    $scope.showTooltip = _showTooltip;
 
 
-    function setOverElement(element){
+    function _setOverElement(element){
 
-        console.log('element',element);
         $scope.currentOverElement = element;
     }
+
+
+    function _showTooltip(element){
+
+        if ($scope.currentOverElement==element)
+            return true
+        return false
+    }
+
 
     function _setUpdate(activity_id){
         $scope.activity.load(activity_id)
