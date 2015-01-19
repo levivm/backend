@@ -5,6 +5,7 @@
     .module('trulii.activities', [
       'trulii.activities.controllers',
       'trulii.activities.services',
+      'trulii.activities.directives',
     ]);
 
   angular
@@ -15,4 +16,7 @@
   angular
     .module('trulii.activities.services', ['ngCookies']);
 
+
+  angular
+    .module('trulii.activities.directives', []);
 })();

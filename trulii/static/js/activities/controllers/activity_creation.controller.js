@@ -12,7 +12,7 @@
 
   ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','Activity'];
   /**
-  * @namespace RegisterController
+  * @namespace ActivityCreationCtrl
   */
   function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
 
@@ -35,6 +35,15 @@
 
     $scope.isCollapsed = true;
 
+
+    $scope.setOverElement = setOverElement;
+
+
+    function setOverElement(element){
+
+        console.log('element',element);
+        $scope.currentOverElement = element;
+    }
 
     function _setUpdate(activity_id){
         $scope.activity.load(activity_id)
