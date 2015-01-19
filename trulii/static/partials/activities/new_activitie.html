@@ -45,7 +45,7 @@
             <!-- <select ng-model="selected_type" -->
             <select ng-model="selected_type"
                 ng-options="type as type.value for type in activity_types" name="type">
-                <option value="" selected>Seleccione Tipo</option>
+                <option value="" selected ng-show="!activity_create_form.type.$dirty">Seleccione..</option>
             </select>
             <!-- <input class="form-control" ng-model="selected_type" name="selected_type" type="hidden"/> -->
             <span class="errors" ng-show="activity_create_form.type.$invalid && !activity_create_form.type.$dirty">
@@ -54,7 +54,7 @@
             <label>Nivel</label>
             <select ng-model="selected_level"
                 ng-options="level as level.value for level in activity_levels" name="level">
-                <option value="" selected>Seleccione Nivel</option>
+                <option value="" selected ng-show="!activity_create_form.level.$dirty">Seleccione..</option>
             </select>
             <span class="errors" ng-show="activity_create_form.level.$invalid && !activity_create_form.level.$dirty">
               <span>{{ errors.level }}</span> 
@@ -64,7 +64,7 @@
             <label>Categoria</label>
             <select ng-model="selected_category"
                 ng-options="category as category.name for (index,category) in activity_categories" name="category">
-                <option value="" selected>Seleccione Categoria</option>
+                <option value="" selected ng-show="!activity_create_form.category.$dirty">Seleccione..</option>
             </select>
             <span class="errors" ng-show="activity_create_form.category.$invalid && !activity_create_form.category.$dirty">
               <span>{{ errors.category }}</span> 
@@ -72,7 +72,7 @@
             <label>Sub-Categoria</label>
             <select ng-model="selected_sub_category" 
                 ng-options="sub_category as sub_category.name for (index,sub_category) in activity_sub_categories" name="sub_category">
-                <option value="" selected>Seleccione Sub-categoria</option>
+                <option value="" selected ng-show="!activity_create_form.sub_category.$dirty">Seleccione..</option>
             </select>
             <span class="errors" ng-show="activity_create_form.sub_category.$invalid && !activity_create_form.sub_category.$dirty">
               <span>{{ errors.sub_category }}</span> 

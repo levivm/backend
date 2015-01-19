@@ -65,7 +65,6 @@
               angular.extend(this, activitieData);
           },
           create: function(){
-            console.log(this);
             return $http.post('/api/activities/',this);
           },
           generalInfo: function() {
@@ -74,13 +73,9 @@
           },
           load: function(id){
             var scope = this;
-            console.log('idddd',id);
             return $http.get('/api/activities/'+id)
-              .success(function(activityData) {
-                scope.setData(activityData);
-              }).error(function(response){
-
-                console.log(response);
+              .then(function(response) {
+                scope.setData(response.data);
               });
           },
           update: function() {

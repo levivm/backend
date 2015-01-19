@@ -10,13 +10,14 @@
     .module('trulii.activities.controllers')
     .controller('ActivityCreationCtrl', ActivityCreationCtrl);
 
-  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','Activity'];
+  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','Activity'];
   /**
   * @namespace RegisterController
   */
-  function ActivityCreationCtrl($scope,$modal,$http,$location,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
+  function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
 
     activate();
+    
     $scope.activity = new Activity();
 
 
@@ -37,25 +38,24 @@
 
     function _setUpdate(activity_id){
         $scope.activity.load(activity_id)
-            .then($scope.activity.generalInfo)
+            .then($scope.activity.generalInfo,_loadActivityFail)
             .then(_setPreSaveInfo)
             .then(_successLoadActivity);
-        $scope.save_activity = _update;
+        $scope.save_activity = _updateActivity;
         $scope.creating = false;
-        //$scope.isCollapsed = true;
     }
 
 
     function _setCreate(){
 
-        $scope.save_activity = _create;
+        $scope.save_activity = _createActivity;
         $scope.creating = true;
         $scope.activity.generalInfo().then(_setPreSaveInfo);
 
 
     }
 
-    function _create() {
+    function _createActivity() {
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
@@ -64,7 +64,7 @@
             .error(_errored);
     }
     
-    function _update() {
+    function _updateActivity() {
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
@@ -112,7 +112,6 @@
 
 
     function _successLoadActivity(response){
-
         $scope.selected_level = filterFilter($scope.activity_levels,{code:response.level})[0];
         $scope.selected_type  = filterFilter($scope.activity_types,{code:response.type})[0];
         $scope.selected_category = filterFilter($scope.activity_categories,{id:response.category_id})[0];
@@ -131,7 +130,6 @@
 
 
     function _updateSelectedValues(){
-
         $scope.activity.category = $scope.selected_category.id;
         $scope.activity.sub_category = $scope.selected_sub_category.id;
         $scope.activity.type = $scope.selected_type.code;
@@ -143,39 +141,18 @@
     function _setWatchers(){
 
         $scope.$watch('selected_category', function (newCategory,oldCategory) {
-            if (oldCategory!=newCategory){
+            if (oldCategory!=newCategory && newCategory){
                 $scope.activity_sub_categories = newCategory.subcategories;
-                if (!$scope.creating){
+                if (!(oldCategory) && !$scope.creating){
                      $scope.selected_sub_category = filterFilter(newCategory.subcategories,{id:$scope.activity.sub_category})[0];
                 }
+
+            }
+            else if (!(newCategory)){
+                $scope.activity_sub_categories = [];
+                $scope.selected_sub_category   = null;
             }
         });
-
-        // $scope.$watch('selected_sub_category', function (newSubCategory,oldSubCategory) {
-        //     if (oldSubCategory!=newSubCategory){
-
-        //         //$scope.activity_sub_categories = newSubCategory.subcategories;
-        //         $scope.activity.sub_category = newSubCategory.id;
-        //         console.log($scope.activity);
-        //     }
-        // });
-
-        // $scope.$watch('selected_type', function (newType,oldType) {
-            
-        //     if (newType!=oldType && newType){
-        //         $scope.activity.type = newType.code;
-        //         console.log($scope.activity);
-        //     }
-        // });
-
-        // $scope.$watch('selected_level', function (newLevel,oldLevel) {
-            
-        //     if (newLevel!=oldLevel && newLevel){
-        //         $scope.activity.level = newLevel.code;
-        //         console.log($scope.activity);
-        //     }
-        // });
-
 
 
     }
@@ -184,12 +161,15 @@
     function activate() {
       // If the user is authenticated, they should not be here.
       if (!(Authentication.isAuthenticated())) {
-        $location.url('/');
+        $state.go('home');
       }
     }
 
-    function _loadActivityFail(){
-        $location.path('/');
+    function _loadActivityFail(response){
+        $state.go('home');
+        var deferred = $q.defer();
+            deferred.reject( response );
+            return deferred.promise
     }
 
 
@@ -219,11 +199,9 @@
     }
 
     function _successCreation(response){
-        $location.path('/activities/edit/'+response.id);
+
+        $state.go('activties-edit',{id:response.id});
     }
-
-    // function _toggleMessage(){
-
 
 
   };

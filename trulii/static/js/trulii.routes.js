@@ -60,6 +60,9 @@
 
 
     $stateProvider
+    .state("home",{
+      url:"/"
+    })
     .state("register", {
       url:'register',
       controller: 'RegisterController', 
@@ -103,7 +106,7 @@
       //templateUrl: 'modalContainer' 
     })
     .state('activties-edit', {
-      url:'/activities/edit/:activity_id/',
+      url:'/activities/edit/{activity_id:int}/', 
       controller: 'ActivityCreationCtrl', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/new_activitie.html',
