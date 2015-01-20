@@ -42,8 +42,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
         return Response(data)
         
-    def pre_save(request,obj):
-        print "OBBJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ",obj
 
 
 

@@ -59,8 +59,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True,slug_field='name',read_only=True)
     #sub_category = SubCategoriesSerializer(required=True)
     #sub_category = SubCategoriesSerializer(required=True)
-    sub_category  = serializers.SlugRelatedField(slug_field='id',queryset=SubCategory.objects.all())
-    category = serializers.CharField(write_only=True)
+    sub_category  = serializers.SlugRelatedField(slug_field='id',queryset=SubCategory.objects.all(),required=True)
+    category = serializers.CharField(write_only=True,required=True)
     category_id = serializers.SlugRelatedField(source='sub_category.category',read_only=True,slug_field='id') 
    
 
@@ -82,6 +82,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         user    = request.user
+        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",data
         organizer = None
         try:
             organizer = Organizer.objects.get(user=user)
@@ -92,7 +93,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-
+        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",validated_data
         request = self.context['request']
         _tags = request.DATA.getlist('tags[]')
 

@@ -78,6 +78,7 @@
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
+        console.log('before create',$scope.selected_sub_category);
         $scope.activity.create()
             .success(_successCreation)
             .error(_errored);
@@ -100,7 +101,7 @@
 
     function _setPreSaveInfo(response) {
         $scope.selected_category = {};
-        $scope.selected_sub_category = null;
+        $scope.selected_sub_category = {};
         $scope.selected_type = {};
         $scope.selected_level = {};
 
@@ -113,7 +114,7 @@
         $scope.activity_levels = data.levels;
 
 
-        $scope.selected_sub_category = data.subcategories[0];
+        //$scope.selected_sub_category = data.subcategories[0];
 
         $scope.loadTags = function(){
             var deferred = $q.defer();
