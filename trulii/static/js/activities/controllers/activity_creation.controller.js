@@ -10,21 +10,19 @@
     .module('trulii.activities.controllers')
     .controller('ActivityCreationCtrl', ActivityCreationCtrl);
 
-  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','Activity'];
+  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','activity'];
   /**
   * @namespace ActivityCreationCtrl
   */
-  function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
+  function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,activity) {
 
-    
 
     initialize();
 
+    $scope.activity = activity;
 
-    $scope.activity = new Activity();
-
-    if ($stateParams.activity_id)
-        _setUpdate($stateParams.activity_id);
+    if (activity.id)
+        _setUpdate();
     else
         _setCreate();
 
@@ -50,6 +48,7 @@
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
+        console.log("ebfore update",$scope.activity);
         $scope.activity.update()
             .success(function(response){
                 $scope.isCollapsed = false;
@@ -74,9 +73,10 @@
 
 
 
-    function _setUpdate(activity_id){
-        $scope.activity.load(activity_id)
-            .then($scope.activity.generalInfo,_loadActivityFail)
+    function _setUpdate(){
+        // $scope.activity.load(activity_id)
+        //     .then(,_loadActivityFail)
+        $scope.activity.generalInfo()
             .then(_setPreSaveInfo)
             .then(_successLoadActivity);
         $scope.save_activity = _updateActivity;
@@ -178,16 +178,6 @@
 
 
 
-
-    function _loadActivityFail(response){
-        $state.go('home');
-        var deferred = $q.defer();
-            deferred.reject( response );
-            return deferred.promise
-    }
-
-
-
     function _clearErrors(){
         $scope.activity_create_form.$setPristine();
         $scope.errors = null;
@@ -214,7 +204,7 @@
 
     function _successCreation(response){
         console.log(response,"ressssssssssssssssssss");
-        $state.go('activities-edit',{activity_id:response.id});
+        $state.go('activities-edit.general',{activity_id:response.id});
     }
 
 

@@ -116,6 +116,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         instance.large_description = validated_data.get('large_description', instance.large_description)
         instance.sub_category = validated_data.get('sub_category', instance.sub_category)
         instance.level = validated_data.get('level', instance.level)
+        instance.type = validated_data.get('type', instance.type)
         instance.save()
 
         _tags = request.DATA.getlist('tags[]')

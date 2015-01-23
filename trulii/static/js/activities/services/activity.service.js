@@ -73,9 +73,11 @@
           },
           load: function(id){
             var scope = this;
+
             return $http.get('/api/activities/'+id)
               .then(function(response) {
                 scope.setData(response.data);
+                return scope
               });
           },
           update: function() {

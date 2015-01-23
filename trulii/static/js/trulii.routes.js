@@ -105,28 +105,89 @@
       //templateUrl: 'modalContainer' 
     })
     .state('activties-new', {
+      abstract:true,
       url:'/activities/new/',
       controller: 'ActivityCreationCtrl',
       data: {
 
         requiredAuthentication : true
       },
+      resolve: {
+
+        activity: getActivity
+
+      },
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/new_activitie.html',
+      templateUrl: 'static/partials/activities/activity_create.html',
+      //templateUrl: 'modalContainer' 
+    })
+    .state('activties-new.general', {
+      url:'',
+      controller: 'ActivityCreationCtrl',
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/activity_dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit', {
+      abstract:true,
       url:'/activities/edit/{activity_id:int}/', 
+      //controller: 'ActivityCreationCtrl', 
+      data: {
+
+        requiredAuthentication : true
+      },
+      resolve: {
+
+        activity: getActivity
+
+      },
+      templateUrl: 'static/partials/activities/activity_edit.html',
+
+      //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.general', {
+      url:'', 
       controller: 'ActivityCreationCtrl', 
+      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/new_activitie.html',
+      templateUrl: 'static/partials/activities/activity_dashboard_general.html',
+      //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.detail', {
+      //url:'/activities/edit/{activity_id:int}/', 
+      controller: 'ActivityCreationCtrl', 
+      template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
+      //controllerAs: 'vm',
+      //templateUrl: 'static/partials/activities/new_activitie.html',
       //templateUrl: 'modalContainer' 
     });
+    
 
     //$urlRouterProvider.otherwise('/');
 
   }
 
+
+  /****** RESOLVER FUNCTIONS *******/
+
+  getActivity.$inject = ['$stateParams','$q','Activity'];
+  
+  function getActivity($stateParams,$q,Activity){
+
+    var activity = new Activity();
+    if (!$stateParams.activity_id){
+      var deferred = $q.defer();
+      deferred.resolve(activity);
+      return deferred.promise;
+    }
+
+    
+    return activity.load($stateParams.activity_id)
+  }
+
+
+
+  /****** RUN METHOD*******/
   run.$inject = ['$rootScope','$state','Authentication'];
 
   function run($rootScope,$state,Authentication){

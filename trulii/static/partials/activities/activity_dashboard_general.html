@@ -1,17 +1,4 @@
-
-<div class="container">
-  <div class="col-sm-2">
-      <nav class="nav-sidebar">
-      <ul class="nav tabs">
-            <li class="active"><a data-target="#tab1" data-toggle="tab">General</a></li>
-            <li class=""><a data-target="#tab2" data-toggle="tab">Detalle</a></li>
-            <li class=""><a data-target="#tab3" data-toggle="tab">Calendario</a></li>                               
-      </ul>
-    </nav>
-      <div><h2 class="add">Place for your add!</h2></div>
-  </div>
-  <div class="tab-content">
-    <div class="tab-pane active text-style" id="tab1">
+    <div class="tab-pane active text-style">
       <div class="row">
         <div class="col-md-6">
        
@@ -44,12 +31,10 @@
               <h2>Información</h2>
               <div class="form-group">
                 <label>Tipo</label>
-                <!-- <select ng-model="selected_type" -->
                 <select ng-model="selected_type"
                     ng-options="type as type.value for type in activity_types" name="type">
                     <option value="" selected ng-show="!activity_create_form.type.$dirty">Seleccione..</option>
                 </select>
-                <!-- <input class="form-control" ng-model="selected_type" name="selected_type" type="hidden"/> -->
                 <span class="errors" ng-show="activity_create_form.type.$invalid && !activity_create_form.type.$dirty">
                   <span>{{ errors.type }}</span> 
                 </span>
@@ -136,18 +121,3 @@
 
       </div>
     </div>
-
-
-    <div class="tab-pane text-style" id="tab2">
-      <div ui-view="detail"></div>
-    </div>
-    <div class="tab-pane text-style" id="tab3">
-      <h2>Stet clita</h2>
-      <p>Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum 
-        iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla 
-        facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit 
-        augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet,</p>
-        <hr>
-    </div>
-  </div>
-</div>
