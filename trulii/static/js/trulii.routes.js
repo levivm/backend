@@ -107,7 +107,7 @@
     .state('activties-new', {
       abstract:true,
       url:'/activities/new/',
-      controller: 'ActivityCreationCtrl',
+      //controller: 'ActivityGeneralController',
       data: {
 
         requiredAuthentication : true
@@ -123,7 +123,7 @@
     })
     .state('activties-new.general', {
       url:'',
-      controller: 'ActivityCreationCtrl',
+      controller: 'ActivityGeneralController',
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_general.html',
       //templateUrl: 'modalContainer' 
@@ -147,18 +147,18 @@
     })
     .state('activities-edit.general', {
       url:'', 
-      controller: 'ActivityCreationCtrl', 
+      controller: 'ActivityGeneralController', 
       //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.detail', {
-      //url:'/activities/edit/{activity_id:int}/', 
-      controller: 'ActivityCreationCtrl', 
-      template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
+      url:'', 
+      controller: 'ActivityGeneralController', 
+      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
-      //templateUrl: 'static/partials/activities/new_activitie.html',
+      templateUrl: 'static/partials/activities/activity_dashboard_detail.html',
       //templateUrl: 'modalContainer' 
     });
     

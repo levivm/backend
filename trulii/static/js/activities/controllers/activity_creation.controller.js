@@ -8,13 +8,13 @@
 
   angular
     .module('trulii.activities.controllers')
-    .controller('ActivityCreationCtrl', ActivityCreationCtrl);
+    .controller('ActivityGeneralController', ActivityGeneralController);
 
-  ActivityCreationCtrl.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Authentication','UploadFile','Categories','activity'];
+  ActivityGeneralController.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','filterFilter','Categories','activity'];
   /**
-  * @namespace ActivityCreationCtrl
+  * @namespace ActivityGeneralController
   */
-  function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,activity) {
+  function ActivityGeneralController($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Categories,activity) {
 
 
     initialize();

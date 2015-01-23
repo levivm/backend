@@ -90,6 +90,8 @@ class Activity(models.Model):
     level = models.CharField(choices = LEVEL_CHOICES, max_length = 1)
     goals = models.TextField()
     methodology = models.TextField()
+    content = models.TextField()
+    audience = models.TextField()
     requirements = models.TextField()
     return_policy = models.TextField()
     #return_policy = models.ForeignKey(Return_Policies) *

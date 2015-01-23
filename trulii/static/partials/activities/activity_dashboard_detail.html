@@ -1,0 +1,101 @@
+    <div class="tab-pane active text-style">
+      <div class="row">
+        <div class="col-md-6">
+       
+          <form name='activity_create_form' ng-submit="save_activity()">
+            <fieldset>
+              <h2>Descripción</h2>
+              <div class="form-group">
+                <label>Contenido</label>
+                <textarea class="form-control" ng-model='activity.content' name="content" ng-mouseover="setOverElement('short_description')">  </textarea>
+                <div class="errors" ng-show="activity_create_form.content.$invalid && !activity_create_form.content.$dirty">
+                  <span>{{ errors.content }}</span> 
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Audencia</label>
+                <textarea class="form-control" ng-model='activity.audience' name="audience">  </textarea>
+                <div class="errors" ng-show="activity_create_form.audience.$invalid && !activity_create_form.audience.$dirty">
+                  <span>{{ errors.audience }}</span> 
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Objetivos</label>
+                <textarea class="form-control" ng-model='activity.goals' name="goals">  </textarea>
+                <div class="errors" ng-show="activity_create_form.goals.$invalid && !activity_create_form.goals.$dirty">
+                  <span>{{ errors.goals }}</span> 
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Requerimientos</label>
+                <textarea class="form-control" ng-model='activity.methodology' name="methodology">  </textarea>
+                <div class="errors" ng-show="activity_create_form.methodology.$invalid && !activity_create_form.methodology.$dirty">
+                  <span>{{ errors.methodology }}</span> 
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Requerimientos</label>
+                <textarea class="form-control" ng-model='activity.requirements' name="requirements">  </textarea>
+                <div class="errors" ng-show="activity_create_form.requirements.$invalid && !activity_create_form.requirements.$dirty">
+                  <span>{{ errors.requirements }}</span> 
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Información Adicional</label>
+                <textarea class="form-control" ng-model='activity.extra_info' name="extra_info">  </textarea>
+                <div class="errors" ng-show="activity_create_form.extra_info.$invalid && !activity_create_form.extra_info.$dirty">
+                  <span>{{ errors.extra_info }}</span> 
+                </div>
+              </div>
+              <hr>
+
+              <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
+              <div ng-savedmessage message="Guardado" ng-model="isCollapsed" collapse="isCollapsed">
+                
+              </div>
+
+              </fieldset>
+          </form>
+        </div>
+        <div class="col-md-3">
+<!--           <div class="sidebar-nav-fixed pull-right affix well">
+            <ul class="nav">
+              <li ng-show="showTooltip('short_description')">
+                Describe tu actividad de forma atractiva, especifica y díficil de olvidar.
+                Recuerda que esta descripción aparecerá en las tarjeta de la actividad.
+              </li>
+              <li ng-show="showTooltip('short_description')">
+                Describe tu actividad de forma atractiva, especifica y díficil de olvidar.
+                Recuerda que esta descripción aparecerá en las tarjeta de la actividad.
+              </li>
+              <li ng-show="showTooltip('sub_category')">
+                Elige la que más esté acorde con 
+                tu actividad. En caso de no hallar 
+                la adecuada, selecciona “otra” y 
+                rato después nosotros añadiremos una nueva que encaje con tu 
+                publicación.
+              </li>
+              <li ng-show="showTooltip('tags')">
+                Estas son etiquetas en forma de
+                hashtags, ayudando a los usuari
+                os a encontrar tu publicación en 
+                nuestros buscadores y redes so
+                ciales. Deja un espacio por cada 
+                palabra o frase que deseas agre-
+                gar, sin poner el #.
+                Un ejemplo para un curso de 
+                pizzas:
+                Hashtags: cocinaitaliana napoli
+                tana cuatroquesos
+              </li>
+
+
+
+
+            </ul>
+          </div> -->
+        </div>
+         <hr>
+
+      </div>
+    </div>

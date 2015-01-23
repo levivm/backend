@@ -117,6 +117,15 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         instance.sub_category = validated_data.get('sub_category', instance.sub_category)
         instance.level = validated_data.get('level', instance.level)
         instance.type = validated_data.get('type', instance.type)
+        instance.goals = validated_data.get('goals', instance.goals)
+        instance.methodology = validated_data.get('methodology', instance.methodology)
+        instance.content = validated_data.get('content', instance.content)
+        instance.audience = validated_data.get('audience', instance.audience)
+        instance.requirements = validated_data.get('requirements', instance.requirements)
+        instance.return_policy = validated_data.get('return_policy', instance.return_policy)
+        instance.extra_info = validated_data.get('extra_info', instance.extra_info)
+
+
         instance.save()
 
         _tags = request.DATA.getlist('tags[]')
