@@ -24,7 +24,6 @@
     $scope.login = login;
     $scope.is_new = true;
 
-    activate();
 
 
     $scope.clearErrors = _clearErrors;
@@ -63,17 +62,6 @@
     }
 
 
-    /**
-    * @name activate
-    * @desc Actions to be performed when this controller is instantiated
-    * @memberOf thinkster.authentication.controllers.LoginController
-    */
-    function activate() {
-      // If the user is authenticated, they should not be here.
-      if (Authentication.isAuthenticated()) {
-        $location.url('/');
-      }
-    }
 
     /**
     * @name login

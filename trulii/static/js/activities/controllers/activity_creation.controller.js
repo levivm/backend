@@ -16,24 +16,17 @@
   */
   function ActivityCreationCtrl($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Authentication,UploadFile,Categories,Activity) {
 
-    activate();
     
+
+    initialize();
+
+
     $scope.activity = new Activity();
 
-
-    var activity_id = $stateParams.activity_id;
-
-    if (activity_id)
-        _setUpdate(activity_id);
+    if ($stateParams.activity_id)
+        _setUpdate($stateParams.activity_id);
     else
         _setCreate();
-        
-
-    $scope.errors = {};
-
-    _setWatchers();
-
-    $scope.isCollapsed = true;
 
 
     $scope.setOverElement = _setOverElement;
@@ -41,11 +34,28 @@
     $scope.showTooltip = _showTooltip;
 
 
-    function _setOverElement(element){
 
-        $scope.currentOverElement = element;
+    /******************ACTIONS**************/
+
+    function _createActivity() {
+        _clearErrors();
+        _updateTags();
+        _updateSelectedValues();
+        $scope.activity.create()
+            .success(_successCreation)
+            .error(_errored);
     }
-
+    
+    function _updateActivity() {
+        _clearErrors();
+        _updateTags();
+        _updateSelectedValues();
+        $scope.activity.update()
+            .success(function(response){
+                $scope.isCollapsed = false;
+            })
+            .error(_errored);
+    }
 
     function _showTooltip(element){
 
@@ -53,6 +63,15 @@
             return true
         return false
     }
+
+
+    function _setOverElement(element){
+
+        $scope.currentOverElement = element;
+    }
+
+    /*****************SETTERS********************/
+
 
 
     function _setUpdate(activity_id){
@@ -74,31 +93,6 @@
 
     }
 
-    function _createActivity() {
-        _clearErrors();
-        _updateTags();
-        _updateSelectedValues();
-        console.log('before create',$scope.selected_sub_category);
-        $scope.activity.create()
-            .success(_successCreation)
-            .error(_errored);
-    }
-    
-    function _updateActivity() {
-        _clearErrors();
-        _updateTags();
-        _updateSelectedValues();
-        $scope.activity.update()
-            .success(function(response){
-                $scope.isCollapsed = false;
-            })
-            .error(_errored);
-    }
-
-
-
-    // //Private functions
-
     function _setPreSaveInfo(response) {
         $scope.selected_category = {};
         $scope.selected_sub_category = {};
@@ -114,7 +108,6 @@
         $scope.activity_levels = data.levels;
 
 
-        //$scope.selected_sub_category = data.subcategories[0];
 
         $scope.loadTags = function(){
             var deferred = $q.defer();
@@ -128,34 +121,6 @@
         return deferred.promise;
 
       
-    }
-
-
-    function _successLoadActivity(response){
-        $scope.selected_level = filterFilter($scope.activity_levels,{code:response.level})[0];
-        $scope.selected_type  = filterFilter($scope.activity_types,{code:response.type})[0];
-        $scope.selected_category = filterFilter($scope.activity_categories,{id:response.category_id})[0];
-        $scope.activity_tags = response.tags;
-    
-    }
-
-    function _updateTags(){
-
-        $scope.activity.tags = [];
-        angular.forEach($scope.activity_tags,function(value,index){
-
-            $scope.activity.tags.push(value.name);
-        })
-    }
-
-
-    function _updateSelectedValues(){
-        $scope.activity.category = $scope.selected_category.id;
-        $scope.activity.sub_category = $scope.selected_sub_category.id;
-        $scope.activity.type = $scope.selected_type.code;
-        $scope.activity.level = $scope.selected_level.code;
-
-
     }
 
     function _setWatchers(){
@@ -177,13 +142,42 @@
 
     }
 
-    
-    function activate() {
-      // If the user is authenticated, they should not be here.
-      if (!(Authentication.isAuthenticated())) {
-        $state.go('home');
-      }
+    function _updateTags(){
+
+        $scope.activity.tags = [];
+        angular.forEach($scope.activity_tags,function(value,index){
+
+            $scope.activity.tags.push(value.name);
+        })
     }
+
+
+    /*********RESPONSE HANDLERS***************/
+
+
+
+    function _successLoadActivity(response){
+        $scope.selected_level = filterFilter($scope.activity_levels,{code:response.level})[0];
+        $scope.selected_type  = filterFilter($scope.activity_types,{code:response.type})[0];
+        $scope.selected_category = filterFilter($scope.activity_categories,{id:response.category_id})[0];
+        $scope.activity_tags = response.tags;
+    
+    }
+
+
+
+
+    function _updateSelectedValues(){
+        $scope.activity.category = $scope.selected_category.id;
+        $scope.activity.sub_category = $scope.selected_sub_category.id;
+        $scope.activity.type = $scope.selected_type.code;
+        $scope.activity.level = $scope.selected_level.code;
+
+
+    }
+
+
+
 
     function _loadActivityFail(response){
         $state.go('home');
@@ -219,10 +213,25 @@
     }
 
     function _successCreation(response){
-
-        $state.go('activties-edit',{id:response.id});
+        console.log(response,"ressssssssssssssssssss");
+        $state.go('activities-edit',{activity_id:response.id});
     }
 
+
+
+    function activate() {
+      // If the user is authenticated, they should not be here.
+
+    }
+
+    function initialize(){
+
+        $scope.errors = {};
+        $scope.isCollapsed = true;
+        _setWatchers();
+
+
+    }
 
   };
 

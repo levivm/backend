@@ -83,7 +83,6 @@
               </div>
               <label>Tags</label>
               <tags-input ng-model="activity_tags" display-property="name" ng-mouseover="setOverElement('tags')"> 
-                <!-- <auto-complete source="loadTags($query)"></auto-complete> -->
                 <auto-complete source="loadTags()"></auto-complete>
               </tags-input> 
 
@@ -134,14 +133,13 @@
           </div>
         </div>
          <hr>
-<!--         <div class="tab-pane active text-style" >
-          asdas
-        </div> -->
+
       </div>
     </div>
 
+
     <div class="tab-pane text-style" id="tab2">
-      <h2>Foto de Perfíl</h2>
+      <div ui-view="detail"></div>
     </div>
     <div class="tab-pane text-style" id="tab3">
       <h2>Stet clita</h2>

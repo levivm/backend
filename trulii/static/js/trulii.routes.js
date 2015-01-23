@@ -3,7 +3,8 @@
 
   angular
     .module('trulii.routes')
-    .config(config);
+    .config(config)
+    .run(run);
 
   config.$inject = ['$urlRouterProvider','$stateProvider'];
 
@@ -62,12 +63,17 @@
     $stateProvider
     .state("home",{
       url:"/"
+      //templateUrl: 'static/partials/authentication/register.html'
     })
     .state("register", {
       url:'register',
       controller: 'RegisterController', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/authentication/register.html'
+    })
+    .state("logout",{
+      url:'/logout/',
+      controller: 'LogOutController'
     })
     .state('confirm_email', {
       url:'/confirm-email/:confirmation_key',
@@ -100,12 +106,16 @@
     })
     .state('activties-new', {
       url:'/activities/new/',
-      controller: 'ActivityCreationCtrl', 
+      controller: 'ActivityCreationCtrl',
+      data: {
+
+        requiredAuthentication : true
+      },
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/new_activitie.html',
       //templateUrl: 'modalContainer' 
     })
-    .state('activties-edit', {
+    .state('activities-edit', {
       url:'/activities/edit/{activity_id:int}/', 
       controller: 'ActivityCreationCtrl', 
       //controllerAs: 'vm',
@@ -116,5 +126,29 @@
     //$urlRouterProvider.otherwise('/');
 
   }
+
+  run.$inject = ['$rootScope','$state','Authentication'];
+
+  function run($rootScope,$state,Authentication){
+
+    $rootScope.$on('$stateChangeStart',function(e,toState){
+
+      if ( !(toState.data) ) return;
+      if ( !(toState.data.requiredAuthentication) ) return;
+
+      var _requiredAuthentication = toState.data.requiredAuthentication;
+
+      console.log(_requiredAuthentication);
+      console.log("is",Authentication.isAuthenticated());
+      if (_requiredAuthentication && !Authentication.isAuthenticated()){
+
+        e.preventDefault();
+        $state.go('home',{'notify':false});
+      }
+      return;
+
+
+    });
+  };
 })();
 
