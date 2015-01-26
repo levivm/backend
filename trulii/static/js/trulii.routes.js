@@ -181,7 +181,7 @@
       return deferred.promise;
     }
 
-    
+    console.log("asdasda");
     return activity.load($stateParams.activity_id)
   }
 
