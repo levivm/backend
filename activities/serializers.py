@@ -76,7 +76,14 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'level',
             'tags',
             'category',
-            'category_id'
+            'category_id',
+            'content',
+            'requirements',
+            'return_policy',
+            'extra_info',
+            'audience',
+            'goals',
+            'methodology',
             )
 
     def validate(self, data):

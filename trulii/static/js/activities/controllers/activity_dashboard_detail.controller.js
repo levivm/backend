@@ -21,6 +21,7 @@
 
     $scope.activity = activity;
 
+    $scope.save_activity = _updateActivity();
 
     $scope.setOverElement = _setOverElement;
 
@@ -32,17 +33,17 @@
 
 
     
-    // function _updateActivity() {
-    //     _clearErrors();
-    //     _updateTags();
-    //     _updateSelectedValues();
-    //     console.log("ebfore update",$scope.activity);
-    //     $scope.activity.update()
-    //         .success(function(response){
-    //             $scope.isCollapsed = false;
-    //         })
-    //         .error(_errored);
-    // }
+    function _updateActivity() {
+        //_clearErrors();
+        //_updateTags();
+        //_updateSelectedValues();
+        console.log("ebfore update",$scope.activity);
+        $scope.activity.update()
+            .success(function(response){
+                $scope.isCollapsed = false;
+            })
+            .error(_errored);
+    }
 
     function _showTooltip(element){
 

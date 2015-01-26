@@ -148,7 +148,6 @@
     .state('activities-edit.general', {
       url:'', 
       controller: 'ActivityGeneralController', 
-      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_general.html',
       //templateUrl: 'modalContainer' 
@@ -156,7 +155,6 @@
     .state('activities-edit.detail', {
       url:'', 
       controller: 'ActivityGeneralController', 
-      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_detail.html',
       //templateUrl: 'modalContainer' 
@@ -164,7 +162,6 @@
     .state('activities-edit.calendar', {
       url:'', 
       controller: 'ActivityCalendarController', 
-      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_calendar.html',
       //templateUrl: 'modalContainer' 
@@ -209,8 +206,6 @@
 
       var _requiredAuthentication = toState.data.requiredAuthentication;
 
-      console.log(_requiredAuthentication);
-      console.log("is",Authentication.isAuthenticated());
       if (_requiredAuthentication && !Authentication.isAuthenticated()){
 
         e.preventDefault();
