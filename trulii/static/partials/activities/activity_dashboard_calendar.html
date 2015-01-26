@@ -1,0 +1,98 @@
+<div class="tab-pane active text-style">
+  <div class="row">
+    <br><br><br>
+    <br><br><br>
+    <br><br><br>
+    <br><br><br>
+    <alert ng-repeat="alert in dates_alerts" type="{{alert.type}}" close="closeAlert(key, $index)">
+        {{alert.msg}}
+    </alert>
+
+
+    <h4>Fecha de inicio de ventas</h4>
+  
+        <p>
+          <div class="row">
+            <div>
+              <p class="input-group">
+                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="start" is-open="startOpened" min-date="minStartDate" datepicker-options="dateOptions" close-text="Close" />
+                <button class="btn btn-default" ng-click="openStart()"><i class="glyphicon glyphicon-calendar"></i></button>
+              </p>
+            </div>
+          </div>
+        </p>
+    
+    <h4>Fecha de cierre de ventas</h4>
+        <p>
+          <div class="row">
+            <div>
+              <p class="input-group">
+                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="end" is-open="endOpened" min-date="minEndDate" max-date = "null" datepicker-options="dateOptions" close-text="Close" />
+                <button class="btn btn-default" ng-click="openEnd()"><i class="glyphicon glyphicon-calendar"></i></button>
+              </p>
+             </div>
+          </div>
+        </p>
+ 
+  Precio: 
+  <input type="number" name = "_price" placeholder="0.00" min="0" />
+  <br>
+  Cupos:
+  <input type="number" name = "_cupos" placeholder="000" min="0"/>
+
+  <br>
+
+<!-- <div ng-controller="TimepickerCtrl">-->
+    
+      <button class="btn btn-success" ng-click="add_object()">Añadir sesión</button>
+      <button class="btn btn-success" ng-click="delete_object()">Eliminar una sesión</button>
+      <button class="btn btn-success" ng-click="delete_all()">Eliminar todas las sesiones</button>
+      <div class="row">
+       <!--ng-repeat="(name, age) in items"-->
+      <div ng-repeat="(key, value) in objects track by $index">
+
+          <br><br>
+        <alert ng-repeat="alert in value.alerts" type="{{alert.type}}" close="closeAlert(key, $index)">
+        {{alert.msg}}
+        </alert>
+          <div>
+            <br><br>
+                <p>
+                <h4>Fecha de sesión:</h4>
+                <!--{{object.innit}}-->
+                  <div class="row">
+                    <div>
+                      <p class="input-group">
+                        <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="value.date" is-open="value.innit" min-date="$parent.start" datepicker-options="dateOptions" close-text="Close" ng-change = "checkSessionDate(key)"
+                        />
+
+                        <button class="btn btn-default" ng-click="$parent.openMiddle(key)"><i class="glyphicon glyphicon-calendar"></i></button>
+                      </p>
+                    </div>
+                  </div>
+                </p>
+             
+          </div>
+            <h4>Hora de inicio:</h4>
+             <timepicker  ng-model="value.start" ng-change="$parent.changed(key)" hour-step="hstep" minute-step="mstep" show-meridian="ismeridian">   
+             </timepicker>  
+            <h4>Hora de fin:</h4>
+            <timepicker ng-model="value.end" ng-change="$parent.changed2(key)" hour-step="hstep" minute-step="mstep" show-meridian="ismeridian">
+            </timepicker>  
+            <!--<div class="col-xs-5">
+                Paso de horas:
+                <select class="form-control" ng-model="hstep" ng-options="opt for opt in options.hstep"></select>
+            </div>
+            -->
+            <!--
+            <div class="col-xs-5">
+                  Paso de minutos:
+                  <select class="form-control" ng-model="mstep" ng-options="opt for opt in options.mstep"></select>
+                
+            </div>
+            --> 
+        </div>
+      </div>
+      <!--</div>-->
+      </div>
+    </div>

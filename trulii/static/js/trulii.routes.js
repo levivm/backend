@@ -160,7 +160,17 @@
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/activity_dashboard_detail.html',
       //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.calendar', {
+      url:'', 
+      controller: 'ActivityCalendarController', 
+      //template: '<div>holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>'
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/activity_dashboard_calendar.html',
+      //templateUrl: 'modalContainer' 
     });
+    
+
     
 
     //$urlRouterProvider.otherwise('/');
