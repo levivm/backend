@@ -1,6 +1,8 @@
   <tabset justified="true">
-    <tab heading="Perfil">
-		<div class="container">
+    <tab heading="Perfil" select="changeState('organizer-dashboard.profile')">
+
+    	
+<!-- 		<div class="container">
 			<div class="col-sm-2">
 			    <nav class="nav-sidebar">
 					<ul class="nav tabs">
@@ -71,11 +73,11 @@
 				    <hr>
 				</div>
 			</div>
-		</div>
+		</div> -->
     </tab>
-    <tab heading="Cuenta">
-
-		<div class="container">
+    <tab heading="Cuenta" select="changeState('organizer-dashboard.account')">
+    	
+<!-- 		<div class="container">
 				<div class="col-sm-2">
 				    <nav class="nav-sidebar">
 						<ul class="nav tabs">
@@ -174,9 +176,10 @@
 					    <hr>
 					</div>
 				</div>
-		</div>
+		</div> -->
 
 
     </tab>
-    <tab heading="Mis Actividades">Mis Actividades</tab>
+    <tab heading="Mis Actividades" select="changeState('organizer-dashboard.activities')"></tab>
   </tabset>
+  <div ui-view></div>

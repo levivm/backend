@@ -75,14 +75,14 @@
       url:'/logout/',
       controller: 'LogOutController'
     })
-    .state('confirm_email', {
+    .state('confirm-email', {
       url:'/confirm-email/:confirmation_key',
       controller: 'EmailConfirmCtrl', 
       //controllerAs: 'vm',
       //templateUrl: 'static/partials/email_confirm.html' url(r"
       templateUrl: 'modalContainer' 
     })
-    .state('password_reset', {
+    .state('password-reset', {
       url:'/password/reset/',
       //ontroller: 'ForgotPasswordCtrl', 
       //controllerAs: 'vm',
@@ -97,11 +97,37 @@
       templateUrl: 'modalContainer' 
       //templateUrl: 'static/partials/authentication/register.html'
     })
-    .state('organizer_dashboard/', {
+    .state('organizer-dashboard', {
+      abstract:true,
       url:'/organizer/dashboard/',
       controller: 'OrganizerDashboardCtrl', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard.html',
+      data: {
+
+        requiredAuthentication : true
+      },
+      //templateUrl: 'modalContainer' 
+    })
+    .state('organizer-dashboard.profile', {
+      url:'',
+      controller: 'OrganizerProfileCtrl', 
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/organizers/dashboard_profile.html',
+      //templateUrl: 'modalContainer' 
+    })
+    .state('organizer-dashboard.account', {
+      url:'',
+      controller: 'OrganizerAccountCtrl', 
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/organizers/dashboard_account.html',
+      //templateUrl: 'modalContainer' 
+    })
+    .state('organizer-dashboard.activities', {
+      url:'',
+      controller: 'OrganizerAccountCtrl', 
+      //controllerAs: 'vm',
+      templateUrl: 'static/partials/organizers/dashboard_activities.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activties-new', {
@@ -118,14 +144,14 @@
 
       },
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/activity_create.html',
+      templateUrl: 'static/partials/activities/create.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activties-new.general', {
       url:'',
       controller: 'ActivityGeneralController',
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/activity_dashboard_general.html',
+      templateUrl: 'static/partials/activities/dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit', {
@@ -141,7 +167,7 @@
         activity: getActivity
 
       },
-      templateUrl: 'static/partials/activities/activity_edit.html',
+      templateUrl: 'static/partials/activities/edit.html',
 
       //templateUrl: 'modalContainer' 
     })
@@ -149,21 +175,21 @@
       url:'', 
       controller: 'ActivityGeneralController', 
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/activity_dashboard_general.html',
+      templateUrl: 'static/partials/activities/dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.detail', {
       url:'', 
       controller: 'ActivityGeneralController', 
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/activity_dashboard_detail.html',
+      templateUrl: 'static/partials/activities/dashboard_detail.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.calendar', {
       url:'', 
       controller: 'ActivityCalendarController', 
       //controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/activity_dashboard_calendar.html',
+      templateUrl: 'static/partials/activities/dashboard_calendar.html',
       //templateUrl: 'modalContainer' 
     });
     

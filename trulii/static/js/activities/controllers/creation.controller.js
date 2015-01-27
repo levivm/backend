@@ -48,7 +48,6 @@
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
-        console.log("ebfore update",$scope.activity);
         $scope.activity.update()
             .success(function(response){
                 $scope.isCollapsed = false;

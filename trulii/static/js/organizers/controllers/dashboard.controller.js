@@ -10,12 +10,18 @@
     .module('trulii.organizers.controllers')
     .controller('OrganizerDashboardCtrl', OrganizerDashboardCtrl);
 
-  OrganizerDashboardCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','UploadFile'];
+  OrganizerDashboardCtrl.$inject = ['$scope','$state'];
   /**
   * @namespace RegisterController
   */
-  function OrganizerDashboardCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile) {
+  function OrganizerDashboardCtrl($scope,$state) {
 
+
+    $scope.changeState = _changeState;
+
+    function _changeState(newState){
+        $state.go(newState);
+    }
 
     //activate();
 

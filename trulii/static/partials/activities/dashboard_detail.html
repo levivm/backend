@@ -7,7 +7,7 @@
               <h2>Descripción</h2>
               <div class="form-group">
                 <label>Contenido</label>
-                <textarea class="form-control" ng-model='activity.content' name="content" ng-mouseover="setOverElement('short_description')">  </textarea>
+                <textarea class="form-control" ng-model='activity.content' name="content" ng-mouseover="setOverElement('content')">  </textarea>
                 <div class="errors" ng-show="activity_create_form.content.$invalid && !activity_create_form.content.$dirty">
                   <span>{{ errors.content }}</span> 
                 </div>
@@ -21,21 +21,21 @@
               </div>
               <div class="form-group">
                 <label>Objetivos</label>
-                <textarea class="form-control" ng-model='activity.goals' name="goals">  </textarea>
+                <textarea class="form-control" ng-model='activity.goals' name="goals" ng-mouseover="setOverElement('goals')">  </textarea>
                 <div class="errors" ng-show="activity_create_form.goals.$invalid && !activity_create_form.goals.$dirty">
                   <span>{{ errors.goals }}</span> 
                 </div>
               </div>
               <div class="form-group">
                 <label>methodology</label>
-                <textarea class="form-control" ng-model='activity.methodology' name="methodology">  </textarea>
+                <textarea class="form-control" ng-model='activity.methodology' name="methodology" ng-mouseover="setOverElement('methodology')">  </textarea>
                 <div class="errors" ng-show="activity_create_form.methodology.$invalid && !activity_create_form.methodology.$dirty">
                   <span>{{ errors.methodology }}</span> 
                 </div>
               </div>
               <div class="form-group">
                 <label>Requerimientos</label>
-                <textarea class="form-control" ng-model='activity.requirements' name="requirements">  </textarea>
+                <textarea class="form-control" ng-model='activity.requirements' name="requirements" ng-mouseover="setOverElement('requirements')">  </textarea>
                 <div class="errors" ng-show="activity_create_form.requirements.$invalid && !activity_create_form.requirements.$dirty">
                   <span>{{ errors.requirements }}</span> 
                 </div>
@@ -58,42 +58,43 @@
           </form>
         </div>
         <div class="col-md-3">
-<!--           <div class="sidebar-nav-fixed pull-right affix well">
+          <div class="sidebar-nav-fixed pull-right affix well">
             <ul class="nav">
-              <li ng-show="showTooltip('short_description')">
-                Describe tu actividad de forma atractiva, especifica y díficil de olvidar.
-                Recuerda que esta descripción aparecerá en las tarjeta de la actividad.
+              <li ng-show="showTooltip('content')">
+                ¿Tu actividad está dividida en 
+                módulos en donde cada uno 
+                tiene temas a enseñar?
               </li>
-              <li ng-show="showTooltip('short_description')">
-                Describe tu actividad de forma atractiva, especifica y díficil de olvidar.
-                Recuerda que esta descripción aparecerá en las tarjeta de la actividad.
+              <li ng-show="showTooltip('goals')">
+                ¿Cuál es la finalidad de tu activ-
+                idad? 
+
+                Algunos ejemplos:
+                 ¿Tus alumnos saldrán domi-
+                nando algún campo en particu-
+                lar?
+                 ¿Tus inscritos saldrán agota-
+                dos con muchas calorías 
+                menos?
               </li>
-              <li ng-show="showTooltip('sub_category')">
-                Elige la que más esté acorde con 
-                tu actividad. En caso de no hallar 
-                la adecuada, selecciona “otra” y 
-                rato después nosotros añadiremos una nueva que encaje con tu 
-                publicación.
+              <li ng-show="showTooltip('methodology')">
+                ¿Tu actividad será evaluada?
+                ¿Cómo?
+                ¿Aplicarás algún método de 
+                enseñanza en particular?
               </li>
-              <li ng-show="showTooltip('tags')">
-                Estas son etiquetas en forma de
-                hashtags, ayudando a los usuari
-                os a encontrar tu publicación en 
-                nuestros buscadores y redes so
-                ciales. Deja un espacio por cada 
-                palabra o frase que deseas agre-
-                gar, sin poner el #.
-                Un ejemplo para un curso de 
-                pizzas:
-                Hashtags: cocinaitaliana napoli
-                tana cuatroquesos
+              <li ng-show="showTooltip('requirements')">
+                ¿Para inscribirse hace falta 
+                conocimientos en algún tema 
+                en particular?
+                ¿Deben llevar algún material 
+                para realizar la actividad?
+                ¿Se requiere una docu-
+                mentación?
               </li>
-
-
-
-
             </ul>
-          </div> -->
+          </div>
+
         </div>
          <hr>
 
