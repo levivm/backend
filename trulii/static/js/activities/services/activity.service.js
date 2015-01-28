@@ -47,9 +47,9 @@
     .module('trulii.activities.services')
     .factory('Activity', Activity);
 
-  Activity.$inject = ['$http'];
+  Activity.$inject = ['$http','$q'];
 
-  function Activity($http) {  
+  function Activity($http,$q) {  
       
       function Activity(activitieData) {
           if (activitieData) {
@@ -69,7 +69,24 @@
           },
           generalInfo: function() {
               var scope = this;
-              return $http.get('/api/activities/info/');
+
+              var deferred = $q.defer();
+              if (scope.presave_info){ 
+
+                deferred.resolve(scope.presave_info);
+                return deferred.promise
+              }
+              else{
+
+                return $http.get('/api/activities/info/').then(function(response){
+                  scope.presave_info = response.data
+                  return response
+                });
+
+              }
+
+              //return deferred.promise;
+
           },
           load: function(id){
             var scope = this;

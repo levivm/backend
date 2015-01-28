@@ -4,6 +4,8 @@ from organizers.models import Organizer,Instructor
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import F
+from django.contrib.gis.db import models as models_gis
+
 
 
 # Create your models here.
@@ -41,6 +43,25 @@ class Tags(models.Model):
     @classmethod
     def ready_to_use(cls):
         return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
+
+
+
+
+class Location(models_gis.Model):
+    name = models_gis.CharField(max_length=255,blank=True)
+
+    # Automatically create slug based on the name field
+    #slug = AutoSlugField(populate_from='name', max_length=255)
+    
+    # Automatically create a unique id for this object
+    #uuid = ext_fields.UUIDField(auto=True)
+    
+    # Geo Django field to store a point
+    point = models_gis.PointField(help_text="Represented as (longitude, latitude)")
+    # You MUST use GeoManager to make Geo Queries
+    objects = models_gis.GeoManager()
+
+
 
 class Activity(models.Model):
 
@@ -88,7 +109,7 @@ class Activity(models.Model):
     large_description = models.TextField()
     short_description = models.CharField(max_length = 100)
     level = models.CharField(choices = LEVEL_CHOICES, max_length = 1)
-    goals = models.TextField()
+    goals = models.TextField(blank=True)
     methodology = models.TextField(blank=True)
     content = models.TextField(blank=True)
     audience = models.TextField(blank=True)
@@ -104,6 +125,7 @@ class Activity(models.Model):
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
+    #location =  models.ForeignKey(Location)
 
     @classmethod
     def get_types(cls):
@@ -158,6 +180,11 @@ class Review(models.Model):
     author      = models.CharField(max_length = 200)
     rating      = models.IntegerField()
     attributes  = models.CharField(max_length = 200)
+
+
+
+
+
 
 # class ReturnPolicy(models.Model):
 #     activity    = models.ForeignKey(Activity)

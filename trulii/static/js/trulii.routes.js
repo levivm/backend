@@ -110,14 +110,14 @@
       //templateUrl: 'modalContainer' 
     })
     .state('organizer-dashboard.profile', {
-      url:'',
+      url:'profile',
       controller: 'OrganizerProfileCtrl', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard_profile.html',
       //templateUrl: 'modalContainer' 
     })
     .state('organizer-dashboard.account', {
-      url:'',
+      url:'account',
       controller: 'OrganizerAccountCtrl', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard_account.html',
@@ -179,14 +179,18 @@
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.detail', {
-      url:'', 
-      controller: 'ActivityGeneralController', 
+      url:'detail', 
+      controller: 'ActivityDBDetailController', 
+      // resolve:{
+      //   activity : getParentActivity
+
+      // },
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_detail.html',
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.calendar', {
-      url:'', 
+      url:'calendar', 
       controller: 'ActivityCalendarController', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_calendar.html',
@@ -199,6 +203,8 @@
     //$urlRouterProvider.otherwise('/');
 
   }
+
+
 
 
   /****** RESOLVER FUNCTIONS *******/
