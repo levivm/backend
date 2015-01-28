@@ -8,6 +8,7 @@ from django.contrib.gis.db import models as models_gis
 
 
 
+
 # Create your models here.
 
 class Category(models.Model):
@@ -44,22 +45,6 @@ class Tags(models.Model):
     def ready_to_use(cls):
         return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
 
-
-
-
-class Location(models_gis.Model):
-    name = models_gis.CharField(max_length=255,blank=True)
-
-    # Automatically create slug based on the name field
-    #slug = AutoSlugField(populate_from='name', max_length=255)
-    
-    # Automatically create a unique id for this object
-    #uuid = ext_fields.UUIDField(auto=True)
-    
-    # Geo Django field to store a point
-    point = models_gis.PointField(help_text="Represented as (longitude, latitude)")
-    # You MUST use GeoManager to make Geo Queries
-    objects = models_gis.GeoManager()
 
 
 
