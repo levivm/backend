@@ -12,6 +12,7 @@
 	  'trulii.organizers',
 	  'trulii.activities',
 	  'trulii.locations',
+	  'trulii.landing',
     'trulii.utils'
 
 	]);
@@ -30,7 +31,7 @@
 	  .module('trulii')
 	  .run(run);
 
-	run.$inject = ['$rootScope','$http','$cookies','Authentication'];
+	run.$inject = ['$rootScope','$http','$cookies','Authentication','LocationManager'];
 
 
 
@@ -43,10 +44,14 @@
 	* @name run
 	* @desc Update xsrf $http headers to align with Django's defaults
 	*/
-	function run($rootScope,$http,$cookies,Authentication) {
+	function run($rootScope,$http,$cookies,Authentication,LocationManager) {
 
 
 		//$http.defaults.headers.post['X-CSRFToken'] = $cookies['csrftoken'];
+
+
+
+
 
 	    $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue,oldValue) {
 	    	if ($cookies.authenticatedAccount == null){

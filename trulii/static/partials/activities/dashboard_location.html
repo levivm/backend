@@ -19,7 +19,7 @@
                     ng-options="city as city.name for city in cities" name="city">
                     <option value="" selected ng-show="!activity_location_form.type.$dirty">Seleccione..</option>
                 </select>
-                <span class="errors" ng-show="activity_location_form.type.$invalid && !activity_location_form.type.$dirty">
+                <span class="errors" ng-show="activity_location_form.city.$invalid && !activity_location_form.city.$dirty">
                   <span>{{ errors.city }}</span> 
                 </span>
               </div>

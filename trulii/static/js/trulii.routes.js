@@ -62,7 +62,11 @@
 
     $stateProvider
     .state("home",{
-      url:"/"
+      url:"/",
+      controller:'HomeController',
+      resolve:{
+        cities:getAvailbleCities
+      },
       //templateUrl: 'static/partials/authentication/register.html'
     })
     .state("register", {
@@ -165,7 +169,6 @@
       resolve: {
 
         activity: getActivity,
-        cities:getAvailbleCities,
 
       },
       templateUrl: 'static/partials/activities/edit.html',
@@ -200,11 +203,11 @@
     .state('activities-edit.location', {
       url:'location', 
       controller: 'ActivityDBLocationController', 
-      // resolve:{
+      resolve:{
 
 
-      //   cities:getAvailbleCities
-      // },
+        cities:getAvailbleCities
+      },
       controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_location.html',
       //templateUrl: 'modalContainer' 
@@ -227,9 +230,7 @@
 
   function getAvailbleCities($stateParams,$q,LocationManager){
 
-    var locationManager = new LocationManager();
-
-    return locationManager.getAvailableCities()
+    return LocationManager.getAvailableCities()
   }
 
 
@@ -245,7 +246,6 @@
       return deferred.promise;
     }
 
-    console.log("asdasda");
     return activity.load($stateParams.activity_id)
   }
 

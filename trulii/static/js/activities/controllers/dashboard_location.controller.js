@@ -10,22 +10,22 @@
     .module('trulii.activities.controllers')
     .controller('ActivityDBLocationController', ActivityDBLocationController);
 
-  ActivityDBLocationController.$inject = ['$scope','$log','uiGmapGoogleMapApi','activity','cities'];
+  ActivityDBLocationController.$inject = ['$scope','$log','uiGmapGoogleMapApi','filterFilter','activity','cities'];
   /**
   * @namespace ActivityDBLocationController
   */
-  function ActivityDBLocationController($scope,$log,uiGmapGoogleMapApi,activity,cities) {
+  function ActivityDBLocationController($scope,$log,uiGmapGoogleMapApi,filterFilter,activity,cities) {
 
 
 
 
-    console.log('Ciudades',cities);
-
-    initialize();
+    
 
     $scope.cities = cities;
 
     $scope.activity = activity;
+
+    initialize();
 
     $scope.save_activity = _updateActivity;
 
@@ -33,13 +33,15 @@
 
     $scope.showTooltip = _showTooltip;
 
-    
+
 
     
     //$scope.map = { center: { latitude: 45, longitude: -73 }, zoom: 8 };
-    $scope.map = {center: {latitude: 40.1451, longitude: -99.6680 }, zoom: 4 };
+    
 
     uiGmapGoogleMapApi.then(function(maps) {
+
+        _setMarker(); 
 
     });
 
@@ -92,12 +94,12 @@
 
     function _setMarker(){
 
-
+      //faltar chequear cuando la activdad no tengo locacion al principio
       $scope.marker = {
         id: 0,
         coords: {
-          latitude: 40.1451,
-          longitude: -99.6680
+          latitude: $scope.activity.location.point[1],
+          longitude: $scope.activity.location.point[0]
         },
         options: { draggable: true },
         events: {
@@ -155,6 +157,7 @@
 
 
     function activate() {
+
       // If the user is authenticated, they should not be here.
 
     }
@@ -163,7 +166,12 @@
 
         $scope.errors = {};
         $scope.isCollapsed = true;
-        _setMarker();
+        var city   = filterFilter($scope.cities,{id:$scope.activity.city}).pop();
+        var latitude  =  city.point[0];
+        var longitude = city.point[1];
+        $scope.map = {center: {latitude: latitude, longitude: longitude }, zoom: 4 };
+
+        
 
 
     }
