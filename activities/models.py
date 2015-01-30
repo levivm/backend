@@ -5,6 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import F
 from django.contrib.gis.db import models as models_gis
+from locations.models import Location
 
 
 
@@ -110,7 +111,7 @@ class Activity(models.Model):
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
-    #location =  models.ForeignKey(Location)
+    location =  models.ForeignKey(Location,null=True)
 
     @classmethod
     def get_types(cls):

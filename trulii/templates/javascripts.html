@@ -8,6 +8,7 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="{% static 'js/lib/ng-tags-input.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/lib/angular-ui-router.min.js' %}"></script> 
+<script type="text/javascript" src="{% static 'js/lib/lodash.min.js' %}"></script> 
 <script type="text/javascript" src="{% static 'js/lib/angular-google-maps.min.js' %}"></script> 
 
 
@@ -35,12 +36,17 @@
 
 
 
+<script type="text/javascript" src="{% static 'js/locations/locations.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/locations/services/locations_manager.service.js' %}"></script>
+
 
 <script type="text/javascript" src="{% static 'js/activities/activities.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/activities.config.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/creation.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_detail.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_calendar.controller.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_location.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/time_picker.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/services/categories.service.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/services/activity.service.js' %}"></script>

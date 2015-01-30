@@ -5,44 +5,7 @@
 (function () {
   'use strict';
 
-  // angular
-  //   .module('trulii.activities.services')
-  //   .factory('activitieService', activitieService);
-
-  // activitieService.$inject = ['$cookies', '$http','Authentication'];
-
-  // /**
-  // * @namespace activitieService
-  // * @returns {Factory}
-  // */
-  // function activitieService($cookies, $http,Authentication) {
-
-
-
-  //   var activitieService = {
-  //     update: update,
-  //   };
-
-
-
-  //   return activitieService;
-
-
-  //   function update(activitie) {
-
-  //     var request = $http({
-  //       method: 'put',
-  //       url:'/api/activities/'+activitie.id+'/',
-  //       data: activitie,
-  //       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-  //     });
-
-  //     return request
-  //   }
-
-
-  // }
-
+ 
   angular
     .module('trulii.activities.services')
     .factory('Activity', Activity);
@@ -69,18 +32,20 @@
           },
           generalInfo: function() {
               var scope = this;
-
+              
               var deferred = $q.defer();
-              if (scope.presave_info){ 
 
-                deferred.resolve(scope.presave_info);
+              if (scope.presave_info){ 
+               
+                deferred.resolve(scope.presave_info);                
                 return deferred.promise
               }
               else{
 
                 return $http.get('/api/activities/info/').then(function(response){
-                  scope.presave_info = response.data
-                  return response
+                  scope.presave_info = response.data;
+                  deferred.resolve(scope.presave_info);
+                  return deferred.promise
                 });
 
               }

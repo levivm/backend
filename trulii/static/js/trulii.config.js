@@ -38,7 +38,6 @@
         value = obj[name];
           
         if(value instanceof Array) {
-          console.log(name,value);
           for(i=0; i<value.length; ++i) {
             subValue = value[i];
             fullSubName = name + '[]';
@@ -63,7 +62,7 @@
       return query.length ? query.substr(0, query.length - 1) : query;
     };
    
-    // Override $http service's default transformRequest
+    //Override $http service's default transformRequest
     $httpProvider.defaults.transformRequest = [function(data) {
       return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
     }];

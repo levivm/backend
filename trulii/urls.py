@@ -33,7 +33,8 @@ urlpatterns += patterns('',
  	url(r'^users/', include('allauth.urls')),
     url(r'^api/users/', include('users.urls')),
     url(r'^api/organizers/', include('organizers.urls')),
- 	url(r'^api/activities/', include('activities.urls')),
+    url(r'^api/activities/', include('activities.urls')),
+ 	url(r'^api/locations/', include('locations.urls')),
  	
 
     

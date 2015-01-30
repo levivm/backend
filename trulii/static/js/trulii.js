@@ -11,6 +11,7 @@
 	  'trulii.authentication',
 	  'trulii.organizers',
 	  'trulii.activities',
+	  'trulii.locations',
     'trulii.utils'
 
 	]);

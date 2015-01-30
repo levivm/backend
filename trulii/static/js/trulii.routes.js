@@ -164,7 +164,8 @@
       },
       resolve: {
 
-        activity: getActivity
+        activity: getActivity,
+        cities:getAvailbleCities,
 
       },
       templateUrl: 'static/partials/activities/edit.html',
@@ -195,6 +196,18 @@
       //controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_calendar.html',
       //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.location', {
+      url:'location', 
+      controller: 'ActivityDBLocationController', 
+      // resolve:{
+
+
+      //   cities:getAvailbleCities
+      // },
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/dashboard_location.html',
+      //templateUrl: 'modalContainer' 
     });
     
 
@@ -208,6 +221,18 @@
 
 
   /****** RESOLVER FUNCTIONS *******/
+
+
+  getAvailbleCities.$inject = ['$stateParams','$q','LocationManager'];
+
+  function getAvailbleCities($stateParams,$q,LocationManager){
+
+    var locationManager = new LocationManager();
+
+    return locationManager.getAvailableCities()
+  }
+
+
 
   getActivity.$inject = ['$stateParams','$q','Activity'];
   

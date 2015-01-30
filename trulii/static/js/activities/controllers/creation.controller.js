@@ -92,14 +92,13 @@
 
     }
 
-    function _setPreSaveInfo(response) {
+    function _setPreSaveInfo(data) {
         $scope.selected_category = {};
         $scope.selected_sub_category = {};
         $scope.selected_type = {};
         $scope.selected_level = {};
 
-        var data = response.data;
-            
+        //var data = data;
         var categories = new Categories(data.categories);
         $scope.activity_sub_categories = data.subcategories;
         $scope.activity_categories = categories;
@@ -202,7 +201,6 @@
     }
 
     function _successCreation(response){
-        console.log(response,"ressssssssssssssssssss");
         $state.go('activities-edit.general',{activity_id:response.id});
     }
 

@@ -2,6 +2,7 @@ from activities.models import Activity,Category,SubCategory,Tags
 from organizers.models import Organizer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
+from locations.serializers import LocationsSerializer
 
 
 
@@ -62,6 +63,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     sub_category  = serializers.SlugRelatedField(slug_field='id',queryset=SubCategory.objects.all(),required=True)
     category = serializers.CharField(write_only=True,required=True)
     category_id = serializers.SlugRelatedField(source='sub_category.category',read_only=True,slug_field='id') 
+    location =  LocationsSerializer(read_only=True)
    
 
     class Meta:
@@ -84,12 +86,38 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'audience',
             'goals',
             'methodology',
+            'location',
             )
+        depth = 1
+
+
+
+
+
+    def _set_location(self,data):
+
+        latitude  = data.get("location[point][latitude]")
+        longitude = data.get("location[point][longitude]")
+        city_id   = data.get("location[city][id]")
+        address   = data.get("location[address]")
+        print "CITTTTTTTTTTTTTTTTTTTTT",city_id
+        location_data = {
+            'city'  : city_id,
+            'point' : [longitude,latitude],
+            'address': address
+
+        }
+        location_serializer = LocationsSerializer(data=location_data)
+        value = None
+        if location_serializer.is_valid(raise_exception=True):
+            value = location_serializer.save()
+
+        return value
 
     def validate(self, data):
         request = self.context['request']
         user    = request.user
-        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",data
+        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",request.DATA
         organizer = None
         try:
             organizer = Organizer.objects.get(user=user)
@@ -97,6 +125,11 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Usuario no es organizador")
 
         data['organizer'] = organizer
+
+        data['location']  = self._set_location(request.DATA)
+        
+
+
         return data
 
     def create(self, validated_data):
@@ -115,9 +148,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         request = self.context['request']
+        print "sssssssssssssssssssss",validated_data
 
-
-        instance.type = validated_data.get('username', instance.type)
         instance.title = validated_data.get('title', instance.title)
         instance.short_description = validated_data.get('short_description', instance.short_description)
         instance.large_description = validated_data.get('large_description', instance.large_description)
@@ -131,6 +163,10 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         instance.requirements = validated_data.get('requirements', instance.requirements)
         instance.return_policy = validated_data.get('return_policy', instance.return_policy)
         instance.extra_info = validated_data.get('extra_info', instance.extra_info)
+        #instance.location = validated_data.get('location', instance.location)
+        location = validated_data.get('location', None)
+        if location:
+            instance.location = location
 
 
         instance.save()
@@ -139,6 +175,19 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         tags  = Tags.update_or_create(_tags)
         instance.tags.clear()
         instance.tags.add(*tags)
+
+        
+
+        # latitude = request.DATA.get("location['point'][latitude]")
+        # longitude = request.DATA.get("location['point'][longitude]")
+        # location_data = {
+        #     'point' : [longitude,latitude]
+        # }
+
+        # location_serializer = LocationsSerializer(data=location_data)
+        # if location_serializer.is_valid(raise_exception=True):
+        #     l = location_serializer.save()
+        #point = fromstr("POINT(%s %s)" % (location[1], location[2]))
 
         return instance
 
