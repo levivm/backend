@@ -10,13 +10,15 @@
     .module('trulii.landing.controllers')
     .controller('HomeController', HomeController);
 
-  HomeController.$inject = ['$scope','$modal','$http','cities'];
+  HomeController.$inject = ['$scope','$cookies','cities'];
   /**
   * @namespace RegisterController
   */
-  function HomeController($scope,$modal,$http,cities) {
+  function HomeController($scope,$cookies,cities) {
 
-  	console.log("conadasd2",cities);
+  	console.log("SSSSSSSSSSSS",cities);
+    $scope.cita = "sdasd";
+    $scope.cities = cities;
 
   }
 })();

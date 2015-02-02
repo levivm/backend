@@ -35,6 +35,15 @@
 
 
     <div ui-view="home">
+
+      <select ng-model="current_city"
+          ng-options="city as city.name for city in cities" name="city">
+          <option value="" >Seleccione..</option>
+      </select>
+      {% verbatim %} 
+         {{cities[0]}}
+      {% endverbatim %}
+
       <div ng-controller="RegisterController">
         <a href="#" form-modal  
                     template="/static/partials/authentication/register.html"
