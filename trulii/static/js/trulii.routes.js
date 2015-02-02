@@ -173,7 +173,7 @@
 
     
 
-    $urlRouterProvider.otherwise('/');
+    //$urlRouterProvider.otherwise('/');
 
   }
 
