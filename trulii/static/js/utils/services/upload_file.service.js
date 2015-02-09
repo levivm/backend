@@ -9,13 +9,13 @@
     .module('trulii.utils.services')
     .factory('UploadFile', UploadFile);
 
-  UploadFile.$inject = ['$cookies', '$http','$upload','$window','Authentication'];
+  UploadFile.$inject = ['$cookies', '$http','$upload','$window'];
 
   /**
-  * @namespace Authentication
+  * @namespace 
   * @returns {Factory}
   */
-  function UploadFile($cookies, $http,$upload,$window,Authentication) {
+  function UploadFile($cookies, $http,$upload,$window) {
     /**
     * @name UploadFile
     * @desc The Factory to be returned

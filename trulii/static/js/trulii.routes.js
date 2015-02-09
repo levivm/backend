@@ -22,9 +22,11 @@
       url:"/",
       controller:'HomeController',
       resolve:{
+
+
         cities:getAvailbleCities
       },
-      //templateUrl: 'static/partials/authentication/register.html'
+      templateUrl: 'static/partials/landing/landing.html'
     })
     .state("register", {
       url:'register',

@@ -10,16 +10,15 @@
     .module('trulii.activities.controllers')
     .controller('ActivityDBLocationController', ActivityDBLocationController);
 
-  ActivityDBLocationController.$inject = ['$scope','$log','uiGmapGoogleMapApi','filterFilter','activity','cities'];
+  ActivityDBLocationController.$inject = ['$scope','$log','uiGmapGoogleMapApi','uiGmapIsReady','filterFilter','activity','cities','LocationManager'];
   /**
   * @namespace ActivityDBLocationController
   */
-  function ActivityDBLocationController($scope,$log,uiGmapGoogleMapApi,filterFilter,activity,cities) {
+  function ActivityDBLocationController($scope,$log,uiGmapGoogleMapApi,uiGmapIsReady,filterFilter,activity,cities,LocationManager) {
 
 
 
 
-    
 
     $scope.cities = cities;
 
@@ -27,23 +26,29 @@
 
     initialize();
 
-    $scope.save_activity = _updateActivity;
+    $scope.save_activity  = _updateActivity;
 
     $scope.setOverElement = _setOverElement;
 
-    $scope.showTooltip = _showTooltip;
+    $scope.showTooltip    = _showTooltip;
 
 
 
     
     //$scope.map = { center: { latitude: 45, longitude: -73 }, zoom: 8 };
     
+    // console.log("maps",$scope);
+    // uiGmapGoogleMapApi.then(function(maps) {
 
-    uiGmapGoogleMapApi.then(function(maps) {
 
-        _setMarker(); 
+    // });
 
-    });
+
+    // uiGmapIsReady.promise().then(function(instances) { 
+    //   $scope.map_instance = instances.pop().map;
+      
+    // });
+
 
 
     /******************ACTIONS**************/
@@ -79,49 +84,11 @@
     /*****************SETTERS********************/
 
     function _setActivityPos(){
-      console.log($scope.marker);
-      //var location = {
-        //'city':$scope.city.id
 
-      ///}
       $scope.activity.location.point = $scope.marker.coords;
-      //$scope.marker.coords;
-      //$scope.activity.setData({'location':$scope.marker.coords});
-      //$scope.activity.location = 
-      //$scope.activity.location = 1;
-      console.log($scope.activity,"bbbbbbbbb");
     }
 
-    function _setMarker(){
 
-      //faltar chequear cuando la activdad no tengo locacion al principio
-      $scope.marker = {
-        id: 0,
-        coords: {
-          latitude: $scope.activity.location.point[1],
-          longitude: $scope.activity.location.point[0]
-        },
-        options: { draggable: true },
-        events: {
-          dragend: function (marker, eventName, args) {
-            $log.log('marker dragend');
-            var lat = marker.getPosition().lat();
-            var lon = marker.getPosition().lng();
-            $log.log(lat);
-            $log.log(lon);
-
-            $scope.marker.options = {
-              draggable: true,
-              labelContent: "lat: " + $scope.marker.coords.latitude + ' ' + 'lon: ' + $scope.marker.coords.longitude,
-              labelAnchor: "100 0",
-              labelClass: "marker-labels"
-            };
-          }
-        }
-      };
-
-
-  }
 
 
     /*********RESPONSE HANDLERS***************/
@@ -166,15 +133,129 @@
 
         $scope.errors = {};
         $scope.isCollapsed = true;
-        var city   = filterFilter($scope.cities,{id:$scope.activity.city}).pop();
-        var latitude  =  city.point[0];
-        var longitude = city.point[1];
-        $scope.map = {center: {latitude: latitude, longitude: longitude }, zoom: 4 };
-
+        //console.log("FFFF",$scope.activity);
+        var city_id;
+        var city  = $scope.activity.location.city;
         
+        if (city)
+          city_id = city.id;
+        else
+          city_id = LocationManager.getCurrentCity().id;
+
+        $scope.activity.location.city =filterFilter($scope.cities,{id:city_id})[0];
+          
+
+
+
+        // if (!($scope.activity.location.city)){
+        //   var current_city =  LocationManager.getCurrentCity();
+        //   //console.log("SDDD",filterFilter($scope.cities,{id:current_city.id}));
+        //   $scope.activity.location.city =filterFilter($scope.cities,{id:current_city.id})[0];
+        // }
+        // else{
+        //   var city_id = $scope.activity.location.city;
+        //   $scope.activity.location.city =filterFilter($scope.cities,{id:city_id})[0];
+        // }
+        _initialize_map();
+        _setMarker(); 
+
+
+
+
+        //$scope.map.control.allowedBounds = _objectToBounds(LocationManager.getAllowedBounds());
+
 
 
     }
+
+    function _initialize_map(){
+
+        //var city =  $scope.activity.location.city;
+        var latitude;
+        var longitude;
+        var location;
+
+        if ($scope.activity.location)
+          location = $scope.activity.location;
+        else
+          location = $scope.activity.city;
+
+        latitude  = location.point[0];
+        longitude = location.point[1];
+
+        $scope.map = {
+          center: {latitude: latitude, longitude: longitude }, 
+          zoom: 8, 
+          bounds: LocationManager.getAllowedBounds() ,
+
+          events: {
+
+            bounds_changed : function(map, eventName, args) {
+
+              var _allowedBounds = LocationManager.getAllowedBounds();
+
+              var _northeast = _allowedBounds.northeast;
+              var _southwest = _allowedBounds.southwest;
+              var  northeast = new google.maps.LatLng(_northeast.latitude,_northeast.longitude);
+              var  southwest = new google.maps.LatLng(_southwest.latitude,_southwest.longitude);
+
+              var allowedBounds = new google.maps.LatLngBounds(southwest,northeast);
+              
+
+
+              if (allowedBounds.contains(map.getCenter())) {
+
+                $scope.map.control.valid_center = map.getCenter();
+                return
+              };
+
+              map.panTo($scope.map.control.valid_center);
+
+            }
+
+          },
+          control : {
+            allowedBounds : LocationManager.getAllowedBounds()
+
+          }
+
+        };
+
+    }
+
+    function _setMarker(){
+
+      //faltar chequear cuando la activdad no tengo locacion al principio
+      $scope.marker = {
+        id: 0,
+        coords: {
+          latitude: $scope.activity.location.point[0],
+          longitude: $scope.activity.location.point[1]
+        },
+        options: { draggable: true },
+        events: {
+          dragend: function (marker, eventName, args) {
+            $log.log('marker dragend',args.map);
+            var lat = marker.getPosition().lat();
+            var lon = marker.getPosition().lng();
+
+
+            $log.log(lat);
+            $log.log(lon);
+
+            $scope.marker.options = {
+              draggable: true,
+              labelContent: "lat: " + $scope.marker.coords.latitude + ' ' + 'lon: ' + $scope.marker.coords.longitude,
+              labelAnchor: "100 0",
+              labelClass: "marker-labels"
+            };
+          }
+        }
+      };
+
+
+    }
+       
 
   };
 

@@ -8,7 +8,7 @@
     ]);
 
   angular
-    .module('trulii.locations.services', []);
+    .module('trulii.locations.services', ['ngCookies']);
 
   // angular
   //  .module('trulii.organizer.directives',[]);

@@ -10,13 +10,18 @@
     .module('trulii.locations.services')
     .factory('LocationManager', LocationManager);
 
-  LocationManager.$inject = ['$http','$q'];
+  LocationManager.$inject = ['$http','$q','$cookies','filterFilter'];
 
-  function LocationManager($http,$q) {  
+  function LocationManager($http,$q,$cookies,filterFilter) {  
       
       this.availableCities;
+      this.currentCity;
+      this.mapBounds;
       var LocationManager = {
-        getAvailableCities :_getAvailableCities
+        getAvailableCities : _getAvailableCities,
+        getCurrentCity    : _getCurrentCity,
+        setCurrentCity   : _setCurrentCity,
+        getAllowedBounds: _getAllowedBounds
       }
 
       function _getAvailableCities(){
@@ -35,6 +40,48 @@
           });
 
         }
+
+      }
+
+      function _setCurrentCity(city){
+
+        if (city){
+
+          $cookies.currentCity = JSON.stringify(city);
+        }
+        //this.currentCity = city;
+
+      }
+
+      function _getCurrentCity(){
+
+        if ($cookies.currentCity){
+          return filterFilter(this.availableCities,JSON.parse($cookies.currentCity))[0]
+        }
+        else{ 
+          this.setCurrentCity(this.availableCities[0]);
+          return this.availableCities[0]
+        }
+          
+
+
+      }
+
+      function _getAllowedBounds(){
+
+        this.mapBounds = {
+            northeast: {
+              latitude:12,
+              longitude:-67
+            },
+            southwest: {
+              latitude:-3,
+              longitude:-78
+
+            }
+          
+        }
+        return this.mapBounds
 
       }
 
@@ -74,6 +121,7 @@
       //     },
       // };
       return LocationManager;
+        
   };
 
 

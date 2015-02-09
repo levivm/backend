@@ -9,10 +9,13 @@ class PointField(serializers.Field):
     Color objects are serialized into 'rgb(#, #, #)' notation.
     """
     def to_representation(self, obj):
+        print "IBJJJ",obj
+        #return {'latitude':objk}obj
         return [obj[0],obj[1]]
 
     def to_internal_value(self, data):
-        point = fromstr("POINT(%s %s)" % (data[0], data[1]))
+        print "SAVING",data
+        point = fromstr("POINT(%s %s)" % (data[1], data[0]))
         return point
 
 

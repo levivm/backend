@@ -10,15 +10,40 @@
     .module('trulii.landing.controllers')
     .controller('HomeController', HomeController);
 
-  HomeController.$inject = ['$scope','$cookies','cities'];
+  HomeController.$inject = ['$scope','$cookies','LocationManager','cities'];
   /**
   * @namespace RegisterController
   */
-  function HomeController($scope,$cookies,cities) {
+  function HomeController($scope,$cookies,LocationManager,cities) {
 
-  	console.log("SSSSSSSSSSSS",cities);
-    $scope.cita = "sdasd";
+
+    //console.log('CITIES',LocationManager.availableCities);
     $scope.cities = cities;
+
+    activate();
+
+    $scope.setCurrentCity = _setCurrentCity; 
+
+    
+
+
+
+    function _setCurrentCity(city){
+
+      LocationManager.setCurrentCity(city);
+      console.log("cityyyyyyyyyyyyy",city);
+
+    }
+
+    function activate(){
+
+
+      $scope.current_city = LocationManager.getCurrentCity();
+      console.log("ZZZZZ",$scope.current_city);
+
+    }
+
+
 
   }
 })();
