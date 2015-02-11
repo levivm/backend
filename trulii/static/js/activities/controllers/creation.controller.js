@@ -84,7 +84,7 @@
 
 
     function _setCreate(){
-
+        //console.log("voy a crear");
         $scope.save_activity = _createActivity;
         $scope.creating = true;
         $scope.activity.generalInfo().then(_setPreSaveInfo);

@@ -135,13 +135,17 @@
         $scope.isCollapsed = true;
         //console.log("FFFF",$scope.activity);
         var city_id;
-        var city  = $scope.activity.location.city;
+        var city  = $scope.activity.location ? $scope.activity.location.city : null;
         
-        if (city)
+        console.log("city",city)
+        if (city){
           city_id = city.id;
-        else
+        }
+        else{
+          console.log("asda",LocationManager.getCurrentCity());
           city_id = LocationManager.getCurrentCity().id;
-
+          $scope.activity.location = {};
+        }
         $scope.activity.location.city =filterFilter($scope.cities,{id:city_id})[0];
           
 
@@ -175,13 +179,16 @@
         var longitude;
         var location;
 
-        if ($scope.activity.location)
+        //location = $scope.activity.location.city ? 
+        if ($scope.activity.location.point)
           location = $scope.activity.location;
         else
-          location = $scope.activity.city;
+          location = $scope.activity.location.city;
 
         latitude  = location.point[0];
         longitude = location.point[1];
+
+        console.log("LOCATION",location);
 
         $scope.map = {
           center: {latitude: latitude, longitude: longitude }, 
@@ -226,11 +233,16 @@
     function _setMarker(){
 
       //faltar chequear cuando la activdad no tengo locacion al principio
+      var latitude = $scope.activity.location.point ? 
+                     $scope.activity.location.point[0] : $scope.activity.location.city.point[0];
+      var longitude = $scope.activity.location.point ? 
+                     $scope.activity.location.point[1] : $scope.activity.location.city.point[1];
+
       $scope.marker = {
         id: 0,
         coords: {
-          latitude: $scope.activity.location.point[0],
-          longitude: $scope.activity.location.point[1]
+          latitude: latitude,
+          longitude: longitude
         },
         options: { draggable: true },
         events: {

@@ -35,7 +35,7 @@
         else{
           var scope = this;
           return $http.get('/api/locations/cities/').then(function(response){    
-            scope.availableCities = response.data           
+            scope.availableCities = response.data;      
             return response.data
           });
 
@@ -56,7 +56,8 @@
       function _getCurrentCity(){
 
         if ($cookies.currentCity){
-          return filterFilter(this.availableCities,JSON.parse($cookies.currentCity))[0]
+           console.log("111111111asdasdad",JSON.parse($cookies.currentCity));   
+          return filterFilter(this.availableCities,{id:JSON.parse($cookies.currentCity).id})[0]
         }
         else{ 
           this.setCurrentCity(this.availableCities[0]);

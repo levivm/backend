@@ -124,9 +124,12 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         except Organizer.DoesNotExist:
             raise serializers.ValidationError("Usuario no es organizador")
 
+
+
         data['organizer'] = organizer
 
-        data['location']  = self._set_location(request.DATA)
+        if request.method == "PUT":
+            data['location']  = self._set_location(request.DATA)
         
 
 
