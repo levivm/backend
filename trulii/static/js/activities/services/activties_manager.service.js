@@ -7,7 +7,9 @@
   ActivitiesManager.$inject = ['$http','$q','Activity'];
 
   function ActivitiesManager($http,$q,Activity) {  
-      
+    
+
+    
     var ActivitiesManager = {
         _pool: {},
         // _retrieveInstance: function(bookId, bookData) {

@@ -1,12 +1,13 @@
 
 from django.shortcuts import render_to_response
-from serializers import ActivitiesSerializer,CategoriesSerializer,SubCategoriesSerializer,TagsSerializer
+from serializers import ActivitiesSerializer,CategoriesSerializer,SubCategoriesSerializer,\
+                        TagsSerializer, ChronogramsSerializer
 from models import Activity,Category,SubCategory,Tags
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-
+from datetime import datetime
 
 class ActivitiesViewSet(viewsets.ModelViewSet):
 
@@ -24,6 +25,43 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
     #     queryset = Activity.objects.all()
     #     activities = get_object_or_404(queryset, pk=pk)
     #     serializer = ActivitiesSerializer(activities)
+
+
+    def get_calendar(self,request,pk=None):
+
+        activity   = self.get_object()
+        chronogram = activity.chronogram_set.get()
+        chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram)
+
+        return Response(chronogram_serializer.data)
+         
+    def update_calendar(self,request,pk=None):
+
+        print "llegueeeeee",pk
+        data = request.DATA
+
+        activity   = self.get_object()
+        chronogram = activity.chronogram_set.get()
+        chronogram_serializer = ChronogramsSerializer(chronogram,data=data,context={'request':request})
+        chronogram = None
+        if chronogram_serializer.is_valid(raise_exception=True):
+            chronogram = chronogram_serializer.save()
+        print "Chronogram",chronogram
+        return Response(chronogram_serializer.data) 
+
+    def create_calendar(self,request,pk=None):
+
+        data  = request.DATA        
+
+
+        chronogram_serializer = ChronogramsSerializer(data=data,context={'request':request})
+        chronogram = None
+        if chronogram_serializer.is_valid(raise_exception=True):
+            chronogram = chronogram_serializer.save()
+        print "Chronogram",chronogram
+        return Response(chronogram_serializer.data)         
+
+
 
     def general_info(self,request):
         categories     = Category.objects.all()

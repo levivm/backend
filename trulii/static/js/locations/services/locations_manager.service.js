@@ -56,7 +56,6 @@
       function _getCurrentCity(){
 
         if ($cookies.currentCity){
-           console.log("111111111asdasdad",JSON.parse($cookies.currentCity));   
           return filterFilter(this.availableCities,{id:JSON.parse($cookies.currentCity).id})[0]
         }
         else{ 

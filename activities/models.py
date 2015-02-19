@@ -144,20 +144,34 @@ class ActivityPhoto(models.Model):
 
 class Chronogram(models.Model):
     activity = models.ForeignKey(Activity)
-    initial_date = models.DateField()
-    closing_sale = models.DateField()
+    initial_date = models.DateTimeField()
+    closing_sale = models.DateTimeField()
     number_of_sessions = models.IntegerField()
-    session_price = models.IntegerField()
+    session_price = models.FloatField()
     capacity = models.IntegerField()
+
+
+
+    def update(self,data):
+        self.__dict__.update(data)
+        self.save()
     #location = models.CharField(max_length = 200)
 
     #chronogram_schedule = models.ForeignKey(Schedules)
 
-class Schedule(models.Model):
-    date = models.DateField()
-    start_time = models.CharField(max_length = 100)
-    end_time = models.CharField(max_length = 100)
-    chronogram = models.ForeignKey(Chronogram)
+    # def transform_session_time(self):
+
+    #     data['initial_date'] = datetime.\
+    #                    utcfromtimestamp(float(data['initial_date'])/1000.0).\
+    #                    date()
+
+
+
+class Session(models.Model):
+    date = models.DateTimeField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    chronogram = models.ForeignKey(Chronogram,related_name="sessions")
     
 
 class Review(models.Model):

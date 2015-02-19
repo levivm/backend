@@ -84,8 +84,10 @@
     /*****************SETTERS********************/
 
     function _setActivityPos(){
-
-      $scope.activity.location.point = $scope.marker.coords;
+      $scope.activity.location.point = [];
+      $scope.activity.location.point[0] = $scope.marker.coords.latitude;
+      $scope.activity.location.point[1] = $scope.marker.coords.longitude;
+      //$scope.activity.location.point = $scope.marker.coords;
     }
 
 

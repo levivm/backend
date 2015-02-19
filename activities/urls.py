@@ -9,6 +9,8 @@ from rest_framework import routers
 urlpatterns = patterns('',
 	#url(r'^categories/?$',ListCategories.as_view()),
 	url(r'^/?$',ActivitiesViewSet.as_view({'get':'list','post':'create'})),
+	url(r'^(?P<pk>\d+)/calendar/?$',ActivitiesViewSet.as_view({'post':'create_calendar',\
+		                            'put': 'update_calendar','get':'get_calendar'})),
 	url(r'^(?P<pk>\d+)/?$',ActivitiesViewSet.as_view({'get':'retrieve','put': 'partial_update'})),
 	url(r'^info/?$',ActivitiesViewSet.as_view({'get':'general_info'})),
 	url(r'^tags/?$',TagsViewSet.as_view({'get':'list'})),

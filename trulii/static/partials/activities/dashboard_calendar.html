@@ -1,98 +1,86 @@
 <div class="tab-pane active text-style">
   <div class="row">
-    <br><br><br>
-    <br><br><br>
-    <br><br><br>
-    <br><br><br>
-    <alert ng-repeat="alert in dates_alerts" type="{{alert.type}}" close="closeAlert(key, $index)">
-        {{alert.msg}}
-    </alert>
+    <div class="col-md-8">
+      <form name='vm.activity_calendar_form' ng-submit="vm.save_calendar()" novalidate>
+        <fieldset>
+          <h2>Calendario</h2>
+          <div class="form-group">
 
-
-    <h4>Fecha de inicio</h4>
-  
-        <p>
-          <div class="row">
-            <div>
-              <p class="input-group">
-                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="start" is-open="startOpened" min-date="minStartDate" datepicker-options="dateOptions" close-text="Close" />
-                <button class="btn btn-default" ng-click="openStart()"><i class="glyphicon glyphicon-calendar"></i></button>
-              </p>
+            <alert type="danger" ng-show="vm.errors.non_field_errors">{{vm.errors.non_field_errors}}</alert>
+            <label>Fecha de Inicio</label>
+            <input type="text" class="form-control" datepicker-popup="{{vm.format}}" ng-model="vm.calendar.initial_date" is-open="vm.calendar.startOpened" min-date="vm.minStartDate"  ng-change="vm.calendar.changeStartDate()" datepicker-options="vm.dateOptions" close-text="Close" />
+            <button class="btn btn-default" ng-click="vm.calendar.openStartDate($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            <div class="errors"  ng-show="activity_calendar_form.title.$invalid && !activity_calendar_form.title.$dirty">
+              <span>{{ errors.title }}</span> 
             </div>
           </div>
-        </p>
-    
-    <h4>Fecha de cierre de ventas</h4>
-        <p>
-          <div class="row">
-            <div>
-              <p class="input-group">
-                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="end" is-open="endOpened" min-date="minEndDate" max-date = "null" datepicker-options="dateOptions" close-text="Close" />
-                <button class="btn btn-default" ng-click="openEnd()"><i class="glyphicon glyphicon-calendar"></i></button>
-              </p>
-             </div>
+          <div class="form-group">
+            <label>Cierre de ventas</label>
+              <input type="text" class="form-control" datepicker-popup="{{vm.format}}" ng-model="vm.calendar.closing_sale" is-open="vm.calendar.endOpened" min-date="vm.calendar.initial_date" max-date = "null" ng-change="vm.calendar.changeCloseDate()" datepicker-options="vm.dateOptions" close-text="Close" />
+              <button class="btn btn-default" ng-click="vm.calendar.openCloseDate($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            <div class="errors"  ng-show="activity_calendar_form.title.$invalid && !activity_calendar_form.title.$dirty">
+              <span>{{ errors.title }}</span> 
+            </div>
           </div>
-        </p>
- 
-  Precio: 
-  <input type="number" name = "_price" placeholder="0.00" min="0" />
-  <br>
-  Cupos:
-  <input type="number" name = "_cupos" placeholder="000" min="0"/>
+          <div class="form-group">
+            <label>Precio(COP)</label>
+            <input class="form-control" type="number" ng-model="vm.calendar.session_price" name="session_price" placeholder="0.00" min="0" />
 
-  <br>
+            <div class="errors"  ng-show="vm.activity_calendar_form.session_price.$invalid && !vm.activity_calendar_form.session_price.$dirty">
+              <span>{{ vm.errors.session_price }}</span> 
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Cupos</label>
+            <input class="form-control" type="number" ng-model="vm.calendar.capacity" name = "capacity" placeholder="0.00" min="1" />
+            <div class="errors"  ng-show="vm.activity_calendar_form.capacity.$invalid && !vm.activity_calendar_form.capacity.$dirty">
+              <span>{{ vm.errors.capacity }}</span> 
+            </div>
+          </div>
 
-<!-- <div ng-controller="TimepickerCtrl">-->
-    
-      <button class="btn btn-success" ng-click="add_object()">Añadir sesión</button>
-      <button class="btn btn-success" ng-click="delete_object()">Eliminar una sesión</button>
-      <button class="btn btn-success" ng-click="delete_all()">Eliminar todas las sesiones</button>
-      <div class="row">
-       <!--ng-repeat="(name, age) in items"-->
-      <div ng-repeat="(key, value) in objects track by $index">
+          <label>Nro Sesiones</label>
+          <div counter  form="vm.activity_calendar_form" value="vm.calendar" change="vm.calendar.changeSessionsN()" min="0"></div>
+<!--           <span class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></span>
+          <span class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span>
+          <input class="form-control" type="number" name="session_number" ng-model="vm.calendar.session_number" ng-change="vm.calendar.changeSessionsN()" placeholder="3" min="0"  /> -->
+          <hr>
+          <div class="errors"  ng-show="vm.activity_calendar_form.number_of_sessions.$invalid && !vm.activity_calendar_form.number_of_sessions.$dirty" >
+            {{ vm.errors.number_of_sessions }}
+          </div>
+          <div ng-repeat="session in vm.calendar.sessions track by $index">
 
-          <br><br>
-        <alert ng-repeat="alert in value.alerts" type="{{alert.type}}" close="closeAlert(key, $index)">
-        {{alert.msg}}
-        </alert>
-          <div>
-            <br><br>
-                <p>
-                <h4>Fecha de sesión:</h4>
-                <!--{{object.innit}}-->
-                  <div class="row">
-                    <div>
-                      <p class="input-group">
-                        <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="value.date" is-open="value.innit" min-date="$parent.start" datepicker-options="dateOptions" close-text="Close" ng-change = "checkSessionDate(key)"
+            
+            <div class="row">
+              
+              
+              <div class="col-md-4">
+                <label>Hora de inicio:</label>
+                <timepicker  ng-model="session.start_time" ng-change="vm.calendar.changeStartTime(session)" hour-step="vm.hstep" minute-step="vm.mstep" show-meridian="vm.ismeridian">   
+                </timepicker>  
+              </div>
+              <div class="col-md-3">
+                <label>Hora de fin:</label>
+                <timepicker ng-model="session.end_time" ng-change="vm.calendar.changeEndTime(session)" hour-step="vm.hstep" minute-step="vm.mstep" show-meridian="vm.ismeridian">
+                </timepicker>  
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control" datepicker-popup="{{vm.format}}" ng-model="session.date" is-open="session.openDate" min-date="session.minDate" max-date="session.maxDate"datepicker-options="vm.dateOptions" close-text="Close" ng-change = "vm.calendar.changeSessionDate($index,session)"
                         />
+                <button class="btn btn-default" ng-click="vm.calendar.openSessionDate($event,session)"><i class="glyphicon glyphicon-calendar"></i></button>
+              </div>
 
-                        <button class="btn btn-default" ng-click="$parent.openMiddle(key)"><i class="glyphicon glyphicon-calendar"></i></button>
-                      </p>
-                    </div>
-                  </div>
-                </p>
-             
+            </div>
+            <alert type="danger" ng-show="vm.errors.{{'sessions_'+$index}}">{{vm.errors.session_error}}</alert>
+
+
           </div>
-            <h4>Hora de inicio:</h4>
-             <timepicker  ng-model="value.start" ng-change="$parent.changed(key)" hour-step="hstep" minute-step="mstep" show-meridian="ismeridian">   
-             </timepicker>  
-            <h4>Hora de fin:</h4>
-            <timepicker ng-model="value.end" ng-change="$parent.changed2(key)" hour-step="hstep" minute-step="mstep" show-meridian="ismeridian">
-            </timepicker>  
-            <!--<div class="col-xs-5">
-                Paso de horas:
-                <select class="form-control" ng-model="hstep" ng-options="opt for opt in options.hstep"></select>
-            </div>
-            -->
-            <!--
-            <div class="col-xs-5">
-                  Paso de minutos:
-                  <select class="form-control" ng-model="mstep" ng-options="opt for opt in options.mstep"></select>
-                
-            </div>
-            --> 
-        </div>
-      </div>
-      <!--</div>-->
-      </div>
+          <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
+          <div ng-savedmessage message="Guardado" ng-model="vm.isCollapsed" collapse="vm.isCollapsed">
+        </fieldset>
+      </form>
+
     </div>
+    <div class="col-md-4">
+    </div>
+  </div>
+</div>

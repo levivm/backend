@@ -130,6 +130,7 @@
         activity: getActivity,
 
       },
+      controllerAs: 'vm',
       templateUrl: 'static/partials/activities/edit.html',
 
       //templateUrl: 'modalContainer' 
@@ -155,8 +156,12 @@
     .state('activities-edit.calendar', {
       url:'calendar', 
       controller: 'ActivityCalendarController', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_calendar.html',
+      resolve:{
+
+        calendar:getCalendar
+      }
       //templateUrl: 'modalContainer' 
     })
     .state('activities-edit.location', {
@@ -169,6 +174,13 @@
       },
       controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_location.html',
+      //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.return-policy', {
+      url:'return-policy', 
+      controller: 'ActivityDBReturnPDashboard', 
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/dashboard_return_policy.html',
       //templateUrl: 'modalContainer' 
     });
     
@@ -190,6 +202,16 @@
   function getAvailbleCities($stateParams,$q,LocationManager){
 
     return LocationManager.getAvailableCities()
+  }
+
+
+  getCalendar.$inject = ['$stateParams','$q','Calendar','activity'];
+
+  function getCalendar($stateParams, $q, Calendar, activity){
+
+    var calendar = new Calendar();
+
+    return calendar.load(activity.id);
   }
 
 
