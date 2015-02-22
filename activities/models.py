@@ -113,6 +113,11 @@ class Activity(models.Model):
     active = models.NullBooleanField()
     location =  models.ForeignKey(Location,null=True)
 
+
+    def update(self,data):
+        self.__dict__.update(data)
+        self.save()
+
     @classmethod
     def get_types(cls):
         _types  = cls.TYPE_CHOICES
@@ -134,6 +139,7 @@ class Activity(models.Model):
                 'value':_level[1],
                 })
         return levels
+
 
 
 class ActivityPhoto(models.Model):

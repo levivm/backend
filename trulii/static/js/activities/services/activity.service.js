@@ -67,7 +67,7 @@
               method: 'put',
               url:'/api/activities/' + this.id,
               data: this,
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+              //headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
             });
           }
           //   //$http.put('/api/activities/' + this.id, this);

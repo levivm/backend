@@ -10,23 +10,30 @@
     .module('trulii.activities.controllers')
     .controller('ActivityDBDetailController', ActivityDBDetailController);
 
-  ActivityDBDetailController.$inject = ['$scope','$modal','$http','$state','$timeout','$q','$stateParams','activity'];
+  ActivityDBDetailController.$inject = ['$scope','$state','$timeout','$q','$stateParams','activity'];
   /**
   * @namespace ActivityDBDetailController
   */
-  function ActivityDBDetailController($scope,$modal,$http,$state,$timeout,$q,$stateParams,activity) {
+  function ActivityDBDetailController($scope,$state,$timeout,$q,$stateParams,activity) {
 
+
+
+
+    var vm = this;
+
+    //console.log(ActivityDashboardCtrl,"parent");
+    console.log($scope.pc,"padre");
 
     initialize();
 
-    $scope.activity = activity;
+    vm.activity = activity;
 
 
-    $scope.save_activity = _updateActivity;
+    vm.save_activity = _updateActivity;
 
-    $scope.setOverElement = _setOverElement;
+    vm.setOverElement = _setOverElement;
 
-    $scope.showTooltip = _showTooltip;
+    vm.showTooltip = _showTooltip;
 
 
 
@@ -36,16 +43,17 @@
     
     function _updateActivity() {
       _clearErrors();
-      $scope.activity.update()
+      vm.activity.update()
           .success(function(response){
-              $scope.isCollapsed = false;
+              vm.isCollapsed = false;
+              console.log("parent",vm)
+              $scope.pc.detailsUpdated(response);
           })
           .error(_errored);
     }
 
     function _showTooltip(element){
-
-        if ($scope.currentOverElement==element)
+        if (vm.currentOverElement==element)
             return true
         return false
     }
@@ -53,7 +61,7 @@
 
     function _setOverElement(element){
 
-        $scope.currentOverElement = element;
+        vm.currentOverElement = element;
     }
 
     /*****************SETTERS********************/
@@ -68,16 +76,16 @@
 
 
     function _clearErrors(){
-        $scope.activity_detail_form.$setPristine();
-        $scope.errors = null;
-        $scope.errors = {};
+        vm.activity_detail_form.$setPristine();
+        vm.errors = null;
+        vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
-      $scope.errors[field] = message;
-      $scope.activity_detail_form[field].$setValidity(message, false);
+      vm.errors[field] = message;
+      vm.activity_detail_form[field].$setValidity(message, false);
 
     };
 
@@ -99,8 +107,8 @@
 
     function initialize(){
 
-        $scope.errors = {};
-        $scope.isCollapsed = true;
+        vm.errors = {};
+        vm.isCollapsed = true;
 
 
     }

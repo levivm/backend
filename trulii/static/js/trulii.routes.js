@@ -120,7 +120,7 @@
     .state('activities-edit', {
       abstract:true,
       url:'/activities/edit/{activity_id:int}/', 
-      //controller: 'ActivityCreationCtrl', 
+      controller: 'ActivityDashboardCtrl', 
       data: {
 
         requiredAuthentication : true
@@ -130,7 +130,7 @@
         activity: getActivity,
 
       },
-      controllerAs: 'vm',
+      controllerAs: 'pc',
       templateUrl: 'static/partials/activities/edit.html',
 
       //templateUrl: 'modalContainer' 
@@ -149,7 +149,7 @@
       //   activity : getParentActivity
 
       // },
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_detail.html',
       //templateUrl: 'modalContainer' 
     })
@@ -163,6 +163,16 @@
         calendar:getCalendar
       }
       //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.calendar.detail' ,{
+      url:'',
+      controller: function($scope){
+        console.log("mirame soy controller")
+
+      },
+      template: "<div>Hola mirame</div>",
+
+
     })
     .state('activities-edit.location', {
       url:'location', 

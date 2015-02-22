@@ -42,6 +42,38 @@
 
     ////////////////////
 
+
+    function _parseParam(obj) {
+      var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
+        
+      for(name in obj) {
+        value = obj[name];
+          
+        if(value instanceof Array) {
+          for(i=0; i<value.length; ++i) {
+            subValue = value[i];
+            fullSubName = name + '[]';
+            innerObj = {};
+            innerObj[fullSubName] = subValue;
+            query += param(innerObj) + '&';
+          }
+        }
+        else if(value instanceof Object) {
+          for(subName in value) {
+            subValue = value[subName];
+            fullSubName = name + '[' + subName + ']';
+            innerObj = {};
+            innerObj[fullSubName] = subValue;
+            query += param(innerObj) + '&';
+          }
+        }
+        else if(value !== undefined && value !== null)
+          query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+      }
+        
+      return query.length ? query.substr(0, query.length - 1) : query;
+    };
+
     /**
     * @name register
     * @desc Try to register a new user
@@ -66,13 +98,15 @@
       var request = $http({
         method: 'post',
         url: '/users/signup/',
-        data:{
+        data:_parseParam({
           password1: password,
           email: email,
           first_name: first_name,
           last_name: last_name,
           user_type: user_type
-        }
+        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+
       });
 
       return request
@@ -88,9 +122,23 @@
      * @memberOf thinkster.authentication.services.Authentication
      */
     function login(email, password) {
-      return $http.post('/users/login/', {
-        login: email, password: password
-      });
+
+      var request = $http({
+        method: 'post',
+        url: '/users/login/',
+        data:_parseParam({
+          login:email,
+          password:password
+        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+        //headers: { 'Content-Type': 'application/json'},
+      })
+      return request
+      // return $http.post('/users/login/', {
+      //   login: email, password: password
+      // },
+      
+      // );
     }
 
     function logout() {
@@ -120,11 +168,21 @@
 
     function reset_password(email) { 
 
-      return $http.post('/password/reset/',{'email':email}).success( function(response) {
-        console.log('password reset');
-        console.log(response);
 
+      var request = $http({
+        data:_parseParam({'email':email}),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
       });
+
+      return request
+      // return $http.post('/password/reset/',
+
+
+      //   ).success( function(response) {
+      //   console.log('password reset');
+      //   console.log(response);
+
+      // });
     }
 
     function getCurrentUser(){

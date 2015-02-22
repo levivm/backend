@@ -99,18 +99,25 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
     def _set_location(self,data):
 
-        point     = data.getlist("location[point][]")
-        city_id   = data.get("location[city][id]")
-        address   = data.get("location[address]")
+        location = data.get('location')
+
+        city    = location["city"]
+        if isinstance(city,dict):
+            city = city["id"]
+
+        #city = _city["id"] if 'id' in _city else _city
+
+        point   = location["point"]
+        address = location["address"]
 
 
         location_data = {
-            'city'  : city_id,
+            'city'  : city,
             'point' : [point[1],point[0]],
             'address': address
 
         }
-        print "LOCATION DATA",location_data
+
         location_serializer = LocationsSerializer(data=location_data)
         value = None
         if location_serializer.is_valid(raise_exception=True):
@@ -121,7 +128,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         user    = request.user
-        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",request.DATA
         organizer = None
         try:
             organizer = Organizer.objects.get(user=user)
@@ -158,30 +164,31 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
         request = self.context['request']
         print "sssssssssssssssssssss",validated_data
-
-        instance.title = validated_data.get('title', instance.title)
-        instance.short_description = validated_data.get('short_description', instance.short_description)
-        instance.large_description = validated_data.get('large_description', instance.large_description)
-        instance.sub_category = validated_data.get('sub_category', instance.sub_category)
-        instance.level = validated_data.get('level', instance.level)
-        instance.type = validated_data.get('type', instance.type)
-        instance.goals = validated_data.get('goals', instance.goals)
-        instance.methodology = validated_data.get('methodology', instance.methodology)
-        instance.content = validated_data.get('content', instance.content)
-        instance.audience = validated_data.get('audience', instance.audience)
-        instance.requirements = validated_data.get('requirements', instance.requirements)
-        instance.return_policy = validated_data.get('return_policy', instance.return_policy)
-        instance.extra_info = validated_data.get('extra_info', instance.extra_info)
-        instance.extra_info = validated_data.get('return_policy', instance.return_policy)
-        #instance.location = validated_data.get('location', instance.location)
         location = validated_data.get('location', None)
+        del(validated_data['location'])
+        instance.update(validated_data)
+        # instance.title = validated_data.get('title', instance.title)
+        # instance.short_description = validated_data.get('short_description', instance.short_description)
+        # instance.large_description = validated_data.get('large_description', instance.large_description)
+        # instance.sub_category = validated_data.get('sub_category', instance.sub_category)
+        # instance.level = validated_data.get('level', instance.level)
+        # instance.type = validated_data.get('type', instance.type)
+        # instance.goals = validated_data.get('goals', instance.goals)
+        # instance.methodology = validated_data.get('methodology', instance.methodology)
+        # instance.content = validated_data.get('content', instance.content)
+        # instance.audience = validated_data.get('audience', instance.audience)
+        # instance.requirements = validated_data.get('requirements', instance.requirements)
+        # instance.return_policy = validated_data.get('return_policy', instance.return_policy)
+        # instance.extra_info = validated_data.get('extra_info', instance.extra_info)
+        # instance.extra_info = validated_data.get('return_policy', instance.return_policy)
+        #instance.location = validated_data.get('location', instance.location)
         if location:
             instance.location = location
 
 
         instance.save()
 
-        _tags = request.DATA.getlist('tags[]')
+        _tags = request.DATA.get('tags')
         tags  = Tags.update_or_create(_tags)
         instance.tags.clear()
         instance.tags.add(*tags)

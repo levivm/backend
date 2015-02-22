@@ -59,6 +59,9 @@
         console.log("actividad");
         _setActivityPos();
         console.log($scope.activity);
+        //var city_object = {};
+        //angular.extend(city_object,$scope.activity.location.city);
+        //var city_object = $scope.activity.location.city.copy();
         $scope.activity.update()
             .success(function(response){
                 $scope.isCollapsed = false;

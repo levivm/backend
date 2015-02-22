@@ -10,14 +10,35 @@
     .module('trulii.activities.controllers')
     .controller('ActivityDashboardCtrl', ActivityDashboardCtrl);
 
-  ActivityDashboardCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','$q','Authentication','UploadFile','Categories','Activity'];
+  ActivityDashboardCtrl.$inject = ['$scope','Activity'];
   /**
   * @namespace RegisterController
   */
-  function ActivityDashboardCtrl($scope,$modal,$http,$location,$timeout,$q,Authentication,UploadFile,Categories,Activity) {
+  function ActivityDashboardCtrl($scope,Activity) {
 
 
 
+
+
+    var vm = this;
+
+    vm.detailsUpdated = _detailsUpdated;
+
+    vm.detailCompleted = ['content'];
+
+    function _detailsUpdated(data){
+
+        var detailsCompleted;
+        angular.forEach(vm.detailCompleted,function(value){
+
+            detailsCompleted = data[value] ? true:false;
+
+            console.log("I jus tupdated updateDetails",data[value]);
+
+        });
+
+        console.log("detailCompleted",detailsCompleted);
+    }
 
 
     // $scope.isCollapsed = true;

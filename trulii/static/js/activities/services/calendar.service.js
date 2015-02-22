@@ -10,9 +10,9 @@
     .module('trulii.activities.services')
     .factory('Calendar', Calendar);
 
-  Calendar.$inject = ['$http','$q'];
+  Calendar.$inject = ['$http','$q','$filter'];
 
-  function Calendar($http,$q) {  
+  function Calendar($http,$q,$filter) {  
       
       function Calendar(calendarData) {
           if (calendarData) {
@@ -54,16 +54,23 @@
       Calendar.prototype = {
           setData: function(calendarData) {
 
+              var that = this;
               angular.extend(this, calendarData);
-              angular.forEach(this.sessions,function(session){
+              this.sessions = $filter('orderBy')(this.sessions,'date');
+
+              angular.forEach(this.sessions,function(session,index){
 
                 session.date = new Date(session.date);
+                that.changeSessionDate(index,session);
+                
                 session.end_time   = new Date(session.end_time);
                 session.start_time = new Date(session.start_time);
 
               });
               this.last_sn = this.number_of_sessions;
-              this.sessions.reverse();    
+              
+              //$scope.images = $filter('orderBy')($scope.images, 'orgName');
+              //this.sessions.reverse();    
 
 
           },
@@ -77,9 +84,6 @@
                         .then(function(response){
                           
                           that.setData(response.data);
-                          //that.sessions.reverse();
-                          //that.last_sn = response.data.
-                          console.log("BUENAAAA",that);
                           return that
 
                         },function(response){
@@ -110,24 +114,10 @@
             var that = this;
             return $http.post('/api/activities/'+activity_id+'/calendar/',this)
                         .then(function(response){
-                          console.log("responseEEEE",response.data);
                           that.setData(response.data);
                           return response.data
+
                         },function(response){
-
-                          //that.setData(response.data);
-                          console.log("ES EROOORR",response.data);
-                          // that.initial_date = new Date(that.initial_date);
-                          // that.closing_sale = new Date(that.closing_sale);
-
-                          // angular.forEach(that.sessions,function(session){
-
-                          //   session.date = new Date(session.date);
-                          //   session.end_time   = new Date(session.end_time);
-                          //   session.start_time = new Date(session.start_time);
-
-                          // });
-
                           return $q.reject(response.data);
                         });
 
@@ -136,7 +126,6 @@
 
             var activity_id = this.activity;
             this.setToSave();
-            console.log("updatinggggggggg",activity_id);
             var that = this;
             return $http.put('/api/activities/'+activity_id+'/calendar/',this)
                         .then(function(response){
@@ -218,13 +207,23 @@
                 if (difference>0){
 
                   var index = this.number_of_sessions - 1
-                  var date = index ? this.sessions[index-1].date : this.initial_date;
+                  
+                  var previous_s  = index ? this.sessions[index-1]:null
+
+
+                  var date = index ? new Date(previous_s.date.getTime()+24*60*60*1000):this.initial_date;
+
+                  
+
+
+                  var _start_time = previous_s && previous_s.date  
 
                   var start_time = new Date();
-                      start_time.setHours( 6 );
+                      start_time.setHours( 10 );
                       start_time.setMinutes( 0 );
+
                   var end_time = new Date();
-                      end_time.setHours( 12 );
+                      end_time.setHours( 14 );
                       end_time.setMinutes( 0 );
 
                   var session = {
