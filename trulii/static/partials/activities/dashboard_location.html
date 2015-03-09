@@ -2,7 +2,7 @@
       <div class="row">
         <div class="col-md-6">
        
-          <form name='activity_location_form' ng-submit="save_activity()">
+          <form name='vm.activity_location_form' ng-submit="vm.save_activity()">
             <fieldset>
               
               <h2>Descripción</h2>
@@ -15,12 +15,12 @@
               </div> -->
               <div class="form-group">
                 <label>Ciudad</label>
-                <select ng-model="activity.location.city"
-                    ng-options="city as city.name for city in cities" name="city">
-                    <option value="" selected ng-show="!activity_location_form.type.$dirty">Seleccione..</option>
+                <select ng-model="vm.activity.location.city"
+                    ng-options="city as city.name for city in vm.cities" name="city">
+                    <option value="" selected ng-show="!vm.activity_location_form.type.$dirty">Seleccione..</option>
                 </select>
-                <span class="errors" ng-show="activity_location_form.city.$invalid && !activity_location_form.city.$dirty">
-                  <span>{{ errors.city }}</span> 
+                <span class="errors" ng-show="vm.activity_location_form.city.$invalid && !vm.activity_location_form.city.$dirty">
+                  <span>{{ vm.errors.city }}</span> 
                 </span>
               </div>
               <div class="form-group">
@@ -28,19 +28,19 @@
               </div>
               <div class="form-group">
                 <label>Dirección exacta</label>
-                <textarea class="form-control" ng-model='activity.location.address' name="address">  </textarea>
-                <div class="errors" ng-show="activity_location_form.address.$invalid && !activity_location_form.address.$dirty">
-                  <span>{{ errors.address }}</span> 
+                <textarea class="form-control" ng-model='vm.activity.location.address' name="address">  </textarea>
+                <div class="errors" ng-show="vm.activity_location_form.address.$invalid && !vm.activity_location_form.address.$dirty">
+                  <span>{{ vm.errors.address }}</span> 
                 </div>
               <hr>
-              <ui-gmap-google-map center='map.center' zoom='map.zoom' bounds="map.bounds" events="map.events" control="map.control">
+              <ui-gmap-google-map center='vm.map.center' zoom='vm.map.zoom' bounds="vm.map.bounds" events="vm.map.events" control="vm.map.control">
 
-                <ui-gmap-marker coords="marker.coords" options="marker.options" events="marker.events" idkey="marker.id">
+                <ui-gmap-marker coords="vm.marker.coords" options="vm.marker.options" events="vm.marker.events" idkey="vm.marker.id">
 
               </ui-gmap-google-map>
 
               <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
-              <div ng-savedmessage message="Guardado" ng-model="isCollapsed" collapse="isCollapsed">
+              <div ng-savedmessage message="Guardado" ng-model="vm.isCollapsed" collapse="vm.isCollapsed">
                 
               </div>
               </fieldset>
@@ -49,12 +49,12 @@
         <div class="col-md-3">
           <div class="sidebar-nav-fixed pull-right affix well">
             <ul class="nav">
-              <li ng-show="showTooltip('content')">
+              <li ng-show="vm.showTooltip('content')">
                 ¿Tu actividad está dividida en 
                 módulos en donde cada uno 
                 tiene temas a enseñar?
               </li>
-              <li ng-show="showTooltip('goals')">
+              <li ng-show="vm.showTooltip('goals')">
                 ¿Cuál es la finalidad de tu activ-
                 idad? 
 
@@ -66,13 +66,13 @@
                 dos con muchas calorías 
                 menos?
               </li>
-              <li ng-show="showTooltip('methodology')">
+              <li ng-show="vm.showTooltip('methodology')">
                 ¿Tu actividad será evaluada?
                 ¿Cómo?
                 ¿Aplicarás algún método de 
                 enseñanza en particular?
               </li>
-              <li ng-show="showTooltip('requirements')">
+              <li ng-show="vm.showTooltip('requirements')">
                 ¿Para inscribirse hace falta 
                 conocimientos en algún tema 
                 en particular?

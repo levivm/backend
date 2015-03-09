@@ -25,18 +25,18 @@ class UserCreateForm(forms.Form):
         user.save()
 
 
-class FileUploadForm(forms.Form):
-    file = forms.FileField()
+# class FileUploadForm(forms.Form):
+#     file = forms.FileField()
 
-    def clean_file(self):
-        content = self.cleaned_data['file']
-        content_type = content.content_type.split('/')[0]
-        if content_type in settings.CONTENT_TYPES:
-            if content._size > settings.MAX_UPLOAD_PHOTO_SIZE:
-                raise forms.ValidationError(_('Please keep filesize under %s. Current filesize %s') % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE), filesizeformat(content._size)))
-        else:
-            raise forms.ValidationError(_('File type is not supported'))
-        return content
+#     def clean_file(self):
+#         content = self.cleaned_data['file']
+#         content_type = content.content_type.split('/')[0]
+#         if content_type in settings.CONTENT_TYPES:
+#             if content._size > settings.MAX_UPLOAD_PHOTO_SIZE:
+#                 raise forms.ValidationError(_('Please keep filesize under %s. Current filesize %s') % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE), filesizeformat(content._size)))
+#         else:
+#             raise forms.ValidationError(_('File type is not supported'))
+#         return content
 
     #error_messages = {
     #    'duplicate_email': _('A user with that email already exists.'),

@@ -42,4 +42,4 @@ class LocationsSerializer(serializers.ModelSerializer):
             'point',
             'address'
             )
-        depth = 1
+        #depth = 1

@@ -34,7 +34,7 @@
 
       console.log(old_value,new_value);
       if (old_value!=new_value && old_value && new_value){ 
-        
+        var url = '/api/users/upload/photo/';
         $scope.upload = UploadFile.upload_file($scope.organizer.photo)
           .progress(_progressUpload)
           .success(_successUploaded)

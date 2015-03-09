@@ -10,34 +10,44 @@
     .module('trulii.activities.controllers')
     .controller('ActivityDashboardCtrl', ActivityDashboardCtrl);
 
-  ActivityDashboardCtrl.$inject = ['$scope','Activity'];
+  ActivityDashboardCtrl.$inject = ['$scope','Activity','activity'];
   /**
   * @namespace RegisterController
   */
-  function ActivityDashboardCtrl($scope,Activity) {
+  function ActivityDashboardCtrl($scope,Activity,activity) {
 
 
 
 
 
-    var vm = this;
+    var pc = this;
+    pc.steps = {};
 
-    vm.detailsUpdated = _detailsUpdated;
+    //pc.detailsUpdated = _detailsUpdated;
 
-    vm.detailCompleted = ['content'];
+    activate();
 
-    function _detailsUpdated(data){
+   
+   
 
-        var detailsCompleted;
-        angular.forEach(vm.detailCompleted,function(value){
+    pc.activitySectionUpdated = _checkSections;
 
-            detailsCompleted = data[value] ? true:false;
+    function _checkSections(activity){
 
-            console.log("I jus tupdated updateDetails",data[value]);
+        console.log("CHECKINGGGGGGGGGGG",activity);
 
+        angular.forEach(activity.completed_steps,function(value,key){
+
+
+            pc.steps[key] = value;
         });
 
-        console.log("detailCompleted",detailsCompleted);
+    }
+
+    function activate(){
+
+        _checkSections(activity);
+
     }
 
 

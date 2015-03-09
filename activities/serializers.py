@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #"Content-Type: text/plain; charset=UTF-8\n"
 
-from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session
+from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
 from organizers.models import Organizer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
@@ -9,6 +9,7 @@ from locations.serializers import LocationsSerializer
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime,time,date
 from calendar import  timegm
+from django.conf import settings
 
 
 
@@ -57,6 +58,15 @@ class CategoriesSerializer(serializers.ModelSerializer):
             )
 
 
+class ActivityPhotosSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ActivityPhoto
+        fields = (
+            'photo',
+            'id'
+            )
+
 
 class ActivitiesSerializer(serializers.ModelSerializer):
 
@@ -67,6 +77,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     category = serializers.CharField(write_only=True,required=True)
     category_id = serializers.SlugRelatedField(source='sub_category.category',read_only=True,slug_field='id') 
     location =  LocationsSerializer(read_only=True)
+    photos   = ActivityPhotosSerializer(read_only=True,many=True)
+    completed_steps = serializers.SerializerMethodField(read_only=True)
    
 
     class Meta:
@@ -90,15 +102,46 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'goals',
             'methodology',
             'location',
+            'photos',
+            'youtube_video_url',
+            'completed_steps',
             )
         depth = 1
 
+
+    def get_completed_steps(self,obj):
+        steps_requiremets = settings.STEPS_REQUIREMETS
+        steps = steps_requiremets.keys()
+        completed_steps = {}
+        print obj.__dict__
+        related_fields = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
+        for step in steps:
+            required_attrs = steps_requiremets[step]
+            completed = True
+            for attr in required_attrs:
+
+                if attr in related_fields:
+                    if not getattr(obj,attr,None).all():
+                        completed = False
+                        break
+                else:
+                    print "attr",attr,getattr(obj,attr,None)
+                    if not  getattr(obj,attr,None):
+                        completed = False
+                        break
+
+            completed_steps[step] = completed
+
+        return completed_steps
+                
 
 
 
 
     def _set_location(self,data):
 
+
+        print "location",data.get('location')
         location = data.get('location')
 
         city    = location["city"]
@@ -232,7 +275,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
 
 
-
 class UnixEpochDateField(serializers.DateTimeField):
 
 
@@ -281,15 +323,18 @@ class SessionsSerializer(serializers.ModelSerializer):
 
     def validate(self,data):
         #start_time = 
-        #print data
+        print data
         print "DATEEEEE",data["date"]
         start_time = data['start_time']
         end_time   = data['end_time']
+        print "start_time",start_time
+        print "end_time",end_time
+
         #print "VALIDATE IN SESSION",data
         #print "VALIDATE IN SESSION",self.context['request']
 
         if start_time>=end_time:
-            raise serializers.ValidationError(_("La hora de inicio debe ser mayor a la hora de inicio"))
+            raise serializers.ValidationError(_("La hora de inicio debe ser menor a la hora final"))
         return data
 
 

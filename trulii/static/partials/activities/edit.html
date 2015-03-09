@@ -5,11 +5,44 @@
       <ul class="nav tabs">
             <!-- <li class="active"><a data-target="#tab1" data-toggle="tab">General</a></li> -->
 <!--             <li class=""><a data-target="#tab2" data-toggle="tab">Detalle</a></li> -->
-            <li ui-sref-active="active"><a ui-sref=".general" >General</a></li>
-            <li><a ui-sref=".detail">Detalle</a></li>                          
-            <li><a ui-sref=".calendar">Calendario</a></li>
-            <li><a ui-sref=".location">Ubicación</a></li>                          
-            <li><a ui-sref=".return-policy">Política de devolución</a></li>                          
+            <li ui-sref-active="active">
+              <a ui-sref=".general" >
+                General
+                <span ng-show="pc.steps.general" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              </a>
+            </li>
+            <li>
+              <a ui-sref=".detail">
+                Detalle
+                <span ng-show="pc.steps.detail" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              </a>
+            </li>                          
+            <li>
+              <a ui-sref=".calendars">
+                Calendario
+                <span ng-show="pc.steps.calendars" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              </a>
+            </li>
+            <li>
+              <a ui-sref=".location">
+                Ubicación 
+                <span ng-show="pc.steps.location" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              </a>
+            </li>                          
+            <li>
+              <a ui-sref=".gallery">
+                Galería
+                <span ng-show="pc.steps.gallery" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+
+              </a>
+
+            </li>                          
+            <li>
+              <a ui-sref=".return-policy">
+              Política de devolución
+              <span ng-show="pc.steps.return_policy" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              </a>
+            </li>                          
       </ul>
     </nav>
       <div><h2 class="add">Place for your add!</h2></div>

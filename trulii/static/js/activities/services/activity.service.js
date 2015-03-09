@@ -10,15 +10,16 @@
     .module('trulii.activities.services')
     .factory('Activity', Activity);
 
-  Activity.$inject = ['$http','$q'];
+  Activity.$inject = ['$http','$q','$log','UploadFile'];
 
-  function Activity($http,$q) {  
+  function Activity($http,$q,$log,UploadFile) {  
       
       function Activity(activitieData) {
           if (activitieData) {
               this.setData(activitieData);
           }
           this.tags = [];
+          this.base_url = '/api/activities/';
 
           // Some other initializations related to book
       };
@@ -28,7 +29,7 @@
               angular.extend(this, activitieData);
           },
           create: function(){
-            return $http.post('/api/activities/',this);
+            return $http.post(this.base_url,this);
           },
           generalInfo: function() {
               var scope = this;
@@ -42,7 +43,8 @@
               }
               else{
 
-                return $http.get('/api/activities/info/').then(function(response){
+                var url = this.base_url + "info/";
+                return $http.get(url).then(function(response){
                   scope.presave_info = response.data;
                   deferred.resolve(scope.presave_info);
                   return deferred.promise
@@ -56,17 +58,38 @@
           load: function(id){
             var scope = this;
 
-            return $http.get('/api/activities/'+id)
+            if (!(id))
+              id = scope.id
+
+            var url = this.base_url + id;
+            return $http.get(url)
               .then(function(response) {
                 scope.setData(response.data);
                 return scope
               });
           },
           update: function() {
+            var url = this.base_url + this.id;
+            var scope = this;
             return $http({
               method: 'put',
-              url:'/api/activities/' + this.id,
+              url:url,
               data: this,
+              //headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            });
+          },
+          addPhoto:function(image){
+            var url = this.base_url + this.id + '/gallery';
+            return UploadFile.upload_file(image,url)
+
+
+          },
+          deletePhoto:function(image){
+            var url = this.base_url + this.id + '/gallery'
+            return $http({
+              method: 'put',
+              url:url,
+              data: {'photo_id':image.id},
               //headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
             });
           }

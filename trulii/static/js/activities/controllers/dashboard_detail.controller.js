@@ -22,11 +22,10 @@
     var vm = this;
 
     //console.log(ActivityDashboardCtrl,"parent");
-    console.log($scope.pc,"padre");
 
     initialize();
 
-    vm.activity = activity;
+    vm.activity = angular.copy(activity);
 
 
     vm.save_activity = _updateActivity;
@@ -46,8 +45,8 @@
       vm.activity.update()
           .success(function(response){
               vm.isCollapsed = false;
-              console.log("parent",vm)
-              $scope.pc.detailsUpdated(response);
+              angular.extend(vm.activity,activity);
+              $scope.pc.activitySectionUpdated(response);
           })
           .error(_errored);
     }

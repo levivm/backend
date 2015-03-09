@@ -19,7 +19,8 @@
 
     initialize();
 
-    $scope.activity = activity;
+    $scope.activity = angular.copy(activity);
+    //$scope.activity = activity;
 
     if (activity.id)
         _setUpdate();
@@ -51,6 +52,8 @@
         $scope.activity.update()
             .success(function(response){
                 $scope.isCollapsed = false;
+                angular.extend(activity,$scope.activity)
+
             })
             .error(_errored);
     }

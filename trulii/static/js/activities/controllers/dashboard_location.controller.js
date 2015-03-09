@@ -18,26 +18,28 @@
 
 
 
+    var vm = this;
+
+    vm.cities = cities;
+
+    vm.activity = angular.copy(activity);
 
 
-    $scope.cities = cities;
-
-    $scope.activity = activity;
 
     initialize();
 
-    $scope.save_activity  = _updateActivity;
+    vm.save_activity  = _updateActivity;
 
-    $scope.setOverElement = _setOverElement;
+    vm.setOverElement = _setOverElement;
 
-    $scope.showTooltip    = _showTooltip;
+    vm.showTooltip    = _showTooltip;
 
 
 
     
-    //$scope.map = { center: { latitude: 45, longitude: -73 }, zoom: 8 };
+    //vm.map = { center: { latitude: 45, longitude: -73 }, zoom: 8 };
     
-    // console.log("maps",$scope);
+    // console.log("maps",vm);
     // uiGmapGoogleMapApi.then(function(maps) {
 
 
@@ -45,7 +47,7 @@
 
 
     // uiGmapIsReady.promise().then(function(instances) { 
-    //   $scope.map_instance = instances.pop().map;
+    //   vm.map_instance = instances.pop().map;
       
     // });
 
@@ -56,22 +58,25 @@
 
     
     function _updateActivity() {
-        console.log("actividad");
+        _clearErrors();
         _setActivityPos();
-        console.log($scope.activity);
         //var city_object = {};
-        //angular.extend(city_object,$scope.activity.location.city);
-        //var city_object = $scope.activity.location.city.copy();
-        $scope.activity.update()
+        //angular.extend(city_object,vm.activity.location.city);
+        //var city_object = vm.activity.location.city.copy();
+        //vm.activity.location.city = vm.activity.location.city.id;
+        console.log("BEFORE UPDATE",vm.activity.location);
+        vm.activity.update()
             .success(function(response){
-                $scope.isCollapsed = false;
+                vm.isCollapsed = false;
+                angular.extend(vm.activity,activity);
+
             })
             .error(_errored);
     }
 
     function _showTooltip(element){
 
-        if ($scope.currentOverElement==element)
+        if (vm.currentOverElement==element)
             return true
         return false
     }
@@ -79,7 +84,7 @@
 
     function _setOverElement(element){
 
-        $scope.currentOverElement = element;
+        vm.currentOverElement = element;
     }
 
 
@@ -87,10 +92,10 @@
     /*****************SETTERS********************/
 
     function _setActivityPos(){
-      $scope.activity.location.point = [];
-      $scope.activity.location.point[0] = $scope.marker.coords.latitude;
-      $scope.activity.location.point[1] = $scope.marker.coords.longitude;
-      //$scope.activity.location.point = $scope.marker.coords;
+      vm.activity.location.point = [];
+      vm.activity.location.point[0] = vm.marker.coords.latitude;
+      vm.activity.location.point[1] = vm.marker.coords.longitude;
+      //vm.activity.location.point = vm.marker.coords;
     }
 
 
@@ -103,17 +108,17 @@
 
 
     function _clearErrors(){
-        $scope.activity_location_form.$setPristine();
-        $scope.errors = null;
-        $scope.errors = {};
+
+        vm.activity_location_form.$setPristine();
+        vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
-      $scope.errors[field] = message;
-      console.log('fiellld',field);
-      $scope.activity_location_form[field].$setValidity(message, false);
+      vm.errors[field] = message;
+      vm.activity_location_form[field].$setValidity(message, false);
+      console.log("FORMMMM",vm.activity_location_form[field]);
 
     };
 
@@ -136,42 +141,54 @@
 
     function initialize(){
 
-        $scope.errors = {};
-        $scope.isCollapsed = true;
-        //console.log("FFFF",$scope.activity);
+        vm.errors = {};
+        vm.isCollapsed = true;
+        console.log("INIIIIT",vm.activity);
         var city_id;
-        var city  = $scope.activity.location ? $scope.activity.location.city : null;
+        //console.log("-----------------------------------");
+        var city  = vm.activity.location ? vm.activity.location.city : null;
+        //console.log("ACTIVITY",vm.activity);
+        //console.log("ACTIVITY CITY",vm.activity.location);
+
+        //console.log("ACTIVITY CITY 2",vm.activity.location.city);
+        //console.log("ACTIVITY CITY 3",vm.activity.location);
         
-        console.log("city",city)
+        //console.log("city",vm.activity.location );
         if (city){
-          city_id = city.id;
+          city_id = typeof city == 'number' ? city:city.id;
+          //console.log("1",city_id);
+          //console.log();
         }
         else{
-          console.log("asda",LocationManager.getCurrentCity());
+          //console.log("asda",LocationManager.getCurrentCity());
           city_id = LocationManager.getCurrentCity().id;
-          $scope.activity.location = {};
+          //vm.activity.location = {};
+          console.log("2",city_id);
+
         }
-        $scope.activity.location.city =filterFilter($scope.cities,{id:city_id})[0];
+        vm.activity.location.city = filterFilter(vm.cities,{id:city_id})[0];
+        console.log(vm.activity.location,vm.cities,city_id);
           
 
 
 
-        // if (!($scope.activity.location.city)){
+        // if (!(vm.activity.location.city)){
         //   var current_city =  LocationManager.getCurrentCity();
-        //   //console.log("SDDD",filterFilter($scope.cities,{id:current_city.id}));
-        //   $scope.activity.location.city =filterFilter($scope.cities,{id:current_city.id})[0];
+        //   //console.log("SDDD",filterFilter(vm.cities,{id:current_city.id}));
+        //   vm.activity.location.city =filterFilter(vm.cities,{id:current_city.id})[0];
         // }
         // else{
-        //   var city_id = $scope.activity.location.city;
-        //   $scope.activity.location.city =filterFilter($scope.cities,{id:city_id})[0];
+        //   var city_id = vm.activity.location.city;
+        //   vm.activity.location.city =filterFilter(vm.cities,{id:city_id})[0];
         // }
+        
         _initialize_map();
         _setMarker(); 
 
 
 
 
-        //$scope.map.control.allowedBounds = _objectToBounds(LocationManager.getAllowedBounds());
+        //vm.map.control.allowedBounds = _objectToBounds(LocationManager.getAllowedBounds());
 
 
 
@@ -179,23 +196,24 @@
 
     function _initialize_map(){
 
-        //var city =  $scope.activity.location.city;
+        //var city =  vm.activity.location.city;
         var latitude;
         var longitude;
-        var location;
+        var location = {};
 
-        //location = $scope.activity.location.city ? 
-        if ($scope.activity.location.point)
-          location = $scope.activity.location;
+        //location = vm.activity.location.city ? 
+        if (vm.activity.location.point)
+          location = angular.copy(vm.activity.location);
+          //location = vm.activity.location;
         else
-          location = $scope.activity.location.city;
+          location = angular.copy(vm.activity.location.city);
+          //location = vm.activity.location.city;
 
         latitude  = location.point[0];
         longitude = location.point[1];
 
-        console.log("LOCATION",location);
 
-        $scope.map = {
+        vm.map = {
           center: {latitude: latitude, longitude: longitude }, 
           zoom: 8, 
           bounds: LocationManager.getAllowedBounds() ,
@@ -217,11 +235,11 @@
 
               if (allowedBounds.contains(map.getCenter())) {
 
-                $scope.map.control.valid_center = map.getCenter();
+                vm.map.control.valid_center = map.getCenter();
                 return
               };
 
-              map.panTo($scope.map.control.valid_center);
+              map.panTo(vm.map.control.valid_center);
 
             }
 
@@ -238,12 +256,12 @@
     function _setMarker(){
 
       //faltar chequear cuando la activdad no tengo locacion al principio
-      var latitude = $scope.activity.location.point ? 
-                     $scope.activity.location.point[0] : $scope.activity.location.city.point[0];
-      var longitude = $scope.activity.location.point ? 
-                     $scope.activity.location.point[1] : $scope.activity.location.city.point[1];
+      var latitude = vm.activity.location.point ? 
+                     vm.activity.location.point[0] : vm.activity.location.city.point[0];
+      var longitude = vm.activity.location.point ? 
+                     vm.activity.location.point[1] : vm.activity.location.city.point[1];
 
-      $scope.marker = {
+      vm.marker = {
         id: 0,
         coords: {
           latitude: latitude,
@@ -260,9 +278,9 @@
             $log.log(lat);
             $log.log(lon);
 
-            $scope.marker.options = {
+            vm.marker.options = {
               draggable: true,
-              labelContent: "lat: " + $scope.marker.coords.latitude + ' ' + 'lon: ' + $scope.marker.coords.longitude,
+              labelContent: "lat: " + vm.marker.coords.latitude + ' ' + 'lon: ' + vm.marker.coords.longitude,
               labelAnchor: "100 0",
               labelClass: "marker-labels"
             };

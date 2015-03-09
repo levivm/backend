@@ -22,14 +22,11 @@
 
 
             var today = new Date();
-            //console.log()
             var tomorrow = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
             this.initial_date = today;
+            this.minStartDate = today;
             this.closing_sale = tomorrow;
             this.capacity = 1;
-
-
-
 
             this.sessions = [];
             this.number_of_sessions = 0;
@@ -58,6 +55,8 @@
               angular.extend(this, calendarData);
               this.sessions = $filter('orderBy')(this.sessions,'date');
 
+              this.initial_date = new Date(this.initial_date);
+              this.closing_sale = new Date(this.closing_sale);
               angular.forEach(this.sessions,function(session,index){
 
                 session.date = new Date(session.date);
@@ -112,10 +111,11 @@
             });
             console.log(this);
             var that = this;
-            return $http.post('/api/activities/'+activity_id+'/calendar/',this)
+            return $http.post('/api/activities/'+activity_id+'/calendars/',this)
                         .then(function(response){
+                          console.log("response.data",response.data);
                           that.setData(response.data);
-                          return response.data
+                          return that
 
                         },function(response){
                           return $q.reject(response.data);
@@ -125,9 +125,10 @@
           update : function(){
 
             var activity_id = this.activity;
+            console.log("updating",this);
             this.setToSave();
             var that = this;
-            return $http.put('/api/activities/'+activity_id+'/calendar/',this)
+            return $http.put('/api/activities/'+activity_id+'/calendars/',this)
                         .then(function(response){
                           that.setData(response.data);
                           return response.data
@@ -201,7 +202,6 @@
             var difference = this.number_of_sessions - this.last_sn;
             var abs_difference = Math.abs(difference);
 
-            console.log("difference",abs_difference);
             for (var i=0; i<abs_difference; i++){
 
                 if (difference>0){
@@ -211,19 +211,21 @@
                   var previous_s  = index ? this.sessions[index-1]:null
 
 
-                  var date = index ? new Date(previous_s.date.getTime()+24*60*60*1000):this.initial_date;
+                  var date = index ? new Date(previous_s.date.getTime()):this.initial_date;
 
-                  
+                  //var minDate =index ? new Date(previous_s.date.getTime()+24*60*60*1000):date;
 
 
-                  var _start_time = previous_s && previous_s.date  
+                  //var _start_time = previous_s && previous_s.date  
+                  var hours = index ? previous_s.end_time.getHours():10
+                  console.log(hours,"horas");
 
                   var start_time = new Date();
-                      start_time.setHours( 10 );
+                      start_time.setHours( hours + 1 );
                       start_time.setMinutes( 0 );
 
                   var end_time = new Date();
-                      end_time.setHours( 14 );
+                      end_time.setHours( hours + 4 );
                       end_time.setMinutes( 0 );
 
                   var session = {

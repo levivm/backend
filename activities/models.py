@@ -143,8 +143,9 @@ class Activity(models.Model):
 
 
 class ActivityPhoto(models.Model):
-    photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
-    activity = models.ForeignKey(Activity)
+    photo = models.ImageField(upload_to="activities")
+    activity = models.ForeignKey(Activity,related_name="photos")
+    
 
 
 

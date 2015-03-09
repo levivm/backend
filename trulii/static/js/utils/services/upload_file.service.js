@@ -29,11 +29,13 @@
     return UploadFile;
 
 
-    function upload_file(file) {
 
 
+    function upload_file(file,url) {
+
+      console.log("FILE",file);
       return $upload.upload({
-        url: '/api/users/upload/photo/', // upload.php script, node.js route, or servlet url
+        url: url, // upload.php script, node.js route, or servlet url
         //method: 'POST' or 'PUT',
         //headers: {'Authorization': 'xxx'}, // only for html5
         //withCredentials: true,

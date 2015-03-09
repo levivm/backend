@@ -18,13 +18,13 @@
 
 
 
-  console.log("calendariooooooooooo",calendar);
   //$scope.startOpened = false;
   var vm = this;
   //vm.start_date = "asdasd";
   activate();
   initialize();
   //this.openStartDate = 
+  //console.log(,"SCOPE");
 
   vm.calendar  = calendar;
   
@@ -49,6 +49,8 @@
 
     vm.hstep = 1;
     vm.mstep = 15;
+
+    vm.minStartDate = new Date();
 
     vm.dateOptions = {
       formatYear: 'yy',
@@ -91,7 +93,7 @@
 
 
     function _addError(field, message) {
-      console.log("field error",field);
+      console.log("field error",field,message);
       vm.errors[field] = message;
 
       var is_session_error = field.split("_")[0] == 'sessions' ? true:false;
@@ -126,16 +128,20 @@
 
     }
 
-    function _successCreated(){
+    function _successCreated(calendar){
 
+      
       vm.save_calendar = _updateCalendar;
       vm.isCollapsed = false;
+      console.log("ccccccccccccccc",$scope);
+      $scope.$parent.vm.setCalendar(calendar);
 
     }
 
-    function _successUpdate(){
-
+    function _successUpdate(calendar){
       vm.isCollapsed = false;
+      $scope.$parent.vm.setCalendar(calendar);
+      
 
     }
 

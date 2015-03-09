@@ -153,26 +153,26 @@
       templateUrl: 'static/partials/activities/dashboard_detail.html',
       //templateUrl: 'modalContainer' 
     })
-    .state('activities-edit.calendar', {
-      url:'calendar', 
-      controller: 'ActivityCalendarController', 
+    .state('activities-edit.calendars', {
+      url:'calendars', 
+      controller: 'ActivityCalendarsController', 
       controllerAs: 'vm',
-      templateUrl: 'static/partials/activities/dashboard_calendar.html',
+      templateUrl: 'static/partials/activities/dashboard_calendars.html',
       resolve:{
 
-        calendar:getCalendar
+        calendars:getCalendars
       }
       //templateUrl: 'modalContainer' 
     })
-    .state('activities-edit.calendar.detail' ,{
-      url:'',
-      controller: function($scope){
-        console.log("mirame soy controller")
+    .state('activities-edit.calendars.detail' ,{
+      url:'?id',
+      controller: 'ActivityCalendarController',
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/dashboard_calendar_detail.html',
+      resolve: {
 
-      },
-      template: "<div>Hola mirame</div>",
-
-
+        calendar: getCalendar
+      }
     })
     .state('activities-edit.location', {
       url:'location', 
@@ -184,14 +184,18 @@
       },
       controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_location.html',
-      //templateUrl: 'modalContainer' 
+    })
+    .state('activities-edit.gallery', {
+      url:'gallery', 
+      controller: 'ActivityDBGalleryController', 
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/activities/dashboard_gallery.html',
     })
     .state('activities-edit.return-policy', {
       url:'return-policy', 
       controller: 'ActivityDBReturnPDashboard', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_return_policy.html',
-      //templateUrl: 'modalContainer' 
     });
     
 
@@ -215,13 +219,23 @@
   }
 
 
-  getCalendar.$inject = ['$stateParams','$q','Calendar','activity'];
+  getCalendars.$inject = ['CalendarsManager','activity'];
 
-  function getCalendar($stateParams, $q, Calendar, activity){
+  function getCalendars( CalendarsManager, activity){
+    var calendars = CalendarsManager.loadCalendars(activity.id);
+    return calendars;
+  }
 
-    var calendar = new Calendar();
+  getCalendar.$inject = ['$stateParams','CalendarsManager','activity'];
 
-    return calendar.load(activity.id);
+  function getCalendar($stateParams, CalendarsManager, activity){
+
+    var calendar_id = $stateParams.id;
+    
+    //console.log("Calendar id",CalendarsManager.getCalendar(calendar_id));
+    console.log("Calendar id",$stateParams);
+    //var calendar = 
+    return CalendarsManager.getCalendar(calendar_id);
   }
 
 
@@ -248,6 +262,8 @@
   function run($rootScope,$state,Authentication){
 
     $rootScope.$on('$stateChangeStart',function(e,toState){
+
+
 
       if ( !(toState.data) ) return;
       if ( !(toState.data.requiredAuthentication) ) return;

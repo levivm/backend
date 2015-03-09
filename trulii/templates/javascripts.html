@@ -1,6 +1,6 @@
 {% load staticfiles%}
 {% load url from future %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
 <script type="text/javascript" src="{% static 'js/lib/ui-bootstrap-tpls-0.12.0.min.js' %}"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-route.min.js"></script>
@@ -13,6 +13,21 @@
 
 
 <script type="text/javascript" src="{% static 'js/lib/angular-file-upload-all.min.js' %}"></script>
+ -->
+
+
+<script type="text/javascript" src="{% static 'js/bower_components/jquery/dist/jquery.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/angular/angular.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/angular-cookies/angular-cookies.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/ng-tags-input/ng-tags-input.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/angular-ui-router/release/angular-ui-router.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/lodash/dist/lodash.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/angular-google-maps/dist/angular-google-maps.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bower_components/ng-file-upload/angular-file-upload-all.js' %}"></script>
+
+
 
 
 <script type="text/javascript" src="{% static 'js/trulii.js' %}"></script>
@@ -49,11 +64,14 @@
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_general.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_detail.controller.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_calendar.controller.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_calendars.controller.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_calendar_detail.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_location.controller.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_gallery.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/controllers/dashboard_return_policy.controller.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/services/categories.service.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/services/activity.service.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/activities/services/calendars_manager.service.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/activities/services/calendar.service.js' %}"></script>
 
 <!-- <script type="text/javascript" src="{% static 'js/activities/services/activtie.service.js' %}"></script>

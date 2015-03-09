@@ -13,7 +13,7 @@ from organizers.models import Organizer
 from organizers.serializer import OrganizersSerializer
 from students.serializer import StudentsSerializer 
 from students.models import Student
-from .forms import FileUploadForm
+from utils.forms import FileUploadForm
 from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect

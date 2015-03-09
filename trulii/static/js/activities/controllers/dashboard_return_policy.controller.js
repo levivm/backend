@@ -16,16 +16,17 @@
   */
   function ActivityDBReturnPDashboard($scope,activity) {
 
-
-    $scope.activity = activity;
+    var vm = this;
+    
+    vm.activity = activity;
 
     initialize();
 
-    $scope.save_activity  = _updateActivity;
+    vm.save_activity  = _updateActivity;
 
-    $scope.setOverElement = _setOverElement;
+    vm.setOverElement = _setOverElement;
 
-    $scope.showTooltip    = _showTooltip;
+    vm.showTooltip    = _showTooltip;
 
 
 
@@ -36,17 +37,18 @@
 
     
     function _updateActivity() {
-        console.log($scope.activity);
-        $scope.activity.update()
+        console.log(vm.activity);
+        vm.activity.update()
             .success(function(response){
-                $scope.isCollapsed = false;
+                vm.isCollapsed = false;
+                $scope.pc.activitySectionUpdated(response);
             })
             .error(_errored);
     }
 
     function _showTooltip(element){
 
-        if ($scope.currentOverElement==element)
+        if (vm.currentOverElement==element)
             return true
         return false
     }
@@ -54,7 +56,7 @@
 
     function _setOverElement(element){
 
-        $scope.currentOverElement = element;
+        vm.currentOverElement = element;
     }
 
 
@@ -72,16 +74,16 @@
 
 
     function _clearErrors(){
-        $scope.activity_return_policy_form.$setPristine();
-        $scope.errors = null;
-        $scope.errors = {};
+        vm.activity_return_policy_form.$setPristine();
+        vm.errors = null;
+        vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
-      $scope.errors[field] = message;
-      $scope.activity_return_policy_form[field].$setValidity(message, false);
+      vm.errors[field] = message;
+      vm.activity_return_policy_form[field].$setValidity(message, false);
 
     };
 
@@ -104,8 +106,8 @@
 
     function initialize(){
 
-        $scope.errors = {};
-        $scope.isCollapsed = true;
+        vm.errors = {};
+        vm.isCollapsed = true;
 
     }
 
