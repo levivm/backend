@@ -18,6 +18,7 @@ from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
+from .serializers import UserProfilesSerializer
 
 
 
@@ -81,6 +82,7 @@ def _set_ajax_response(_super):
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    serializer_class = UserProfilesSerializer
 
     def retrieve(self, request):
         user = self.request.user

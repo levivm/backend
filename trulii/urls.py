@@ -37,6 +37,8 @@ urlpatterns += patterns('',
  	url(r'^api/locations/', include('locations.urls')),
  	
 
+
+    url(r'^docs/', include('rest_framework_swagger.urls')),
     
  #    url(r'^organizers/', include('organizers.urls')),
  #    #url(r'^organizers/', include('allauth.urls')),
