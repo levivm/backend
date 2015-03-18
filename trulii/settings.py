@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 import django.conf.global_settings as DEFAULT_SETTINGS
 
-
+import dj_database_url
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -29,8 +29,31 @@ SECRET_KEY = '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-='
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
+DEBUG = True
 
-DEBUG = False
+
+if 'DATABASE_URL' in os.environ:
+    DEBUG = False
+    DATABASES = {}
+    DATABASES['default'] = dj_database_url.config()
+    DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+
+else:
+    DATABASES = {
+        'default': {
+            # 'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+            'NAME': 'trulii',  # Or path to database file if using sqlite3.
+            # The following settings are not used with sqlite3:
+            'USER': 'trulii',
+            'PASSWORD': 'trulii',
+            'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+            'PORT': '',  # Set to empty string for default.
+        }
+    }
+
+
+
 
 TEMPLATE_DEBUG = True
 
@@ -116,18 +139,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 # }
 
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'trulii',  # Or path to database file if using sqlite3.
-        # The following settings are not used with sqlite3:
-        'USER': 'trulii',
-        'PASSWORD': 'trulii',
-        'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',  # Set to empty string for default.
-    }
-}
+
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
