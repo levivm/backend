@@ -1,3 +1,5 @@
+import dj_database_url
+
 ################AMAZON S3 STORAGE ##########################
 
 
@@ -28,6 +30,10 @@ STATICFILES_STORAGE  = 'trulii.custom_storages.StaticRootS3BotoStorage'
 STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
 
 ########MEDIA##########
+
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config()
+DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 
 
