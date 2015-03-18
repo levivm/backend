@@ -28,7 +28,7 @@ SECRET_KEY = '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-='
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = True
+DEBUG = False
 
 
 if 'DATABASE_URL' in os.environ:
