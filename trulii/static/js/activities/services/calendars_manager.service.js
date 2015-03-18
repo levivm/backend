@@ -84,10 +84,9 @@
             //var activity_id = calendar.activity;
            
 
-            return $http.delete('/api/activities/'+this.activity_id+'/calendars/?id='+calendarId)
+            return $http.delete('/api/activities/'+this.activity_id+'/calendars/'+calendarId)
                 .then(function(response){
-                    var calendar_id = response.data['chronogram_id'];
-                        scope._deleteInsntance(calendar_id);
+                    scope._deleteInsntance(calendarId);
 
                     deferred.resolve(scope.calendars)
                     return deferred.promise

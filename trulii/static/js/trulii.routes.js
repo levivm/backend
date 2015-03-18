@@ -64,7 +64,7 @@
       abstract:true,
       url:'/organizer/dashboard/',
       controller: 'OrganizerDashboardCtrl', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard.html',
       data: {
 
@@ -75,14 +75,14 @@
     .state('organizer-dashboard.profile', {
       url:'profile',
       controller: 'OrganizerProfileCtrl', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard_profile.html',
       //templateUrl: 'modalContainer' 
     })
     .state('organizer-dashboard.account', {
       url:'account',
       controller: 'OrganizerAccountCtrl', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard_account.html',
       //templateUrl: 'modalContainer' 
     })

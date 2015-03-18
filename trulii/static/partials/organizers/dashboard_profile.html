@@ -12,18 +12,18 @@
 	<div class="tab-content">
 		<div class="tab-pane active text-style" id="tab1">
 		  <h2>Información</h2>
-		  	<form name='profile_form_info' ng-submit="submit_info()">
+		  	<form name='vm.profile_form_info' ng-submit="vm.submit_info()">
 			    <fieldset>
 			      	<div class="form-group">
 			          <label>Nombre completo</label>
-			          <input type="text" class="form-control" ng-model='organizer.name' name="full_name" >
+			          <input type="text" class="form-control" ng-model='vm.organizer.name' name="full_name" >
 			        </div>
 			      	<div class="form-group">
 			          <label>Biografía</label>
-			          <textarea class="form-control" ng-model='organizer.bio' name="bio">  </textarea>
+			          <textarea class="form-control" ng-model='vm.organizer.bio' name="bio">  </textarea>
 			        </div>
 			        <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
-		        	<div collapse="isCollapsed">
+		        	<div collapse="vm.isCollapsed">
 						Guardado
 					</div>
 		        </fieldset>
@@ -32,28 +32,28 @@
 		</div>
 		<div class="tab-pane text-style" id="tab2">
 			<h2>Foto de Perfíl</h2>
-			<form name='profile_form_photo' ng-submit="submit_video()">
+			<form name='vm.profile_form_photo' ng-submit="vm.submit_video()">
 			    <fieldset>
 			      	<div class="form-group">
 
 
 				        <label>Foto</label>
-						<div ng-file-drop="" ng-file-select="" ng-model="organizer.photo" class="drop-box" drag-over-class="{accept:'dragover', reject:'dragover-err', delay:100}" ng-multiple="false" allow-dir="true" accept="image/*">
+						<div ng-file-drop="" ng-file-select="" ng-model="vm.organizer.photo" class="drop-box" drag-over-class="{accept:'dragover', reject:'dragover-err', delay:100}" ng-multiple="false" allow-dir="true" accept="image/*" ng-file-change="vm.addImage(vm.organizer.photo)">
 								Drop Images or PDFs<div>here</div>
 						</div>
 						<div ng-no-file-drop="" class="drop-box">File Farg&amp;Drop not supported on your browser</div>
-						<img ng-src="{{photo_path}}" width="300px" height="300px" /> 
-						<img ng-src="/static/img/ajax-loader.gif" ng-show='photo_loading'/> 
-			          	<div class="errors" ng-show="photo_invalid">
-            				<span>{{ errors.file }}</span> 
+						<img ng-src="{{vm.photo_path}}" width="300px" height="300px" /> 
+						<img ng-src="/static/img/ajax-loader.gif" ng-show='vm.photo_loading'/> 
+			          	<div class="errors" ng-show="vm.photo_invalid">
+            				<span>{{ vm.errors.file }}</span> 
           				</div>
 			        </div>
 			      	<div class="form-group">
 			          <label>Vídeo</label>
-			          <input type="text" class="form-control" ng-model="organizer.youtube_video_url" name="video" placeholder='Ejemplo: www.youtube.com/watch?v=video_id'>
+			          <input type="text" class="form-control" ng-model="vm.organizer.youtube_video_url" name="video" placeholder='Ejemplo: www.youtube.com/watch?v=video_id'>
 			        </div>
 			        <input type="submit" id="submit" class="btn btn-primary" value="Guardar"/>
-		        	<div collapse="isCollapsed">
+		        	<div collapse="vm.isCollapsed">
 						Guardado
 					</div>
 		        </fieldset>

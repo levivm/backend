@@ -17,6 +17,20 @@ from django.conf import settings
 
 
 
+
+class ChronogramsViewSet(viewsets.ModelViewSet):
+    serializer_class = ChronogramsSerializer
+    #queryset = Chronogram.objects.all()
+    lookup_url_kwarg = 'calendar_pk'
+
+
+    def get_queryset(self):
+        activity_id = self.kwargs.get('activity_pk',None)
+        activity = get_object_or_404(Activity,pk=activity_id)
+        return activity.chronogram_set.all()
+
+
+
 class ActivitiesViewSet(viewsets.ModelViewSet):
     #parser_classes = (FileUploadParser,)
     
@@ -52,7 +66,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
 
     def get_calendars(self,request,pk=None):
-
+        print "AQUIIIIIIIIIIII NOOOOOOOOO"
         activity   = self.get_object()
         chronogram = activity.chronogram_set.all()
         chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram,many=True)

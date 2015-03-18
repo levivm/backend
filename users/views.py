@@ -120,6 +120,9 @@ class PhotoUploadView(APIView):
         data     = None
         photo    = None
 
+
+        print "HOLAAAAAAAAAAAAAAAAAa"
+
         file_form = FileUploadForm(request.POST,request.FILES)
         if file_form.is_valid():
             photo = request.FILES['file']

@@ -128,7 +128,7 @@
             console.log("updating",this);
             this.setToSave();
             var that = this;
-            return $http.put('/api/activities/'+activity_id+'/calendars/',this)
+            return $http.put('/api/activities/'+activity_id+'/calendars/'+this.id,this)
                         .then(function(response){
                           that.setData(response.data);
                           return response.data

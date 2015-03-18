@@ -16,37 +16,47 @@
   */
   function OrganizerProfileCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile,Organizer) {
 
+    var vm = this;
+
 
     activate();
 
+
     var cache_organizer = Authentication.getAuthenticatedAccount();
     console.log(cache_organizer);
-    $scope.organizer    = new Organizer(cache_organizer);
+    vm.organizer    = new Organizer(cache_organizer);
 
 
-    $scope.photo_path = $scope.organizer.photo;
-    $scope.errors = {};
-    $scope.photo_invalid = false;
-    $scope.photo_loading = false;
-    $scope.isCollapsed   = true;
+    vm.photo_path = vm.organizer.photo;
+    vm.errors = {};
+    vm.photo_invalid = false;
+    vm.photo_loading = false;
+    vm.isCollapsed   = true;
 
-    $scope.$watch('organizer.photo', function(old_value,new_value) {
+    vm.addImage = _uploadImage;
 
-      console.log(old_value,new_value);
-      if (old_value!=new_value && old_value && new_value){ 
-        var url = '/api/users/upload/photo/';
-        $scope.upload = UploadFile.upload_file($scope.organizer.photo)
-          .progress(_progressUpload)
-          .success(_successUploaded)
-          .error(_erroredUpload);
-      }
 
-    });
+
+
+
+    // vm.$watch('organizer.photo', function(old_value,new_value) {
+
+    //   console.log(old_value,new_value);
+    //   if (old_value!=new_value && old_value && new_value){ 
+    //     var url = '/api/users/upload/photo/';
+    //     console.log("1111111111111111111111111111");
+    //     vm.upload = UploadFile.upload_file(vm.organizer.photo,url)
+    //       .progress(_progressUpload)
+    //       .success(_successUploaded)
+    //       .error(_erroredUpload);
+    //   }
+
+    // });
 
     //submit callbacks
-    $scope.submit_info  =  _update_info;
+    vm.submit_info  =  _update_info;
 
-    $scope.submit_video =  _update_video;
+    vm.submit_video =  _update_video;
     
 
    
@@ -54,9 +64,20 @@
 
     //Private functions
 
+
+    function _uploadImage(image){
+
+      var url = '/api/users/upload/photo/';
+      UploadFile.upload_file(image,url)
+          .progress(_progressUpload)
+          .success(_successUploaded)
+          .error(_erroredUpload);
+
+    }
+
     function _update_info() {
 
-      $scope.organizer.update()
+      vm.organizer.update()
         .success(_updateSuccess)
         .error(_updateFail);
       
@@ -66,7 +87,7 @@
     function _update_video() {
 
 
-      $scope.organizer.update()
+      vm.organizer.update()
         .success(_updateSuccess)
         .error(_updateFail);
       
@@ -95,28 +116,28 @@
 
 
     function _clearErrors(){
-      $scope.errors = null;
-      $scope.errors = {};
+      vm.errors = null;
+      vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
 
-      $scope.errors[field] = message;
+      vm.errors[field] = message;
 
     };
 
     function _progressUpload(){
-      $scope.photo_loading = true;
+      vm.photo_loading = true;
     };
 
 
     function _erroredUpload(response) {
 
-
+      vm.photo_loading = false;
       if (response['errors']) {
-        $scope.photo_invalid = true;
+        vm.photo_invalid = true; 
         
         
 
@@ -132,18 +153,18 @@
     function _successUploaded(data){
       Authentication.updateAuthenticatedAccount();
 
-      $scope.photo_path    = data.photo;
-      $scope.photo_invalid = false;
-      $scope.photo_loading = false;
+      vm.photo_path    = data.photo;
+      vm.photo_invalid = false;
+      vm.photo_loading = false;
 
     }
 
     function _toggleMessage(){
 
 
-      $scope.isCollapsed   = false;
+      vm.isCollapsed   = false;
       var timer = $timeout(function() {
-        $scope.isCollapsed = true;
+        vm.isCollapsed = true;
       }, 1000);
     }
 

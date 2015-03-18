@@ -34,6 +34,9 @@
     function upload_file(file,url) {
 
       console.log("FILE",file);
+      console.log("FILE",file);
+      console.log("FILE",file);
+      console.log("FILE",file);
       return $upload.upload({
         url: url, // upload.php script, node.js route, or servlet url
         //method: 'POST' or 'PUT',
