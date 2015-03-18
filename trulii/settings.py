@@ -41,6 +41,7 @@ if 'DATABASE_URL' in os.environ:
 
 DATABASES = {}
 DATABASES['default'] = dj_database_url.config()
+DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 print "HEROKUUUUUUUUUUUU",DATABASES
 
 
