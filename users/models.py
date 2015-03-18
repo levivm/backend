@@ -52,10 +52,3 @@ class UserProfile(models.Model):
     birthday   = models.DateField(null=True,blank=True)
     telephone  = models.CharField(max_length=100,null=True,blank=True)
     bio = models.TextField(null=True,blank=True)
-
-
-
-
-
-
-

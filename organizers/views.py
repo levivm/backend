@@ -37,5 +37,3 @@ class OrganizerViewSet(viewsets.ModelViewSet):
 
 
 
-
-

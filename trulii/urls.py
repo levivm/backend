@@ -35,9 +35,6 @@ urlpatterns += patterns('',
     url(r'^api/organizers/', include('organizers.urls')),
     url(r'^api/activities/', include('activities.urls')),
  	url(r'^api/locations/', include('locations.urls')),
- 	
-
-
     url(r'^docs/', include('rest_framework_swagger.urls')),
     
  #    url(r'^organizers/', include('organizers.urls')),
@@ -57,7 +54,6 @@ urlpatterns += patterns('',
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
 
     url(r'^.*$', 'landing.views.landing', name='home'),
-
 
 )
 

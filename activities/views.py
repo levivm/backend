@@ -213,3 +213,4 @@ class ListCategories(APIView):
             'subcategory':SubCategoriesSerializer(subcategories,many=True).data,
         }
         return Response(data)
+
