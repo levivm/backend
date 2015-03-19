@@ -35,6 +35,7 @@ STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
 
 DATABASES = {}
 DATABASES['default'] = dj_database_url.config()
+DATABASES['default']['engine'] = 'django.db.backends.postgresql_psycopg2'
 
 
 
