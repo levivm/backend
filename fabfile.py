@@ -12,11 +12,11 @@ django.setup()
 
 
 
-def load_data(where):
-    local('%s python manage.py loaddata data/cities_data.json' % where)
-    local('%s python manage.py loaddata data/categories_data.json' % where)
-    local('%s python manage.py loaddata data/subcategories_data.json' % where)
-    local('%s python manage.py loaddata data/socialapp_data.json' % where)
+def load_data(command=""):
+    local('%s python manage.py loaddata data/cities_data.json' % command)
+    local('%s python manage.py loaddata data/categories_data.json' % command)
+    local('%s python manage.py loaddata data/subcategories_data.json' % command)
+    local('%s python manage.py loaddata data/socialapp_data.json' % command)
 
 
 
@@ -35,13 +35,12 @@ def deploy_heroku():
     #local('heroku maintenance:off')
 
 def initial_deploy_heroku():
-    invoke(deploy_heroku)
-    env.where = "heroku"
-    local('python manage.py syncdb')
-    invoke(load_data)
+    deploy_heroku()
+    local('heroku run python manage.py syncdb')
+    load_data("heroku run")
 
 
-def clear_db(which):
+def prepare_sqlclear():
 
     from django.conf import settings
     not_apps = ["django","allauth."]
@@ -58,33 +57,21 @@ def clear_db(which):
     with open("sqlclear.sql", "w") as text_file:
         text_file.write(sqlclear_all)
 
-    local("%s python manage.py dbshell < sqlclear.sql" % which )
-    local("%s rm sqlclear.sql",which)
+def reset_db(server="local"):
 
-def reset_db(which=None):
-    if not which:
-        clear_local_db("heroku run")
+    if server == "heroku":
+        prepare_sqlclear()
+        local("heroku pg:psql < sqlclear.sql")
+        local('heroku run python manage.py syncdb')
+        load_data("heroku run")
+    elif server == "local":
+        prepare_sqlclear()
+        local("python manage.py dbshell < sqlclear.sql") 
         local('python manage.py syncdb')
-        load_data("")
-    
-    # if which=='Heroku':
-
-    #     pass
-    # else:
-    #     clear_local_db("heroku run")
-    #     local('python manage.py syncdb')
-    #     load_data("")
-
-
-def reset_heroku_db():
-    env.where = ""
-    local('./manage.py sqlclear | heroku run python manage.py dbshell')
-    local('python manage.py syncdb')
-    invoke(load_data)
+        load_data()
 
 
 def initial_deploy_local():
     local('pip install -r requirements.txt')
-    env.where = ""
     local('python manage.py syncdb')
-    invoke(load_data)
+    load_data()
