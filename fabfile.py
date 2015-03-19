@@ -52,7 +52,11 @@ def prepare_sqlclear():
     
     for app in installed_apps:
         command = ["python","manage.py","sqlclear","%s"%app]
-        sqlclear_all += check_output(command)
+
+        try:
+            sqlclear_all += check_output(command)
+        except Exception,e:
+            pass
 
     with open("sqlclear.sql", "w") as text_file:
         text_file.write(sqlclear_all)
