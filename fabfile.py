@@ -24,7 +24,7 @@ def load_data(command=""):
 
 def deploy_heroku():
     local('pip freeze > requirements.txt')
-    local('git add .')
+    local('git add --all')
     print("enter your git commit comment: ")
     comment = raw_input()
     local('git commit -m "%s"' % comment)
