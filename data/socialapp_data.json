@@ -7,7 +7,7 @@
         "client_id":"1563536137193781",
         "secret":"9fecd238829796fd99109283aca7d4ff",
         "provider":"facebook",
-        "sites":""
+        "sites":[1]
     }
 }
 ]
