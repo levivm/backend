@@ -113,7 +113,7 @@ ROOT_URLCONF = 'trulii.urls'
 WSGI_APPLICATION = 'trulii.wsgi.application'
 
 
-# Database#
+# Database##
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 
