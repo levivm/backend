@@ -1,0 +1,10 @@
+[
+{
+    "pk": 1, 
+    "model": "locations.City", 
+    "fields": {
+        "name": "Bogotá",
+        "point":"(4.5981, -74.0758)"
+    }
+}
+]

@@ -79,7 +79,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     location =  LocationsSerializer(read_only=True)
     photos   = ActivityPhotosSerializer(read_only=True,many=True)
     completed_steps = serializers.SerializerMethodField(read_only=True)
-   
+
 
     class Meta:
         model = Activity
@@ -125,7 +125,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
                         completed = False
                         break
                 else:
-                    print "attr",attr,getattr(obj,attr,None)
                     if not  getattr(obj,attr,None):
                         completed = False
                         break
@@ -138,20 +137,16 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
 
 
-    def _set_location(self,data):
+    def _set_location(self,location):
 
-
-        print "location",data.get('location')
-        location = data.get('location')
 
         city    = location["city"]
         if isinstance(city,dict):
             city = city["id"]
 
-        #city = _city["id"] if 'id' in _city else _city
 
         point   = location["point"]
-        address = location["address"]
+        address = location.get("address","")
 
 
         location_data = {
@@ -181,13 +176,13 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
         data['organizer'] = organizer
 
-        if request.method == "PUT":
-            #ocation_data = 
-            data['location']  = self._set_location(request.DATA)
-            #print "LOOOOCC",data['location']
+        location_data = request.data.get('location',None)
+        #if  location_data:
+        data['location'] = self._set_location(location_data) if location_data else None 
+
+        #if request.method == "PUT":
+        #    data['location']  = self._set_location(request.DATA)
         
-
-
         return data
 
     def create(self, validated_data):

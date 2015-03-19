@@ -17,30 +17,40 @@
   function ActivityGeneralController($scope,$modal,$http,$state,$timeout,$q,$stateParams,filterFilter,Categories,activity) {
 
 
+    var vm = this;
+
     initialize();
 
-    $scope.activity = angular.copy(activity);
-    //$scope.activity = activity;
+    vm.activity = angular.copy(activity);
+    //vm.activity = activity;
 
     if (activity.id)
         _setUpdate();
     else
         _setCreate();
 
+    vm.selectCategory = _selectCategory;
 
-    $scope.setOverElement = _setOverElement;
+    vm.setOverElement = _setOverElement;
 
-    $scope.showTooltip = _showTooltip;
 
 
 
     /******************ACTIONS**************/
 
+
+    function _selectCategory(category){
+
+        console.log("category",category);
+        vm.activity_sub_categories = category.subcategories;
+
+    }
+
     function _createActivity() {
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
-        $scope.activity.create()
+        vm.activity.create()
             .success(_successCreation)
             .error(_errored);
     }
@@ -49,10 +59,10 @@
         _clearErrors();
         _updateTags();
         _updateSelectedValues();
-        $scope.activity.update()
+        vm.activity.update()
             .success(function(response){
-                $scope.isCollapsed = false;
-                angular.extend(activity,$scope.activity)
+                vm.isCollapsed = false;
+                angular.extend(activity,vm.activity)
 
             })
             .error(_errored);
@@ -60,7 +70,7 @@
 
     function _showTooltip(element){
 
-        if ($scope.currentOverElement==element)
+        if (vm.currentOverElement==element)
             return true
         return false
     }
@@ -68,7 +78,7 @@
 
     function _setOverElement(element){
 
-        $scope.currentOverElement = element;
+        vm.currentOverElement = element;
     }
 
     /*****************SETTERS********************/
@@ -76,41 +86,42 @@
 
 
     function _setUpdate(){
-        // $scope.activity.load(activity_id)
+        // vm.activity.load(activity_id)
         //     .then(,_loadActivityFail)
-        $scope.activity.generalInfo()
+        vm.activity.generalInfo()
             .then(_setPreSaveInfo)
             .then(_successLoadActivity);
-        $scope.save_activity = _updateActivity;
-        $scope.creating = false;
+        vm.save_activity = _updateActivity;
+        vm.creating = false;
     }
 
 
     function _setCreate(){
         //console.log("voy a crear");
-        $scope.save_activity = _createActivity;
-        $scope.creating = true;
-        $scope.activity.generalInfo().then(_setPreSaveInfo);
+        vm.save_activity = _createActivity;
+        vm.creating = true;
+        vm.activity.generalInfo().then(_setPreSaveInfo);
 
 
     }
 
     function _setPreSaveInfo(data) {
-        $scope.selected_category = {};
-        $scope.selected_sub_category = {};
-        $scope.selected_type = {};
-        $scope.selected_level = {};
+        vm.selected_category = {};
+        vm.selected_sub_category = {};
+        vm.selected_type = {};
+        vm.selected_level = {};
 
         //var data = data;
         var categories = new Categories(data.categories);
-        $scope.activity_sub_categories = data.subcategories;
-        $scope.activity_categories = categories;
-        $scope.activity_types  = data.types;
-        $scope.activity_levels = data.levels;
+        console.log("CSUBBBSSS",data.subcategories);
+        vm.activity_categories = categories;
+        vm.activity_sub_categories = data.subcategories;
+        vm.activity_types  = data.types;
+        vm.activity_levels = data.levels;
 
 
 
-        $scope.loadTags = function(){
+        vm.loadTags = function(){
             var deferred = $q.defer();
                 deferred.resolve(data.tags);
             return deferred.promise;
@@ -118,7 +129,7 @@
 
 
         var deferred = $q.defer();
-            deferred.resolve($scope.activity);
+            deferred.resolve(vm.activity);
         return deferred.promise;
 
       
@@ -126,29 +137,31 @@
 
     function _setWatchers(){
 
-        $scope.$watch('selected_category', function (newCategory,oldCategory) {
-            if (oldCategory!=newCategory && newCategory){
-                $scope.activity_sub_categories = newCategory.subcategories;
-                if (!(oldCategory) && !$scope.creating){
-                     $scope.selected_sub_category = filterFilter(newCategory.subcategories,{id:$scope.activity.sub_category})[0];
-                }
 
-            }
-            else if (!(newCategory)){
-                $scope.activity_sub_categories = [];
-                $scope.selected_sub_category   = null;
-            }
-        });
+
+        // vm.$watch('selected_category', function (newCategory,oldCategory) {
+        //     if (oldCategory!=newCategory && newCategory){
+        //         vm.activity_sub_categories = newCategory.subcategories;
+        //         if (!(oldCategory) && !vm.creating){
+        //              vm.selected_sub_category = filterFilter(newCategory.subcategories,{id:vm.activity.sub_category})[0];
+        //         }
+
+        //     }
+        //     else if (!(newCategory)){
+        //         vm.activity_sub_categories = [];
+        //         vm.selected_sub_category   = null;
+        //     }
+        // });
 
 
     }
 
     function _updateTags(){
 
-        $scope.activity.tags = [];
-        angular.forEach($scope.activity_tags,function(value,index){
+        vm.activity.tags = [];
+        angular.forEach(vm.activity_tags,function(value,index){
 
-            $scope.activity.tags.push(value.name);
+            vm.activity.tags.push(value.name);
         })
     }
 
@@ -158,10 +171,11 @@
 
 
     function _successLoadActivity(response){
-        $scope.selected_level = filterFilter($scope.activity_levels,{code:response.level})[0];
-        $scope.selected_type  = filterFilter($scope.activity_types,{code:response.type})[0];
-        $scope.selected_category = filterFilter($scope.activity_categories,{id:response.category_id})[0];
-        $scope.activity_tags = response.tags;
+        vm.selected_level = filterFilter(vm.activity_levels,{code:response.level})[0];
+        vm.selected_type  = filterFilter(vm.activity_types,{code:response.type})[0];
+        vm.selected_category = filterFilter(vm.activity_categories,{id:response.category_id})[0];
+        vm.selected_sub_category = filterFilter(vm.activity_sub_categories,{id:response.sub_category})[0];
+        vm.activity_tags = response.tags; 
     
     }
 
@@ -169,10 +183,10 @@
 
 
     function _updateSelectedValues(){
-        $scope.activity.category = $scope.selected_category.id;
-        $scope.activity.sub_category = $scope.selected_sub_category.id;
-        $scope.activity.type = $scope.selected_type.code;
-        $scope.activity.level = $scope.selected_level.code;
+        vm.activity.category = vm.selected_category.id;
+        vm.activity.sub_category = vm.selected_sub_category.id;
+        vm.activity.type = vm.selected_type.code;
+        vm.activity.level = vm.selected_level.code;
 
 
     }
@@ -180,16 +194,16 @@
 
 
     function _clearErrors(){
-        $scope.activity_create_form.$setPristine();
-        $scope.errors = null;
-        $scope.errors = {};
+        vm.activity_create_form.$setPristine();
+        vm.errors = null;
+        vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
-      $scope.errors[field] = message;
-      $scope.activity_create_form[field].$setValidity(message, false);
+      vm.errors[field] = message;
+      vm.activity_create_form[field].$setValidity(message, false);
 
     };
 
@@ -216,8 +230,8 @@
 
     function initialize(){
 
-        $scope.errors = {};
-        $scope.isCollapsed = true;
+        vm.errors = {};
+        vm.isCollapsed = true;
         _setWatchers();
 
 

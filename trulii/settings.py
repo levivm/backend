@@ -28,7 +28,7 @@ SECRET_KEY = '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-='
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = False
+DEBUG = True
 
 
 if 'DATABASE_URL' in os.environ:
@@ -39,10 +39,6 @@ if 'DATABASE_URL' in os.environ:
 
 
 
-DATABASES = {}
-DATABASES['default'] = dj_database_url.config()
-DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
-print "HEROKUUUUUUUUUUUU",DATABASES
 
 
 TEMPLATE_DEBUG = True
@@ -62,6 +58,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'storages',
+    'django_extensions',
     'rest_framework',
     'rest_framework_swagger',
     'activities',
@@ -183,19 +180,6 @@ if not DEBUG:
     from dev_settings import *
 else:
     from local_settings import *
-    # DATABASES = {}
-    # DATABASES = {
-    #     'default': {
-    #         # 'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-    #         'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-    #         'NAME': 'trulii',  # Or path to database file if using sqlite3.
-    #         # The following settings are not used with sqlite3:
-    #         'USER': 'trulii',
-    #         'PASSWORD': 'trulii',
-    #         'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-    #         'PORT': '',  # Set to empty string for default.
-    #     }
-    # }
 
 
 #DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'

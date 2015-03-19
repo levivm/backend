@@ -113,7 +113,7 @@
     .state('activties-new.general', {
       url:'',
       controller: 'ActivityGeneralController',
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })
@@ -138,7 +138,7 @@
     .state('activities-edit.general', {
       url:'', 
       controller: 'ActivityGeneralController', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/activities/dashboard_general.html',
       //templateUrl: 'modalContainer' 
     })

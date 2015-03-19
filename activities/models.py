@@ -107,7 +107,7 @@ class Activity(models.Model):
     #activities_-Contenido(Relacion) -> Para despues
     #sponsors = models.ForeignKey(Relacion)
     #pictures = models.ForeignKey(Relacion)
-    youtube_video_url = models.CharField(max_length = 200)
+    youtube_video_url = models.CharField(max_length = 200,blank=True,null=True)
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
