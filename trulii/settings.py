@@ -97,7 +97,7 @@ TEMPLATE_CONTEXT_PROCESSORS =  DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
 
 
 TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + (
-    PROJECT_PATH + '/templates/',
+    PROJECT_PATH + '/templates/', 
 )
 #TEMPLATES_PATH = os.path.join(SETTINGS_PATH, "templates")
 
@@ -113,7 +113,7 @@ ROOT_URLCONF = 'trulii.urls'
 WSGI_APPLICATION = 'trulii.wsgi.application'
 
 
-# Database
+# Database#
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 
