@@ -14,7 +14,7 @@ class PointField(serializers.Field):
         return [obj[0],obj[1]]
 
     def to_internal_value(self, data):
-        point = fromstr("POINT(%s %s)" % (data[1], data[0]))
+        #point = fromstr("POINT(%s %s)" % (data[1], data[0]))
         return point
 
 

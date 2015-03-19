@@ -33,7 +33,7 @@ DEBUG = True
 
 if 'DATABASE_URL' in os.environ:
 
-    DEBUG = True
+    DEBUG = False
 
 
 

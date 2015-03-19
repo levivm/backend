@@ -4,7 +4,6 @@ from organizers.models import Organizer,Instructor
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import F
-from django.contrib.gis.db import models as models_gis
 from locations.models import Location
 
 
