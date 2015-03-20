@@ -1,2 +1,3 @@
 *.pyc
 trulii/media/*
+trulii/staticfiles/*

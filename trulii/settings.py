@@ -192,6 +192,10 @@ AWS_S3_FILE_OVERWRITE = False
 
 
 
+STATICFILES_DIRS = (
+    os.path.join(PROJECT_PATH, "static"),
+)
+
 if not DEBUG:
     from dev_settings import *
 else:
