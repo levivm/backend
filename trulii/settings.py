@@ -221,7 +221,7 @@ MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 #STATIC_ROOT = '/static/'
-
+#
 
 
 from allauth_settings import *
