@@ -14,7 +14,12 @@
   </head>
   <body>
 
-  <ui-view>hola</ui-view>
+  <ui-view></ui-view>
+
+    <select ng-model="current_city"
+        ng-options="city as city.name for city in cities" name="city">
+        <option value="" >Seleccione..</option>
+    </select>
 
   <script type="text/ng-template" id="modalContainer">
       
