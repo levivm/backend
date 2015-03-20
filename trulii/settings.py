@@ -183,6 +183,7 @@ AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'
 AWS_SECRET_ACCESS_KEY = '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'
 AWS_QUERYSTRING_AUTH = False
 AWS_HEADERS = {
+    'Expires': 'Thu, 15 Apr 2016 20:00:00 GMT',
     'Cache-Control': str('public, max-age=15552000')
 }
 # Tell django-storages that when coming up with the URL for an item in S3 storage, keep
