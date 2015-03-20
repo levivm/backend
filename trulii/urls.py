@@ -15,7 +15,7 @@ from users.views import ResetPassword,ChangeEmailView,PasswordChange
 urlpatterns = patterns('',
     # Examples:
     url(r'^home$', 'landing.views.landing', name='home'),
-    url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
+    #url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
 
     # url(r'^blog/', include('blog.urls')),
 
