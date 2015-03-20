@@ -1,1 +1,1 @@
-web: gunicorn trulii.wsgi
+web: python manage.py collectstatic ; gunicorn trulii.wsgi
