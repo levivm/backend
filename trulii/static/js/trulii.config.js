@@ -22,7 +22,7 @@
     $locationProvider.html5Mode(true);
     $locationProvider.hashPrefix('!');
 
-    //$httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+    $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 
     // Use x-www-form-urlencoded Content-Type
