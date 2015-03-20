@@ -223,7 +223,7 @@ MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 
 #STATIC_ROOT = '/static/'
-#
+##
 
 
 from allauth_settings import *
