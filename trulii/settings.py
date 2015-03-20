@@ -220,7 +220,7 @@ import os
 STATICFILES_DIRS = (
     os.path.join(PROJECT_PATH, "static"),
 )
-
+#
 
 STATIC_URL = '/static/'
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
