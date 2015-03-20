@@ -181,10 +181,6 @@ LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
 AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
 AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'
 AWS_SECRET_ACCESS_KEY = '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'
-AWS_HEADERS = {
-    'Expires': 'Thu, 15 Apr 2016 20:00:00 GMT',
-    'Cache-Control': str('public, max-age=15552000')
-}
 # Tell django-storages that when coming up with the URL for an item in S3 storage, keep
 # it simple - just use this domain plus the path. (If this isn't set, things get complicated).
 # This controls how the `static` template tag from `staticfiles` gets expanded, if you're using it.
