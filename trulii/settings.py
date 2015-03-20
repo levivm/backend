@@ -221,8 +221,8 @@ STATIC_URL = '/staticfiles/'
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-MEDIA_ROOT  = os.path.join(BASE_DIR, 'media')
-STATIC_ROOT = os.path.join(BASE_DIR, 'trulii/staticfiles/')
+MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
+STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 #STATIC_ROOT = '/static/'
 #
 
