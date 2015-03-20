@@ -71,45 +71,7 @@
       
     </div> -->
     <div >
-      <strong>Menu:</strong>
-      <ul>
-      	{% if user.is_authenticated %}
-      	<li><a href="{% url 'account_email' %}">Change E-mail</a></li>
-      	<li><a href ui-sref="logout">Sign Out</a></li>
-      	{% else %}
-      	<li><a href="{% url 'account_login' %}">Sign In</a></li>
-      	<li><a href="{% url 'account_signup' %}">Sign Up</a></li>
 
-
-        <div ng-controller="RegisterController">
-          <a href="#" form-modal  
-                      template="/static/partials/authentication/register.html"
-                      title="Register"
-                      ok-button-text="Registarme"
-                      form-submit="register()"
-                      form-object="user"
-                      form-errors="errors"
-                      ng-init="user_type='O';">
-            Registrarse
-          </a>
-        </div>
-
-        <div ng-controller="LoginController">
-          <a href="#" form-modal  
-                      template="/static/partials/authentication/login.html"
-                      title="Login"
-                      ok-button-text="Iniciar Sesión"
-                      form-submit="login()"
-                      form-object="user"
-                      form-errors="errors"
-                      ng-click='click()'>
-            Iniciar Sesión
-          </a>
-        </div>
-
-
-      	{% endif %}
-      </ul>
     </div>
     {% block content %}
     {% endblock %}
