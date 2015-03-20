@@ -11,7 +11,7 @@ from users.views import ResetPassword,ChangeEmailView,PasswordChange
 
 
 #if settings.DEBUG :
-if True :
+if settings.DEBUG:
     urlpatterns = patterns('',
         (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
     )
