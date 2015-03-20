@@ -32,7 +32,7 @@ AWS_S3_FILE_OVERWRITE = False
 ########MEDIA##########
 
 
-
+#
 DATABASES = {}
 DATABASES['default'] = dj_database_url.config()
 
