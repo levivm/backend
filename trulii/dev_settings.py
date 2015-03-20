@@ -25,9 +25,9 @@ AWS_S3_FILE_OVERWRITE = False
 # you run `collectstatic`).
 #STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 
-STATICFILES_LOCATION = 'static'
-STATICFILES_STORAGE  = 'trulii.custom_storages.StaticRootS3BotoStorage'
-STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
+# STATICFILES_LOCATION = 'static'
+# STATICFILES_STORAGE  = 'trulii.custom_storages.StaticRootS3BotoStorage'
+# STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
 
 ########MEDIA##########
 
