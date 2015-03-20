@@ -1,1 +1,1 @@
-web: gunicorn trulii.wsgi
+web: gunicorn trulii.wsgi --log-file - 
