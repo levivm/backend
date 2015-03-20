@@ -211,7 +211,7 @@ DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
 MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 
 #STATIC_ROOT = 
-#STATIC_URL = '/static/'
+STATIC_URL = '/staticfiles/'
 
 #
 # STATICFILES_LOCATION = 'static'
@@ -219,7 +219,7 @@ MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 # STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
 
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
-#STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
+STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 #STATIC_ROOT = '/static/'
 #
 
