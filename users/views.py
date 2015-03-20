@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from organizers.models import Organizer
-from organizers.serializer import OrganizersSerializer
+from organizers.serializers import OrganizersSerializer
 from students.serializer import StudentsSerializer 
 from students.models import Student
 from utils.forms import FileUploadForm
