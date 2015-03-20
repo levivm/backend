@@ -23,7 +23,6 @@
       controller:'HomeController',
       resolve:{
 
-
         cities:getAvailbleCities
       },
       templateUrl: 'static/partials/landing/landing.html'
