@@ -7,7 +7,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Organizer
-from .serializer import OrganizersSerializer
+from .serializers import OrganizersSerializer
 
 
 
