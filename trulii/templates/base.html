@@ -4,16 +4,10 @@
 <html ng-app="trulii">
   <head>
     <base href="/">
-  <script type="text/javascript" src="{% static 'js/bower_components/jquery/dist/jquery.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/bower_components/bootstrap/dist/js/bootstrap.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/bower_components/angular/angular.js' %}"></script>
-    <script>
-        angular
-    .module('trulii',[])
-    .controller('HomeCrt',['$scope',function($scope){
+      {%include 'javascripts.html'%}
 
-      console.log("MIRAMEEEEEEEEEEEEEEEEE")
-    }]);
+    <script>
+    console.log("sadasd");
     </script>
   </head>
   <body>
