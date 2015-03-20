@@ -50,7 +50,7 @@ DEBUG = True
 
 if 'DATABASE_URL' in os.environ:
 
-    DEBUG = False
+    DEBUG = True
 
 
 
@@ -196,7 +196,8 @@ if not DEBUG:
 else:
     from local_settings import *
 
-
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config()
 
 
 
