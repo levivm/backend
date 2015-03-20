@@ -11,12 +11,8 @@ from users.views import ResetPassword,ChangeEmailView,PasswordChange
 
 
 #if settings.DEBUG :
-if settings.DEBUG:
-    urlpatterns = patterns('',
-        (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
-    )
 
-urlpatterns += patterns('',
+urlpatterns = patterns('',
     # Examples:
     url(r'^home$', 'landing.views.landing', name='home'),
     url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
@@ -59,5 +55,12 @@ urlpatterns += patterns('',
 )
 
 
+if settings.DEBUG:
+    urlpatterns += patterns('',
+        (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
+    )
+
+
 
 urlpatterns = format_suffix_patterns(urlpatterns)
+
