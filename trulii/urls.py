@@ -8,7 +8,7 @@ from django.conf import settings
 #from users.views import SignUpAjax
 from users.views import ResetPassword,ChangeEmailView,PasswordChange
 
-
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 #if settings.DEBUG :
 
@@ -56,10 +56,11 @@ urlpatterns = patterns('',
 
 
 if  not settings.DEBUG:
-    urlpatterns += patterns('',
-        (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
+    urlpatterns += staticfiles_urlpatterns()
+    #urlpatterns += patterns('',
+    #    (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
         #(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
-    )
+    #)
 
 #
 
