@@ -31,8 +31,7 @@ PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 # }
     
 
-DATABASES = {}
-DATABASES['default'] = dj_database_url.config()
+
 
 #SETTINGS_PATH = os.path.realpath(os.path.dirname(__file__))
 
@@ -179,24 +178,24 @@ LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
 
 
 
-# AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
-# AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'
-# AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
+AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'
+AWS_SECRET_ACCESS_KEY = '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'
 
 
-# # Tell django-storages that when coming up with the URL for an item in S3 storage, keep
-# # it simple - just use this domain plus the path. (If this isn't set, things get complicated).
-# # This controls how the `static` template tag from `staticfiles` gets expanded, if you're using it.
-# # We also use it in the next setting.
-# AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
-# AWS_S3_FILE_OVERWRITE = False
+# Tell django-storages that when coming up with the URL for an item in S3 storage, keep
+# it simple - just use this domain plus the path. (If this isn't set, things get complicated).
+# This controls how the `static` template tag from `staticfiles` gets expanded, if you're using it.
+# We also use it in the next setting.
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_S3_FILE_OVERWRITE = False
 
 
 
-# if not DEBUG:
-#     from dev_settings import *
-# else:
-#     from local_settings import *
+if not DEBUG:
+    from dev_settings import *
+else:
+    from local_settings import *
 
 
 
@@ -205,12 +204,12 @@ LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
 #DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 
-# MEDIAFILES_LOCATION = 'media' 
-# DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
-# MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
+MEDIAFILES_LOCATION = 'media' 
+DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
+MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 
 #STATIC_ROOT = 
-STATIC_URL = '/static/'
+#STATIC_URL = '/static/'
 
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
