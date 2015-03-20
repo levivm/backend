@@ -1,1 +1,1 @@
-web: gunicorn trulii.wsgi --log-file - 
+web: gunicorn --pythonpath app app.wsgi 
