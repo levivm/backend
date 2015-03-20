@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath trulii trulii.wsgi 
+web: python manage.py runserver  
