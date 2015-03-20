@@ -125,7 +125,7 @@
 
       var request = $http({
         method: 'post',
-        url: '/users/login/',
+        url: 'https://trulii.herokuapp.com/users/login/',
         data:_parseParam({
           login:email,
           password:password
