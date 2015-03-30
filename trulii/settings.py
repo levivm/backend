@@ -50,7 +50,7 @@ DEBUG = True
 
 if 'DATABASE_URL' in os.environ:
 
-    DEBUG = True
+    DEBUG = False
 
 
 
@@ -83,6 +83,7 @@ INSTALLED_APPS = (
     'organizers',
     'students',
     'allauth',
+    'utils',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.facebook',
@@ -191,14 +192,20 @@ AWS_S3_FILE_OVERWRITE = False
 
 
 
+
+
+
 if not DEBUG:
     from dev_settings import *
+
+
 else:
+    
     from local_settings import *
+    #STATIC_ROOT = '/static/'
 
-DATABASES = {}
-DATABASES['default'] = dj_database_url.config()
-
+# DATABASES = {}
+# DATABASES['default'] = dj_database_url.config()
 
 
 #DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
@@ -209,17 +216,22 @@ DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
 MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 
 
-import os
 
+
+
+#
 STATICFILES_DIRS = (
     os.path.join(PROJECT_PATH, "static"),
 )
-#
+
+
+STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = 'staticfiles'
+
+
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 

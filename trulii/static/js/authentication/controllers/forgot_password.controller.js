@@ -9,47 +9,78 @@
     .module('trulii.authentication.controllers')
     .controller('ForgotPasswordCtrl', ForgotPasswordCtrl);
 
-  ForgotPasswordCtrl.$inject = ['$location', '$scope', 'Authentication','$modal','$stateParams'];
+  ForgotPasswordCtrl.$inject = ['$scope','$location','$modal','$state','$stateParams','Authentication'];
 
   /**
   * @namespace ForgotPasswordCtrl
   */
-  function ForgotPasswordCtrl($location, $scope, Authentication,$modal,$stateParams) {
+  function ForgotPasswordCtrl($scope, $location,$modal,$state,$stateParams,Authentication) {
     var vm = this;
 
+    console.log("state params",$stateParams);
+    console.log("state params",$stateParams);
+    console.log("state params",$stateParams);
 
-    if ($stateParams.confirmation_key_done){
+    if ($stateParams.reset_key){
+
+      var modalInstance = $modal.open({
+        templateUrl: 'static/partials/authentication/reset_password.html',
+        controller: 'ResetPasswordCtrl',
+        controllerAs:'vm'
+      });
+
+      modalInstance.result.then(function(){
+
+      $state.go('general-message',{'module_name':'authentication',
+                                   'template_name':'change_password_success',
+                                   'redirect_state':'home'});
+
+      });
+
+    }
+    else if ($stateParams.confirmation_key_done){
 
       var modalInstance = $modal.open({
         templateUrl: 'static/partials/authentication/password_reset_key_done.html',
         controller: 'ModalInstanceCtrl',
       });
     }
+    // else{
 
-    $scope.user = {};
+    //   var modalInstance = $modal.open({
+    //     templateUrl: 'static/partials/authentication/reset_password.html',
+    //     controller: 'ResetPasswordCtrl',
+    //     controllerAs:'vm'
+    //   });
 
-    $scope.errors = {};
-    $scope.forgotPassword = forgotPassword;
+    // }
 
-    $scope.clearErrors = _clearErrors;
+    vm.user = {};
+
+    vm.errors = {};
+    vm.forgotPassword = forgotPassword;
+
+    vm.clearErrors = _clearErrors;
 
     function _clearErrors(){
-      $scope.errors = null;
-      $scope.errors = {};
+      vm.errors = null;
+      vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
 
-      $scope.errors[field] = message;
+      vm.errors[field] = message;
+      vm.forgot_password_form[field].$setValidity(message, false);
+
 
     };
 
 
-        // $scope.form[field].$setValidity('server', false)
+        // vm.form[field].$setValidity('server', false)
         // # keep the error messages from the server
-        // $scope.errors[field] = errors.join(', ')
+        // vm.errors[field] = errors.join(', ')
 
 
     function _errored(response) {
@@ -75,7 +106,7 @@
     function forgotPassword() {
       _clearErrors();
 
-     // return  Authentication.login($scope.user.login, $scope.user.password)
+     // return  Authentication.login(vm.user.login, vm.user.password)
      //          .error(_errored)
      //          .success(function(data){
 
@@ -83,8 +114,7 @@
      //            console.log(data);
      //          });
      console.log('auth');
-     console.log(Authentication);
-     return  Authentication.reset_password($scope.user.email)
+     return  Authentication.forgot_password(vm.user.email)
               .error(passwordResetErrorFn)
               .success(passwordResetFn);
     }
@@ -98,7 +128,7 @@
 
       console.log('data to store');
       console.log(data);
-      console.log($scope.user);
+      console.log(vm.user);
 
       var modalInstance = $modal.open({
         templateUrl: 'static/partials/authentication/password_reset_done.html',
@@ -106,11 +136,11 @@
         // size: size,
         // resolve: {
         //   items: function () {
-        //     return $scope.items;
+        //     return vm.items;
         //   }
         // }
       });
-      //Authentication.setAuthenticatedAccount($scope.user);
+      //Authentication.setAuthenticatedAccount(vm.user);
 
       //window.location = '/';
     }
@@ -119,7 +149,8 @@
      * @name passwordResetErrorFn
      * @desc Log "Epic failure!" to the console
      */
-    function passwordResetErrorFn(data, status, headers, config) {
+    function passwordResetErrorFn(data) {
+      console.log("errroor",data);
       _errored(data);
     }
 

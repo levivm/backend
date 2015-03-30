@@ -23,7 +23,8 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 # The user is required to hand over an e-mail address when signing up.
 ACCOUNT_EMAIL_REQUIRED = True
 
-
+#CONFIRM EMAIL SETTINGS
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
 # Determines the e-mail verification method during signup. When set to
 # "mandatory" the user is blocked from logging in until the email
@@ -31,7 +32,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 # with an unverified e-mail address. In case of "optional", the e-mail
 # verification mail is still sent, whereas in case of "none" no e-mail
 # verification mails are sent.
-# ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 
 # Subject-line prefix to use for email messages sent. By default, the name
 # of the current Site (django.contrib.sites) is used.
@@ -86,7 +87,7 @@ ACCOUNT_USERNAME_REQUIRED = False
 # Dictionary containing provider specific settings.
 # SOCIALACCOUNT_PROVIDERS
 
-
+ACCOUNT_ADAPTER = 'users.allauth_adapter.MyAccountAdapter'
 
 LOGIN_REDIRECT_URL = '/'
 SOCIALACCOUNT_QUERY_EMAIL = True

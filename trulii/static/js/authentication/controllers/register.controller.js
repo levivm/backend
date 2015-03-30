@@ -1,4 +1,4 @@
--/**
+/**
 * Register controller
 * @namespace thinkster.authentication.controllers
 */
@@ -20,63 +20,43 @@
     
 
 
-  
+  RegisterController.$inject = ['$scope','$q','Authentication','$modal','$http'];
 
 
-
-  RegisterController.$inject = ['$location', '$scope', 'Authentication','$modal','$http'];
-
-  /**
-  * @namespace RegisterController
-  */
-  function RegisterController($location, $scope, Authentication,$modal,$http) {
+  function RegisterController($scope, $q, Authentication,$modal,$http) {
     var vm = this;
 
     
-    //vm.user = {};
-    console.log('calling the controller');
 
-    $scope.set_usertype = function function_name(user_type) {
-      $scope.user_type = user_type;
+    vm.set_usertype = function function_name(user_type) {
+      vm.user_type = user_type;
     }
 
-    $scope.user = {};
-    $scope.errors = {};
-    $scope.user.user_type = $scope.user_type;
-    
-    $scope.$watch("user_type", function(){
-      $scope.user.user_type = $scope.user_type;
-    });
+    vm.user   = {};
+    vm.errors = {};
 
-    $scope.register = register;
-    //vm.register = register;
+    vm.register = register;
 
 
 
     function _clearErrors(){
-      $scope.errors = null;
-      $scope.errors = {};
+      vm.errors = null;
+      vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
 
-      $scope.errors[field] = message;
+      vm.errors[field] = message;
 
     };
 
 
-        // $scope.form[field].$setValidity('server', false)
-        // # keep the error messages from the server
-        // $scope.errors[field] = errors.join(', ')
+    function _errored(data) {
+      if (data['form_errors']) {
 
-
-    function _errored(response) {
-
-      if (response['form_errors']) {
-
-        angular.forEach(response['form_errors'], function(errors, field) {
+        angular.forEach(data['form_errors'], function(errors, field) {
 
           _addError(field, errors[0]);
 
@@ -85,31 +65,30 @@
       }
     }
 
-    /**
-    * @name register
-    * @desc Register a new user
-    * @memberOf thinkster.authentication.controllers.RegisterController
-    */
+
     function register() {
       _clearErrors();
-      return Authentication.register($scope.user.email, $scope.user.password1,
-                                     $scope.user.first_name, $scope.user.last_name,
-                                     $scope.user.user_type)
-            .error(_errored)
-            .success(function(data){
+      vm.user.user_type = vm.user_type;
+      return Authentication.register(vm.user.email, vm.user.password1,
+                                     vm.user.first_name, vm.user.last_name,
+                                     vm.user.user_type)
+            .then(function(response){
 
               console.log("success");
-              console.log(data);
-            });
+              console.log(response);
+              //HERE SHOULD HSHOW A POP UP
+
+            },_registerError);
+
+    }
+
+    function _registerError(response){
+      _errored(response.data);
+      return $q.reject(response);
+
     }
   }
 
-
-
-
-
-
-  //serverError.$inject = [''];
 
   function serverError(){
     return {

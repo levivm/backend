@@ -1,30 +1,33 @@
-      <select ng-model="current_city"
-          ng-options="city as city.name for city in cities" name="city" ng-change="setCurrentCity(current_city)">
+      <select ng-model="vm.current_city"
+          ng-options="city as city.name for city in vm.cities" name="city" ng-change="vm.setCurrentCity(current_city)">
           
       </select>
 
-      <div ng-controller="RegisterController">
-        <a href="#" form-modal  
-                    template="/static/partials/authentication/register.html"
-                    title="Register"
-                    ok-button-text="Registarme"
-                    form-submit="register()"
-                    form-object="user"
-                    form-errors="errors"
-                    ng-init="user_type='O';">
-          Registrarse
-        </a>
+      <div ng-show="!vm.isUserAuthenticated">
+        <div ng-controller="RegisterController as vm">
+          <a href="#" form-modal  
+                      template="static/partials/authentication/register.html"
+                      title="Register"
+                      ok-button-text="Registarme"
+                      form-submit="vm.register()"
+                      form-object="vm.user"
+                      form-errors="vm.errors"
+                      ng-init="vm.user_type='O';">
+            Registrarse
+          </a>
+        </div>
+
+        <div ng-controller="LoginController as vm">
+          <a href="#" form-modal  
+                      template="static/partials/authentication/login.html"
+                      title="Login"
+                      ok-button-text="Iniciar Sesión"
+                      form-submit="vm.login()"
+                      form-object="vm.user"
+                      form-errors="vm.errors"
+                      ng-click='click()'>
+            Iniciar Sesión
+          </a>
+        </div>
       </div>
 
-      <div ng-controller="LoginController">
-        <a href="#" form-modal  
-                    template="/static/partials/authentication/login.html"
-                    title="Login"
-                    ok-button-text="Iniciar Sesión"
-                    form-submit="login()"
-                    form-object="user"
-                    form-errors="errors"
-                    ng-click='click()'>
-          Iniciar Sesión
-        </a>
-      </div>

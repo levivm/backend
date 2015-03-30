@@ -10,21 +10,23 @@
     .module('trulii.landing.controllers')
     .controller('HomeController', HomeController);
 
-  HomeController.$inject = ['$scope','$cookies','LocationManager','cities'];
+  HomeController.$inject = ['$scope','$cookies','LocationManager','cities','authenticatedUser'];
   /**
   * @namespace RegisterController
   */
-  function HomeController($scope,$cookies,LocationManager,cities) {
+  function HomeController($scope,$cookies,LocationManager,cities,authenticatedUser) {
 
 
+    var vm = this;
     //console.log('CITIES',LocationManager.availableCities);
-    $scope.cities = cities;
+    vm.cities = cities;
+
 
     activate();
+    vm.isUserAuthenticated = authenticatedUser != undefined ? true:false;
 
-    $scope.setCurrentCity = _setCurrentCity; 
+    vm.setCurrentCity = _setCurrentCity; 
 
-    
 
 
 
@@ -38,8 +40,8 @@
     function activate(){
 
 
-      $scope.current_city = LocationManager.getCurrentCity();
-      console.log("ZZZZZ",$scope.current_city);
+      vm.current_city = LocationManager.getCurrentCity();
+      console.log("ZZZZZ",vm.current_city);
 
     }
 

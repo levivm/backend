@@ -1,14 +1,9 @@
 import dj_database_url
 import os
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = (
- os.path.join(PROJECT_PATH, 'static') ,
-)
-
-
+#STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 
 
 # DATABASES = {}

@@ -67,12 +67,13 @@
 
               var result = scope.formSubmit();
               
-
+              console.log("123123123123123123213213",result);
 
               if (angular.isObject(result)) {
-                result.success(function() {
+                result.then(function(res) {
+                  console.log("TODOOOOO BIENNN",result);
                   $element.modal('hide');
-                }).error(function(){
+                },function(){
                   angular.forEach(scope.formErrors, function(errors, field) {
 
                     if (field!='__all__')

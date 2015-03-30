@@ -1,6 +1,8 @@
 from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,PasswordChangeView,LoginView,EmailView
+from allauth.account.views import SignupView,PasswordResetView,_ajax_response,\
+                                  PasswordChangeView,LoginView,EmailView,ConfirmEmailView
 # Create your views here.
+from allauth.account.models import EmailConfirmation
 import json
 from utils.form_utils import ajax_response
 from django.http import HttpResponse
@@ -19,6 +21,7 @@ from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from .serializers import UserProfilesSerializer
+from django.shortcuts import get_object_or_404
 
 
 
@@ -108,6 +111,13 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
+
+
+
+
+
+
+
 class PhotoUploadView(APIView):
     parser_classes = (FileUploadParser,)
 
@@ -120,8 +130,6 @@ class PhotoUploadView(APIView):
         data     = None
         photo    = None
 
-
-        print "HOLAAAAAAAAAAAAAAAAAa"
 
         file_form = FileUploadForm(request.POST,request.FILES)
         if file_form.is_valid():
@@ -141,6 +149,8 @@ class PhotoUploadView(APIView):
             data    = StudentsSerializer(profile).data
 
         return Response(data)
+
+
 
 
 
@@ -199,18 +209,18 @@ class PasswordChange(PasswordChangeView):
 
 
 
-class ResetPassword(PasswordResetView):
+# class ResetPassword(PasswordResetView):
 
 
 
-    def post(self, request, *args, **kwargs):
+#     def post(self, request, *args, **kwargs):
 
-        _super_response =  super(ResetPassword, self)
+#         _super_response =  super(ResetPassword, self)
         
         
         
-        response,form = _set_ajax_response(_super_response)
-        return _ajax_response(request, response, form=form)
+#         response,form = _set_ajax_response(_super_response)
+#         return _ajax_response(request, response, form=form)
 
         # #super(ResetPassword, self).post(request, *args, **kwargs)
         # print s.__attr__

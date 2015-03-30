@@ -23,7 +23,7 @@
 
 
     var cache_organizer = Authentication.getAuthenticatedAccount();
-    console.log(cache_organizer);
+    
     vm.organizer    = new Organizer(cache_organizer);
 
 

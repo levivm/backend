@@ -10,21 +10,29 @@
     .module('trulii.utils.controllers')
     .controller('SimpleModalMsgCtrl', SimpleModalMsgCtrl);
 
-  SimpleModalMsgCtrl.$inject = ['$scope','$modal','$http','$stateParams'];
+  SimpleModalMsgCtrl.$inject = ['$scope','$modal','$http','$stateParams','$state'];
   /**
   * @namespace RegisterController
   */
-  function SimpleModalMsgCtrl($scope,$modal,$http,$stateParams) {
+  function SimpleModalMsgCtrl($scope,$modal,$http,$stateParams,$state) {
 
 
-  	var template_name = $stateParams.template_name;
-  	var module_name   = $stateParams.module_name;
+  	var template_name  = $stateParams.template_name;
+  	var module_name    = $stateParams.module_name;
+  	
 
 
 	var modalInstance = $modal.open({
 	    templateUrl: 'static/partials/'+module_name+'/messages/'+template_name+'.html',
 	    controller: 'ModalInstanceCtrl',
 	});
+
+	modalInstance.result.then(function(){
+
+		var redirect_state = $stateParams.redirect_state;
+		if(redirect_state)
+			$state.go(redirect_state);
+	})
 
   };
 
@@ -42,5 +50,25 @@
 			$modalInstance.dismiss();
 		};
 	});
+
+
+  angular
+    .module('trulii.utils.controllers')
+    .controller('DialogModalCtrl', DialogModalCtrl);
+
+  DialogModalCtrl.$inject = ['$scope','$modal','$http','$stateParams','$state'];
+  /**
+  * @namespace RegisterController
+  */
+  function DialogModalCtrl($scope,$modal,$http,$stateParams,$state) {
+  	
+
+
+	var modalInstance = $modal.open({
+	    templateUrl:'static/partials/utils/base_dialog_modal.html',
+	    controller: 'ModalInstanceCtrl',
+	});
+
+  };
 
   })();

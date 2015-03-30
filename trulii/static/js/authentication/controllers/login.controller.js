@@ -9,50 +9,46 @@
     .module('trulii.authentication.controllers')
     .controller('LoginController', LoginController);
 
-  LoginController.$inject = ['$location', '$scope', 'Authentication'];
+  LoginController.$inject = ['$scope', '$location', '$state','$q','Authentication'];
 
   /**
   * @namespace LoginController
   */
-  function LoginController($location, $scope, Authentication) {
+  function LoginController($scope, $location, $state, $q, Authentication) {
     var vm = this;
 
-    $scope.user = {};
+    vm.user = {};
 
 
-    $scope.errors = {};
-    $scope.login = login;
-    $scope.is_new = true;
+    vm.errors = {};
+    vm.login = login;
+    vm.is_new = true;
 
 
 
-    $scope.clearErrors = _clearErrors;
+    vm.clearErrors = _clearErrors;
 
     function _clearErrors(){
-      $scope.errors = null;
-      $scope.errors = {};
+      vm.errors = null;
+      vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
 
-      $scope.errors[field] = message;
+      vm.errors[field] = message;
 
     };
 
 
-        // $scope.form[field].$setValidity('server', false)
-        // # keep the error messages from the server
-        // $scope.errors[field] = errors.join(', ')
 
 
-    function _errored(response) {
+    function _errored(data) {
 
+      if (data['form_errors']) {
 
-      if (response['form_errors']) {
-
-        angular.forEach(response['form_errors'], function(errors, field) {
+        angular.forEach(data['form_errors'], function(errors, field) {
 
           _addError(field, errors[0]);
 
@@ -71,9 +67,10 @@
     function login() {
       _clearErrors();
 
-     return  Authentication.login($scope.user.login, $scope.user.password)
-              .error(loginErrorFn)
-              .success(loginSuccessFn);
+     return  Authentication.login(vm.user.login, vm.user.password)
+              .then(_loginSuccess,_loginError)
+              //.error(loginErrorFn)
+              //.success(loginSuccessFn);
     }
 
 
@@ -81,11 +78,10 @@
      * @name loginSuccessFn
      * @desc Set the authenticated account and redirect to index
      */
-    function loginSuccessFn(data, status, headers, config) {
+    function _loginSuccess(response) {
 
-      Authentication.updateAuthenticatedAccount();
-      
-      $location.path('/');
+      //Authentication.updateAuthenticatedAccount();
+      $state.reload();
       //window.location = '/';
     }
 
@@ -93,8 +89,9 @@
      * @name loginErrorFn
      * @desc Log "Epic failure!" to the console
      */
-    function loginErrorFn(data, status, headers, config) {
-      _errored(data);
+    function _loginError(response) {
+      _errored(response.data);
+      return $q.reject(response);
 
     }
 

@@ -1,5 +1,5 @@
 import dj_database_url
-
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ################AMAZON S3 STORAGE ##########################
 
 
@@ -17,6 +17,8 @@ AWS_S3_FILE_OVERWRITE = False
 
 
 ###STATIC#####
+
+
 
 # This is used by the `static` template tag from `static`, if you're using that. Or if anything else
 # refers directly to STATIC_URL. So it's safest to always set it.

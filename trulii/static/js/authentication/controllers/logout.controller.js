@@ -14,7 +14,7 @@
   
   function LogOutController($location, $scope,$state,Authentication) {
     
-    Authentication.logout().success(_successLogout);
+    Authentication.logout().then(_successLogout);
 
     function _successLogout(){
 

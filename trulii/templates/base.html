@@ -13,11 +13,15 @@
   <body>
 
   <ui-view></ui-view>
+  {% block content %}
+  {% endblock %}
 
 
   <script type="text/ng-template" id="modalContainer">
-      
+  
   </script>
+
+  
   {%include 'javascripts.html'%}
 
   </body>

@@ -21,38 +21,85 @@
     .state("home",{
       url:"/",
       controller:'HomeController',
+      controllerAs: 'vm',
       resolve:{
 
-        cities:getAvailbleCities
+        cities:getAvailbleCities,
+
+        authenticatedUser:getAuthenticatedUser
       },
       templateUrl: 'static/partials/landing/landing.html'
     })
     .state("register", {
       url:'register',
       controller: 'RegisterController', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       templateUrl: 'static/partials/authentication/register.html'
     })
     .state("logout",{
       url:'/logout/',
       controller: 'LogOutController'
     })
-    .state('confirm-email', {
-      url:'/confirm-email/:confirmation_key',
+    .state('email-confirm', {
+      url:'/email/confirm/:status/',
       controller: 'EmailConfirmCtrl', 
-      //controllerAs: 'vm',
+      controllerAs: 'vm',
       //templateUrl: 'static/partials/email_confirm.html' url(r"
       templateUrl: 'modalContainer' 
     })
-    .state('password-reset', {
-      url:'/password/reset/',
-      //ontroller: 'ForgotPasswordCtrl', 
+    .state('modal-dialog', {
+      url:'/m/',
+      controller: 'DialogModalCtrl', 
+      // onEnter: function($stateParams, $state, $modal) {
+
+
+      //     var modalInstance = $modal.open({
+      //       templateUrl: 'static/partials/utils/base_dialog_modal.html',
+      //       controller: 'ModalInstanceCtrl',
+      //     });
+
+      // } 
+      //templateUrl:'myModalContent.html'
+      // views:{
+      //   'modal':{
+      //     templateUrl:'myModalContent.html'
+      //   }
+        
+      // }
       //controllerAs: 'vm',
       //templateUrl: 'static/partials/email_confirm.html' url(r"
-      templateUrl: 'modalContainer' 
+      //templateUrl: 'modalContainer' 
+      //templateUrl: 'static/partials/utils/base_dialog_modal.html' 
     })
+    .state('modal-dialog.password-forgot', {
+      url:'password/forgot/',
+      controller: 'ForgotPasswordCtrl', 
+      controllerAs: 'vm',
+      parent: 'modal-dialog',
+      views:{
+        'modal@':{
+          templateUrl: '/static/partials/authentication/forgot_password.html'
+        }
+        
+      }
+      //templateUrl: '/static/partials/authentication/forgot_password.html'
+    })
+    // .state('password-reset', {
+    //   url:'/password/reset/',
+    //   controller: 'ForgotPasswordCtrl', 
+    //   //controllerAs: 'vm',
+    //   //templateUrl: 'static/partials/email_confirm.html' url(r"
+    //   templateUrl: 'modalContainer' 
+    // })
+    // .state('password-reset-key', {
+    //   url:'/password/reset/key/:reset_key/',
+    //   controller: 'ForgotPasswordCtrl',
+    //   //controllerAs: 'vm',
+    //   //templateUrl: 'static/partials/email_confirm.html' url(r"
+    //   templateUrl: 'modalContainer' 
+    // })
     .state('general-message', {
-      url:'/messages/:module_name/:template_name/',
+      url:'/messages/:module_name/:template_name/?redirect_state',
       controller: 'SimpleModalMsgCtrl', 
       //controllerAs: 'vm',
       //templateUrl: 'static/partials/email_confirm.html' url(r"
@@ -65,6 +112,10 @@
       controller: 'OrganizerDashboardCtrl', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard.html',
+      // resolve:{
+
+      //   organizer : 
+      // },
       data: {
 
         requiredAuthentication : true
@@ -87,7 +138,7 @@
     })
     .state('organizer-dashboard.activities', {
       url:'',
-      controller: 'OrganizerAccountCtrl', 
+      //controller: 'OrganizerAccountCtrl', 
       //controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard_activities.html',
       //templateUrl: 'modalContainer' 
@@ -205,9 +256,19 @@
   }
 
 
+  /****** RESOLVER FUNCTIONS USERS *******/
+
+  getAuthenticatedUser.$inject = ['Authentication'];
+
+  function getAuthenticatedUser(Authentication){
+
+    var authenticatedUser =  Authentication.getAuthenticatedAccount();
+    return authenticatedUser
+
+  }  
 
 
-  /****** RESOLVER FUNCTIONS *******/
+  /****** RESOLVER FUNCTIONS ACTIVITIES *******/
 
 
   getAvailbleCities.$inject = ['$stateParams','$q','LocationManager'];
@@ -230,10 +291,6 @@
   function getCalendar($stateParams, CalendarsManager, activity){
 
     var calendar_id = $stateParams.id;
-    
-    //console.log("Calendar id",CalendarsManager.getCalendar(calendar_id));
-    console.log("Calendar id",$stateParams);
-    //var calendar = 
     return CalendarsManager.getCalendar(calendar_id);
   }
 

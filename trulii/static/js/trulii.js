@@ -6,6 +6,7 @@
 	angular
 	.module('trulii', [
 	  'ui.bootstrap',
+	  'LocalStorageModule',
 	  'trulii.config',
 	  'trulii.routes',
 	  'trulii.authentication',
@@ -53,16 +54,16 @@
 
 
 
-	    $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue,oldValue) {
-	    	if ($cookies.authenticatedAccount == null){
-	    		if (newValue!=oldValue){  
-		    		Authentication.logout();
-		    		console.log('aqui hago logout');
+	    // $rootScope.$watch(function() { return $cookies.authenticatedAccount	;}, function(newValue,oldValue) {
+	    // 	if ($cookies.authenticatedAccount == null){
+	    // 		if (newValue!=oldValue){  
+		   //  		Authentication.logout();
+		   //  		console.log('aqui hago logout');
 
-	    		}
+	    // 		}
 
-	    	}
-	    });
+	    // 	}
+	    // });
 
 	  $http.defaults.xsrfHeaderName = 'X-CSRFToken';
 	  $http.defaults.xsrfCookieName = 'csrftoken';

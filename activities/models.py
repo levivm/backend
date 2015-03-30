@@ -8,7 +8,6 @@ from locations.models import Location
 
 
 
-
 # Create your models here.
 
 class Category(models.Model):

@@ -1,12 +1,12 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
-
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.urlpatterns import format_suffix_patterns
 from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax
-from users.views import ResetPassword,ChangeEmailView,PasswordChange
+from users.views import ChangeEmailView,PasswordChange
 
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
@@ -24,10 +24,10 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/email/', ChangeEmailView.as_view()),
-    url(r'^users/password/change/', PasswordChange.as_view()),
-    url(r'^password/reset/', ResetPassword.as_view()),
+    #url(r'^users/password/change/', PasswordChange.as_view()),
+    #url(r'^password/reset/', ResetPassword.as_view()),
+    url(r'^users/', include('allauth.urls')),
     url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
- 	url(r'^users/', include('allauth.urls')),
     url(r'^api/users/', include('users.urls')),
     url(r'^api/organizers/', include('organizers.urls')),
     url(r'^api/activities/', include('activities.urls')),
@@ -50,7 +50,7 @@ urlpatterns = patterns('',
  #    ## create the view for the instructor
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
 
-    url(r'^.*$', 'landing.views.landing', name='home'),
+url(r'^.*$', 'landing.views.landing', name='home'),
 
 )
 
@@ -64,6 +64,7 @@ if  not settings.DEBUG:
 
 #
 
+urlpatterns += staticfiles_urlpatterns()
 
 urlpatterns = format_suffix_patterns(urlpatterns)
 

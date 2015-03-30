@@ -17,22 +17,23 @@
   function OrganizerAccountCtrl($scope,$modal,$http,$location,$timeout,Authentication,Organizer) {
 
 
+    var vm = this;
     activate();
 
     var cache_organizer = Authentication.getAuthenticatedAccount();
-    $scope.organizer    = new Organizer(cache_organizer);
+    vm.organizer    = new Organizer(cache_organizer);
 
-    $scope.errors = {};
-    $scope.password_data = {};
+    vm.errors = {};
+    vm.password_data = {};
     
     
 
-    $scope.isCollapsed  = true;
+    vm.isCollapsed  = true;
 
     //submit callbacks
-    $scope.changeEmail    =  _changeEmail;
+    vm.changeEmail    =  _changeEmail;
 
-    $scope.changePassword =  _changePassword;
+    vm.changePassword =  _changePassword;
     
     
 
@@ -41,8 +42,8 @@
     //Private functions
 
     function _changeEmail() {
-      _clearErrors($scope.account_form_email);
-      $scope.organizer.change_email()
+      _clearErrors(vm.account_form_email);
+      vm.organizer.change_email()
         .success(_changeSuccess)
         .error(_changeFail);
 
@@ -51,8 +52,8 @@
 
 
     function _changePassword() {
-      _clearErrors($scope.account_form_password);
-      $scope.organizer.change_password($scope.password_data)
+      _clearErrors(vm.account_form_password);
+      vm.organizer.change_password(vm.password_data)
         .success(_changePasswordSuccess)
         .error(_changeFail);
       
@@ -91,28 +92,28 @@
 
     function _clearErrors(form){
       form.$setPristine();
-      $scope.errors = null;
-      $scope.errors = {};
+      vm.errors = null;
+      vm.errors = {};
     }
 
 
 
     function _addError(field, message) {
 
-      $scope.errors[field] = message;
-      if (field in $scope.account_form_email)
-        $scope.account_form_email[field].$setValidity(message, false);
+      vm.errors[field] = message;
+      if (field in vm.account_form_email)
+        vm.account_form_email[field].$setValidity(message, false);
 
-      if (field in $scope.account_form_password)
-        $scope.account_form_password[field].$setValidity(message, false);
+      if (field in vm.account_form_password)
+        vm.account_form_password[field].$setValidity(message, false);
 
     };
 
 
     function _toggleMessage(){
-      $scope.isCollapsed  = false;
+      vm.isCollapsed  = false;
       var timer = $timeout(function() {
-         $scope.isCollapsed = true;
+         vm.isCollapsed = true;
       }, 1000);
     }
 

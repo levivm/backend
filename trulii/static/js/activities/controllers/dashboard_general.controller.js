@@ -113,7 +113,6 @@
 
         //var data = data;
         var categories = new Categories(data.categories);
-        console.log("CSUBBBSSS",data.subcategories);
         vm.activity_categories = categories;
         vm.activity_sub_categories = data.subcategories;
         vm.activity_types  = data.types;
@@ -135,26 +134,6 @@
       
     }
 
-    function _setWatchers(){
-
-
-
-        // vm.$watch('selected_category', function (newCategory,oldCategory) {
-        //     if (oldCategory!=newCategory && newCategory){
-        //         vm.activity_sub_categories = newCategory.subcategories;
-        //         if (!(oldCategory) && !vm.creating){
-        //              vm.selected_sub_category = filterFilter(newCategory.subcategories,{id:vm.activity.sub_category})[0];
-        //         }
-
-        //     }
-        //     else if (!(newCategory)){
-        //         vm.activity_sub_categories = [];
-        //         vm.selected_sub_category   = null;
-        //     }
-        // });
-
-
-    }
 
     function _updateTags(){
 
@@ -232,7 +211,7 @@
 
         vm.errors = {};
         vm.isCollapsed = true;
-        _setWatchers();
+        
 
 
     }

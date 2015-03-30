@@ -4,41 +4,36 @@
 {% load i18n %}
 {% load account %}
 
-{% block head_title %}{% trans "Confirm E-mail Address" %}{% endblock %}
 
 
 {% block content %}
-<h1>{% trans "Confirm E-mail Address" %}</h1>
 
-{% if confirmation %}
+
+	<!-- If reached this page, is because token is wrong, redirect to email confirmation error modal -->
+	<script type="text/javascript">
+		
+
+		window.location = "/email/confirm/error/";
+		
+	</script>
+
+<!-- {% if confirmation %}
 
 {% user_display confirmation.email_address.user as user_display %}
         
-<p>{% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{email}}">{{ email }}</a> is an e-mail address for user {{ user_display }}.{% endblocktrans %}</p>
 
 <script type="text/javascript">
 	
 
-	window.location = "/confirm-email/{{confirmation.key}}";
+	//window.location = "/confirm-email/{{confirmation.key}}/";
+	//window.location = "/messages/authentication/email_confirmation_success/";
 	
 </script>
-
-<form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-{% csrf_token %}
-    <button type="submit">{% trans 'Confirm' %}</button>
-</form>
 
 {% else %}
 
 
-	<script type="text/javascript">
-		
 
-		window.location = "/messages/authentication/email_confirmation_error";
-		
-	</script>
-
-
-{% endif %}
+{% endif %} -->
 
 {% endblock %}
