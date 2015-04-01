@@ -3,7 +3,12 @@
           
       </select>
 
-      <div ng-show="!vm.isUserAuthenticated">
+      <br/>
+      <a ui-sref="register">Register</a>
+      <br/>
+      <a ui-sref="login">Iniciar sesión</a>
+
+<!--       <div ng-show="!vm.isUserAuthenticated">
         <div ng-controller="RegisterController as vm">
           <a href="#" form-modal  
                       template="static/partials/authentication/register.html"
@@ -15,9 +20,10 @@
                       ng-init="vm.user_type='O';">
             Registrarse
           </a>
-        </div>
-
-        <div ng-controller="LoginController as vm">
+        </div> 
+      </div> -->
+      <!-- <a ui-sref="modal-dialog.login">Iniciar sesión</a> -->
+<!--         <div ng-controller="LoginController as vm">
           <a href="#" form-modal  
                       template="static/partials/authentication/login.html"
                       title="Login"
@@ -28,6 +34,6 @@
                       ng-click='click()'>
             Iniciar Sesión
           </a>
-        </div>
-      </div>
+        </div> 
+      </div>-->
 

@@ -21,7 +21,7 @@
     //console.log('CITIES',LocationManager.availableCities);
     vm.cities = cities;
 
-
+    console.log("HEREEEEEE");
     activate();
     vm.isUserAuthenticated = authenticatedUser != undefined ? true:false;
 

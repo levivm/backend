@@ -71,12 +71,38 @@
                   scope.setData(organizerData);
               });
           },
-          update: function() {
+          update_video: function(){
+
+            var scope = this;
+            var video_data = {'youtube_video_url':scope.youtube_video_url};
+            return scope.update(video_data)
+
+          },
+          update_profile: function(){
+
+            var scope = this;
+            var profile_data = {'name':scope.name,'bio':scope.bio};
+            return scope.update(profile_data)
+
+          },
+          update: function(data) {
+            var scope = this;
             return $http({
               method: 'put',
               url:'/api/organizers/' + this.id,
-              data: this,
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+              data: data,
+              //headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            }).then(function(response){
+
+              Authentication.setAuthenticatedAccount(response.data);
+              scope.setData(response.data);
+              return response.data;
+
+            },function(response){
+
+
+              return $q.reject(response);
+
             });
 
             //$http.put('/api/organizers/' + this.id, this);
@@ -89,19 +115,25 @@
                 'email':this.user.email,
                 'action_add':true,
               },
+            }).then(function(response){
+
+              Authentication.setAuthenticatedAccount(response.data);
+              scope.setData(response.data);
+              return response.data;
+
+            },function(response){
+
+
+              return $q.reject(response);
+
             });
+            ;
 
             //$http.put('/api/organizers/' + this.id, this);
           },
           change_password: function(password_data) {
-            console.log(password_data);
-            console.log('--------');
-            return $http({
-              method: 'post',
-              url:'/users/password/change/',
-              data: password_data,
-            });
 
+            return Authentication.change_password(password_data)
             //$http.put('/api/organizers/' + this.id, this);
           },
       };

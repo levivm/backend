@@ -20,10 +20,10 @@
     
 
 
-  RegisterController.$inject = ['$scope','$q','Authentication','$modal','$http'];
+  RegisterController.$inject = ['$scope','$q','Authentication','$modal','$http','$state'];
 
 
-  function RegisterController($scope, $q, Authentication,$modal,$http) {
+  function RegisterController($scope, $q, Authentication,$modal,$http,$state) {
     var vm = this;
 
     
@@ -32,7 +32,7 @@
       vm.user_type = user_type;
     }
 
-    vm.user   = {};
+    vm.auth   = {};
     vm.errors = {};
 
     vm.register = register;
@@ -49,6 +49,7 @@
     function _addError(field, message) {
 
       vm.errors[field] = message;
+      vm.signup_form[field].$setValidity(message, false);
 
     };
 
@@ -68,14 +69,16 @@
 
     function register() {
       _clearErrors();
-      vm.user.user_type = vm.user_type;
-      return Authentication.register(vm.user.email, vm.user.password1,
-                                     vm.user.first_name, vm.user.last_name,
-                                     vm.user.user_type)
+      vm.auth.user_type = vm.user_type;
+      console.log("user user_type",vm.user_type);
+      return Authentication.register(vm.auth.email, vm.auth.password1,
+                                     vm.auth.first_name, vm.auth.last_name,
+                                     vm.auth.user_type)
             .then(function(response){
 
               console.log("success");
               console.log(response);
+              $state.go("login");
               //HERE SHOULD HSHOW A POP UP
 
             },_registerError);

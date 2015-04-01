@@ -102,8 +102,6 @@ class UsersViewSet(viewsets.ModelViewSet):
             data    = StudentsSerializer(profile).data
 
 
-
-
         # ...
         # do some staff with uploaded file
         # ...

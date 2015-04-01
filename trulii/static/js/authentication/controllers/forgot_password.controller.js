@@ -9,42 +9,41 @@
     .module('trulii.authentication.controllers')
     .controller('ForgotPasswordCtrl', ForgotPasswordCtrl);
 
-  ForgotPasswordCtrl.$inject = ['$scope','$location','$modal','$state','$stateParams','Authentication'];
+  ForgotPasswordCtrl.$inject = ['$scope','$location','$modalStack','$modal','$state','$stateParams','Authentication'];
 
   /**
   * @namespace ForgotPasswordCtrl
   */
-  function ForgotPasswordCtrl($scope, $location,$modal,$state,$stateParams,Authentication) {
+  function ForgotPasswordCtrl($scope, $location,$modalStack,$modal,$state,$stateParams,Authentication) {
     var vm = this;
 
-    console.log("state params",$stateParams);
-    console.log("state params",$stateParams);
-    console.log("state params",$stateParams);
 
-    if ($stateParams.reset_key){
+    // console.log("parent controller",$scope.$parent);
+    // if ($stateParams.reset_key){
 
-      var modalInstance = $modal.open({
-        templateUrl: 'static/partials/authentication/reset_password.html',
-        controller: 'ResetPasswordCtrl',
-        controllerAs:'vm'
-      });
+    //   var modalInstance = $modal.open({
+    //     templateUrl: 'static/partials/authentication/reset_password.html',
+    //     controller: 'ResetPasswordCtrl',
+    //     controllerAs:'vm'
+    //   });
 
-      modalInstance.result.then(function(){
+    //   modalInstance.result.then(function(){
 
-      $state.go('general-message',{'module_name':'authentication',
-                                   'template_name':'change_password_success',
-                                   'redirect_state':'home'});
+      
+    //   $state.go('general-message',{'module_name':'authentication',
+    //                                'template_name':'change_password_success',
+    //                                'redirect_state':'home'});
 
-      });
+    //   });
 
-    }
-    else if ($stateParams.confirmation_key_done){
+    // }
+    // else if ($stateParams.confirmation_key_done){
 
-      var modalInstance = $modal.open({
-        templateUrl: 'static/partials/authentication/password_reset_key_done.html',
-        controller: 'ModalInstanceCtrl',
-      });
-    }
+    //   var modalInstance = $modal.open({
+    //     templateUrl: 'static/partials/authentication/password_reset_key_done.html',
+    //     controller: 'ModalInstanceCtrl',
+    //   });
+    // }
     // else{
 
     //   var modalInstance = $modal.open({
@@ -55,7 +54,6 @@
 
     // }
 
-    vm.user = {};
 
     vm.errors = {};
     vm.forgotPassword = forgotPassword;
@@ -78,9 +76,6 @@
     };
 
 
-        // vm.form[field].$setValidity('server', false)
-        // # keep the error messages from the server
-        // vm.errors[field] = errors.join(', ')
 
 
     function _errored(response) {
@@ -98,48 +93,23 @@
     }
 
 
-    /**
-    * @name login
-    * @desc Log the user in
-    * @memberOf thinkster.authentication.controllers.LoginController
-    */
     function forgotPassword() {
       _clearErrors();
 
-     // return  Authentication.login(vm.user.login, vm.user.password)
-     //          .error(_errored)
-     //          .success(function(data){
-
-     //            console.log("success");
-     //            console.log(data);
-     //          });
-     console.log('auth');
-     return  Authentication.forgot_password(vm.user.email)
+     return  Authentication.forgot_password(vm.email)
               .error(passwordResetErrorFn)
               .success(passwordResetFn);
     }
 
 
-    /**
-     * @name passwordResetFn
-     * @desc Set the authenticated account and redirect to index
-     */
     function passwordResetFn(data, status, headers, config) {
 
-      console.log('data to store');
-      console.log(data);
-      console.log(vm.user);
+    
 
-      var modalInstance = $modal.open({
-        templateUrl: 'static/partials/authentication/password_reset_done.html',
-        controller: 'ModalInstanceCtrl',
-        // size: size,
-        // resolve: {
-        //   items: function () {
-        //     return vm.items;
-        //   }
-        // }
-      });
+     $state.go('general-message',{'module_name':'authentication',
+                                   'template_name':'password_reset_done',
+                                   'redirect_state':'home'});
+
       //Authentication.setAuthenticatedAccount(vm.user);
 
       //window.location = '/';

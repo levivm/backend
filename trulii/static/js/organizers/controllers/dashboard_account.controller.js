@@ -10,18 +10,20 @@
     .module('trulii.organizers.controllers')
     .controller('OrganizerAccountCtrl', OrganizerAccountCtrl);
 
-  OrganizerAccountCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','Organizer'];
+  OrganizerAccountCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','$state','Authentication','Organizer','organizer'];
   /**
   * @namespace RegisterController
   */
-  function OrganizerAccountCtrl($scope,$modal,$http,$location,$timeout,Authentication,Organizer) {
+  function OrganizerAccountCtrl($scope,$modal,$http,$location,$timeout,$state,Authentication,Organizer,organizer) {
 
 
     var vm = this;
     activate();
 
-    var cache_organizer = Authentication.getAuthenticatedAccount();
-    vm.organizer    = new Organizer(cache_organizer);
+    //console.log("111111");
+    //var cache_organizer = Authentication.getAuthenticatedAccount();
+    
+    vm.organizer    = organizer
 
     vm.errors = {};
     vm.password_data = {};
@@ -71,7 +73,13 @@
     function _changePasswordSuccess(response){
 
       //$location.url('/');
-      window.location = '/';
+      //
+      $state.go('general-message',{'module_name':'authentication',
+                                   'template_name':'change_password_success',
+                                   'redirect_state':'home'});
+
+      //$state.go
+     // window.location = '/';
 
     }
 

@@ -30,7 +30,9 @@
       logout:logout,
       reset_password:reset_password,
       forgot_password:forgot_password,
+      change_password: change_password,
       updateAuthenticatedAccount: updateAuthenticatedAccount,
+      setAuthenticatedAccount: setAuthenticatedAccount,
       unauthenticate: unauthenticate,
       getCurrentUser:getCurrentUser
 
@@ -99,7 +101,6 @@
 
 
     function login(email, password) {
-
       var request = $http({
         method: 'post',
         url: '/users/login/',
@@ -109,7 +110,8 @@
         }),
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
         //headers: { 'Content-Type': 'application/json'},
-      }).then(updateAuthenticatedAccount,authenticationError);
+      })
+      .then(loginSuccess,authenticationError);
 
       return request
 
@@ -157,6 +159,23 @@
     }
 
 
+    function change_password(password_data){
+
+      var request = $http({
+        method: 'post',
+        url:'/users/password/change/',
+        data: _parseParam(password_data),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+      });
+
+      return request
+
+
+
+
+    }
+
+
     function getCurrentUser(){
 
       return $http.get('api/users/current/');
@@ -175,6 +194,7 @@
 
     function authenticationError(response){
 
+      console.log("response BAD login",response);
       return $q.reject(response);
 
     }
@@ -195,12 +215,23 @@
     }
 
 
+    function loginSuccess(response){
 
-    function updateAuthenticatedAccount() {
+      return response
+    }
+
+    function setAuthenticatedAccount(data){
+
+      localStorageService.set('user',data);
+      return data
+    }
+
+    function updateAuthenticatedAccount(response) {
 
       return getCurrentUser().then(function(response){
         localStorageService.set('user',response.data);
         return response.data
+        //return login_response.data.location;
 
       });
       

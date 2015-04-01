@@ -7,5 +7,6 @@ class UserProfilesSerializer(serializers.ModelSerializer):
 		model = UserProfile
 		fields = (
 			'bio',
-			'id'
+			'id',
+			
 			)

@@ -10,21 +10,17 @@
     .module('trulii.organizers.controllers')
     .controller('OrganizerProfileCtrl', OrganizerProfileCtrl);
 
-  OrganizerProfileCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','UploadFile','Organizer'];
+  OrganizerProfileCtrl.$inject = ['$scope','$modal','$http','$location','$timeout','Authentication','UploadFile','organizer'];
   /**
   * @namespace RegisterController
   */
-  function OrganizerProfileCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile,Organizer) {
+  function OrganizerProfileCtrl($scope,$modal,$http,$location,$timeout,Authentication,UploadFile,organizer) {
 
     var vm = this;
 
 
-    activate();
-
-
-    var cache_organizer = Authentication.getAuthenticatedAccount();
     
-    vm.organizer    = new Organizer(cache_organizer);
+    vm.organizer    = angular.copy(organizer);
 
 
     vm.photo_path = vm.organizer.photo;
@@ -36,22 +32,6 @@
     vm.addImage = _uploadImage;
 
 
-
-
-
-    // vm.$watch('organizer.photo', function(old_value,new_value) {
-
-    //   console.log(old_value,new_value);
-    //   if (old_value!=new_value && old_value && new_value){ 
-    //     var url = '/api/users/upload/photo/';
-    //     console.log("1111111111111111111111111111");
-    //     vm.upload = UploadFile.upload_file(vm.organizer.photo,url)
-    //       .progress(_progressUpload)
-    //       .success(_successUploaded)
-    //       .error(_erroredUpload);
-    //   }
-
-    // });
 
     //submit callbacks
     vm.submit_info  =  _update_info;
@@ -69,17 +49,15 @@
 
       var url = '/api/users/upload/photo/';
       UploadFile.upload_file(image,url)
-          .progress(_progressUpload)
-          .success(_successUploaded)
-          .error(_erroredUpload);
+          .then(_successUploaded,_erroredUpload,_progressUpload);
 
     }
 
     function _update_info() {
 
-      vm.organizer.update()
-        .success(_updateSuccess)
-        .error(_updateFail);
+      vm.organizer.update_profile()
+        .then(_updateSuccess,_updateFail);
+        
       
     }
 
@@ -87,31 +65,25 @@
     function _update_video() {
 
 
-      vm.organizer.update()
-        .success(_updateSuccess)
-        .error(_updateFail);
-      
+      vm.organizer.update_video()
+        .then(_updateSuccess,_updateFail);      
     }
 
-    function _updateSuccess(response){
+    function _updateSuccess(){
 
-      Authentication.updateAuthenticatedAccount();
+      angular.extend(organizer,vm.organizer);
+      //Authentication.updateAuthenticatedAccount();
       _toggleMessage();
 
 
     }
 
     function _updateFail(response){
+      console.log("FAIL",response)
         console.log(response);
     }
 
     
-    function activate() {
-      // If the user is authenticated, they should not be here.
-      if (!(Authentication.isAuthenticated())) {
-        //$location.url('/');
-      }
-    }
 
 
 
@@ -150,10 +122,9 @@
       }
     }
 
-    function _successUploaded(data){
-      Authentication.updateAuthenticatedAccount();
-
-      vm.photo_path    = data.photo;
+    function _successUploaded(response){
+      angular.extend(organizer,vm.organizer);
+      vm.photo_path    = response.data.photo;
       vm.photo_invalid = false;
       vm.photo_loading = false;
 

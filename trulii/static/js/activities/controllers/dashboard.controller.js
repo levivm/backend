@@ -34,7 +34,6 @@
 
     function _checkSections(activity){
 
-        console.log("CHECKINGGGGGGGGGGG",activity);
 
         angular.forEach(activity.completed_steps,function(value,key){
 

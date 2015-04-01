@@ -9,13 +9,13 @@
     .module('trulii.authentication.controllers')
     .controller('ResetPasswordCtrl', ResetPasswordCtrl);
 
-  ResetPasswordCtrl.$inject = ['$location', '$scope','$modal','$modalInstance',
+  ResetPasswordCtrl.$inject = ['$location', '$scope','$modal',
                                '$stateParams','$state','Authentication'];
 
   /**
   * @namespace ResetPasswordCtrl
   */
-  function ResetPasswordCtrl($location, $scope,$modal,$modalInstance,$stateParams,$state,Authentication) {
+  function ResetPasswordCtrl($location, $scope,$modal,$stateParams,$state,Authentication) {
     var vm = this;
 
 
@@ -43,7 +43,9 @@
 
     function _passwordResetSuccess(response){
 
-        $modalInstance.close();
+      $state.go('general-message',{'module_name':'authentication',
+                                   'template_name':'change_password_success',
+                                   'redirect_state':'home'});
     }
 
 

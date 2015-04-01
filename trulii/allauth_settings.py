@@ -32,7 +32,7 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 # with an unverified e-mail address. In case of "optional", the e-mail
 # verification mail is still sent, whereas in case of "none" no e-mail
 # verification mails are sent.
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 # Subject-line prefix to use for email messages sent. By default, the name
 # of the current Site (django.contrib.sites) is used.

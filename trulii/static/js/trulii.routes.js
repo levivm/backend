@@ -6,17 +6,17 @@
     .config(config)
     .run(run);
 
-  config.$inject = ['$urlRouterProvider','$stateProvider'];
+  config.$inject = ['$urlRouterProvider','$stateProvider','$urlMatcherFactoryProvider'];
 
   /**
   * @name config
   * @desc Define valid application routes
   */
-  function config($urlRouterProvider,$stateProvider) {
+  function config($urlRouterProvider,$stateProvider,$urlMatcherFactoryProvider) {
    
 
 
-
+    $urlMatcherFactoryProvider.strictMode(false);
     $stateProvider
     .state("home",{
       url:"/",
@@ -31,14 +31,32 @@
       templateUrl: 'static/partials/landing/landing.html'
     })
     .state("register", {
-      url:'register',
+      url:'/register',
       controller: 'RegisterController', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/authentication/register.html'
     })
+    .state("login", {
+      url:'/login',
+      controller: 'LoginController', 
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/authentication/login.html'
+    })
     .state("logout",{
-      url:'/logout/',
+      url:'/logout',
       controller: 'LogOutController'
+    })
+    .state("password-forgot", {
+      url:'/password/forgot',
+      controller: 'ForgotPasswordCtrl', 
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/authentication/forgot_password.html'
+    })
+    .state("password-reset", {
+      url:'/password/reset/key/:reset_key',
+      controller: 'ResetPasswordCtrl', 
+      controllerAs: 'vm',
+      templateUrl: 'static/partials/authentication/reset_password.html'
     })
     .state('email-confirm', {
       url:'/email/confirm/:status/',
@@ -47,9 +65,11 @@
       //templateUrl: 'static/partials/email_confirm.html' url(r"
       templateUrl: 'modalContainer' 
     })
+
     .state('modal-dialog', {
-      url:'/m/',
+      url:'/',
       controller: 'DialogModalCtrl', 
+      controllerAs: 'vm', 
       // onEnter: function($stateParams, $state, $modal) {
 
 
@@ -71,19 +91,45 @@
       //templateUrl: 'modalContainer' 
       //templateUrl: 'static/partials/utils/base_dialog_modal.html' 
     })
+    // .state('modal-dialog.login', {
+    //   url:'login',
+    //   parent: 'modal-dialog',
+    //   views:{
+    //     'modal@':{
+    //       templateUrl: '/static/partials/authentication/login.html',
+    //       controller: 'LoginController', 
+    //       controllerAs: 'vm',
+    //     }
+        
+    //   }
+    //   //templateUrl: '/static/partials/authentication/forgot_password.html'
+    // })
     .state('modal-dialog.password-forgot', {
       url:'password/forgot/',
-      controller: 'ForgotPasswordCtrl', 
-      controllerAs: 'vm',
       parent: 'modal-dialog',
       views:{
         'modal@':{
-          templateUrl: '/static/partials/authentication/forgot_password.html'
+          templateUrl: '/static/partials/authentication/forgot_password.html',
+          controller: 'ForgotPasswordCtrl', 
+          controllerAs: 'vm',
         }
         
       }
       //templateUrl: '/static/partials/authentication/forgot_password.html'
     })
+    // .state('modal-dialog.password-reset', {
+    //   url:'password/reset/key/:reset_key/',
+    //   parent: 'modal-dialog',
+    //   views:{
+    //     'modal@':{
+    //       templateUrl: '/static/partials/authentication/reset_password.html',
+    //       controller: 'ResetPasswordCtrl', 
+    //       controllerAs: 'vm',
+    //     }
+        
+    //   }
+    //   //templateUrl: '/static/partials/authentication/forgot_password.html'
+    // })
     // .state('password-reset', {
     //   url:'/password/reset/',
     //   controller: 'ForgotPasswordCtrl', 
@@ -112,10 +158,11 @@
       controller: 'OrganizerDashboardCtrl', 
       controllerAs: 'vm',
       templateUrl: 'static/partials/organizers/dashboard.html',
-      // resolve:{
+      resolve:{
 
-      //   organizer : 
-      // },
+        organizer : getOrganizer,
+      },
+      
       data: {
 
         requiredAuthentication : true
@@ -250,7 +297,7 @@
     
 
     
-
+    
     //$urlRouterProvider.otherwise('/');
 
   }
@@ -266,6 +313,30 @@
     return authenticatedUser
 
   }  
+
+  getOrganizer.$inject = ['Authentication','Organizer'];
+
+  function getOrganizer(Authentication,Organizer){
+
+
+    var authenticatedUser =  Authentication.getAuthenticatedAccount();
+    
+    var is_organizer = true;
+
+    if(authenticatedUser){
+
+
+      is_organizer = authenticatedUser.user_type == 'O' ? true:false;
+       
+
+    }
+
+    var result = is_organizer ? new Organizer(authenticatedUser):$q.reject();
+
+    return result
+
+
+  }
 
 
   /****** RESOLVER FUNCTIONS ACTIVITIES *******/
@@ -313,12 +384,17 @@
 
 
   /****** RUN METHOD*******/
-  run.$inject = ['$rootScope','$state','Authentication'];
+  run.$inject = ['$rootScope','$modalStack','$state','$urlMatcherFactory','Authentication'];
 
-  function run($rootScope,$state,Authentication){
+  function run($rootScope,$modalStack,$state,$urlMatcherFactory,Authentication){
 
-    $rootScope.$on('$stateChangeStart',function(e,toState){
 
+    $urlMatcherFactory.strictMode(false);
+    $rootScope.$on('$stateChangeStart',function(e,toState,toParams,fromState){
+
+      $state.previous = fromState;
+
+      //$modalStack.dismissAll();
 
 
       if ( !(toState.data) ) return;

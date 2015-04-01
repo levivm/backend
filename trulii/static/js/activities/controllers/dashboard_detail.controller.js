@@ -45,7 +45,7 @@
       vm.activity.update()
           .success(function(response){
               vm.isCollapsed = false;
-              angular.extend(vm.activity,activity);
+              angular.extend(activity,vm.activity);
               $scope.pc.activitySectionUpdated(response);
           })
           .error(_errored);

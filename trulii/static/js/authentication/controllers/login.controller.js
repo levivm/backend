@@ -17,10 +17,10 @@
   function LoginController($scope, $location, $state, $q, Authentication) {
     var vm = this;
 
-    vm.user = {};
-
+    
 
     vm.errors = {};
+    vm.auth = {};
     vm.login = login;
     vm.is_new = true;
 
@@ -38,6 +38,7 @@
     function _addError(field, message) {
 
       vm.errors[field] = message;
+      vm.login_form[field].$setValidity(message, false);
 
     };
 
@@ -66,8 +67,8 @@
     */
     function login() {
       _clearErrors();
-
-     return  Authentication.login(vm.user.login, vm.user.password)
+      console.log("vm auth",vm.auth);
+     return  Authentication.login(vm.auth.email, vm.auth.password)
               .then(_loginSuccess,_loginError)
               //.error(loginErrorFn)
               //.success(loginSuccessFn);
@@ -78,10 +79,13 @@
      * @name loginSuccessFn
      * @desc Set the authenticated account and redirect to index
      */
-    function _loginSuccess(response) {
+    function _loginSuccess(redirect_state) {
 
-      //Authentication.updateAuthenticatedAccount();
-      $state.reload();
+      $state.go(redirect_state.data.location);
+      //console.log("response login",response);
+      //$state.go("home");
+      Authentication.updateAuthenticatedAccount();
+      //$state.reload();
       //window.location = '/';
     }
 

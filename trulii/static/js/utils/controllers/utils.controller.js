@@ -28,7 +28,6 @@
 	});
 
 	modalInstance.result.then(function(){
-
 		var redirect_state = $stateParams.redirect_state;
 		if(redirect_state)
 			$state.go(redirect_state);
@@ -39,7 +38,7 @@
 
 	angular
 	.module('trulii.utils.controllers')
-	.controller('ModalInstanceCtrl', function ($scope, $modalInstance) {
+	.controller('ModalInstanceCtrl', function ($scope, $modalInstance,$state) {
 
 
 		$scope.ok = function () {
@@ -47,28 +46,33 @@
 		};
 
 		$scope.cancel = function () {
-			$modalInstance.dismiss();
+
+			// //$state.go('modal-dialog.login');
+
+			// //console.log("cancel twicce");
+			$modalInstance.dismiss('cancel');
+			// $state.go('home');
+			// //$modalInstance.dismiss('cancel');
+
+			// //$state.go($state.previous,{reload:true});
+			// //console.log($state.previous,"pre");
+			// //$state.reload();
+			// $state.go($state.previous.name,{reload:true});
+			// if($state.previous !== undefined && !$state.previous.abstract){
+				
+
+			// 	$state.go($state.previous.name,{reload:true});
+			// 	//$modalInstance.close();
+			// 	//$modalInstance.close();
+			// 	//$state.go('modal-dialog.login',{reload:true});
+			// 	//state.reload();
+			// }
+
+			// if($state.previous.abstract)
+			// 	$state.go('home');
 		};
 	});
 
 
-  angular
-    .module('trulii.utils.controllers')
-    .controller('DialogModalCtrl', DialogModalCtrl);
-
-  DialogModalCtrl.$inject = ['$scope','$modal','$http','$stateParams','$state'];
-  /**
-  * @namespace RegisterController
-  */
-  function DialogModalCtrl($scope,$modal,$http,$stateParams,$state) {
-  	
-
-
-	var modalInstance = $modal.open({
-	    templateUrl:'static/partials/utils/base_dialog_modal.html',
-	    controller: 'ModalInstanceCtrl',
-	});
-
-  };
 
   })();
