@@ -138,6 +138,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 
+
 class ObtainAuthTokenView(APIView):
     throttle_classes = ()
     permission_classes = ()
