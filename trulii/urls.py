@@ -51,6 +51,7 @@ urlpatterns = patterns('',
  #    ## create the view for the instructor
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
     
+    url(r'^/$', 'landing.views.landing', name='home'),
     url(r'^.*$', 'landing.views.landing', name='home'),
 
 )
