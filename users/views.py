@@ -93,16 +93,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfilesSerializer
 
     def retrieve(self, request):
-        print "USERRRRRRR11111",self.request.user
-        print "AUTHHHHHHHHH",self.request.auth
         user = request.user
-
-        print "RESPONSEeeeeeeeeee",user
-        print "usereeeeeeeeee",user
-        print "usereeeeeeeeee",user
-        print "usereeeeeeeeee",user
-        print "usereeeeeeeeee",user
-        print "usereeeeeeeeee",user
 
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -116,25 +107,13 @@ class UsersViewSet(viewsets.ModelViewSet):
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
 
-        token = None
-        try:
-            token = Token.objects.get(user=profile)
-        except Token.DoesNotExist:
-            pass
 
-        response = {'token':token,'user':data}
 
-        print "RESPONSEeeeeeeeeee",response
-        print "RESPONSEeeeeeeeeee",response
-        print "RESPONSEeeeeeeeeee",response
-        print "RESPONSEeeeeeeeeee",response
-        print "RESPONSEeeeeeeeeee",response
-        print "RESPONSEeeeeeeeeee",response
         # ...
         # do some staff with uploaded file
         # ...
 
-        return Response(response)
+        return Response(data)
 
 
 
