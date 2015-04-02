@@ -15,6 +15,7 @@ from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
 from students.serializer import StudentsSerializer 
 from students.models import Student
+from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
 from utils.form_utils import ajax_response
 from rest_framework import status
@@ -24,6 +25,9 @@ from .serializers import UserProfilesSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 
+
+from rest_framework import parsers
+from rest_framework import renderers
 
 
 
@@ -89,6 +93,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfilesSerializer
 
     def retrieve(self, request):
+        print "USERRRRRRR",request.user
         user = self.request.user
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -120,7 +125,22 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 
+class ObtainAuthTokenView(APIView):
+    throttle_classes = ()
+    permission_classes = ()
+    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = AuthTokenSerializer
 
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key})
+
+
+#obtain_auth_token = ObtainAuthToken.as_view()
 
 
 

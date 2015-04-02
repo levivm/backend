@@ -5,7 +5,6 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
-from rest_framework.authtoken import views as TokenViews
 #from users.views import SignUpAjax
 from users.views import ChangeEmailView,PasswordChange
 
@@ -51,7 +50,7 @@ urlpatterns = patterns('',
 
  #    ## create the view for the instructor
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
-    url(r'^token/', TokenViews.obtain_auth_token),
+    
     url(r'^.*$', 'landing.views.landing', name='home'),
 
 )
