@@ -102,15 +102,15 @@ class UsersViewSet(viewsets.ModelViewSet):
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
 
-        Token = None
+        token = None
         try:
-            token = get_object_or_404(Token,user=profile)
+            token = Token.objects.get(user=profile)
         except Token.DoesNotExist:
             pass
 
         response = {'token':token,'user':data}
 
-
+        print "RESPONSEeeeeeeeeee",response
         # ...
         # do some staff with uploaded file
         # ...
