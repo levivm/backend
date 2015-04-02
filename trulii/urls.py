@@ -28,7 +28,7 @@ urlpatterns = patterns('',
     #url(r'^users/password/change/', PasswordChange.as_view()),
     #url(r'^password/reset/', ResetPassword.as_view()),
     url(r'^users/', include('allauth.urls')),
-    url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': '/'}),
+    url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': 'home'}),
     url(r'^api/users/', include('users.urls')),
     url(r'^api/organizers/', include('organizers.urls')),
     url(r'^api/activities/', include('activities.urls')),
@@ -51,7 +51,7 @@ urlpatterns = patterns('',
  #    ## create the view for the instructor
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
     
-    url(r'^/$', 'landing.views.landing', name='home'),
+    
     url(r'^.*$', 'landing.views.landing', name='home'),
 
 )
