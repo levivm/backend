@@ -147,7 +147,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 
 #---------CORS SETTINGS------------
 CORS_URLS_REGEX = r'^/api/.*$'
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
