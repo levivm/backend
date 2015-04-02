@@ -18,7 +18,6 @@
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
 
 
-
     $locationProvider.html5Mode(true);
     $locationProvider.hashPrefix('!');
 

@@ -22,6 +22,7 @@ from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from .serializers import UserProfilesSerializer
 from django.shortcuts import get_object_or_404
+from rest_framework.authtoken.models import Token
 
 
 
@@ -101,12 +102,20 @@ class UsersViewSet(viewsets.ModelViewSet):
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
 
+        Token = None
+        try:
+            token = get_object_or_404(Token,user=profile)
+        except Token.DoesNotExist:
+            pass
+
+        response = {'token':token,'user':data}
+
 
         # ...
         # do some staff with uploaded file
         # ...
 
-        return Response(data)
+        return Response(response)
 
 
 

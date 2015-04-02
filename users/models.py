@@ -6,6 +6,7 @@ from .forms import UserCreateForm
 from organizers.models import Organizer
 from students.models import Student
 from allauth.account.models import EmailAddress
+from rest_framework.authtoken.models import Token
 
 _ = lambda x:x
 
@@ -21,6 +22,8 @@ def after_sign_up(sender, **kwargs):
     elif user_type == 'O':
         profile = Organizer.objects.create(user=user)
         profile.save()
+
+    Token.objects.create(user=profile)
 
 
 
