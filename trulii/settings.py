@@ -73,6 +73,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'storages',
     'django_extensions',
     'rest_framework',
@@ -96,6 +97,7 @@ INSTALLED_APPS = (
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -143,7 +145,8 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 # }
 
 
-
+#---------CORS SETTINGS------------
+CORS_URLS_REGEX = r'^/api/.*$'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
