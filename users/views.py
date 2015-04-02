@@ -93,7 +93,8 @@ class UsersViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfilesSerializer
 
     def retrieve(self, request):
-        #print "USERRRRRRR",request.user
+        print "USERRRRRRR11111",self.request.user
+        print "AUTHHHHHHHHH",self.request.auth
         user = request.user
 
         print "RESPONSEeeeeeeeeee",user
