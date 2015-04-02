@@ -146,11 +146,12 @@ class ObtainAuthTokenView(APIView):
     serializer_class = AuthTokenSerializer
 
     def post(self, request):
-        print "REQUESTTTTTT DATA",request.data
+
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+        print "TOKENNN",token
         return Response({'token': token.key})
 
 
