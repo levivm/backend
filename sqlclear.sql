@@ -1,4 +1,8 @@
 BEGIN;
+DROP TABLE "corsheaders_corsmodel";
+
+COMMIT;
+BEGIN;
 DROP TABLE "activities_review";
 DROP TABLE "activities_session";
 DROP TABLE "activities_chronogram";

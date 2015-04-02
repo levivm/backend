@@ -81,6 +81,7 @@
      */
     function _loginSuccess(redirect_state) {
 
+      
       $state.go(redirect_state.data.location);
       //console.log("response login",response);
       //$state.go("home");
