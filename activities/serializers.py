@@ -166,8 +166,10 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         user    = request.user
+        print "SOY UN USUARIIOOOOOOOOOOOOOOOOOO",user
         organizer = None
         try:
+            ##_organizer = user.organizer_profile
             organizer = Organizer.objects.get(user=user)
         except Organizer.DoesNotExist:
             raise serializers.ValidationError("Usuario no es organizador")
