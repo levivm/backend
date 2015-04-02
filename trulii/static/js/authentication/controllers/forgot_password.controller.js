@@ -9,12 +9,12 @@
     .module('trulii.authentication.controllers')
     .controller('ForgotPasswordCtrl', ForgotPasswordCtrl);
 
-  ForgotPasswordCtrl.$inject = ['$scope','$location','$modalStack','$modal','$state','$stateParams','Authentication'];
+  ForgotPasswordCtrl.$inject = ['$scope','$location','$modal','$state','$stateParams','Authentication'];
 
   /**
   * @namespace ForgotPasswordCtrl
   */
-  function ForgotPasswordCtrl($scope, $location,$modalStack,$modal,$state,$stateParams,Authentication) {
+  function ForgotPasswordCtrl($scope, $location,$modal,$state,$stateParams,Authentication) {
     var vm = this;
 
 

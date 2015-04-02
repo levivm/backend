@@ -384,9 +384,9 @@
 
 
   /****** RUN METHOD*******/
-  run.$inject = ['$rootScope','$modalStack','$state','$urlMatcherFactory','Authentication'];
+  run.$inject = ['$rootScope','$state','$urlMatcherFactory','Authentication'];
 
-  function run($rootScope,$modalStack,$state,$urlMatcherFactory,Authentication){
+  function run($rootScope,$state,$urlMatcherFactory,Authentication){
 
 
     $urlMatcherFactory.strictMode(false);
