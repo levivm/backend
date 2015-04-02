@@ -102,7 +102,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         print "usereeeeeeeeee",user
         print "usereeeeeeeeee",user
         print "usereeeeeeeeee",user
-        
+
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
         profile  = None
@@ -146,6 +146,7 @@ class ObtainAuthTokenView(APIView):
     serializer_class = AuthTokenSerializer
 
     def post(self, request):
+        print "REQUESTTTTTT DATA",request.data
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
