@@ -23,7 +23,7 @@ def after_sign_up(sender, **kwargs):
         profile = Organizer.objects.create(user=user)
         profile.save()
 
-    Token.objects.create(user=profile)
+    Token.objects.create(user=user)
 
 
 
