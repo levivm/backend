@@ -235,7 +235,7 @@ class PasswordChange(PasswordChangeView):
         
         
         response,form = _set_ajax_response(_super_response)
-        print "RESPONSEEEEE"
+        print "RESPONSEEEEE",response
         return _ajax_response(request, response, form=form)
 
 
