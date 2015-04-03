@@ -3,7 +3,7 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import viewsets
-from rest_framework.authentication import SessionAuthentication
+#from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Organizer
@@ -25,7 +25,7 @@ class OrganizerViewSet(viewsets.ModelViewSet):
     """
     queryset = Organizer.objects.all()
     serializer_class = OrganizersSerializer
-    authentication_classes = (SessionAuthentication,)
+    #authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     # def partial_update(self, request, pk=None):
