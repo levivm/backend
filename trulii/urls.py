@@ -25,7 +25,7 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/email/', ChangeEmailView.as_view()),
-    #url(r'^users/password/change/', PasswordChange.as_view()),
+    url(r'^users/password/change/', PasswordChange.as_view()),
     #url(r'^password/reset/', ResetPassword.as_view()),
     url(r'^users/', include('allauth.urls')),
     url(r'^api/users/', include('users.urls')),
