@@ -223,19 +223,20 @@ class ChangeEmailView(EmailView):
     #     #print response,form
     #     return _ajax_response(request, response, form=form)
 
-class PasswordChange(PasswordChangeView):
+# class PasswordChange(PasswordChangeView):
 
 
 
-    def post(self, request, *args, **kwargs):
+#     def post(self, request, *args, **kwargs):
 
-        _super_response =  super(PasswordChange, self)
-        _super_response.post(request, *args, **kwargs)
+#         _super_response =  super(PasswordChange, self)
+#         _super_response.post(request, *args, **kwargs)
         
         
         
-        response,form = _set_ajax_response(_super_response)
-        return _ajax_response(request, response, form=form)
+#         response,form = _set_ajax_response(_super_response)
+#         print "RESPONSEEEEE"
+#         return _ajax_response(request, response, form=form)
 
 
 
