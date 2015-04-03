@@ -234,6 +234,8 @@ class PasswordChange(PasswordChangeView):
             _super_response.post(request, *args, **kwargs)
         except Exception,e:
             print "EROOOOOOOOOR",e
+            print "EROOOOOOOOOR",e
+            print "EROOOOOOOOOR",e
         #print "RESPONSEEEEE",_super_response
         
         
