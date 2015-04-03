@@ -143,7 +143,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 # Database###
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
-
+APPEND_SLASH = False
 
 # DATABASES = {
 #     'default': {
