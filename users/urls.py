@@ -7,5 +7,7 @@ urlpatterns = patterns('',
 	url(r'^token/', ObtainAuthTokenView.as_view()),
     url(r'^upload/photo/?$', PhotoUploadView.as_view()),
     url(r'^current/?$', UsersViewSet.as_view({'get':'retrieve'})),
+    url(r'^logout/?$', UsersViewSet.as_view({'post':'logout'})),
+
 
 	)

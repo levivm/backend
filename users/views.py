@@ -24,6 +24,7 @@ from django.core.urlresolvers import reverse
 from .serializers import UserProfilesSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import logout as auth_logout
 
 
 from rest_framework import parsers
@@ -114,6 +115,12 @@ class UsersViewSet(viewsets.ModelViewSet):
         # ...
 
         return Response(data)
+
+
+    def logout(self,request):
+
+        auth_logout(request)
+        return Response(status=status.HTTP_200_OK)
 
 
 
