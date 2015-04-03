@@ -15,7 +15,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 urlpatterns = patterns('',
     # Examples:
     
-    url(r'^home$', 'landing.views.landing', name='home'),
+    url(r'^home/$', 'landing.views.landing', name='home'),
     url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
 
     # url(r'^blog/', include('blog.urls')),
@@ -28,7 +28,7 @@ urlpatterns = patterns('',
     #url(r'^users/password/change/', PasswordChange.as_view()),
     #url(r'^password/reset/', ResetPassword.as_view()),
     url(r'^users/', include('allauth.urls')),
-    url(r'^api/users/logout/?$', 'django.contrib.auth.views.logout',{'next_page': 'home'}),
+    url(r'^api/users/logout/$', 'django.contrib.auth.views.logout',{'next_page': 'home/'}),
     url(r'^api/users/', include('users.urls')),
     url(r'^api/organizers/', include('organizers.urls')),
     url(r'^api/activities/', include('activities.urls')),

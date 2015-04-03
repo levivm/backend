@@ -121,7 +121,7 @@
 
       var request = $http({
         method: 'post',
-        url: '/users/logout/',
+        url: '/users/logout',
       }).then(unauthenticate,logoutError);
 
       return request
