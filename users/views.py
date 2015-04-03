@@ -229,8 +229,10 @@ class PasswordChange(PasswordChangeView):
 
     def post(self, request, *args, **kwargs):
 
+
         _super_response =  super(PasswordChange, self)
         _super_response.post(request, *args, **kwargs)
+        print "RESPONSEEEEE",_super_response
         
         
         
