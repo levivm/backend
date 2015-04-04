@@ -51,7 +51,7 @@ urlpatterns = patterns('',
  #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
     
     
-    url(r'^.*$', 'landing.views.landing', name='home'),
+    #url(r'^.*$', 'landing.views.landing', name='home'),
 
 )
 

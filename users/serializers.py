@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import UserProfile
 from django.contrib.auth import authenticate
 from django.utils.translation import ugettext_lazy as _
+from allauth.account.forms import LoginForm
 
 from rest_framework import exceptions, serializers
 
@@ -26,7 +27,12 @@ class AuthTokenSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
+            # login_form = LoginForm({'login':email,'password':password})
+            # login_form.is_valid()
+            
+            # login_form.login(self.context['request']._request)
             user = authenticate(email=email, password=password)
+           
 
             if user:
                 if not user.is_active:

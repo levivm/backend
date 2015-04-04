@@ -10,6 +10,7 @@ from rest_framework import viewsets
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -109,11 +110,6 @@ class UsersViewSet(viewsets.ModelViewSet):
             data    = StudentsSerializer(profile).data
 
 
-
-        # ...
-        # do some staff with uploaded file
-        # ...
-
         return Response(data)
 
 
@@ -135,15 +131,13 @@ class ObtainAuthTokenView(APIView):
 
     def post(self, request):
 
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data,context={'request':request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        print "TOKENNN",token
         return Response({'token': token.key})
 
 
-#obtain_auth_token = ObtainAuthToken.as_view()
 
 
 
@@ -184,17 +178,16 @@ class PhotoUploadView(APIView):
 
 
 
-class ChangeEmailView(EmailView):
-
-
+class ChangeEmailView(APIView):
 
     def post(self, request, *args, **kwargs):
         res = None
         if "action_add" in request.POST:
-            _super =  super(ChangeEmailView, self)
-            response,form = _set_ajax_response(_super)
-            res = super(ChangeEmailView, self).post(request, *args, **kwargs)
+            _super =  EmailView()
+            _super.request = request._request
+            response,form  = _set_ajax_response(_super)
             return _ajax_response(request, response, form=form)
+
         elif request.POST.get("email"):
             if "action_send" in request.POST:
                 res = super(ChangeEmailView, self)._action_send(request)
@@ -223,25 +216,16 @@ class ChangeEmailView(EmailView):
     #     #print response,form
     #     return _ajax_response(request, response, form=form)
 
-class PasswordChange(PasswordChangeView):
+class PasswordChange(APIView):
 
+    # authentication_classes = (TokenAuthentication,)
 
+    def post(self,request, *args, **kwargs):
+        _super_response = PasswordChangeView()
+        _super_response.request = request._request
+        _super_response.post(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
-
-        try:
-            _super_response =  super(PasswordChange, self)
-            _super_response.post(request, *args, **kwargs)
-        except Exception,e:
-            print "EROOOOOOOOOR",e
-            print "EROOOOOOOOOR",e
-            print "EROOOOOOOOOR",e
-        #print "RESPONSEEEEE",_super_response
-        
-        
-        
         response,form = _set_ajax_response(_super_response)
-        print "RESPONSEEEEE",response
         return _ajax_response(request, response, form=form)
 
 

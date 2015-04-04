@@ -30,11 +30,11 @@ def after_sign_up(sender, **kwargs):
 @receiver(email_added)
 def after_email_added(sender, **kwargs):
     new_email = kwargs['email_address']
-    request = kwargs['request']
     user    = kwargs['user']  
     old_email = EmailAddress.objects.filter(user=user,primary=True).get()
     if old_email:
         new_email.set_as_primary()
+        old_email.delete()
 
 
 class UserProfile(models.Model):
