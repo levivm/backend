@@ -50,7 +50,7 @@ DEBUG = True
 
 if 'DATABASE_URL' in os.environ:
 
-    DEBUG = False
+    DEBUG = True
 
 
 REST_FRAMEWORK = {
@@ -210,7 +210,7 @@ AWS_S3_FILE_OVERWRITE = False
 
 
 
-if not DEBUG:
+if  DEBUG:
     from dev_settings import *
 
 

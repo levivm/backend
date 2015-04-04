@@ -96,6 +96,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request):
         user = request.user
+        print "USER",user
 
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
