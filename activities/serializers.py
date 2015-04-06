@@ -111,7 +111,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         steps_requirements = settings.STEPS_REQUIREMENTS
         steps = steps_requirements.keys()
         completed_steps = {}
-        print obj.__dict__
         related_fields = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
         for step in steps:
             required_attrs = steps_requirements[step]
@@ -180,7 +179,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        print "dataaaaaaaaaaaaaaaaaaaaaaaaaaa",validated_data
         request = self.context['request']
         _tags = request.DATA.get('tags')
 
@@ -370,7 +368,6 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         del(validated_data['sessions'])
         chronogram = Chronogram.objects.create(**validated_data)
         _sessions = [Session(chronogram=chronogram,**data) for data in sessions_data]
-        print "sessions",_sessions[0].__dict__
         sessions = Session.objects.bulk_create(_sessions)
 
         return chronogram

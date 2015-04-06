@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 #"Content-Type: text/plain; charset=UTF-8\n"
-from django.shortcuts import render_to_response
 from serializers import ActivitiesSerializer,CategoriesSerializer,SubCategoriesSerializer,\
                         TagsSerializer, ChronogramsSerializer,ActivityPhotosSerializer
 from models import Activity,Category,SubCategory,Tags,Chronogram,ActivityPhoto
 from rest_framework import viewsets,status
-from rest_framework.parsers import FileUploadParser
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from datetime import datetime
 from utils.forms import FileUploadForm
 from utils.form_utils import ajax_response
 from django.conf import settings
@@ -20,7 +17,6 @@ from django.conf import settings
 
 class ChronogramsViewSet(viewsets.ModelViewSet):
     serializer_class = ChronogramsSerializer
-    #queryset = Chronogram.objects.all()
     lookup_url_kwarg = 'calendar_pk'
 
 
@@ -32,21 +28,10 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
 
 
 class ActivitiesViewSet(viewsets.ModelViewSet):
-    #parser_classes = (FileUploadParser,)
     
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
-    #permission_classes = (IsOwnerOrReadOnly,)
 
-    # def list(self, request):
-    #     queryset = Activity.objects.all()
-    #     serializer = ActivitiesSerializer(queryset, many=True)
-    #     return Response(serializer.data)
-
-    # def retrieve(self, request, pk=None):
-    #     queryset = Activity.objects.all()
-    #     activities = get_object_or_404(queryset, pk=pk)
-    #     serializer = ActivitiesSerializer(activities)
 
 
     def delete_calendar(self,request,pk=None):
@@ -66,7 +51,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
 
     def get_calendars(self,request,pk=None):
-        print "AQUIIIIIIIIIIII NOOOOOOOOO"
         activity   = self.get_object()
         chronogram = activity.chronogram_set.all()
         chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram,many=True)
@@ -90,7 +74,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
-        print "Chronogram",chronogram
         return Response(chronogram_serializer.data) 
 
     def create_calendar(self,request,pk=None):
@@ -102,7 +85,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
-        print "Chronogram",chronogram
         return Response(chronogram_serializer.data)         
 
 
@@ -111,14 +93,12 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         activity = self.get_object()
 
         photos_count = activity.photos.count()
-        print "POHOHOOHOOTOOTOS ",photos_count
 
         if photos_count >= settings.MAX_ACTIVITY_PHOTOS:
             msg = _(u'Ya excedió el número máximo de imagenes por actividad')
             return Response({'non_field_errors':[msg]},status=status.HTTP_404_NOT_FOUND)
 
         photo    = None
-        #return Response({'photo_id':1})
         file_form = FileUploadForm(request.POST,request.FILES)
         if file_form.is_valid():
             photo = file_form.cleaned_data['file']
@@ -162,6 +142,12 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         }
 
         return Response(data)
+
+
+    def publish_activity(self,request):
+        activity = self.get_object()
+        activity.publish()
+
         
 
 
@@ -176,17 +162,6 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
 
-    
-
-    # def create():
-
-
-    # def perform_create(self, serializer):
-    #     print "Category",self.request.POST.get('category_id')
-    #     print self.request.POST.get('category_id')
-    #     category = get_object_or_404(Category, id=1)
-        
-    #     serializer.save(category=category)
         
 
 class TagsViewSet(viewsets.ModelViewSet):

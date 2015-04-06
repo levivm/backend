@@ -25,4 +25,3 @@ def after_sign_up(sender, **kwargs):
 def after_confirmation_sent(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']
-    print "AFTER SIGN UPPP",user

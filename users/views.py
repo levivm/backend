@@ -78,7 +78,6 @@ from rest_framework import renderers
 def _set_ajax_response(_super):
     form_class = _super.get_form_class()
     form = _super.get_form(form_class)
-    print 'formm,',form
     response = None
     if form.is_valid():
         response = _super.form_valid(form)
@@ -96,7 +95,6 @@ class UsersViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request):
         user = request.user
-        print "USER",user
 
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -199,11 +197,6 @@ class ChangeEmailView(APIView):
             res = res or HttpResponseRedirect(reverse('account_email'))
 
         return _ajax_response(request, res)
-
-
-
-
-
 
     # def post(self, request, *args, **kwargs):
 

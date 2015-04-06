@@ -73,18 +73,6 @@ class Activity(models.Model):
         ('TA',u'Taller'),
         )
 
-
-
-
-    # //     { label: 'Certificación', value: 1 },
-    # //     { label: 'Curso', value: 2 },
-    # //     { label: 'Clase', value: 3 },
-    # //     { label: 'Diplomado', value: 4 },
-    # //     { label: 'Seminario', value: 5 },
-    # //     { label: 'Taller', value: 6 }
-
-
-
     type = models.CharField(max_length = 2,choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory) 
     organizer = models.ForeignKey(Organizer)
@@ -99,17 +87,12 @@ class Activity(models.Model):
     audience = models.TextField(blank=True)
     requirements = models.TextField(blank=True)
     return_policy = models.TextField(blank=True)
-    #return_policy = models.ForeignKey(Return_Policies) *
     extra_info = models.TextField(blank=True)
-    #instructors = models.ForeignKey(Relacion)
-    #activities_-Contenido(Relacion) -> Para despues
-    #sponsors = models.ForeignKey(Relacion)
-    #pictures = models.ForeignKey(Relacion)
     youtube_video_url = models.CharField(max_length = 200,blank=True,null=True)
     instructors = models.ManyToManyField(Instructor,related_name="activities")
-    #attendant = models.ForeignKey(Relacion) * 
     active = models.NullBooleanField()
     location =  models.ForeignKey(Location,null=True)
+
 
 
     def update(self,data):
@@ -138,6 +121,11 @@ class Activity(models.Model):
                 })
         return levels
 
+    def publish(self):
+        self.active = True
+        self.save()
+
+
 
 
 class ActivityPhoto(models.Model):
@@ -160,16 +148,6 @@ class Chronogram(models.Model):
     def update(self,data):
         self.__dict__.update(data)
         self.save()
-    #location = models.CharField(max_length = 200)
-
-    #chronogram_schedule = models.ForeignKey(Schedules)
-
-    # def transform_session_time(self):
-
-    #     data['initial_date'] = datetime.\
-    #                    utcfromtimestamp(float(data['initial_date'])/1000.0).\
-    #                    date()
-
 
 
 class Session(models.Model):
@@ -185,36 +163,3 @@ class Review(models.Model):
     author      = models.CharField(max_length = 200)
     rating      = models.IntegerField()
     attributes  = models.CharField(max_length = 200)
-
-
-
-
-
-
-# class ReturnPolicy(models.Model):
-#     activity    = models.ForeignKey(Activity)
-#     description = models.TextField()
-#activity_name = models.ForeignKey(Activity)
-#amount = models.IntegerField()
-#transaction_number = models.IntegerField()
-#date = models.DateField()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Create your models here.
