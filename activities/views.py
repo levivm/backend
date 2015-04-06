@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 #"Content-Type: text/plain; charset=UTF-8\n"
-from serializers import ActivitiesSerializer,CategoriesSerializer,SubCategoriesSerializer,\
+from django.shortcuts import render_to_response
+from .serializers import ActivitiesSerializer,CategoriesSerializer,SubCategoriesSerializer,\
                         TagsSerializer, ChronogramsSerializer,ActivityPhotosSerializer
-from models import Activity,Category,SubCategory,Tags,Chronogram,ActivityPhoto
+from .models import Activity,Category,SubCategory,Tags,Chronogram,ActivityPhoto
 from rest_framework import viewsets,status
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.views import APIView
@@ -74,7 +75,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
-        return Response(chronogram_serializer.data) 
+        return Response(chronogram_serializer.data)
 
     def create_calendar(self,request,pk=None):
 
@@ -85,7 +86,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
-        return Response(chronogram_serializer.data)         
+        return Response(chronogram_serializer.data)
 
 
     def add_photo(self,request,pk=None):
@@ -162,8 +163,20 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
 
+<<<<<<< Updated upstream
+=======
+    
+
+    # def create():
+
+
+    # def perform_create(self, serializer):
+    #     category = get_object_or_404(Category, id=1)
+        
+    #     serializer.save(category=category)
         
 
+>>>>>>> Stashed changes
 class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer

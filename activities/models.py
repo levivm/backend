@@ -76,7 +76,7 @@ class Activity(models.Model):
     type = models.CharField(max_length = 2,choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory) 
     organizer = models.ForeignKey(Organizer)
-    tags = models.ManyToManyField(Tags,null=True)
+    tags = models.ManyToManyField(Tags)
     title = models.CharField(max_length = 100) 
     large_description = models.TextField()
     short_description = models.CharField(max_length = 100)

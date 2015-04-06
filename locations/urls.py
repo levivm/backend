@@ -1,6 +1,6 @@
 from django.conf.urls import *
 #from activities import views
-from views import CitiesViewSet
+from .views import CitiesViewSet
 
 
 
