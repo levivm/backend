@@ -12,7 +12,7 @@ TAGS_MIN_OCCOURRENCE = 15
 
 MAX_ACTIVITY_PHOTOS  = 6
 
-STEPS_REQUIREMETS = {
+STEPS_REQUIREMENTS = {
 	
 	'general':['title','short_description','large_description','sub_category_id','level','type'],
 	'detail':['content'],

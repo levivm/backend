@@ -39,11 +39,7 @@ def deploy_heroku(app_name=""):
     print("enter your git commit comment: ")
     comment = raw_input()
     local('git commit -m "%s"' % comment)
-    #local('git push -u heroku master')
-    #local('heroku maintenance:on')
     local('git push %s master' % app_name)
-    #local('heroku run python manage.py collectstatic')
-    #local('heroku maintenance:off')
 
 def initial_deploy_heroku(app_name=""):
     local('git push %s master' % app_name)

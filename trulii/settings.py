@@ -17,24 +17,6 @@ PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 
 
-# DATABASES = {
-#     'default': {
-#         # 'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-#         'NAME': 'trulii',  # Or path to database file if using sqlite3.
-#         # The following settings are not used with sqlite3:
-#         'USER': 'trulii',
-#         'PASSWORD': 'trulii',
-#         'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-#         'PORT': '',  # Set to empty string for default.
-#     }
-# }
-    
-
-
-
-#SETTINGS_PATH = os.path.realpath(os.path.dirname(__file__))
-
 SITE_ID = 1
 
 # Quick-start development settings - unsuitable for production
@@ -56,7 +38,6 @@ if 'DATABASE_URL' in os.environ:
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
-        #'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     )
 }
@@ -140,25 +121,11 @@ ROOT_URLCONF = 'trulii.urls'
 WSGI_APPLICATION = 'trulii.wsgi.application'
 
 
-# Database###
-# https://docs.djangoproject.com/en/1.7/ref/settings/#databases
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
-
 #---------CORS SETTINGS------------
 #CORS_URLS_REGEX = r'^/api/.*$'
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-
-#hola
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -203,11 +170,6 @@ AWS_SECRET_ACCESS_KEY = 'H4r9fQA1fW70nZq6S+n4WSZu+m9BXLmmBYJaWhPd'
 # We also use it in the next setting.
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_FILE_OVERWRITE = False
-#
-
-
-
-
 
 
 if not DEBUG:
@@ -217,13 +179,6 @@ if not DEBUG:
 else:
     
     from local_settings import *
-    #STATIC_ROOT = '/static/'
-
-# DATABASES = {}
-# DATABASES['default'] = dj_database_url.config()
-
-
-#DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 
 MEDIAFILES_LOCATION = 'media' 
@@ -248,10 +203,6 @@ STATIC_URL = '/static/'
 
 
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
-
-
-#STATIC_ROOT = '/static/'
-###
 
 
 from allauth_settings import *
