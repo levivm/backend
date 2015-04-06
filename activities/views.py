@@ -163,20 +163,6 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
 
-<<<<<<< Updated upstream
-=======
-    
-
-    # def create():
-
-
-    # def perform_create(self, serializer):
-    #     category = get_object_or_404(Category, id=1)
-        
-    #     serializer.save(category=category)
-        
-
->>>>>>> Stashed changes
 class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer
