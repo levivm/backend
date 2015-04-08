@@ -1,21 +1,31 @@
 from rest_framework import serializers
 from .models import UserProfile
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from allauth.account.forms import LoginForm
 
 from rest_framework import exceptions, serializers
 
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+        )
+
+
 class UserProfilesSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = UserProfile
-		fields = (
-			'bio',
-			'id',
-			
-			)
+    class Meta:
+        model = UserProfile
+        fields = (
+            'bio',
+            'id',
 
-
+        )
 
 
 class AuthTokenSerializer(serializers.Serializer):
@@ -29,10 +39,9 @@ class AuthTokenSerializer(serializers.Serializer):
         if email and password:
             # login_form = LoginForm({'login':email,'password':password})
             # login_form.is_valid()
-            
+
             # login_form.login(self.context['request']._request)
             user = authenticate(email=email, password=password)
-           
 
             if user:
                 if not user.is_active:

@@ -10,8 +10,7 @@ from django.utils.translation import ugettext_lazy as _
 from datetime import datetime,time,date
 from calendar import  timegm
 from django.conf import settings
-
-
+from organizers.serializers import OrganizersSerializer
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -77,18 +76,24 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     location =  LocationsSerializer(read_only=True)
     photos   = ActivityPhotosSerializer(read_only=True,many=True)
     completed_steps = serializers.SerializerMethodField(read_only=True)
-
+    organizer = OrganizersSerializer()
+    type_display = serializers.SerializerMethodField()
+    sub_category_display = serializers.SerializerMethodField()
+    level_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
         fields = (
             'id',
             'type',
+            'type_display',
             'title',
             'short_description',
             'large_description',
             'sub_category',
+            'sub_category_display',
             'level',
+            'level_display',
             'tags',
             'category',
             'category_id',
@@ -103,6 +108,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'photos',
             'youtube_video_url',
             'completed_steps',
+            'organizer',
             )
         depth = 1
 
@@ -130,9 +136,14 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
         return completed_steps
                 
+    def get_type_display(self, obj):
+        return obj.get_type_display()
 
+    def get_sub_category_display(self, obj):
+        return obj.sub_category.name
 
-
+    def get_level_display(self, obj):
+        return obj.get_level_display()
 
     def _set_location(self,location):
 
@@ -321,7 +332,7 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         initial_date = data['initial_date']
 
         f_range = len(session_data)
-        for i in xrange(f_range):
+        for i in range(f_range):
 
             session    = session_data[i]
             n_session  = session_data[i+1] if i+1 < f_range else None 
