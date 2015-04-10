@@ -14,6 +14,7 @@ urlpatterns = patterns('',
 
     url(r'^signup/$', signup),
     url(r'^(?P<pk>\d+)/?$', OrganizerViewSet.as_view({'put': 'partial_update','get':'retrieve'})),
+    url(r'^(?P<pk>\d+)/activities/?$', OrganizerViewSet.as_view({'get':'activities'})),
 	)
 
 
