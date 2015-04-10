@@ -17,6 +17,8 @@ urlpatterns = patterns('',
 
 	# url(r'^(?P<pk>\d+)/calendars/?$',ActivitiesViewSet.as_view({'post':'create_calendar',\
 	# 	                            'put': 'update_calendar','get':'get_calendars','delete':'delete_calendar'})),
+	
+	url(r'^(?P<pk>\d+)/publish/?$',ActivitiesViewSet.as_view({'put':'publish'})),
 	url(r'^(?P<pk>\d+)/gallery/?$',ActivitiesViewSet.as_view({'post':'add_photo','put':'delete_photo'})),
 
 	url(r'^info/?$',ActivitiesViewSet.as_view({'get':'general_info'})),

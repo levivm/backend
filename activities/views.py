@@ -23,7 +23,7 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         activity_id = self.kwargs.get('activity_pk',None)
         activity = get_object_or_404(Activity,pk=activity_id)
-        return activity.chronogram_set.all()
+        return activity.chronograms.all()
 
 
 
@@ -41,7 +41,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
         activity   = self.get_object()
         try:
-            chronogram = activity.chronogram_set.get(id=chronogram_id)
+            chronogram = activity.chronograms.get(id=chronogram_id)
         except Chronogram.DoesNotExist:
             msg = _("El Calendario a borrar no existe")
             return Response({str(chronogram_id):msg},status=status.HTTP_404_NOT_FOUND)
@@ -52,7 +52,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
     def get_calendars(self,request,pk=None):
         activity   = self.get_object()
-        chronogram = activity.chronogram_set.all()
+        chronogram = activity.chronograms.all()
         chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram,many=True)
 
         return Response(chronogram_serializer.data)
@@ -64,12 +64,12 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         activity   = self.get_object()
 
         try:
-            chronogram = activity.chronogram_set.get(id=chronogram_id)
+            chronogram = activity.chronograms.get(id=chronogram_id)
         except Chronogram.DoesNotExist:
             msg = _("El calendario a editar no existe")
             return Response({'non_field_errors':[msg]},status=status.HTTP_404_NOT_FOUND)
 
-        chronogram = activity.chronogram_set.get(id=chronogram_id)
+        chronogram = activity.chronograms.get(id=chronogram_id)
         chronogram_serializer = ChronogramsSerializer(chronogram,data=data,context={'request':request})
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
@@ -144,9 +144,10 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-    def publish_activity(self,request):
+    def publish(self,request,pk):
         activity = self.get_object()
         activity.publish()
+        return Response(status.HTTP_200_OK)
 
         
 
