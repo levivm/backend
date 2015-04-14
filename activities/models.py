@@ -135,6 +135,11 @@ class Activity(models.Model):
 
         return chronograms[0]['sessions__date']
 
+    def add_instructors(self,instructors_data,organizer):
+        instructors = Instructor.update_or_create(instructors_data,organizer)
+        self.instructors.clear()
+        self.instructors.add(*instructors)
+
 
 
 

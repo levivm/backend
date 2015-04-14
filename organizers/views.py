@@ -5,9 +5,11 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 #from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+
 
 from .models import Organizer
-from .serializers import OrganizersSerializer
+from .serializers import OrganizersSerializer,InstructorsSerializer
 from activities.serializers import ActivitiesSerializer
 
 
@@ -37,6 +39,7 @@ class OrganizerViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
+
     # def partial_update(self, request, pk=None):
     #     print "REEE",request.POST
 
@@ -44,5 +47,13 @@ class OrganizerViewSet(viewsets.ModelViewSet):
         
 
 
+class InstructorViewSet(viewsets.ModelViewSet):
+    serializer_class = InstructorsSerializer
+    lookup_url_kwarg = 'instructor_id'
 
 
+    def get_queryset(self):
+        organizer_id = self.kwargs.get('organizer_id',None)
+        organizer = get_object_or_404(Organizer,pk=organizer_id)
+        print "instructors",organizer.instructors.all()
+        return organizer.instructors.all()
