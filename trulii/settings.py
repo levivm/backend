@@ -152,7 +152,7 @@ LANGUAGES = (
     #('en', ugettext('English')),
     ('es', ugettext('Spanish')),
 )
-LOCALE_PATHS = os.path.join(BASE_DIR, 'locale')
+LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'), )
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
@@ -172,12 +172,12 @@ AWS_S3_FILE_OVERWRITE = False
 
 
 if not DEBUG:
-    from dev_settings import *
+    from .dev_settings import *
 
 
 else:
     
-    from local_settings import *
+    from .local_settings import *
 
 
 MEDIAFILES_LOCATION = 'media' 
@@ -204,5 +204,5 @@ STATIC_URL = '/static/'
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 
-from allauth_settings import *
-from constants import *
+from .allauth_settings import *
+from .constants import *

@@ -1,6 +1,6 @@
 from django.conf.urls import *
 #from activities import views
-from views import ActivitiesViewSet,ListCategories,CategoriesViewSet,\
+from .views import ActivitiesViewSet,ListCategories,CategoriesViewSet,\
 				  SubCategoriesViewSet,TagsViewSet,ChronogramsViewSet
 from rest_framework.routers import DefaultRouter
 from rest_framework import routers

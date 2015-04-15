@@ -2,7 +2,6 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.urlpatterns import format_suffix_patterns
-from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax

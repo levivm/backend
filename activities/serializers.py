@@ -143,24 +143,19 @@ class ChronogramsSerializer(serializers.ModelSerializer):
 
 
     def validate_activity(self,value):
-        #print "VALIDATINGGGACITIVITIIiyiy",value
         return value
 
     def validate_schedules(self,value):
-        #print "values",value
         return value
 
     def validate_initial_date(self,value):
-        #print "AQUIUU",value
         return value
 
     def validate_sessions(self,value):
-        #print "validaingggggggg sess",value
         return value
 
     def validate_session_price(self,value):
-        #print "validaint session_price",value
-        if value<1: 
+        if value<1:
             raise serializers.ValidationError(_("El precio no puede ser negativo."))
         return value
 

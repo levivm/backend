@@ -204,10 +204,7 @@ class ChangeEmailView(APIView):
     #     _response = super(ChangeEmailView, self).post(request, *args, **kwargs)
     #     _super_response = super(ChangeEmailView, self)
 
-    #     print _super_response
-    #     #print "es un post"
     #     response,form = set_ajax_response(_response)
-    #     #print response,form
     #     return _ajax_response(request, response, form=form)
 
 class PasswordChange(APIView):
@@ -238,21 +235,12 @@ class PasswordChange(APIView):
 #         return _ajax_response(request, response, form=form)
 
         # #super(ResetPassword, self).post(request, *args, **kwargs)
-        # print s.__attr__
-        # #print _s
-        # #print super(super(ResetPassword, self).__class__,self)
-        # #print super(ResetPassword, self).get_context_data(**kwargs)
         # form_class =  super(ResetPassword, self).get_form_class()
         # form = super(ResetPassword, self).get_form(form_class)
-        # print form.errors
-        #print "eror",_ajax_response(self.request, response, form=form)
-        #print "eror",ajax_response(form._errors)
-        #print "eror",form.is_valid()
 
 
     # def get_context_data(self, **kwargs):
     #     ret = super(ResetPassword, self).get_context_data(**kwargs)
-    #     print "re",ret
     #     # NOTE: For backwards compatibility
     #     ret['password_reset_form'] = super(ResetPassword, self).get_form_class()
     #     # (end NOTE)
@@ -264,9 +252,7 @@ class PasswordChange(APIView):
 #     # def post(self, request, *args, **kwargs):
 
 
-#     #     print super(SignUpAjax, self)(self)
 #     #     #ret = super(SignUpAjax, self).get_context_data(**kwargs)
-#     #     #print "MIRAME ret",ret
 #     #     return HttpResponse(json.dumps({'hola':'asdasd'}), content_type="application/json")
 #     #     return ajax_response(ret['form'])
 #         # form = self.form_class(request.POST)
@@ -279,7 +265,6 @@ class PasswordChange(APIView):
 
 #     def post(self, request, *args, **kwargs):
 
-#         print "soy ajaxxxxxxxxxxx",request.is_ajax()
 #         form_class = self.get_form_class()
 #         form = self.get_form(form_class)
 #         if form.is_valid():
@@ -297,8 +282,6 @@ class PasswordChange(APIView):
 
 
 #     #     post = super(SignUpAjax, self).post(request, *args, **kwargs)
-#     #     #print "POSTTTTTTT",post
-#     #     print post.request
 #     #     return post
 #         #form = super(SignUpAjax, self).get_form(form_class)
 #         #if form.is_valid():
@@ -308,9 +291,6 @@ class PasswordChange(APIView):
 #         #return _ajax_response(self.request, response, form=form)
 #         #ret = .get_context_data(**kwargs)
 #         #ret['all_tags'] = "ss"
-#         #print ret['form'].errors
-#         #print ret
-#         #print ajax_response(ret['form'])
 #         #json.dumps(ret)
 #         #return HttpResponse(, content_type="application/json")
 #         #return json.dumps(response_data)
