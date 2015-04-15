@@ -2,6 +2,7 @@
 #"Content-Type: text/plain; charset=UTF-8\n"
 
 from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
+from orders.serializers import OrdersSerializer
 from organizers.models import Organizer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
@@ -10,8 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from datetime import datetime,time,date
 from calendar import  timegm
 from django.conf import settings
-
-
+from organizers.serializers import OrganizersSerializer
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -66,7 +66,6 @@ class ActivityPhotosSerializer(serializers.ModelSerializer):
             'photo',
             'id'
             )
-
 
 
 class UnixEpochDateField(serializers.DateTimeField):
@@ -124,6 +123,7 @@ class ChronogramsSerializer(serializers.ModelSerializer):
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
+    orders = OrdersSerializer(many=True, read_only=True)
     
     class Meta:
         model   = Chronogram
@@ -136,6 +136,7 @@ class ChronogramsSerializer(serializers.ModelSerializer):
             'session_price',
             'capacity',
             'sessions',
+            'orders',
             )
         depth = 1
 
@@ -180,7 +181,7 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         initial_date = data['initial_date']
 
         f_range = len(session_data)
-        for i in xrange(f_range):
+        for i in range(f_range):
 
             session    = session_data[i]
             n_session  = session_data[i+1] if i+1 < f_range else None 
@@ -253,19 +254,24 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     completed_steps = serializers.SerializerMethodField(read_only=True)
     chronograms = ChronogramsSerializer(read_only=True,many=True)
     last_date = serializers.SerializerMethodField()
-
-
+    organizer = OrganizersSerializer(read_only=True)
+    type_display = serializers.SerializerMethodField()
+    sub_category_display = serializers.SerializerMethodField()
+    level_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
         fields = (
             'id',
             'type',
+            'type_display',
             'title',
             'short_description',
             'large_description',
             'sub_category',
+            'sub_category_display',
             'level',
+            'level_display',
             'tags',
             'category',
             'category_id',
@@ -283,7 +289,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'published',
             'enroll_open',
             'last_date',
-            'chronograms'
+            'chronograms',
+            'organizer',
             )
         depth = 1
 
@@ -308,7 +315,6 @@ class ActivitiesSerializer(serializers.ModelSerializer):
                         break
 
             completed_steps[step] = completed
-        print "completed steps",completed_steps
         return completed_steps
                 
 
@@ -316,11 +322,14 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def get_last_date(self,obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())
 
+    def get_type_display(self, obj):
+        return obj.get_type_display()
 
+    def get_sub_category_display(self, obj):
+        return obj.sub_category.name
 
-        
-
-
+    def get_level_display(self, obj):
+        return obj.get_level_display()
 
     def _set_location(self,location):
 
