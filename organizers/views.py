@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import Organizer
 from .serializers import OrganizersSerializer
+from activities.serializers import ActivitiesSerializer
 
 
 
@@ -27,6 +28,14 @@ class OrganizerViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizersSerializer
     #authentication_classes = (SessionAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+
+    def activities(self,request,pk=None):
+        organizer = self.get_object()
+        activities = organizer.activity_set.all()
+        data = ActivitiesSerializer(activities,many=True).data
+        return Response(data)
+
 
     # def partial_update(self, request, pk=None):
     #     print "REEE",request.POST

@@ -4,7 +4,7 @@ STUDENT_TYPE   = 'S'
 
 CONTENT_TYPES = ['image', 'video']
 
-MAX_UPLOAD_PHOTO_SIZE = "2621440"
+MAX_UPLOAD_PHOTO_SIZE = 2621440
 
 #Activities APP CONSTANT
 
@@ -16,7 +16,7 @@ STEPS_REQUIREMENTS = {
 	
 	'general':['title','short_description','large_description','sub_category_id','level','type'],
 	'detail':['content'],
-	'calendars':['chronogram_set'],
+	'calendars':['chronograms'],
 	'location':['location'],''
 	'gallery':['photos'],
 	'return_policy':['return_policy']

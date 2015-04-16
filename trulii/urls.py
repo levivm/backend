@@ -2,7 +2,6 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.urlpatterns import format_suffix_patterns
-from activities.api import ActivitiesList,ActivityDetail
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax
@@ -32,8 +31,9 @@ urlpatterns = patterns('',
     url(r'^api/organizers/', include('organizers.urls')),
     url(r'^api/activities/', include('activities.urls')),
  	url(r'^api/locations/', include('locations.urls')),
+    url(r'^api/', include('orders.urls')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
-    
+
  #    url(r'^organizers/', include('organizers.urls')),
  #    #url(r'^organizers/', include('allauth.urls')),
 
