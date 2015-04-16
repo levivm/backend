@@ -23,7 +23,7 @@ class Instructor(models.Model):
     bio   = models.TextField(blank="True",null=True)
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
     organizer = models.ForeignKey(Organizer,related_name="instructors",null=True)
-    website   = models.URLField(max_length=200,null=True,blank=True)
+    website   = models.CharField(max_length=200,null=True,blank=True)
 
 
 
