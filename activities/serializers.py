@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 #"Content-Type: text/plain; charset=UTF-8\n"
 
-from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
-from orders.serializers import OrdersSerializer, AssistantSerializer
-from organizers.models import Organizer
 from rest_framework import serializers
-from django.core.urlresolvers import reverse
-from locations.serializers import LocationsSerializer
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime,time,date
-from calendar import  timegm
 from django.conf import settings
+
+from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
+from orders.serializers import AssistantSerializer
+from organizers.models import Organizer
+from locations.serializers import LocationsSerializer
 from organizers.serializers import OrganizersSerializer
+from utils.serializers import UnixEpochDateField
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -68,28 +67,7 @@ class ActivityPhotosSerializer(serializers.ModelSerializer):
             )
 
 
-class UnixEpochDateField(serializers.DateTimeField):
-
-
-    def to_representation(self, value):
-
-        """ Return epoch time for a datetime object or ``None``"""
-        #return int(time.mktime(value.timetuple()))
-        
-        if type(value) is time:
-            d = date.today()
-            value = datetime.combine(d,value)
-
-        try:
-            return timegm(value.timetuple())*1000
-        except (AttributeError, TypeError):
-            return None
-
-    def to_internal_value(self, value):
-        return datetime.utcfromtimestamp(float(value)/1000).replace(second=0)
-
-
-class SessionsSerializer(serializers.ModelSerializer): 
+class SessionsSerializer(serializers.ModelSerializer):
     date       = UnixEpochDateField()
     start_time = UnixEpochDateField()
     end_time   = UnixEpochDateField()
