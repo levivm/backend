@@ -2,7 +2,7 @@
 #"Content-Type: text/plain; charset=UTF-8\n"
 
 from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
-from orders.serializers import OrdersSerializer
+from orders.serializers import OrdersSerializer, AssistantSerializer
 from organizers.models import Organizer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
@@ -123,8 +123,8 @@ class ChronogramsSerializer(serializers.ModelSerializer):
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
-    orders = OrdersSerializer(many=True, read_only=True)
-    
+    assistants = serializers.SerializerMethodField()
+
     class Meta:
         model   = Chronogram
         fields = ( 
@@ -136,7 +136,7 @@ class ChronogramsSerializer(serializers.ModelSerializer):
             'session_price',
             'capacity',
             'sessions',
-            'orders',
+            'assistants',
             )
         depth = 1
 
@@ -168,7 +168,6 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         if value<1:
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))            
         return value
-
 
     def _valid_sessions(self,data):
         
@@ -212,7 +211,6 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         
         return data
 
-
     def create(self, validated_data):
         sessions_data = validated_data.get('sessions')
         del(validated_data['sessions'])
@@ -235,8 +233,16 @@ class ChronogramsSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def get_assistants(self, obj):
+        assistants = []
+        orders = obj.orders.all()
 
+        for order in orders:
+            assistants.append(order.assistants.all())
 
+        assistants = [item for sublist in assistants for item in sublist]
+        assistants_serialzer = AssistantSerializer(assistants, many=True)
+        return assistants_serialzer.data
 
 class ActivitiesSerializer(serializers.ModelSerializer):
 
