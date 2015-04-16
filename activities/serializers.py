@@ -2,7 +2,8 @@
 #"Content-Type: text/plain; charset=UTF-8\n"
 
 from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
-from organizers.models import Organizer
+from organizers.models import Organizer,Instructor
+from organizers.serializers import InstructorsSerializer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
 from locations.serializers import LocationsSerializer
@@ -66,151 +67,6 @@ class ActivityPhotosSerializer(serializers.ModelSerializer):
             'photo',
             'id'
             )
-
-
-class ActivitiesSerializer(serializers.ModelSerializer):
-
-    tags = serializers.SlugRelatedField(many=True,slug_field='name',read_only=True)
-    sub_category  = serializers.SlugRelatedField(slug_field='id',queryset=SubCategory.objects.all(),required=True)
-    category = serializers.CharField(write_only=True,required=True)
-    category_id = serializers.SlugRelatedField(source='sub_category.category',read_only=True,slug_field='id') 
-    location =  LocationsSerializer(read_only=True)
-    photos   = ActivityPhotosSerializer(read_only=True,many=True)
-    completed_steps = serializers.SerializerMethodField(read_only=True)
-
-
-    class Meta:
-        model = Activity
-        fields = (
-            'id',
-            'type',
-            'title',
-            'short_description',
-            'large_description',
-            'sub_category',
-            'level',
-            'tags',
-            'category',
-            'category_id',
-            'content',
-            'requirements',
-            'return_policy',
-            'extra_info',
-            'audience',
-            'goals',
-            'methodology',
-            'location',
-            'photos',
-            'youtube_video_url',
-            'completed_steps',
-            )
-        depth = 1
-
-
-    def get_completed_steps(self,obj):
-        steps_requirements = settings.STEPS_REQUIREMENTS
-        steps = steps_requirements.keys()
-        completed_steps = {}
-        related_fields = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
-        for step in steps:
-            required_attrs = steps_requirements[step]
-            completed = True
-            for attr in required_attrs:
-
-                if attr in related_fields:
-                    if not getattr(obj,attr,None).all():
-                        completed = False
-                        break
-                else:
-                    if not  getattr(obj,attr,None):
-                        completed = False
-                        break
-
-            completed_steps[step] = completed
-
-        return completed_steps
-                
-
-
-
-
-    def _set_location(self,location):
-
-
-        city    = location["city"]
-        if isinstance(city,dict):
-            city = city["id"]
-
-
-        point   = location["point"]
-        address = location.get("address","")
-
-
-        location_data = {
-            'city'  : city,
-            'point' : [point[1],point[0]],
-            'address': address
-
-        }
-
-        location_serializer = LocationsSerializer(data=location_data)
-        value = None
-        if location_serializer.is_valid(raise_exception=True):
-            value = location_serializer.save()
-
-        return value
-
-    def validate(self, data):
-        request = self.context['request']
-        user    = request.user
-        organizer = None
-        try:
-            organizer = Organizer.objects.get(user=user)
-        except Organizer.DoesNotExist:
-            raise serializers.ValidationError("Usuario no es organizador")
-
-
-
-        data['organizer'] = organizer
-
-        location_data = request.data.get('location',None)
-        data['location'] = self._set_location(location_data) if location_data else None 
-        
-        return data
-
-    def create(self, validated_data):
-        request = self.context['request']
-        _tags = request.DATA.get('tags')
-
-        tags  = Tags.update_or_create(_tags)
-        if 'category' in validated_data:
-            del validated_data['category']
-        activity = Activity.objects.create(**validated_data)
-        activity.tags.clear()
-        activity.tags.add(*tags)
-        return activity
-
-    def update(self, instance, validated_data):
-
-        request = self.context['request']
-        location = validated_data.get('location', None)
-        del(validated_data['location'])
-        instance.update(validated_data)
-
-        if location:
-            instance.location = location
-
-
-        instance.save()
-
-        _tags = request.DATA.get('tags')
-        tags  = Tags.update_or_create(_tags)
-        instance.tags.clear()
-        instance.tags.add(*tags)
-
-
-        return instance
-
 
 
 
@@ -373,6 +229,8 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         return chronogram
 
     def update(self, instance, validated_data):
+
+
         sessions_data = validated_data.get('sessions')
         del(validated_data['sessions'])
         instance.update(validated_data)
@@ -384,3 +242,181 @@ class ChronogramsSerializer(serializers.ModelSerializer):
 
 
         return instance
+
+
+
+
+
+
+class ActivitiesSerializer(serializers.ModelSerializer):
+
+    tags = serializers.SlugRelatedField(many=True,slug_field='name',read_only=True)
+    sub_category  = serializers.SlugRelatedField(slug_field='id',queryset=SubCategory.objects.all(),required=True)
+    category = serializers.CharField(write_only=True,required=True)
+    category_id = serializers.SlugRelatedField(source='sub_category.category',read_only=True,slug_field='id') 
+    location =  LocationsSerializer(read_only=True)
+    photos   = ActivityPhotosSerializer(read_only=True,many=True)
+    completed_steps = serializers.SerializerMethodField(read_only=True)
+    chronograms = ChronogramsSerializer(read_only=True,many=True)
+    last_date = serializers.SerializerMethodField()
+    instructors = InstructorsSerializer(many=True,required=False)
+
+    
+
+
+
+    class Meta:
+        model = Activity
+        fields = (
+            'id',
+            'type',
+            'title',
+            'short_description',
+            'large_description',
+            'sub_category',
+            'level',
+            'tags',
+            'category',
+            'category_id',
+            'content',
+            'requirements',
+            'return_policy',
+            'extra_info',
+            'audience',
+            'goals',
+            'methodology',
+            'location',
+            'photos',
+            'youtube_video_url',
+            'completed_steps',
+            'published',
+            'enroll_open',
+            'last_date',
+            'chronograms',
+            'instructors',
+
+            )
+        depth = 1
+
+
+    def get_completed_steps(self,obj):
+
+        steps_requirements = settings.STEPS_REQUIREMENTS
+        steps = steps_requirements.keys()
+        completed_steps = {}
+        related_fields  = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
+        related_fields += [rel.name for rel in obj._meta.many_to_many]
+        for step in steps:
+            required_attrs = steps_requirements[step]
+            completed = True
+            for attr in required_attrs:
+
+                if attr in related_fields:
+                    if not getattr(obj,attr,None).all():
+                        completed = False
+                        break
+                else:
+                    if not  getattr(obj,attr,None):
+                        completed = False
+                        break
+
+            completed_steps[step] = completed
+        return completed_steps
+                
+
+
+    def get_last_date(self,obj):
+        return UnixEpochDateField().to_representation(obj.last_sale_date())
+
+
+
+        
+
+
+
+    def _set_location(self,location):
+
+
+        city    = location["city"]
+        if isinstance(city,dict):
+            city = city["id"]
+
+
+        point   = location["point"]
+        address = location.get("address","")
+
+
+        location_data = {
+            'city'  : city,
+            'point' : [point[1],point[0]],
+            'address': address
+
+        }
+
+        location_serializer = LocationsSerializer(data=location_data)
+        value = None
+        if location_serializer.is_valid(raise_exception=True):
+            value = location_serializer.save()
+
+        return value
+
+    def validate(self, data):
+        request = self.context['request']
+        user    = request.user
+        organizer = None
+        try:
+            organizer = Organizer.objects.get(user=user)
+        except Organizer.DoesNotExist:
+            raise serializers.ValidationError("Usuario no es organizador")
+
+
+
+        data['organizer'] = organizer
+
+        location_data = request.data.get('location',None)
+        data['location'] = self._set_location(location_data) if location_data else None 
+        
+        return data
+
+    def create(self, validated_data):
+        request = self.context['request']
+        _tags = request.DATA.get('tags')
+
+        tags  = Tags.update_or_create(_tags)
+        if 'category' in validated_data:
+            del validated_data['category']
+        activity = Activity.objects.create(**validated_data)
+        activity.tags.clear()
+        activity.tags.add(*tags)
+        return activity
+
+    def update(self, instance, validated_data):
+
+        request = self.context['request']
+        organizer = validated_data.get('organizer')
+        instructor_data = validated_data.get('instructors', [])
+
+        instance.add_instructors(instructor_data,organizer)
+
+
+
+        location = validated_data.get('location', None)
+        del(validated_data['location'])
+        instance.update(validated_data)
+
+        if location:
+            instance.location = location
+
+
+        instance.save()
+
+        _tags = request.DATA.get('tags')
+        tags  = Tags.update_or_create(_tags)
+        instance.tags.clear()
+        instance.tags.add(*tags)
+
+
+        return instance
+
+
+

@@ -27,9 +27,18 @@ class OrganizersSerializer(serializers.ModelSerializer):
 		return UserCreateForm.USER_TYPES[0][0]
 
 class InstructorsSerializer(serializers.ModelSerializer):
+
+	id = serializers.IntegerField()
 	class Meta:
 		model = Instructor
 		fields = (
 			'full_name',
-			'organizer'
+			'id',
+			'bio',
+			'organizer',
+			'photo',
+			'website',
 			)
+
+	def validate(self,validated_data):
+		return validated_data

@@ -90,7 +90,8 @@ class Activity(models.Model):
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length = 200,blank=True,null=True)
     instructors = models.ManyToManyField(Instructor,related_name="activities")
-    active = models.NullBooleanField()
+    enroll_open = models.NullBooleanField(default=True)
+    published = models.NullBooleanField(default=False)
     location =  models.ForeignKey(Location,null=True)
 
 
@@ -122,8 +123,23 @@ class Activity(models.Model):
         return levels
 
     def publish(self):
-        self.active = True
+        self.published = True
         self.save()
+
+    def last_sale_date(self):
+
+        chronograms = self.chronograms.values('sessions__date')\
+                          .order_by('-sessions__date').all()
+        if not chronograms:
+            return None
+
+        return chronograms[0]['sessions__date']
+
+    def add_instructors(self,instructors_data,organizer):
+        instructors = Instructor.update_or_create(instructors_data,organizer)
+        self.instructors.clear()
+        self.instructors.add(*instructors)
+
 
 
 
@@ -136,7 +152,7 @@ class ActivityPhoto(models.Model):
 
 
 class Chronogram(models.Model):
-    activity = models.ForeignKey(Activity)
+    activity = models.ForeignKey(Activity,related_name="chronograms")
     initial_date = models.DateTimeField()
     closing_sale = models.DateTimeField()
     number_of_sessions = models.IntegerField()

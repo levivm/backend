@@ -16,7 +16,8 @@ STEPS_REQUIREMENTS = {
 	
 	'general':['title','short_description','large_description','sub_category_id','level','type'],
 	'detail':['content'],
-	'calendars':['chronogram_set'],
+	'calendars':['chronograms'],
+	'instructors':['instructors'],
 	'location':['location'],''
 	'gallery':['photos'],
 	'return_policy':['return_policy']
