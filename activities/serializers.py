@@ -3,7 +3,8 @@
 
 from activities.models import Activity,Category,SubCategory,Tags,Chronogram,Session,ActivityPhoto
 from orders.serializers import OrdersSerializer, AssistantSerializer
-from organizers.models import Organizer
+from organizers.models import Organizer,Instructor
+from organizers.serializers import InstructorsSerializer
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
 from locations.serializers import LocationsSerializer
@@ -221,6 +222,8 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         return chronogram
 
     def update(self, instance, validated_data):
+
+
         sessions_data = validated_data.get('sessions')
         del(validated_data['sessions'])
         instance.update(validated_data)
@@ -244,6 +247,8 @@ class ChronogramsSerializer(serializers.ModelSerializer):
         assistants_serialzer = AssistantSerializer(assistants, many=True)
         return assistants_serialzer.data
 
+
+
 class ActivitiesSerializer(serializers.ModelSerializer):
 
     tags = serializers.SlugRelatedField(many=True,slug_field='name',read_only=True)
@@ -259,6 +264,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     type_display = serializers.SerializerMethodField()
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
+    instructors = InstructorsSerializer(many=True,required=False)
+
 
     class Meta:
         model = Activity
@@ -292,15 +299,18 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'last_date',
             'chronograms',
             'organizer',
+            'instructors',
             )
         depth = 1
 
 
     def get_completed_steps(self,obj):
+
         steps_requirements = settings.STEPS_REQUIREMENTS
         steps = steps_requirements.keys()
         completed_steps = {}
-        related_fields = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
+        related_fields  = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
+        related_fields += [rel.name for rel in obj._meta.many_to_many]
         for step in steps:
             required_attrs = steps_requirements[step]
             completed = True
@@ -359,6 +369,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
+
         request = self.context['request']
         user    = request.user
         organizer = None
@@ -391,6 +402,12 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         request = self.context['request']
+        organizer = validated_data.get('organizer')
+        instructors_data = validated_data.get('instructors', [])
+        instance.add_instructors(instructors_data,organizer)
+
+
+
         location = validated_data.get('location', None)
         del(validated_data['location'])
         instance.update(validated_data)

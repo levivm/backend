@@ -20,6 +20,20 @@ class Organizer(models.Model):
 # Create your models here.
 class Instructor(models.Model):
     full_name = models.CharField(max_length = 200)
-    bio   = models.TextField()
+    bio   = models.TextField(blank=True,null=True)
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
-    organizer = models.ForeignKey(Organizer,related_name="instructors")
+    organizer = models.ForeignKey(Organizer,related_name="instructors",null=True)
+    website   = models.CharField(max_length=200,null=True,blank=True)
+
+
+
+    @classmethod
+    def update_or_create(cls,instructors_data,organizer):
+
+        instructors = map(lambda ins:cls.objects.update_or_create(\
+                                        organizer=organizer,id=ins.get('id',None),\
+                                        defaults=ins)[0],\
+                          instructors_data)
+        return instructors
+        
+
