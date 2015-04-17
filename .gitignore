@@ -1,4 +1,5 @@
 *.pyc
 trulii/media/*
 trulii/staticfiles/*
+trulii/*.pyc
 .idea
