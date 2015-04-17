@@ -39,14 +39,6 @@ class OrganizerViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-
-    # def partial_update(self, request, pk=None):
-    #     print "REEE",request.POST
-
-    #     return Response(status=200)
-        
-
-
 class InstructorViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorsSerializer
     lookup_url_kwarg = 'instructor_id'
@@ -55,5 +47,4 @@ class InstructorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         organizer_id = self.kwargs.get('organizer_id',None)
         organizer = get_object_or_404(Organizer,pk=organizer_id)
-        print "instructors",organizer.instructors.all()
         return organizer.instructors.all()
