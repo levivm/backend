@@ -361,6 +361,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
+
         request = self.context['request']
         user    = request.user
         organizer = None
@@ -394,9 +395,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
         request = self.context['request']
         organizer = validated_data.get('organizer')
-        instructor_data = validated_data.get('instructors', [])
-
-        instance.add_instructors(instructor_data,organizer)
+        instructors_data = validated_data.get('instructors', [])
+        instance.add_instructors(instructors_data,organizer)
 
 
 

@@ -20,7 +20,7 @@ class Organizer(models.Model):
 # Create your models here.
 class Instructor(models.Model):
     full_name = models.CharField(max_length = 200)
-    bio   = models.TextField(blank="True",null=True)
+    bio   = models.TextField(blank=True,null=True)
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
     organizer = models.ForeignKey(Organizer,related_name="instructors",null=True)
     website   = models.CharField(max_length=200,null=True,blank=True)
