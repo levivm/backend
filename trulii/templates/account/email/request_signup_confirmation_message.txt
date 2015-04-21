@@ -1,0 +1,3 @@
+{% load i18n %}{% autoescape off %}{% blocktrans %}Organizer {{ organizer }} 
+To confirm this is correct, go to {{ activate_url  }}
+{% endblocktrans %}{% endautoescape %}
