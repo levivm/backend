@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up,email_added
 from allauth.account.models import EmailAddress
@@ -99,6 +100,7 @@ class OrganizerConfirmation(models.Model):
                                    default=timezone.now)
     key = models.CharField(verbose_name=_('key'), max_length=64, unique=True)
     sent = models.DateTimeField(verbose_name=_('sent'), null=True)
+    used = models.BooleanField(default=False)
 
     def __unicode__(self):
         return "Requested Signup ID: %s - ID: %s" % \
@@ -117,11 +119,16 @@ class OrganizerConfirmation(models.Model):
         return get_random_string(64).lower()
 
 
+    def get_confirmation_url(self):
+        base_url = settings.FRONT_SERVER_URL
+        rest_url = "/organizers/confirmation/%s/"%(self.key)
+        return base_url + rest_url
+
 
     def send(self):
 
         ctx = {
-            'activate_url' : "localhost"+self.key,
+            'activate_url' : self.get_confirmation_url(),
             'organizer' : self.requested_signup.name
 
         }

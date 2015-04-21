@@ -1,16 +1,21 @@
-from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,\
-                                  PasswordChangeView,LoginView,EmailView,ConfirmEmailView
+# -*- coding: utf-8 -*-
+#"Content-Type: text/plain; charset=UTF-8\n"
+
+
+# from django.shortcuts import render
+from allauth.account.views import _ajax_response,\
+                                  PasswordChangeView,EmailView
 # Create your views here.
-from allauth.account.models import EmailConfirmation
-import json
+# from allauth.account.models import EmailConfirmation
+# import json
 from utils.form_utils import ajax_response
-from django.http import HttpResponse
-from rest_framework import viewsets
-from rest_framework.parsers import FileUploadParser
+#from django.http import HttpResponse
+from rest_framework import viewsets, exceptions
+from rest_framework.parsers import FileUploadParser,FormParser,MultiPartParser,JSONParser
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
-from rest_framework.authentication import TokenAuthentication
+#from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -18,7 +23,7 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
-from utils.form_utils import ajax_response
+#from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -26,12 +31,8 @@ from .serializers import UserProfilesSerializer, RequestSignupsSerializers
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
-from .models import RequestSignup
-
-
-
-from rest_framework import parsers
-from rest_framework import renderers
+from .models import RequestSignup,OrganizerConfirmation
+from django.utils.translation import ugettext_lazy as _
 
 
 
@@ -96,6 +97,9 @@ class RequestSignupViewSet(viewsets.ModelViewSet):
 
 
 
+
+
+
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserProfilesSerializer
@@ -115,7 +119,6 @@ class UsersViewSet(viewsets.ModelViewSet):
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
 
-        print "DATA SERIALIZADA",data
         return Response(data)
 
 
@@ -124,6 +127,14 @@ class UsersViewSet(viewsets.ModelViewSet):
         auth_logout(request)
         return Response(status=status.HTTP_200_OK)
 
+    def verify_organizer_pre_signup_key(self,request,key):
+        oc = get_object_or_404(OrganizerConfirmation,key=key)
+        if oc.used:
+            msg = _('Token de confirmación ha sido usado')
+            raise exceptions.ValidationError(msg)
+        
+        return Response(status=status.HTTP_200_OK) 
+
 
 
 
@@ -131,8 +142,8 @@ class UsersViewSet(viewsets.ModelViewSet):
 class ObtainAuthTokenView(APIView):
     throttle_classes = ()
     permission_classes = ()
-    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
-    renderer_classes = (renderers.JSONRenderer,)
+    parser_classes = (FormParser, MultiPartParser, JSONParser,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = AuthTokenSerializer
 
     def post(self, request):
