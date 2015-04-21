@@ -15,6 +15,8 @@ class City(models.Model):
     class Meta:
         verbose_name_plural = "cities"
 
+    def __unicode__(self):
+        return self.name
 
 
 class Location(models.Model):

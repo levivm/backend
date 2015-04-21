@@ -22,10 +22,12 @@ from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from .serializers import UserProfilesSerializer
+from .serializers import UserProfilesSerializer, RequestSignupsSerializers
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
+from .models import RequestSignup
+
 
 
 from rest_framework import parsers
@@ -86,6 +88,11 @@ def _set_ajax_response(_super):
 
     return response,form
 
+
+
+class RequestSignupViewSet(viewsets.ModelViewSet):
+    queryset = RequestSignup.objects.all()
+    serializer_class = RequestSignupsSerializers
 
 
 

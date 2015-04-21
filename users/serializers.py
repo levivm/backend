@@ -1,11 +1,10 @@
-from rest_framework import serializers
-from .models import UserProfile
+from rest_framework import serializers,exceptions
+from .models import UserProfile,RequestSignup
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
-from allauth.account.forms import LoginForm
+#from allauth.account.forms import LoginForm
 
-from rest_framework import exceptions, serializers
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -27,6 +26,11 @@ class UserProfilesSerializer(serializers.ModelSerializer):
 
         )
 
+
+class RequestSignupsSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = RequestSignup  
 
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()

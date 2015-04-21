@@ -1,12 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up,email_added
+from allauth.account.models import EmailAddress
+from allauth.account.adapter import get_adapter
 from django.dispatch import receiver
 from .forms import UserCreateForm
 from organizers.models import Organizer
 from students.models import Student
-from allauth.account.models import EmailAddress
 from rest_framework.authtoken.models import Token
+from locations.models import City
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from datetime import datetime
+
 
 _ = lambda x:x
 
@@ -55,3 +61,75 @@ class UserProfile(models.Model):
     birthday   = models.DateField(null=True,blank=True)
     telephone  = models.CharField(max_length=100,null=True,blank=True)
     bio = models.TextField(null=True,blank=True)
+
+
+
+
+
+
+class RequestSignup(models.Model):
+    email = models.EmailField(max_length=100)
+    name  = models.CharField(max_length=100)
+    telephone =  models.CharField(max_length=100)
+    want_to_teach = models.TextField()
+    city = models.ForeignKey(City)
+    approved = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "Nombre: %s - Email: %s - ID: %s" % (self.name,self.email,self.id)
+
+    def save(self, *args, **kwargs):
+
+        print "saving",self.approved
+        if  self.approved:
+            instance,created = OrganizerConfirmation.objects.get_or_create(requested_signup=self)
+            if created:
+                instance.save()
+
+            instance.send()
+
+        super(RequestSignup, self).save(*args, **kwargs)
+
+
+
+class OrganizerConfirmation(models.Model):
+
+    requested_signup = models.OneToOneField(RequestSignup)
+    created = models.DateTimeField(verbose_name=_('created'),
+                                   default=timezone.now)
+    key = models.CharField(verbose_name=_('key'), max_length=64, unique=True)
+    sent = models.DateTimeField(verbose_name=_('sent'), null=True)
+
+    def __unicode__(self):
+        return "Requested Signup ID: %s - ID: %s" % \
+                (self.requested_signup.id,self.id)
+
+
+    def save(self, *args, **kwargs):
+
+        if not self.pk:
+            self.key = self.generate_key()
+
+        super(OrganizerConfirmation, self).save(*args, **kwargs)
+
+
+    def generate_key(self):
+        return get_random_string(64).lower()
+
+
+
+    def send(self):
+
+        ctx = {
+            'activate_url' : "localhost"+self.key,
+            'organizer' : self.requested_signup.name
+
+        }
+        email_template = "account/email/request_signup_confirmation"
+        get_adapter().send_mail(email_template,
+                                self.requested_signup.email,
+                                ctx)
+        self.sent = datetime.now()
+        self.save()
+
+
