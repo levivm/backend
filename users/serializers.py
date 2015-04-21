@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+#"Content-Type: text/plain; charset=UTF-8\n"
+
 from rest_framework import serializers,exceptions
-from .models import UserProfile,RequestSignup
+from .models import UserProfile,RequestSignup, OrganizerConfirmation
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -27,6 +30,21 @@ class UserProfilesSerializer(serializers.ModelSerializer):
         )
 
 
+
+
+class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrganizerConfirmation
+
+
+
+
+
+
+
+
+
 class RequestSignupsSerializers(serializers.ModelSerializer):
 
     class Meta:
@@ -36,9 +54,9 @@ class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField(style={'input_type': 'password'})
 
-    def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
 
         if email and password:
             # login_form = LoginForm({'login':email,'password':password})
@@ -58,5 +76,5 @@ class AuthTokenSerializer(serializers.Serializer):
             msg = _('Must include "email" and "password".')
             raise exceptions.ValidationError(msg)
 
-        attrs['user'] = user
-        return attrs
+        data['user'] = user
+        return data
