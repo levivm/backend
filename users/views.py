@@ -196,9 +196,11 @@ class SignUpCustomView(SignupView):
             user_type = form.cleaned_data.get('user_type','S')
             if user_type == settings.ORGANIZER_TYPE:
                 try:
-                    OrganizerConfirmation.objects.\
+                    oc = OrganizerConfirmation.objects.\
                         select_related('requested_signup').\
                         get(requested_signup__email=email)
+                    oc.used = True
+                    oc.save()
 
                 except OrganizerConfirmation.DoesNotExist:
                     msg = unicode(_("Este correo no ha sido previamente validado"))
