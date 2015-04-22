@@ -27,10 +27,22 @@ def after_sign_up(sender, **kwargs):
         profile = Student.objects.create(user=user)
         profile.save()
     elif user_type == 'O':
+        
+        # try:
+        #     OrganizerConfirmation.objects.\
+        #         select_related('requested_signup').\
+        #         get(requested_signup__email=user.email)
         profile = Organizer.objects.create(user=user)
         profile.save()
+        # except OrganizerConfirmation.DoesNotExist:
+        #     print "USERRRRR ID ",user.id
+        #     a = EmailAddress.objects.filter(user=user,primary=True).get()
+        #     print a.id
+        #     user.delete()
+            # return
 
-    Token.objects.create(user=user)
+    
+    # Token.objects.create(user=user)
 
 
 

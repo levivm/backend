@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 #"Content-Type: text/plain; charset=UTF-8\n"
-
-
-# from django.shortcuts import render
 from allauth.account.views import _ajax_response,\
                                   PasswordChangeView,EmailView
-# Create your views here.
-# from allauth.account.models import EmailConfirmation
-# import json
+import json
+from django.conf import settings
 from utils.form_utils import ajax_response
-#from django.http import HttpResponse
 from rest_framework import viewsets, exceptions
 from rest_framework.parsers import FileUploadParser,FormParser,MultiPartParser,JSONParser
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
-#from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -23,7 +17,6 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
-#from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -33,48 +26,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
 from .models import RequestSignup,OrganizerConfirmation
 from django.utils.translation import ugettext_lazy as _
-
-
-
-# def _ajax_response(request, response, form=None):
-#     if request.is_ajax():
-#         if (isinstance(response, HttpResponseRedirect)
-#                 or isinstance(response, HttpResponsePermanentRedirect)):
-#             redirect_to = response['Location']
-#         else:
-#             redirect_to = None
-#         response = get_adapter().ajax_response(request,
-#                                                response,
-#                                                form=form,
-#                                                redirect_to=redirect_to)
-#     return HttpResponse({'hola':1}, content_type="application/json")
-#     return response
-
-
-
-
-# def ajax_response_(request, response, redirect_to=None, form=None):
-#     data = {}
-#     if redirect_to:
-#         status = 200
-#         data['location'] = redirect_to
-#     if form:
-#         if form.is_valid():
-#             status = 200
-#         else:
-#             status = 400
-#             data['form_errors'] = form._errors
-#         if hasattr(response, 'render'):
-#             response.render()
-#         data['html'] = response.content.decode('utf8')
-#     return HttpResponse(json.dumps(data),
-#                         status=status,
-#                         content_type='application/json')
-
-
- #ret = super(PasswordResetView, self).get_context_data(**kwargs)
-
-
+from allauth.account.views import SignupView
+from django.http import HttpResponse
 
 
 
@@ -216,18 +169,9 @@ class ChangeEmailView(APIView):
 
         return _ajax_response(request, res)
 
-    # def post(self, request, *args, **kwargs):
-
-       
-    #     _response = super(ChangeEmailView, self).post(request, *args, **kwargs)
-    #     _super_response = super(ChangeEmailView, self)
-
-    #     response,form = set_ajax_response(_response)
-    #     return _ajax_response(request, response, form=form)
 
 class PasswordChange(APIView):
 
-    # authentication_classes = (TokenAuthentication,)
 
     def post(self,request, *args, **kwargs):
         _super_response = PasswordChangeView()
@@ -238,79 +182,34 @@ class PasswordChange(APIView):
         return _ajax_response(request, response, form=form)
 
 
-
-# class ResetPassword(PasswordResetView):
-
+class SignUpCustomView(SignupView):
 
 
-#     def post(self, request, *args, **kwargs):
-
-#         _super_response =  super(ResetPassword, self)
-        
-        
-        
-#         response,form = _set_ajax_response(_super_response)
-#         return _ajax_response(request, response, form=form)
-
-        # #super(ResetPassword, self).post(request, *args, **kwargs)
-        # form_class =  super(ResetPassword, self).get_form_class()
-        # form = super(ResetPassword, self).get_form(form_class)
+    def post(self, request, *args, **kwargs):
 
 
-    # def get_context_data(self, **kwargs):
-    #     ret = super(ResetPassword, self).get_context_data(**kwargs)
-    #     # NOTE: For backwards compatibility
-    #     ret['password_reset_form'] = super(ResetPassword, self).get_form_class()
-    #     # (end NOTE)
-    #     return ret
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        if form.is_valid():
 
-# class SignUpAjax(SignupView):
+            email = form.cleaned_data.get('email',None)
+            user_type = form.cleaned_data.get('user_type','S')
+            if user_type == settings.ORGANIZER_TYPE:
+                try:
+                    OrganizerConfirmation.objects.\
+                        select_related('requested_signup').\
+                        get(requested_signup__email=email)
 
+                except OrganizerConfirmation.DoesNotExist:
+                    msg = unicode(_("Este correo no ha sido previamente validado"))
+                    response_data = {'form_errors':{'email':[msg]}}
+                    
+                    return HttpResponse(json.dumps(response_data),
+                        content_type="application/json",status=400)
 
-#     # def post(self, request, *args, **kwargs):
-
-
-#     #     #ret = super(SignUpAjax, self).get_context_data(**kwargs)
-#     #     return HttpResponse(json.dumps({'hola':'asdasd'}), content_type="application/json")
-#     #     return ajax_response(ret['form'])
-#         # form = self.form_class(request.POST)
-#         # if form.is_valid():
-#         #     # <process form cleaned data>
-#         #     return HttpResponseRedirect('/success/')
-
-#         # return render(request, self.template_name, {'form': form})
-
-
-#     def post(self, request, *args, **kwargs):
-
-#         form_class = self.get_form_class()
-#         form = self.get_form(form_class)
-#         if form.is_valid():
-#             response = self.form_valid(form)
-#         else:
-#             response = self.form_invalid(form)
-
-#         return ajax_response_(request,response,form=form)
-
-#         return HttpResponse(json.dumps({'data':1}),
-#                     status=200,
-#                     content_type='application/json')
-
-#     # def post(self, request, *args, **kwargs):
+            response = self.form_valid(form)
+        else:
+            response = self.form_invalid(form)
 
 
-#     #     post = super(SignUpAjax, self).post(request, *args, **kwargs)
-#     #     return post
-#         #form = super(SignUpAjax, self).get_form(form_class)
-#         #if form.is_valid():
-#         #    response = super(SignUpAjax, self).form_valid(form)
-#         #else:
-#         #    response = super(SignUpAjax, self).form_invalid(form)
-#         #return _ajax_response(self.request, response, form=form)
-#         #ret = .get_context_data(**kwargs)
-#         #ret['all_tags'] = "ss"
-#         #json.dumps(ret)
-#         #return HttpResponse(, content_type="application/json")
-#         #return json.dumps(response_data)
-#         #return _ajax_response(self.request, response, form=form)
-#         #return ret
+        return _ajax_response(request,response,form=form)
