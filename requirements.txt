@@ -5,6 +5,7 @@ dj-static==0.0.6
 Django==1.8
 git+https://github.com/pennersr/django-allauth.git
 django-cors-headers==1.0.0
+django-guardian==1.2.5
 django-extensions==1.5.2
 django-rest-swagger==0.2.9
 django-storages-redux==1.2.3
