@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
+from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
+from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, ChronogramsSerializer, ActivityPhotosSerializer
-from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
-from rest_framework import viewsets, status
-from django.utils.translation import ugettext_lazy as _
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from utils.forms import FileUploadForm
-from utils.form_utils import ajax_response
-from django.conf import settings
-from django.utils.timezone import now
 
 
 class ChronogramsViewSet(viewsets.ModelViewSet):
     serializer_class = ChronogramsSerializer
     lookup_url_kwarg = 'calendar_pk'
+    model = Chronogram
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
 
     def get_queryset(self):
         activity_id = self.kwargs.get('activity_pk',None)
@@ -35,6 +36,7 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
 class ActivitiesViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
 
     def delete_calendar(self, request, pk=None):
 
@@ -85,40 +87,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
             chronogram = chronogram_serializer.save()
         return Response(chronogram_serializer.data)
 
-    def add_photo(self, request, pk=None):
-
-        activity = self.get_object()
-
-        photos_count = activity.photos.count()
-
-        if photos_count >= settings.MAX_ACTIVITY_PHOTOS:
-            msg = _(u'Ya excedió el número máximo de imagenes por actividad')
-            return Response({'non_field_errors': [msg]}, status=status.HTTP_404_NOT_FOUND)
-
-        photo = None
-        file_form = FileUploadForm(request.POST, request.FILES)
-        if file_form.is_valid():
-            photo = file_form.cleaned_data['file']
-            activity_photo = ActivityPhoto(photo=photo, activity=activity)
-            activity_photo.save()
-            activity_serializer = ActivitiesSerializer(instance=activity, context={'request': request})
-            photo_serializer = ActivityPhotosSerializer(instance=activity_photo)
-            return Response({'activity': activity_serializer.data, 'photo': photo_serializer.data})
-        else:
-            return Response(ajax_response(file_form), status=status.HTTP_406_NOT_ACCEPTABLE)
-
-    def delete_photo(self, request, pk=None):
-        activity = self.get_object()
-        photo_id = request.DATA.get("photo_id", None)
-        try:
-            photo = activity.photos.get(id=photo_id)
-            photo.delete()
-            activity_serializer = ActivitiesSerializer(instance=activity, context={'request': request})
-            return Response({'photo_id': photo_id, 'activity': activity_serializer.data}, status=status.HTTP_200_OK)
-        except ActivityPhoto.DoesNotExist:
-            msg = _("La imagen a eliminar no existe")
-            return Response({'non_field_errors': [msg]}, status=status.HTTP_404_NOT_FOUND)
-
     def general_info(self, request):
         categories = Category.objects.all()
         sub_categories = SubCategory.objects.all()
@@ -140,6 +108,46 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         activity = self.get_object()
         activity.publish()
         return Response(status.HTTP_200_OK)
+
+
+class AcitivityPhotosViewSet(viewsets.ModelViewSet):
+    model = ActivityPhoto
+    serializer_class = ActivityPhotosSerializer
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwner)
+    lookup_url_kwarg = 'gallery_pk'
+
+    def get_queryset(self):
+        activity = self.get_activity_object(**self.kwargs)
+        return activity.photos.all()
+
+    def create(self, request, *args, **kwargs):
+        activity = self.get_activity_object(**kwargs)
+        serializer = ActivityPhotosSerializer(data=request.data, context={'activity': activity, 'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        return Response(
+            data={'activity': activity_serializer.data, 'photo': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        gallery_pk = kwargs.get('gallery_pk')
+        activity = self.get_activity_object(**kwargs)
+        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
+            status=status.HTTP_200_OK)
+
+    def get_activity_object(self, **kwargs):
+        activity_pk = kwargs.get('activity_pk')
+        return get_object_or_404(Activity, pk=activity_pk)
+
+    def get_activity_serializer(self, instance, context):
+        return ActivitiesSerializer(instance=instance, context=context)
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):

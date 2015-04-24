@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from allauth.account.signals import user_signed_up,email_added
 from django.dispatch import receiver
 from .forms import UserCreateForm
@@ -17,14 +17,13 @@ def after_sign_up(sender, **kwargs):
     user = kwargs['user']    
     user_type = request.POST.get('user_type',None) 
     if user_type == 'S':
-        profile = Student.objects.create(user=user)
-        profile.save()
+        Student.objects.create(user=user)
     elif user_type == 'O':
-        profile = Organizer.objects.create(user=user)
-        profile.save()
+        Organizer.objects.create(user=user)
+        organizers = Group.objects.get(name='Organizers')
+        user.groups.add(organizers)
 
     Token.objects.create(user=user)
-
 
 
 @receiver(email_added)
