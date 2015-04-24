@@ -42,9 +42,7 @@ REST_FRAMEWORK = {
     )
 }
 
-
-
-
+ANONYMOUS_USER_ID = -1
 
 TEMPLATE_DEBUG = True
 
@@ -78,6 +76,7 @@ INSTALLED_APPS = (
     'allauth.socialaccount',
     'allauth.socialaccount.providers.facebook',
     'orders',
+    'guardian',
 )
 
 
@@ -113,6 +112,7 @@ AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + (
 
     # `allauth` specific authentication methods, such as login by e-mail
     "allauth.account.auth_backends.AuthenticationBackend",
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 ROOT_URLCONF = 'trulii.urls'

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from allauth.account.signals import user_signed_up,email_added
 from allauth.socialaccount.signals import pre_social_login,social_account_added
 from allauth.account.models import EmailAddress
@@ -25,20 +26,17 @@ def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']    
     data = request.POST
-    user_type = data.get('user_type','S') 
-    import pdb
-    pdb.set_trace()
+    user_type = data.get('user_type','S')
     if user_type == 'S':
         profile = Student.objects.create(user=user)
         profile.save()
         if not user.socialaccount_set.exists():
             send_email_confirmation(request,user,signup=True)
-
     elif user_type == 'O':
-        
         name = data.get('name')
         profile = Organizer.objects.create(user=user,name=name)
-        profile.save()
+        organizers = Group.objects.get(name='Organizers')
+        user.groups.add(organizers)
 
 
 # @receiver(pre_social_login)
@@ -69,7 +67,6 @@ def after_sign_up(sender, **kwargs):
 
     
     # Token.objects.create(user=user)
-
 
 
 @receiver(email_added)
