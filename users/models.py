@@ -148,7 +148,7 @@ class OrganizerConfirmation(models.Model):
 
     def get_confirmation_url(self):
         base_url = settings.FRONT_SERVER_URL
-        rest_url = "/organizers/register/%s/"%(self.key)
+        rest_url = "organizers/register/%s/"%(self.key)
         return base_url + rest_url
 
 
