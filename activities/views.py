@@ -123,13 +123,11 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         categories = Category.objects.all()
         sub_categories = SubCategory.objects.all()
         tags = Tags.ready_to_use()
-        types = Activity.get_types()
         levels = Activity.get_levels()
 
         data = {
             'categories': CategoriesSerializer(categories, many=True).data,
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
-            'types': types,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
         }
