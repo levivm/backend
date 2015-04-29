@@ -251,11 +251,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         model = Activity
         fields = (
             'id',
-            'type',
-            'type_display',
             'title',
             'short_description',
-            'large_description',
             'sub_category',
             'sub_category_display',
             'level',
@@ -275,6 +272,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'youtube_video_url',
             'completed_steps',
             'published',
+            'certification',
             'enroll_open',
             'last_date',
             'chronograms',
