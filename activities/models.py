@@ -64,21 +64,11 @@ class Activity(models.Model):
         ('5','Viernes'),
         )
 
-    TYPE_CHOICES = (
-        ('CU',u'Curso'),
-        ('CE',u'Certificación'),
-        ('CL',u'Clase'),
-        ('DP',u'Diplomado'),
-        ('SE',u'Seminario'),
-        ('TA',u'Taller'),
-        )
 
-    type = models.CharField(max_length = 2,choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory) 
     organizer = models.ForeignKey(Organizer)
     tags = models.ManyToManyField(Tags)
     title = models.CharField(max_length = 100) 
-    large_description = models.TextField()
     short_description = models.CharField(max_length = 100)
     level = models.CharField(choices = LEVEL_CHOICES, max_length = 1)
     goals = models.TextField(blank=True)
@@ -92,6 +82,7 @@ class Activity(models.Model):
     instructors = models.ManyToManyField(Instructor,related_name="activities")
     enroll_open = models.NullBooleanField(default=True)
     published = models.NullBooleanField(default=False)
+    certification = models.NullBooleanField(default=False)
     location =  models.ForeignKey(Location,null=True)
 
 
