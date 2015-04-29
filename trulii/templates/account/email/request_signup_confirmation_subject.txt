@@ -1,0 +1,4 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %}Crea tu cuenta y comienza a user Trulii{% endblocktrans %}
+{% endautoescape %}

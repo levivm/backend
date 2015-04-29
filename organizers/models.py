@@ -35,5 +35,12 @@ class Instructor(models.Model):
                                         defaults=ins)[0],\
                           instructors_data)
         return instructors
-        
 
+
+
+
+
+
+
+        
+    
