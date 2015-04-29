@@ -26,7 +26,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
 from .models import RequestSignup,OrganizerConfirmation
 from django.utils.translation import ugettext_lazy as _
-from allauth.account.views import SignupView
+from allauth.account.views import SignupView,ConfirmEmailView
 from django.http import HttpResponse
 
 
@@ -41,6 +41,21 @@ def _set_ajax_response(_super):
         response = _super.form_invalid(form)
 
     return response,form
+
+
+def get_user_profile_data(user):
+    profile = None
+    data = None
+
+    try:
+        profile = Organizer.objects.get(user=user)
+        data    = OrganizersSerializer(profile).data
+    except Organizer.DoesNotExist:
+        profile = Student.objects.get(user=user)
+        data    = StudentsSerializer(profile).data
+
+    return data
+
 
 
 
@@ -62,16 +77,8 @@ class UsersViewSet(viewsets.ModelViewSet):
 
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
-        profile  = None
-        data     = None
 
-        try:
-            profile = Organizer.objects.get(user=user)
-            data    = OrganizersSerializer(profile).data
-        except Organizer.DoesNotExist:
-            profile = Student.objects.get(user=user)
-            data    = StudentsSerializer(profile).data
-
+        data = get_user_profile_data(user)
         return Response(data)
 
 
@@ -83,10 +90,14 @@ class UsersViewSet(viewsets.ModelViewSet):
     def verify_organizer_pre_signup_key(self,request,key):
         oc = get_object_or_404(OrganizerConfirmation,key=key)
         if oc.used:
-            msg = _('Token de confirmación ha sido usado')
+            msg = _('Token de confirmacion ha sido usado')
             raise exceptions.ValidationError(msg)
         
-        return Response(status=status.HTTP_200_OK) 
+        request_signup = oc.requested_signup
+        request_signup_data = RequestSignupsSerializers(request_signup).data
+
+
+        return Response(request_signup_data,status=status.HTTP_200_OK) 
 
 
 
@@ -104,8 +115,12 @@ class ObtainAuthTokenView(APIView):
         serializer = self.serializer_class(data=request.data,context={'request':request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+
+        user_data = get_user_profile_data(user)
+
+
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key})
+        return Response({'token': token.key,'user':user_data})
 
 
 
@@ -182,36 +197,50 @@ class PasswordChange(APIView):
         return _ajax_response(request, response, form=form)
 
 
-class SignUpCustomView(SignupView):
+class ConfirmEmail(ConfirmEmailView):
 
 
-    def post(self, request, *args, **kwargs):
+    def post(self,request,*args,**kwargs):
+        
+        super(ConfirmEmail, self).post(request, *args, **kwargs)
+
+        return HttpResponse(
+            content_type="application/json",status=200)
 
 
-        form_class = self.get_form_class()
-        form = self.get_form(form_class)
-        if form.is_valid():
 
-            email = form.cleaned_data.get('email',None)
-            user_type = form.cleaned_data.get('user_type','S')
-            if user_type == settings.ORGANIZER_TYPE:
-                try:
-                    oc = OrganizerConfirmation.objects.\
-                        select_related('requested_signup').\
-                        get(requested_signup__email=email)
-                    oc.used = True
-                    oc.save()
 
-                except OrganizerConfirmation.DoesNotExist:
-                    msg = unicode(_("Este correo no ha sido previamente validado"))
-                    response_data = {'form_errors':{'email':[msg]}}
+
+# class SignUpCustomView(SignupView):
+
+
+#     def post(self, request, *args, **kwargs):
+
+
+#         form_class = self.get_form_class()
+#         form = self.get_form(form_class)
+#         if form.is_valid():
+
+#             email = form.cleaned_data.get('email',None)
+#             user_type = form.cleaned_data.get('user_type','S')
+#             if user_type == settings.ORGANIZER_TYPE:
+#                 try:
+#                     oc = OrganizerConfirmation.objects.\
+#                         select_related('requested_signup').\
+#                         get(requested_signup__email=email)
+#                     oc.used = True
+#                     oc.save()
+
+#                 except OrganizerConfirmation.DoesNotExist:
+#                     msg = unicode(_("Este correo no ha sido previamente validado"))
+#                     response_data = {'form_errors':{'email':[msg]}}
                     
-                    return HttpResponse(json.dumps(response_data),
-                        content_type="application/json",status=400)
+#                     return HttpResponse(json.dumps(response_data),
+#                         content_type="application/json",status=400)
 
-            response = self.form_valid(form)
-        else:
-            response = self.form_invalid(form)
+#             response = self.form_valid(form)
+#         else:
+#             response = self.form_invalid(form)
 
 
-        return _ajax_response(request,response,form=form)
+#         return _ajax_response(request,response,form=form)

@@ -5,7 +5,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax
-from users.views import ChangeEmailView,PasswordChange,SignUpCustomView
+from users.views import ChangeEmailView,PasswordChange,ConfirmEmail
 
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
@@ -24,7 +24,8 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/email/', ChangeEmailView.as_view()),
-    url(r'^users/signup/', SignUpCustomView.as_view()),
+    url(r'^users/confirm-email/(?P<key>\w+)/', ConfirmEmail.as_view()),
+    # url(r'^users/signup/', SignUpCustomView.as_view()),
     url(r'^users/password/change/', PasswordChange.as_view()),
     #url(r'^password/reset/', ResetPassword.as_view()),
     url(r'^users/', include('allauth.urls')),

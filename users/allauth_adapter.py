@@ -24,15 +24,15 @@ class MyAccountAdapter(DefaultAccountAdapter):
         return path
 
 
+    # def save_user(self, request, sociallogin, form=None):
+    #     user = super(MyAccountAdapter, self).save_user(request, sociallogin, form=form)
+    #     self.login( request, user)
+    #     return user
+
     def get_email_confirmation_redirect_url(self,request):
 
         path = "/email/confirm/success/"
         return path
-
-    # def clean_email(self,email):
-
-    #     return email
-
 
     # def populate_username(self,request,user):
     #     raise forms.ValidationError(_("This username is already taken. Please "

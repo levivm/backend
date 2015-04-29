@@ -4,8 +4,8 @@ from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up,email_added
 from allauth.account.models import EmailAddress
 from allauth.account.adapter import get_adapter
+from allauth.account.utils import send_email_confirmation
 from django.dispatch import receiver
-from .forms import UserCreateForm
 from organizers.models import Organizer
 from students.models import Student
 from rest_framework.authtoken.models import Token
@@ -22,18 +22,27 @@ _ = lambda x:x
 def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']    
-    user_type = request.POST.get('user_type',None) 
+    data = request.POST
+    user_type = data.get('user_type') 
     if user_type == 'S':
         profile = Student.objects.create(user=user)
         profile.save()
+        send_email_confirmation(request,user,signup=True)
     elif user_type == 'O':
         
         # try:
         #     OrganizerConfirmation.objects.\
         #         select_related('requested_signup').\
         #         get(requested_signup__email=user.email)
-        profile = Organizer.objects.create(user=user)
+        name = data.get('name')
+        profile = Organizer.objects.create(user=user,name=name)
         profile.save()
+
+
+
+    # get_adapter().login(request,user)
+
+
         # except OrganizerConfirmation.DoesNotExist:
         #     print "USERRRRR ID ",user.id
         #     a = EmailAddress.objects.filter(user=user,primary=True).get()
@@ -66,8 +75,14 @@ class UserProfile(models.Model):
         (FEMALE, _('Mujer'))
     )
 
+    USER_TYPES = (
+        ('O', _('Organizador')),
+        ('S', _('Estudiante')),
+    )
+
+
     user   = models.OneToOneField(User, related_name='profile')
-    user_type = models.CharField(max_length=1,choices=UserCreateForm.USER_TYPES)
+    user_type = models.CharField(max_length=1,choices=USER_TYPES)
     gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
     created_at = models.DateTimeField(auto_now_add=True)
     photo      = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
@@ -133,7 +148,7 @@ class OrganizerConfirmation(models.Model):
 
     def get_confirmation_url(self):
         base_url = settings.FRONT_SERVER_URL
-        rest_url = "/organizers/confirmation/%s/"%(self.key)
+        rest_url = "/organizers/register/%s/"%(self.key)
         return base_url + rest_url
 
 
