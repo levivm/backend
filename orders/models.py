@@ -5,7 +5,7 @@ from students.models import Student
 
 class Order(models.Model):
     chronogram = models.ForeignKey(Chronogram, related_name='orders')
-    student = models.ForeignKey(Student)
+    student = models.ForeignKey(Student, related_name='orders')
     amount = models.FloatField()
     quantity = models.IntegerField()
     enroll = models.BooleanField(default=False)
