@@ -1,0 +1,118 @@
+[
+{
+    "model": "auth.user",
+    "fields": {
+        "user_permissions": [],
+        "last_name": "",
+        "is_staff": false,
+        "password": "",
+        "email": "",
+        "groups": [],
+        "is_active": true,
+        "last_login": null,
+        "is_superuser": false,
+        "first_name": "",
+        "date_joined": "2015-04-21T15:55:16.434Z",
+        "username": "AnonymousUser"
+    },
+    "pk": -1
+},
+{
+    "model": "auth.user",
+    "fields": {
+        "user_permissions": [],
+        "last_name": "Forero",
+        "is_staff": false,
+        "password": "pbkdf2_sha256$20000$g8b2B240IvcW$wWrWM9fdDsoiUeZFfpwyqiosVUedUweLbtDooYIrU50=",
+        "email": "harvey@trulii.com",
+        "groups": [
+            1
+        ],
+        "is_active": true,
+        "last_login": "2015-04-22T16:51:31.897Z",
+        "is_superuser": false,
+        "first_name": "Harvey",
+        "date_joined": "2015-04-21T17:02:11.904Z",
+        "username": "harvey"
+    },
+    "pk": 1
+},
+{
+    "model": "auth.user",
+    "fields": {
+        "user_permissions": [],
+        "last_name": "fo2",
+        "is_staff": false,
+        "password": "pbkdf2_sha256$20000$s9PM7CADBQza$iffGYR0ydAowlO67pJF4+W9HfjjZ4hzK18aZzpWyjQI=",
+        "email": "ho2@trulii.com",
+        "groups": [
+            1
+        ],
+        "is_active": true,
+        "last_login": "2015-04-22T15:26:49.569Z",
+        "is_superuser": false,
+        "first_name": "ho2",
+        "date_joined": "2015-04-21T21:35:33.779Z",
+        "username": "ho2"
+    },
+    "pk": 2
+},
+{
+    "model": "auth.user",
+    "fields": {
+        "user_permissions": [],
+        "last_name": "Forero",
+        "is_staff": false,
+        "password": "pbkdf2_sha256$20000$jUHWxlzxdP12$O1TBbRwKOZNR7effkc4287Vzr2l+kRgrtgPSK0y18Y4=",
+        "email": "h@trulii.com",
+        "groups": [
+            2
+        ],
+        "is_active": true,
+        "last_login": "2015-04-28T15:34:22.987Z",
+        "is_superuser": false,
+        "first_name": "Harvey",
+        "date_joined": "2015-04-15T20:13:55.790Z",
+        "username": "harvey2"
+    },
+    "pk": 3
+},
+{
+  "model": "auth.user",
+  "fields": {
+      "user_permissions": [],
+      "last_name": "Forero",
+      "is_staff": false,
+      "password": "pbkdf2_sha256$20000$jUHWxlzxdP12$O1TBbRwKOZNR7effkc4287Vzr2l+kRgrtgPSK0y18Y4=",
+      "email": "hstudent@trulii.com",
+      "groups": [
+          2
+      ],
+      "is_active": true,
+      "last_login": "2015-04-28T15:34:22.987Z",
+      "is_superuser": false,
+      "first_name": "Harvey",
+      "date_joined": "2015-04-15T20:13:55.790Z",
+      "username": "hstudent"
+  },
+  "pk": 4
+},
+{
+    "model": "auth.user",
+    "fields": {
+        "user_permissions": [],
+        "last_name": "",
+        "is_staff": true,
+        "password": "pbkdf2_sha256$20000$56RAptlzeXZp$0O7sEh6zNVOTmS+ANADQ2KdI6FuPgz7wxWXoV6ABYJs=",
+        "email": "hadmin@trulii.com",
+        "groups": [],
+        "is_active": true,
+        "last_login": "2015-04-22T22:07:22.827Z",
+        "is_superuser": true,
+        "first_name": "",
+        "date_joined": "2015-04-22T15:46:39.697Z",
+        "username": "hadmin"
+    },
+    "pk": 5
+}
+]

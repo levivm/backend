@@ -1,0 +1,22 @@
+[
+{
+    "pk": 1,
+    "model": "students.student",
+    "fields": {
+        "created_at": "2015-04-15T20:13:55.830Z",
+        "gender": 1,
+        "user": 3,
+        "photo": ""
+    }
+},
+{
+  "pk": 2,
+  "model": "students.student",
+  "fields": {
+      "created_at": "2015-04-15T20:13:55.830Z",
+      "gender": 1,
+      "user": 4,
+      "photo": ""
+  }
+}
+]
