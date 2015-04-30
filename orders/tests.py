@@ -1,11 +1,5 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
-
-# Un usuario anonimo no puede traer nada
-# Un organizador no puede traer nada
-# Revisar que sea un estudiante
-# Estudiante no owner no puede traer nada
-# Traer las ordenes
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 
@@ -42,7 +36,7 @@ class BaseOrdersViewTest(APITestCase):
 class CreateOrdersViewTest(BaseOrdersViewTest):
     url = '/api/activities/1/orders'
 
-    def test_students_can_create_an_order(self):
+    def test_students_should_create_an_order(self):
         client = self.get_student_client()
         data = {
             'chronogram': 1,
@@ -58,12 +52,12 @@ class CreateOrdersViewTest(BaseOrdersViewTest):
         self.assertEqual(response.status_code, 201)
         self.assertIn(b'"id":2', response.content)
 
-    def test_organizers_cant_create_orders(self):
+    def test_organizers_shouldnt_create_orders(self):
         client = self.get_organizer_client()
         response = client.post(self.url)
         self.assertEqual(response.status_code, 403)
 
-    def test_anonymous_cant_create_orders(self):
+    def test_anonymous_shouldnt_create_orders(self):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 401)
 
