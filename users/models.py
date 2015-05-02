@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up,email_added
+from allauth.socialaccount.signals import pre_social_login,social_account_added
 from allauth.account.models import EmailAddress
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import send_email_confirmation
@@ -20,23 +21,39 @@ _ = lambda x:x
 #handler for signal after user singed up
 @receiver(user_signed_up)
 def after_sign_up(sender, **kwargs):
+
     request = kwargs['request']
     user = kwargs['user']    
     data = request.POST
-    user_type = data.get('user_type') 
+    user_type = data.get('user_type','S') 
+    import pdb
+    pdb.set_trace()
     if user_type == 'S':
         profile = Student.objects.create(user=user)
         profile.save()
-        send_email_confirmation(request,user,signup=True)
+        if not user.socialaccount_set.exists():
+            send_email_confirmation(request,user,signup=True)
+
     elif user_type == 'O':
         
-        # try:
-        #     OrganizerConfirmation.objects.\
-        #         select_related('requested_signup').\
-        #         get(requested_signup__email=user.email)
         name = data.get('name')
         profile = Organizer.objects.create(user=user,name=name)
         profile.save()
+
+
+# @receiver(pre_social_login)
+# def after_social_sign_up(sender, **kwargs):
+
+#     request = kwargs['request']
+#     sociallogin = kwargs['sociallogin']
+
+#     user = sociallogin.user
+
+#     # profile = Student.objects.create(user=user)
+#     # profile.save()
+
+
+
 
 
 
