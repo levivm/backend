@@ -2,8 +2,6 @@
 #"Content-Type: text/plain; charset=UTF-8\n"
 from allauth.account.views import _ajax_response,\
                                   PasswordChangeView,EmailView
-import json
-from django.conf import settings
 from utils.form_utils import ajax_response
 from rest_framework import viewsets, exceptions
 from rest_framework.parsers import FileUploadParser,FormParser,MultiPartParser,JSONParser
@@ -26,8 +24,13 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
 from .models import RequestSignup,OrganizerConfirmation
 from django.utils.translation import ugettext_lazy as _
-from allauth.account.views import SignupView,ConfirmEmailView
+from allauth.account.views import ConfirmEmailView
 from django.http import HttpResponse
+from rest_framework.permissions import AllowAny
+from allauth.socialaccount.models import SocialApp,SocialToken,SocialLogin
+from allauth.socialaccount.providers.facebook.views import fb_complete_login
+from allauth.socialaccount.helpers import complete_social_login
+
 
 
 
@@ -121,6 +124,63 @@ class ObtainAuthTokenView(APIView):
 
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key,'user':user_data})
+
+
+
+
+
+class RestFacebookLogin(APIView):
+    """
+    Login or register a user based on an authentication token coming
+    from Facebook.
+    Returns user data including session id.
+    """
+
+    permission_classes = (AllowAny,)
+
+    def dispatch(self, *args, **kwargs):
+        return super(RestFacebookLogin, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            original_request = request._request
+            auth_token = request.data.get('auth_token', '')
+
+            # Find the token matching the passed Auth token
+            app = SocialApp.objects.get(provider='facebook')
+            fb_auth_token = SocialToken(app=app, token=auth_token)
+
+            # check token against facebook
+            login = fb_complete_login(original_request, app, fb_auth_token)
+            login.token = fb_auth_token
+            login.state = SocialLogin.state_from_request(original_request)
+
+            # add or update the user into users table
+            complete_social_login(original_request, login)
+            # Create or fetch the session id for this user
+            user = original_request.user
+
+            token, _ = Token.objects.get_or_create(user=user)
+
+            # token, _ = Token.objects.get_or_create(user=original_request.user)
+            # if we get here we've succeeded
+            user_data = get_user_profile_data(user)
+
+            data = {
+                'user': user_data,
+                'token': token.key,
+            }
+
+            return Response(
+                status=200,
+                data=data
+            )
+
+        except Exception,error:
+            return Response(status=401, data={
+                'detail': error,
+            })
 
 
 
