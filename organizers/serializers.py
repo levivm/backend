@@ -3,6 +3,7 @@ from .models import Organizer
 from .models import Instructor
 from users.forms import UserCreateForm
 from users.serializers import UserSerializer
+from locations.serializers import LocationsSerializer
 from rest_framework import serializers
 
 
@@ -28,6 +29,7 @@ class OrganizersSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True)
+    locations = LocationsSerializer(many=True)
 
     class Meta:
         model = Organizer
@@ -43,6 +45,7 @@ class OrganizersSerializer(serializers.ModelSerializer):
             'user_type',
             'created_at',
             'instructors',
+            'locations',
             )
         read_only_fields = ('id','photo',)
         depth = 1

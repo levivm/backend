@@ -52,5 +52,5 @@ class LocationsSerializer(serializers.ModelSerializer):
             'id',
             'city',
             'point',
-            'address'
+            'address',
             )
