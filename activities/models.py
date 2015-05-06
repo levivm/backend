@@ -5,6 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import F
 from locations.models import Location
+from utils.mixins import AssignPermissionsMixin
 
 
 class Category(models.Model):
@@ -40,7 +41,7 @@ class Tags(models.Model):
         return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
 
 
-class Activity(models.Model):
+class Activity(AssignPermissionsMixin, models.Model):
     LEVEL_CHOICES = (
         ('P', 'Principiante'),
         ('I', 'Intermedio'),
@@ -64,6 +65,7 @@ class Activity(models.Model):
         ('SE', u'Seminario'),
         ('TA', u'Taller'),
     )
+    permissions = ('organizers.delete_instructor', )
 
     type = models.CharField(max_length=2, choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory)
@@ -127,8 +129,13 @@ class Activity(models.Model):
 
     def add_instructors(self, instructors_data, organizer):
         instructors = Instructor.update_or_create(instructors_data, organizer)
+
+        for instructor in instructors:
+            self.assign_permissions(organizer.user, instructor)
+
         self.instructors.clear()
         self.instructors.add(*instructors)
+
 
 
 class ActivityPhoto(models.Model):
