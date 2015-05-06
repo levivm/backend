@@ -1,0 +1,53 @@
+[
+{
+    "pk": 1,
+    "model": "guardian.userobjectpermission",
+    "fields": {
+        "user": 1,
+        "permission": [
+            "change_organizer",
+            "organizers",
+            "organizer"
+        ],
+        "content_type": [
+            "organizers",
+            "organizer"
+        ],
+        "object_pk": "1"
+    }
+},
+{
+  "pk": 2,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "change_activity",
+          "activities",
+          "activity"
+      ],
+      "content_type": [
+          "activities",
+          "activity"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 3,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_instructor",
+          "organizers",
+          "instructor"
+      ],
+      "content_type": [
+          "organizers",
+          "instructor"
+      ],
+      "object_pk": "1"
+  }
+}
+]
