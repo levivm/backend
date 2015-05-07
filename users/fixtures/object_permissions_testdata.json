@@ -49,5 +49,22 @@
       ],
       "object_pk": "1"
   }
+},
+{
+    "pk": 4,
+    "model": "guardian.userobjectpermission",
+    "fields": {
+        "user": 3,
+        "permission": [
+            "change_student",
+            "students",
+            "student"
+        ],
+        "content_type": [
+            "students",
+            "student"
+        ],
+        "object_pk": "1"
+    }
 }
 ]
