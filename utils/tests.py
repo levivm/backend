@@ -9,8 +9,8 @@ class BaseViewTest(APITestCase):
                 'groups_testdata', 'object_permissions_testdata', 'instructors_testdata']
     url = None
     view_name = None
-    __organizer_id = 1
-    __student_id = 3
+    __ORGANIZER_ID = 1
+    __STUDENT_ID = 3
     __SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
 
     def __get_token(self, user_id):
@@ -30,12 +30,12 @@ class BaseViewTest(APITestCase):
         return clients
 
     def get_organizer_client(self, user_id=None):
-        user_id = user_id or self.__organizer_id
+        user_id = user_id or self.__ORGANIZER_ID
         token = self.__get_token(user_id=user_id)
         return self.__get_client_with_credentials(token=token)
 
     def get_student_client(self, user_id=None):
-        user_id = user_id or self.__student_id
+        user_id = user_id or self.__STUDENT_ID
         token = self.__get_token(user_id=user_id)
         return self.__get_client_with_credentials(token=token)
 
