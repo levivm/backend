@@ -1,16 +1,14 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User,Group
 from allauth.account.signals import user_signed_up,email_added
-from allauth.socialaccount.signals import pre_social_login,social_account_added
 from allauth.account.models import EmailAddress
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import send_email_confirmation
 from django.dispatch import receiver
+from guardian.shortcuts import assign_perm
 from organizers.models import Organizer
 from students.models import Student
-from rest_framework.authtoken.models import Token
 from locations.models import City
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -26,47 +24,21 @@ def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']    
     data = request.POST
-    user_type = data.get('user_type','S')
+    user_type = data.get('user_type')
+    group = None
     if user_type == 'S':
-        profile = Student.objects.create(user=user)
-        profile.save()
+        student = Student.objects.create(user=user)
+        assign_perm('students.change_student', user, student)
+        group = Group.objects.get(name='Students')
         if not user.socialaccount_set.exists():
             send_email_confirmation(request,user,signup=True)
     elif user_type == 'O':
         name = data.get('name')
-        profile = Organizer.objects.create(user=user,name=name)
-        organizers = Group.objects.get(name='Organizers')
-        user.groups.add(organizers)
+        organizer = Organizer.objects.create(user=user,name=name)
+        assign_perm('organizers.change_organizer', user, organizer)
+        group = Group.objects.get(name='Organizers')
 
-
-# @receiver(pre_social_login)
-# def after_social_sign_up(sender, **kwargs):
-
-#     request = kwargs['request']
-#     sociallogin = kwargs['sociallogin']
-
-#     user = sociallogin.user
-
-#     # profile = Student.objects.create(user=user)
-#     # profile.save()
-
-
-
-
-
-
-    # get_adapter().login(request,user)
-
-
-        # except OrganizerConfirmation.DoesNotExist:
-        #     print "USERRRRR ID ",user.id
-        #     a = EmailAddress.objects.filter(user=user,primary=True).get()
-        #     print a.id
-        #     user.delete()
-            # return
-
-    
-    # Token.objects.create(user=user)
+    user.groups.add(group)
 
 
 @receiver(email_added)
