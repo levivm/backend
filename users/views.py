@@ -82,6 +82,7 @@ class UsersViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         data = get_user_profile_data(user)
+
         return Response(data)
 
 

@@ -1,0 +1,71 @@
+[
+{
+    "pk": 1,
+    "model": "activities.category",
+    "fields": {
+        "name": "Fitness"
+    }
+},
+{
+    "pk": 1,
+    "model": "activities.subcategory",
+    "fields": {
+        "category": 1,
+        "name": "Yoga"
+    }
+},
+{
+    "pk": 1,
+    "model": "activities.activity",
+    "fields": {
+        "audience": "",
+        "return_policy": "",
+        "instructors": [],
+        "location": null,
+        "enroll_open": true,
+        "tags": [],
+        "youtube_video_url": null,
+        "published": true,
+        "short_description": "Descripci\u00f3n corta",
+        "level": "I",
+        "extra_info": "",
+        "title": "Yoga",
+        "content": "Algo",
+        "methodology": "",
+        "organizer": 1,
+        "sub_category": 1,
+        "goals": "",
+        "requirements": ""
+    }
+},
+{
+    "pk": 1,
+    "model": "activities.activityphoto",
+    "fields": {
+        "photo": "activities/yoga_three_panel_f5J1YYb.jpg",
+        "activity": 1
+    }
+},
+{
+    "pk": 1,
+    "model": "activities.chronogram",
+    "fields": {
+        "capacity": 14,
+        "session_price": 324234.0,
+        "initial_date": "2015-05-01T14:43:00.601Z",
+        "activity": 1,
+        "closing_sale": "2015-05-10T14:43:00.601Z",
+        "number_of_sessions": 1
+    }
+},
+{
+    "pk": 1,
+    "model": "activities.session",
+    "fields": {
+        "date": "2015-05-01T14:43:00.601Z",
+        "start_time": "16:00:00.552",
+        "chronogram": 1,
+        "end_time": "19:00:00.552"
+    }
+}
+]
