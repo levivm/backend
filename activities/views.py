@@ -135,6 +135,9 @@ class AcitivityPhotosViewSet(viewsets.ModelViewSet):
         activity = self.get_activity_object(**kwargs)
         activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
         instance = self.get_object()
+        if instance.main_photo:
+            msg = _("No puede eliminar la foto principal")
+            return Response({'detail':msg},status=status.HTTP_200_OK)
         self.perform_destroy(instance)
         return Response(
             data={'activity': activity_serializer.data, 'photo_id': gallery_pk},

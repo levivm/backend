@@ -29,7 +29,7 @@ class OrdersViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         self.student = self._get_student(user=request.user)
-        return super().create(request, *args, **kwargs)
+        return super(OrdersViewSet,self).create(request, *args, **kwargs)
 
     def list_by_activity(self, request, *args, **kwargs):
         activity_pk = kwargs.get('activity_pk')

@@ -55,8 +55,11 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         model = ActivityPhoto
         fields = (
             'photo',
+            'main_photo',
             'id',
         )
+
+
 
     def validate(self, data):
         activity = self.context['activity']
@@ -74,7 +77,15 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return self.clean_file(file)
 
     def create(self, validated_data):
+
+        is_main_photo = activity = validated_data['main_photo']
+        if is_main_photo:
+            activity = validated_data['activity']
+            ActivityPhoto.objects.filter(activity=activity,main_photo=True).delete()
+
+
         photo = super(ActivityPhotosSerializer, self).create(validated_data)
+
         request = self.context['request']
         self.assign_permissions(request.user, photo)
         return photo

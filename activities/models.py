@@ -130,6 +130,7 @@ class Activity(AssignPermissionsMixin, models.Model):
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
     activity = models.ForeignKey(Activity, related_name="photos")
+    main_photo = models.BooleanField(default=False)
 
 
 class Chronogram(models.Model):

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# "Content-Type: text/plain; charset=UTF-8\n"
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
