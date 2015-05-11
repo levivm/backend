@@ -70,7 +70,7 @@ class ActivitiesListViewTest(BaseViewTest):
         activity = serializer.create(validated_data=serializer.validated_data)
         self.assertTrue(user.has_perm('activities.add_activity'))
         self.assertTrue(user.has_perm('activities.change_activity', activity))
-        self.assertFalse(user.has_perm('activities.delete_activity'))
+        self.assertFalse(user.has_perm('activities.delete_activity', activity))
 
 
 class GetActivityViewTest(BaseViewTest):
