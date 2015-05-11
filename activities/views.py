@@ -110,7 +110,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         return Response(status.HTTP_200_OK)
 
 
-class AcitivityPhotosViewSet(viewsets.ModelViewSet):
+class ActivityPhotosViewSet(viewsets.ModelViewSet):
     model = ActivityPhoto
     serializer_class = ActivityPhotosSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwner)
@@ -163,6 +163,7 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
 class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
 
 
 class ListCategories(APIView):
