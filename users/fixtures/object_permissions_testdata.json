@@ -66,5 +66,56 @@
         ],
         "object_pk": "1"
     }
+},
+{
+  "pk": 5,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_chronogram",
+          "activities",
+          "chronogram"
+      ],
+      "content_type": [
+          "activities",
+          "chronogram"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 6,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "change_chronogram",
+          "activities",
+          "chronogram"
+      ],
+      "content_type": [
+          "activities",
+          "chronogram"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 7,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_activityphoto",
+          "activities",
+          "activityphoto"
+      ],
+      "content_type": [
+          "activities",
+          "activityphoto"
+      ],
+      "object_pk": "1"
+  }
 }
 ]

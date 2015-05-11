@@ -137,7 +137,9 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         return value
 
     def validate_sessions(self, value):
-        return value
+        if len(value) > 0:
+            return value
+        raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
     def validate_session_price(self, value):
         if value < 1:

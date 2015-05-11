@@ -3,9 +3,9 @@ defusedxml==0.4.1
 dj-database-url==0.3.0
 dj-static==0.0.6
 Django==1.8
-git+https://github.com/pennersr/django-allauth.git
+-e git+https://github.com/pennersr/django-allauth.git
 django-cors-headers==1.0.0
-django-guardian==1.2.5
+-e git+https://github.com/lukaszb/django-guardian@devel#egg=django-guardian
 django-extensions==1.5.2
 django-rest-swagger==0.2.9
 django-storages-redux==1.2.3
