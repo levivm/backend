@@ -1,0 +1,33 @@
+[
+{
+    "model": "orders.order",
+    "fields": {
+        "quantity": 2,
+        "enroll": false,
+        "chronogram": 1,
+        "amount": 648468.0,
+        "student": 1
+    },
+    "pk": 1
+},
+{
+    "model": "orders.assistant",
+    "fields": {
+        "last_name": "forero",
+        "first_name": "harvey",
+        "order": 1,
+        "email": "h@trulii.com"
+    },
+    "pk": 1
+},
+{
+    "model": "orders.assistant",
+    "fields": {
+        "last_name": "vasquez",
+        "first_name": "levi",
+        "order": 1,
+        "email": "l@trulii.com"
+    },
+    "pk": 2
+}
+]

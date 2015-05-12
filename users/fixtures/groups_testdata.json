@@ -1,0 +1,125 @@
+[
+{
+    "model": "auth.group",
+    "fields": {
+        "name": "Organizers",
+        "permissions": [
+            [
+                "add_activity",
+                "activities",
+                "activity"
+            ],
+            [
+                "change_activity",
+                "activities",
+                "activity"
+            ],
+            [
+                "add_activityphoto",
+                "activities",
+                "activityphoto"
+            ],
+            [
+                "delete_activityphoto",
+                "activities",
+                "activityphoto"
+            ],
+            [
+                "add_chronogram",
+                "activities",
+                "chronogram"
+            ],
+            [
+                "change_chronogram",
+                "activities",
+                "chronogram"
+            ],
+            [
+                "delete_chronogram",
+                "activities",
+                "chronogram"
+            ],
+            [
+                "add_session",
+                "activities",
+                "session"
+            ],
+            [
+                "change_session",
+                "activities",
+                "session"
+            ],
+            [
+                "delete_session",
+                "activities",
+                "session"
+            ],
+            [
+                "add_tags",
+                "activities",
+                "tags"
+            ],
+            [
+                "add_location",
+                "locations",
+                "location"
+            ],
+            [
+                "change_location",
+                "locations",
+                "location"
+            ],
+            [
+                "add_instructor",
+                "organizers",
+                "instructor"
+            ],
+            [
+                "change_instructor",
+                "organizers",
+                "instructor"
+            ],
+            [
+                "delete_instructor",
+                "organizers",
+                "instructor"
+            ],
+            [
+                "change_organizer",
+                "organizers",
+                "organizer"
+            ]
+        ]
+    },
+    "pk": 1
+},
+{
+    "model": "auth.group",
+    "fields": {
+        "name": "Students",
+        "permissions": [
+            [
+                "add_review",
+                "activities",
+                "review"
+            ],
+            [
+                "add_assistant",
+                "orders",
+                "assistant"
+            ],
+            [
+                "add_order",
+                "orders",
+                "order"
+            ],
+            [
+                "change_student",
+                "students",
+                "student"
+            ]
+        ]
+    },
+    "pk": 2
+}
+]

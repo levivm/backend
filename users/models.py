@@ -1,7 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from allauth.account.signals import user_signed_up,email_added
 from django.dispatch import receiver
+from guardian.shortcuts import assign_perm
 from .forms import UserCreateForm
 from organizers.models import Organizer
 from students.models import Student
@@ -15,16 +16,19 @@ _ = lambda x:x
 def after_sign_up(sender, **kwargs):
     request = kwargs['request']
     user = kwargs['user']    
-    user_type = request.POST.get('user_type',None) 
+    user_type = request.POST.get('user_type',None)
+    group = None
     if user_type == 'S':
-        profile = Student.objects.create(user=user)
-        profile.save()
+        student = Student.objects.create(user=user)
+        assign_perm('students.change_student', user, student)
+        group = Group.objects.get(name='Students')
     elif user_type == 'O':
-        profile = Organizer.objects.create(user=user)
-        profile.save()
+        organizer = Organizer.objects.create(user=user)
+        assign_perm('organizers.change_organizer', user, organizer)
+        group = Group.objects.get(name='Organizers')
 
+    user.groups.add(group)
     Token.objects.create(user=user)
-
 
 
 @receiver(email_added)

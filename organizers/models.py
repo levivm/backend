@@ -34,6 +34,7 @@ class Instructor(models.Model):
                                         organizer=organizer,id=ins.get('id',None),\
                                         defaults=ins)[0],\
                           instructors_data)
-        return instructors
+
+        return list(instructors)
         
 

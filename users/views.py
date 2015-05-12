@@ -108,7 +108,6 @@ class UsersViewSet(viewsets.ModelViewSet):
             profile = Student.objects.get(user=user)
             data    = StudentsSerializer(profile).data
 
-        print "DATA SERIALIZADA",data
         return Response(data)
 
 

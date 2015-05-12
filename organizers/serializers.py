@@ -1,16 +1,14 @@
+from rest_framework import serializers
+from users.serializers import UserSerializer
+from users.forms import UserCreateForm
 from utils.serializers import UnixEpochDateField
 from .models import Organizer
 from .models import Instructor
-from users.forms import UserCreateForm
-from users.serializers import UserSerializer
-from rest_framework import serializers
-
-
 
 
 class InstructorsSerializer(serializers.ModelSerializer):
-
     id = serializers.IntegerField()
+
     class Meta:
         model = Instructor
         fields = (
@@ -20,10 +18,10 @@ class InstructorsSerializer(serializers.ModelSerializer):
             'organizer',
             'photo',
             'website',
-            )
+        )
+
 
 class OrganizersSerializer(serializers.ModelSerializer):
-
     user_type = serializers.SerializerMethodField()
     user = UserSerializer()
     created_at = serializers.SerializerMethodField()
@@ -43,11 +41,11 @@ class OrganizersSerializer(serializers.ModelSerializer):
             'user_type',
             'created_at',
             'instructors',
-            )
-        read_only_fields = ('id','photo',)
+        )
+        read_only_fields = ('id', 'photo',)
         depth = 1
 
-    def get_user_type(self,obj):
+    def get_user_type(self, obj):
         return UserCreateForm.USER_TYPES[0][0]
 
     def get_created_at(self, obj):

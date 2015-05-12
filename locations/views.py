@@ -1,16 +1,11 @@
-from django.shortcuts import render
 from rest_framework import viewsets
+
 from .models import City
 from .serializers import CitiesSerializer
-
-
-
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 
 
 class CitiesViewSet(viewsets.ModelViewSet):
-
     queryset = City.objects.all()
     serializer_class = CitiesSerializer
-
-
-# Create your views here.
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )

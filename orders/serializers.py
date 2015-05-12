@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from orders.models import Order, Assistant
+from students.serializer import StudentsSerializer
 
 
 class AssistantSerializer(serializers.ModelSerializer):
@@ -16,10 +17,12 @@ class AssistantSerializer(serializers.ModelSerializer):
 
 class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantSerializer(many=True)
+    student = StudentsSerializer(read_only=True)
 
     class Meta:
         model = Order
         fields = (
+            'id',
             'chronogram',
             'student',
             'amount',
@@ -30,6 +33,7 @@ class OrdersSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
+        validated_data.update({'student': self.context['view'].student})
         order = Order.objects.create(**validated_data)
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)

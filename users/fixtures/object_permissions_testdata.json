@@ -1,0 +1,121 @@
+[
+{
+    "pk": 1,
+    "model": "guardian.userobjectpermission",
+    "fields": {
+        "user": 1,
+        "permission": [
+            "change_organizer",
+            "organizers",
+            "organizer"
+        ],
+        "content_type": [
+            "organizers",
+            "organizer"
+        ],
+        "object_pk": "1"
+    }
+},
+{
+  "pk": 2,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "change_activity",
+          "activities",
+          "activity"
+      ],
+      "content_type": [
+          "activities",
+          "activity"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 3,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_instructor",
+          "organizers",
+          "instructor"
+      ],
+      "content_type": [
+          "organizers",
+          "instructor"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+    "pk": 4,
+    "model": "guardian.userobjectpermission",
+    "fields": {
+        "user": 3,
+        "permission": [
+            "change_student",
+            "students",
+            "student"
+        ],
+        "content_type": [
+            "students",
+            "student"
+        ],
+        "object_pk": "1"
+    }
+},
+{
+  "pk": 5,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_chronogram",
+          "activities",
+          "chronogram"
+      ],
+      "content_type": [
+          "activities",
+          "chronogram"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 6,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "change_chronogram",
+          "activities",
+          "chronogram"
+      ],
+      "content_type": [
+          "activities",
+          "chronogram"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 7,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_activityphoto",
+          "activities",
+          "activityphoto"
+      ],
+      "content_type": [
+          "activities",
+          "activityphoto"
+      ],
+      "object_pk": "1"
+  }
+}
+]
