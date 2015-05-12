@@ -38,7 +38,6 @@ class UserCreateForm(forms.Form):
     def clean_email(self):
         data = self.cleaned_data
         email = data.get('email')
-        print "EMAIL",email
         return email
 
 

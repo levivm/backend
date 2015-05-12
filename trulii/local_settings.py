@@ -20,4 +20,6 @@ DATABASES = {
         'PORT': '',  # Set to empty string for default.
     }
 }
-    
+
+
+BROKER_URL = 'redis://localhost:6379/0'

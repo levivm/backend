@@ -1,37 +1,36 @@
 # -*- coding: utf-8 -*-
-#"Content-Type: text/plain; charset=UTF-8\n"
-from allauth.account.views import _ajax_response,\
-                                  PasswordChangeView,EmailView
-from utils.form_utils import ajax_response
+# "Content-Type: text/plain; charset=UTF-8\n"
+from allauth.account.views import _ajax_response, \
+    PasswordChangeView, EmailView
 from rest_framework import viewsets, exceptions
-from rest_framework.parsers import FileUploadParser,FormParser,MultiPartParser,JSONParser
+from rest_framework.parsers import FileUploadParser, FormParser, MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
-from organizers.models import Organizer
-from organizers.serializers import OrganizersSerializer
-from students.serializer import StudentsSerializer 
-from students.models import Student
-from .serializers import AuthTokenSerializer
-from utils.forms import FileUploadForm
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from .serializers import UserProfilesSerializer, RequestSignupsSerializers
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
-from .models import RequestSignup,OrganizerConfirmation
 from django.utils.translation import ugettext_lazy as _
 from allauth.account.views import ConfirmEmailView
 from django.http import HttpResponse
 from rest_framework.permissions import AllowAny
-from allauth.socialaccount.models import SocialApp,SocialToken,SocialLogin
+from allauth.socialaccount.models import SocialApp, SocialToken, SocialLogin
 from allauth.socialaccount.providers.facebook.views import fb_complete_login
 from allauth.socialaccount.helpers import complete_social_login
 
-
+from utils.form_utils import ajax_response
+from organizers.models import Organizer
+from organizers.serializers import OrganizersSerializer
+from students.serializer import StudentsSerializer
+from students.models import Student
+from .serializers import AuthTokenSerializer
+from utils.forms import FileUploadForm
+from .serializers import UserProfilesSerializer, RequestSignupsSerializers
+from .models import RequestSignup, OrganizerConfirmation
 
 
 def _set_ajax_response(_super):
@@ -43,7 +42,7 @@ def _set_ajax_response(_super):
     else:
         response = _super.form_invalid(form)
 
-    return response,form
+    return response, form
 
 
 def get_user_profile_data(user):
@@ -52,23 +51,17 @@ def get_user_profile_data(user):
 
     try:
         profile = Organizer.objects.get(user=user)
-        data    = OrganizersSerializer(profile).data
+        data = OrganizersSerializer(profile).data
     except Organizer.DoesNotExist:
         profile = Student.objects.get(user=user)
-        data    = StudentsSerializer(profile).data
+        data = StudentsSerializer(profile).data
 
     return data
-
-
 
 
 class RequestSignupViewSet(viewsets.ModelViewSet):
     queryset = RequestSignup.objects.all()
     serializer_class = RequestSignupsSerializers
-
-
-
-
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -78,7 +71,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     def retrieve(self, request):
         user = request.user
 
-        if  user.is_anonymous():
+        if user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         data = get_user_profile_data(user)
@@ -86,25 +79,21 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-    def logout(self,request):
+    def logout(self, request):
 
         auth_logout(request)
         return Response(status=status.HTTP_200_OK)
 
-    def verify_organizer_pre_signup_key(self,request,key):
-        oc = get_object_or_404(OrganizerConfirmation,key=key)
+    def verify_organizer_pre_signup_key(self, request, key):
+        oc = get_object_or_404(OrganizerConfirmation, key=key)
         if oc.used:
             msg = _('Token de confirmacion ha sido usado')
             raise exceptions.ValidationError(msg)
-        
+
         request_signup = oc.requested_signup
         request_signup_data = RequestSignupsSerializers(request_signup).data
 
-
-        return Response(request_signup_data,status=status.HTTP_200_OK) 
-
-
-
+        return Response(request_signup_data, status=status.HTTP_200_OK)
 
 
 class ObtainAuthTokenView(APIView):
@@ -115,19 +104,14 @@ class ObtainAuthTokenView(APIView):
     serializer_class = AuthTokenSerializer
 
     def post(self, request):
-
-        serializer = self.serializer_class(data=request.data,context={'request':request})
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
 
         user_data = get_user_profile_data(user)
 
-
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key,'user':user_data})
-
-
-
+        return Response({'token': token.key, 'user': user_data})
 
 
 class RestFacebookLogin(APIView):
@@ -178,14 +162,10 @@ class RestFacebookLogin(APIView):
                 data=data
             )
 
-        except Exception,error:
+        except Exception as error:
             return Response(status=401, data={
                 'detail': error,
             })
-
-
-
-
 
 
 class PhotoUploadView(APIView):
@@ -196,42 +176,37 @@ class PhotoUploadView(APIView):
         user = self.request.user
         if not user:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        profile  = None
-        data     = None
-        photo    = None
+        profile = None
+        data = None
+        photo = None
 
-
-        file_form = FileUploadForm(request.POST,request.FILES)
+        file_form = FileUploadForm(request.POST, request.FILES)
         if file_form.is_valid():
             photo = request.FILES['file']
         else:
-            return Response(ajax_response(file_form),status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(ajax_response(file_form), status=status.HTTP_406_NOT_ACCEPTABLE)
 
         try:
             profile = Organizer.objects.get(user=user)
             profile.photo = photo
             profile.save()
-            data    = OrganizersSerializer(profile).data
+            data = OrganizersSerializer(profile).data
         except Organizer.DoesNotExist:
             profile = Student.objects.get(user=user)
             profile.photo = photo
             profile.save()
-            data    = StudentsSerializer(profile).data
+            data = StudentsSerializer(profile).data
 
         return Response(data)
 
 
-
-
-
 class ChangeEmailView(APIView):
-
     def post(self, request, *args, **kwargs):
         res = None
         if "action_add" in request.POST:
-            _super =  EmailView()
+            _super = EmailView()
             _super.request = request._request
-            response,form  = _set_ajax_response(_super)
+            response, form = _set_ajax_response(_super)
             return _ajax_response(request, response, form=form)
 
         elif request.POST.get("email"):
@@ -247,29 +222,21 @@ class ChangeEmailView(APIView):
 
 
 class PasswordChange(APIView):
-
-
-    def post(self,request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         _super_response = PasswordChangeView()
         _super_response.request = request._request
         _super_response.post(request, *args, **kwargs)
 
-        response,form = _set_ajax_response(_super_response)
+        response, form = _set_ajax_response(_super_response)
         return _ajax_response(request, response, form=form)
 
 
 class ConfirmEmail(ConfirmEmailView):
-
-
-    def post(self,request,*args,**kwargs):
-        
+    def post(self, request, *args, **kwargs):
         super(ConfirmEmail, self).post(request, *args, **kwargs)
 
         return HttpResponse(
-            content_type="application/json",status=200)
-
-
-
+            content_type="application/json", status=200)
 
 
 # class SignUpCustomView(SignupView):
@@ -295,7 +262,7 @@ class ConfirmEmail(ConfirmEmailView):
 #                 except OrganizerConfirmation.DoesNotExist:
 #                     msg = unicode(_("Este correo no ha sido previamente validado"))
 #                     response_data = {'form_errors':{'email':[msg]}}
-                    
+
 #                     return HttpResponse(json.dumps(response_data),
 #                         content_type="application/json",status=400)
 
