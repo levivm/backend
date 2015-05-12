@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# "Content-Type: text/plain; charset=UTF-8\n"
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
@@ -18,7 +20,7 @@ class FileUploadMixin(object):
         content_type = file.content_type.split('/')[0]
         if content_type in settings.CONTENT_TYPES:
             if file._size > settings.MAX_UPLOAD_PHOTO_SIZE:
-                msg = _('Mantenga el tamaño del archivo por debajo %s. Tamaño actual %s'\
+                msg = _('Mantenga el tamaño del archivo por debajo %s. Tamaño actual %s' \
                         % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE), filesizeformat(file._size)))
                 raise serializers.ValidationError(msg)
         else:

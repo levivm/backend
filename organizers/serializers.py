@@ -1,9 +1,11 @@
 from rest_framework import serializers
+
 from users.serializers import UserSerializer
 from users.forms import UserCreateForm
 from utils.serializers import UnixEpochDateField
 from .models import Organizer
 from .models import Instructor
+from locations.serializers import LocationsSerializer
 
 
 class InstructorsSerializer(serializers.ModelSerializer):
@@ -26,6 +28,7 @@ class OrganizersSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True)
+    locations = LocationsSerializer(many=True)
 
     class Meta:
         model = Organizer
@@ -41,6 +44,7 @@ class OrganizersSerializer(serializers.ModelSerializer):
             'user_type',
             'created_at',
             'instructors',
+            'locations',
         )
         read_only_fields = ('id', 'photo',)
         depth = 1

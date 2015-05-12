@@ -1,16 +1,13 @@
-from django.shortcuts import render
-from allauth.account.views import SignupView,PasswordResetView,_ajax_response,\
-                                  PasswordChangeView,LoginView,EmailView,ConfirmEmailView
-# Create your views here.
-from allauth.account.models import EmailConfirmation
-import json
+# -*- coding: utf-8 -*-
+#"Content-Type: text/plain; charset=UTF-8\n"
+from allauth.account.views import _ajax_response,\
+                                  PasswordChangeView,EmailView
 from utils.form_utils import ajax_response
-from django.http import HttpResponse
-from rest_framework import viewsets
-from rest_framework.parsers import FileUploadParser
+from rest_framework import viewsets, exceptions
+from rest_framework.parsers import FileUploadParser,FormParser,MultiPartParser,JSONParser
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
-from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -18,59 +15,21 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
-from utils.form_utils import ajax_response
 from rest_framework import status
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from .serializers import UserProfilesSerializer
+from .serializers import UserProfilesSerializer, RequestSignupsSerializers
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
-
-
-from rest_framework import parsers
-from rest_framework import renderers
-
-
-
-# def _ajax_response(request, response, form=None):
-#     if request.is_ajax():
-#         if (isinstance(response, HttpResponseRedirect)
-#                 or isinstance(response, HttpResponsePermanentRedirect)):
-#             redirect_to = response['Location']
-#         else:
-#             redirect_to = None
-#         response = get_adapter().ajax_response(request,
-#                                                response,
-#                                                form=form,
-#                                                redirect_to=redirect_to)
-#     return HttpResponse({'hola':1}, content_type="application/json")
-#     return response
-
-
-
-
-# def ajax_response_(request, response, redirect_to=None, form=None):
-#     data = {}
-#     if redirect_to:
-#         status = 200
-#         data['location'] = redirect_to
-#     if form:
-#         if form.is_valid():
-#             status = 200
-#         else:
-#             status = 400
-#             data['form_errors'] = form._errors
-#         if hasattr(response, 'render'):
-#             response.render()
-#         data['html'] = response.content.decode('utf8')
-#     return HttpResponse(json.dumps(data),
-#                         status=status,
-#                         content_type='application/json')
-
-
- #ret = super(PasswordResetView, self).get_context_data(**kwargs)
-
+from .models import RequestSignup,OrganizerConfirmation
+from django.utils.translation import ugettext_lazy as _
+from allauth.account.views import ConfirmEmailView
+from django.http import HttpResponse
+from rest_framework.permissions import AllowAny
+from allauth.socialaccount.models import SocialApp,SocialToken,SocialLogin
+from allauth.socialaccount.providers.facebook.views import fb_complete_login
+from allauth.socialaccount.helpers import complete_social_login
 
 
 
@@ -87,6 +46,29 @@ def _set_ajax_response(_super):
     return response,form
 
 
+def get_user_profile_data(user):
+    profile = None
+    data = None
+
+    try:
+        profile = Organizer.objects.get(user=user)
+        data    = OrganizersSerializer(profile).data
+    except Organizer.DoesNotExist:
+        profile = Student.objects.get(user=user)
+        data    = StudentsSerializer(profile).data
+
+    return data
+
+
+
+
+class RequestSignupViewSet(viewsets.ModelViewSet):
+    queryset = RequestSignup.objects.all()
+    serializer_class = RequestSignupsSerializers
+
+
+
+
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -98,15 +80,8 @@ class UsersViewSet(viewsets.ModelViewSet):
 
         if  user.is_anonymous():
             return Response(status=status.HTTP_403_FORBIDDEN)
-        profile  = None
-        data     = None
 
-        try:
-            profile = Organizer.objects.get(user=user)
-            data    = OrganizersSerializer(profile).data
-        except Organizer.DoesNotExist:
-            profile = Student.objects.get(user=user)
-            data    = StudentsSerializer(profile).data
+        data = get_user_profile_data(user)
 
         return Response(data)
 
@@ -116,6 +91,18 @@ class UsersViewSet(viewsets.ModelViewSet):
         auth_logout(request)
         return Response(status=status.HTTP_200_OK)
 
+    def verify_organizer_pre_signup_key(self,request,key):
+        oc = get_object_or_404(OrganizerConfirmation,key=key)
+        if oc.used:
+            msg = _('Token de confirmacion ha sido usado')
+            raise exceptions.ValidationError(msg)
+        
+        request_signup = oc.requested_signup
+        request_signup_data = RequestSignupsSerializers(request_signup).data
+
+
+        return Response(request_signup_data,status=status.HTTP_200_OK) 
+
 
 
 
@@ -123,8 +110,8 @@ class UsersViewSet(viewsets.ModelViewSet):
 class ObtainAuthTokenView(APIView):
     throttle_classes = ()
     permission_classes = ()
-    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
-    renderer_classes = (renderers.JSONRenderer,)
+    parser_classes = (FormParser, MultiPartParser, JSONParser,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = AuthTokenSerializer
 
     def post(self, request):
@@ -132,8 +119,69 @@ class ObtainAuthTokenView(APIView):
         serializer = self.serializer_class(data=request.data,context={'request':request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+
+        user_data = get_user_profile_data(user)
+
+
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key})
+        return Response({'token': token.key,'user':user_data})
+
+
+
+
+
+class RestFacebookLogin(APIView):
+    """
+    Login or register a user based on an authentication token coming
+    from Facebook.
+    Returns user data including session id.
+    """
+
+    permission_classes = (AllowAny,)
+
+    def dispatch(self, *args, **kwargs):
+        return super(RestFacebookLogin, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            original_request = request._request
+            auth_token = request.data.get('auth_token', '')
+
+            # Find the token matching the passed Auth token
+            app = SocialApp.objects.get(provider='facebook')
+            fb_auth_token = SocialToken(app=app, token=auth_token)
+
+            # check token against facebook
+            login = fb_complete_login(original_request, app, fb_auth_token)
+            login.token = fb_auth_token
+            login.state = SocialLogin.state_from_request(original_request)
+
+            # add or update the user into users table
+            complete_social_login(original_request, login)
+            # Create or fetch the session id for this user
+            user = original_request.user
+
+            token, _ = Token.objects.get_or_create(user=user)
+
+            # token, _ = Token.objects.get_or_create(user=original_request.user)
+            # if we get here we've succeeded
+            user_data = get_user_profile_data(user)
+
+            data = {
+                'user': user_data,
+                'token': token.key,
+            }
+
+            return Response(
+                status=200,
+                data=data
+            )
+
+        except Exception,error:
+            return Response(status=401, data={
+                'detail': error,
+            })
 
 
 
@@ -197,18 +245,9 @@ class ChangeEmailView(APIView):
 
         return _ajax_response(request, res)
 
-    # def post(self, request, *args, **kwargs):
-
-       
-    #     _response = super(ChangeEmailView, self).post(request, *args, **kwargs)
-    #     _super_response = super(ChangeEmailView, self)
-
-    #     response,form = set_ajax_response(_response)
-    #     return _ajax_response(request, response, form=form)
 
 class PasswordChange(APIView):
 
-    # authentication_classes = (TokenAuthentication,)
 
     def post(self,request, *args, **kwargs):
         _super_response = PasswordChangeView()
@@ -219,79 +258,50 @@ class PasswordChange(APIView):
         return _ajax_response(request, response, form=form)
 
 
+class ConfirmEmail(ConfirmEmailView):
 
-# class ResetPassword(PasswordResetView):
 
+    def post(self,request,*args,**kwargs):
+        
+        super(ConfirmEmail, self).post(request, *args, **kwargs)
+
+        return HttpResponse(
+            content_type="application/json",status=200)
+
+
+
+
+
+# class SignUpCustomView(SignupView):
 
 
 #     def post(self, request, *args, **kwargs):
 
-#         _super_response =  super(ResetPassword, self)
-        
-        
-        
-#         response,form = _set_ajax_response(_super_response)
-#         return _ajax_response(request, response, form=form)
-
-        # #super(ResetPassword, self).post(request, *args, **kwargs)
-        # form_class =  super(ResetPassword, self).get_form_class()
-        # form = super(ResetPassword, self).get_form(form_class)
-
-
-    # def get_context_data(self, **kwargs):
-    #     ret = super(ResetPassword, self).get_context_data(**kwargs)
-    #     # NOTE: For backwards compatibility
-    #     ret['password_reset_form'] = super(ResetPassword, self).get_form_class()
-    #     # (end NOTE)
-    #     return ret
-
-# class SignUpAjax(SignupView):
-
-
-#     # def post(self, request, *args, **kwargs):
-
-
-#     #     #ret = super(SignUpAjax, self).get_context_data(**kwargs)
-#     #     return HttpResponse(json.dumps({'hola':'asdasd'}), content_type="application/json")
-#     #     return ajax_response(ret['form'])
-#         # form = self.form_class(request.POST)
-#         # if form.is_valid():
-#         #     # <process form cleaned data>
-#         #     return HttpResponseRedirect('/success/')
-
-#         # return render(request, self.template_name, {'form': form})
-
-
-#     def post(self, request, *args, **kwargs):
 
 #         form_class = self.get_form_class()
 #         form = self.get_form(form_class)
 #         if form.is_valid():
+
+#             email = form.cleaned_data.get('email',None)
+#             user_type = form.cleaned_data.get('user_type','S')
+#             if user_type == settings.ORGANIZER_TYPE:
+#                 try:
+#                     oc = OrganizerConfirmation.objects.\
+#                         select_related('requested_signup').\
+#                         get(requested_signup__email=email)
+#                     oc.used = True
+#                     oc.save()
+
+#                 except OrganizerConfirmation.DoesNotExist:
+#                     msg = unicode(_("Este correo no ha sido previamente validado"))
+#                     response_data = {'form_errors':{'email':[msg]}}
+                    
+#                     return HttpResponse(json.dumps(response_data),
+#                         content_type="application/json",status=400)
+
 #             response = self.form_valid(form)
 #         else:
 #             response = self.form_invalid(form)
 
-#         return ajax_response_(request,response,form=form)
 
-#         return HttpResponse(json.dumps({'data':1}),
-#                     status=200,
-#                     content_type='application/json')
-
-#     # def post(self, request, *args, **kwargs):
-
-
-#     #     post = super(SignUpAjax, self).post(request, *args, **kwargs)
-#     #     return post
-#         #form = super(SignUpAjax, self).get_form(form_class)
-#         #if form.is_valid():
-#         #    response = super(SignUpAjax, self).form_valid(form)
-#         #else:
-#         #    response = super(SignUpAjax, self).form_invalid(form)
-#         #return _ajax_response(self.request, response, form=form)
-#         #ret = .get_context_data(**kwargs)
-#         #ret['all_tags'] = "ss"
-#         #json.dumps(ret)
-#         #return HttpResponse(, content_type="application/json")
-#         #return json.dumps(response_data)
-#         #return _ajax_response(self.request, response, form=form)
-#         #return ret
+#         return _ajax_response(request,response,form=form)

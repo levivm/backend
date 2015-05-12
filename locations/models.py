@@ -1,5 +1,5 @@
 from django.db import models
-
+from organizers.models import Organizer
 
 # Create your models here.
 
@@ -15,6 +15,8 @@ class City(models.Model):
     class Meta:
         verbose_name_plural = "cities"
 
+    def __unicode__(self):
+        return self.name
 
 
 class Location(models.Model):
@@ -22,6 +24,7 @@ class Location(models.Model):
     address = models.TextField()
     city    = models.ForeignKey(City)
     point   = models.CharField(max_length="200")
+    organizer = models.ForeignKey(Organizer,null=True,related_name="locations")
     # Automatically create slug based on the name field
     #slug = AutoSlugField(populate_from='name', max_length=255)
       

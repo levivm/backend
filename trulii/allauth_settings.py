@@ -32,7 +32,7 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 # with an unverified e-mail address. In case of "optional", the e-mail
 # verification mail is still sent, whereas in case of "none" no e-mail
 # verification mails are sent.
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 
 # Subject-line prefix to use for email messages sent. By default, the name
 # of the current Site (django.contrib.sites) is used.
@@ -89,7 +89,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 
 ACCOUNT_ADAPTER = 'users.allauth_adapter.MyAccountAdapter'
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'home'
+SOCIALACCOUNT_EMAIL_VERIFICATION = False
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_PROVIDERS = {
     'facebook': {

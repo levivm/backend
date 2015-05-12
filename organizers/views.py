@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
-
 from rest_framework.response import Response
+
+from locations.serializers import LocationsSerializer
 from activities.serializers import ActivitiesSerializer
 from organizers.models import Instructor
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
@@ -27,6 +28,19 @@ class OrganizerViewSet(viewsets.ModelViewSet):
         activities = organizer.activity_set.all()
         data = ActivitiesSerializer(activities, many=True).data
         return Response(data)
+
+    def set_location(self, request, pk=None):
+        organizer = self.get_object()
+
+        location_data = request.data.copy()
+        location_data['organizer'] = organizer.id
+        location_serializer = LocationsSerializer(data=location_data)
+        if location_serializer.is_valid(raise_exception=True):
+            organizer.locations.all().delete()
+            location = location_serializer.save()
+            organizer.locations.add(location)
+
+        return Response(location_serializer.data)
 
 
 class InstructorViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,18 @@
+
+
+
+#GENERAL CONSTANTS
+
+FRONT_SERVER_URL = "http://localhost:8080/"
+
+
+#USER APP CONSTANTS
+
 ORGANIZER_TYPE = 'O'
 STUDENT_TYPE   = 'S'
+
+
+#UTILS CONSTANTS
 
 
 CONTENT_TYPES = ['image', 'video']

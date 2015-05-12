@@ -4,6 +4,7 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+
 from activities.models import Activity, Category, SubCategory, Tags, Chronogram, Session, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantSerializer
@@ -51,10 +52,12 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
     permissions = ('activities.delete_activityphoto', )
+
     class Meta:
         model = ActivityPhoto
         fields = (
             'photo',
+            'main_photo',
             'id',
         )
 
@@ -74,7 +77,13 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return self.clean_file(file)
 
     def create(self, validated_data):
+        is_main_photo = activity = validated_data['main_photo']
+        if is_main_photo:
+            activity = validated_data['activity']
+            ActivityPhoto.objects.filter(activity=activity, main_photo=True).delete()
+
         photo = super(ActivityPhotosSerializer, self).create(validated_data)
+
         request = self.context['request']
         self.assign_permissions(request.user, photo)
         return photo
@@ -92,7 +101,6 @@ class SessionsSerializer(serializers.ModelSerializer):
             'date',
             'start_time',
             'end_time',
-
         )
 
     def validate(self, data):
@@ -245,7 +253,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     chronograms = ChronogramsSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
-    type_display = serializers.SerializerMethodField()
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, required=False)
@@ -255,11 +262,8 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         model = Activity
         fields = (
             'id',
-            'type',
-            'type_display',
             'title',
             'short_description',
-            'large_description',
             'sub_category',
             'sub_category_display',
             'level',
@@ -279,6 +283,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'youtube_video_url',
             'completed_steps',
             'published',
+            'certification',
             'enroll_open',
             'last_date',
             'chronograms',
@@ -314,8 +319,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())
 
-    def get_type_display(self, obj):
-        return obj.get_type_display()
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
@@ -391,7 +394,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             instance.location = location
 
         instance.save()
-
 
         _tags = request.DATA.get('tags')
         if _tags:

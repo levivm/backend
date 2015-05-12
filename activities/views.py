@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
 from .permissions import IsActivityOwner
@@ -20,8 +21,8 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
 
     def get_queryset(self):
-        activity_id = self.kwargs.get('activity_pk',None)
-        activity = get_object_or_404(Activity,pk=activity_id)
+        activity_id = self.kwargs.get('activity_pk', None)
+        activity = get_object_or_404(Activity, pk=activity_id)
         return activity.chronograms.all()
 
     def list(self, request, *args, **kwargs):
@@ -52,10 +53,10 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         chronogram.delete()
         return Response({'chronogram_id': chronogram_id}, status=status.HTTP_200_OK)
 
-    def get_calendars(self,request,pk=None):
-        activity   = self.get_object()
+    def get_calendars(self, request, pk=None):
+        activity = self.get_object()
         chronogram = activity.chronograms.all()
-        chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram,many=True)
+        chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram, many=True)
         return Response(chronogram_serializer.data)
 
     def update_calendar(self, request, pk=None):
@@ -71,7 +72,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
             return Response({'non_field_errors': [msg]}, status=status.HTTP_404_NOT_FOUND)
 
         chronogram = activity.chronograms.get(id=chronogram_id)
-        chronogram_serializer = ChronogramsSerializer(chronogram,data=data,context={'request':request})
+        chronogram_serializer = ChronogramsSerializer(chronogram, data=data, context={'request': request})
         chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
@@ -91,20 +92,18 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         categories = Category.objects.all()
         sub_categories = SubCategory.objects.all()
         tags = Tags.ready_to_use()
-        types = Activity.get_types()
         levels = Activity.get_levels()
 
         data = {
             'categories': CategoriesSerializer(categories, many=True).data,
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
-            'types': types,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
         }
 
         return Response(data)
 
-    def publish(self,request,pk):
+    def publish(self, request, pk):
         activity = self.get_object()
         activity.publish()
         return Response(status.HTTP_200_OK)
@@ -137,6 +136,9 @@ class ActivityPhotosViewSet(viewsets.ModelViewSet):
         activity = self.get_activity_object(**kwargs)
         activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
         instance = self.get_object()
+        if instance.main_photo:
+            msg = _("No puede eliminar la foto principal")
+            return Response({'detail': msg}, status=status.HTTP_200_OK)
         self.perform_destroy(instance)
         return Response(
             data={'activity': activity_serializer.data, 'photo_id': gallery_pk},

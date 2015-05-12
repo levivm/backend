@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from organizers.models import Organizer, Instructor
-from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django.db.models import F
+
+from organizers.models import Organizer, Instructor
 from locations.models import Location
 from utils.mixins import AssignPermissionsMixin
 
@@ -67,12 +66,10 @@ class Activity(AssignPermissionsMixin, models.Model):
     )
     permissions = ('organizers.delete_instructor', )
 
-    type = models.CharField(max_length=2, choices=TYPE_CHOICES)
     sub_category = models.ForeignKey(SubCategory)
     organizer = models.ForeignKey(Organizer)
     tags = models.ManyToManyField(Tags)
     title = models.CharField(max_length=100)
-    large_description = models.TextField()
     short_description = models.CharField(max_length=100)
     level = models.CharField(choices=LEVEL_CHOICES, max_length=1)
     goals = models.TextField(blank=True)
@@ -86,6 +83,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     instructors = models.ManyToManyField(Instructor, related_name="activities")
     enroll_open = models.NullBooleanField(default=True)
     published = models.NullBooleanField(default=False)
+    certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
 
     def update(self, data):
@@ -137,10 +135,10 @@ class Activity(AssignPermissionsMixin, models.Model):
         self.instructors.add(*instructors)
 
 
-
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
     activity = models.ForeignKey(Activity, related_name="photos")
+    main_photo = models.BooleanField(default=False)
 
 
 class Chronogram(models.Model):
