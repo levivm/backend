@@ -42,18 +42,18 @@ class Tags(models.Model):
 
 class Activity(AssignPermissionsMixin, models.Model):
     LEVEL_CHOICES = (
-        ('P', 'Principiante'),
-        ('I', 'Intermedio'),
-        ('A', 'Avanzado'),
-        ('N', 'No Aplica')
+        ('P',_('Principiante')),
+        ('I',_('Intermedio')),
+        ('A',_('Avanzado')),
+        ('N',_('No Aplica'))
     )
 
     DAY_CHOICES = (
-        ('1', 'Lunes'),
-        ('2', 'Martes'),
-        ('3', 'Miercoles'),
-        ('4', 'Jueves'),
-        ('5', 'Viernes'),
+        ('1', _('Lunes')),
+        ('2', _('Martes')),
+        ('3', _('Miercoles')),
+        ('4', _('Jueves')),
+        ('5', _('Viernes')),
     )
 
     TYPE_CHOICES = (
@@ -86,9 +86,33 @@ class Activity(AssignPermissionsMixin, models.Model):
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
 
+
     def update(self, data):
         self.__dict__.update(data)
         self.save()
+
+    def steps_completed(self):
+
+
+        steps_requirements = settings.REQUIRED_STEPS
+        steps = steps_requirements.keys()
+        # completed_steps = {}
+        related_fields  = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
+        related_fields += [rel.name for rel in self._meta.many_to_many]
+        for step in steps:
+            required_attrs = steps_requirements[step]
+            for attr in required_attrs:
+
+                if attr in related_fields:
+                    if not getattr(self,attr,None).all():
+                        return False
+                        # break
+                else:
+                    if not  getattr(self,attr,None):
+                        return False
+                        # break
+        return True
+
 
     @classmethod
     def get_types(cls):
@@ -113,8 +137,16 @@ class Activity(AssignPermissionsMixin, models.Model):
         return levels
 
     def publish(self):
-        self.published = True
+        if self.steps_completed():
+            self.published = True
+            self.save(update_fields=['published'])
+            return True
+        return False
+
+    def unpublish(self):
+        self.published = False
         self.save(update_fields=['published'])
+        
 
     def last_sale_date(self):
 

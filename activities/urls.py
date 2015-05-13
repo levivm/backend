@@ -17,8 +17,16 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/(?P<activity_pk>\d+)/gallery/?$', ActivityPhotosViewSet.as_view({'post': 'create'})),
     url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$', ActivityPhotosViewSet.as_view({'delete': 'destroy'})),
 
-    url(r'^/info/?$', ActivitiesViewSet.as_view({'get': 'general_info'})),
-    url(r'^/tags/?$', TagsViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^/categories/?$', CategoriesViewSet.as_view({'get': 'list'})),
-    url(r'^/subcategories/?$', SubCategoriesViewSet.as_view({'get': 'list'})),
-)
+	# url(r'^/(?P<pk>\d+)/calendars/?$',ActivitiesViewSet.as_view({'post':'create_calendar',\
+	# 	                            'put': 'update_calendar','get':'get_calendars','delete':'delete_calendar'})),
+	
+	url(r'^/(?P<pk>\d+)/publish/?$',ActivitiesViewSet.as_view({'put':'publish'})),
+	url(r'^/(?P<pk>\d+)/unpublish/?$',ActivitiesViewSet.as_view({'put':'unpublish'})),
+	url(r'^/(?P<activity_pk>\d+)/gallery/?$',AcitivityPhotosViewSet.as_view({'get': 'list', 'post': 'create'})),
+	url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$',AcitivityPhotosViewSet.as_view({'delete':'destroy'})),
+
+	url(r'^/info/?$',ActivitiesViewSet.as_view({'get':'general_info'})),
+	url(r'^/tags/?$',TagsViewSet.as_view({'get':'list'})),
+	url(r'^/categories/?$',CategoriesViewSet.as_view({'get':'list'})),
+	url(r'^/subcategories/?$',SubCategoriesViewSet.as_view({'get':'list'})),
+	)

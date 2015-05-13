@@ -25,10 +25,11 @@ class Instructor(models.Model):
 
 
     @classmethod
-    def update_or_create(cls, instructors_data, organizer):
-        instructors = map(lambda ins: cls.objects.update_or_create( \
-            organizer=organizer, id=ins.get('id', None), \
-            defaults=ins)[0], \
+    def update_or_create(cls,instructors_data,organizer):
+
+        instructors = map(lambda ins:cls.objects.update_or_create(\
+                                        id=ins.get('id',None),\
+                                        defaults=ins)[0],\
                           instructors_data)
 
         return list(instructors)

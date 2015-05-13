@@ -1,13 +1,16 @@
 from django.http import Http404
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import viewsets,status
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
 from organizers.models import Organizer
 from students.models import Student
 from .models import Order
+from activities.models import Activity
 from .serializers import OrdersSerializer
+
 
 
 class OrdersViewSet(viewsets.ModelViewSet):
@@ -28,6 +31,12 @@ class OrdersViewSet(viewsets.ModelViewSet):
             raise PermissionDenied
 
     def create(self, request, *args, **kwargs):
+        activity_pk = kwargs.get('activity_pk')
+        activity = get_object_or_404(Activity,pk=activity_pk)
+        if not activity.published:
+            msg = _("La actividad no se encuentra activa")
+            return Response({'detail': msg}, status=status.HTTP_400_BAD_REQUEST)
+
         self.student = self._get_student(user=request.user)
         return super(OrdersViewSet, self).create(request, *args, **kwargs)
 

@@ -249,13 +249,14 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     category_id = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='id')
     location = LocationsSerializer(read_only=True)
     photos = ActivityPhotosSerializer(read_only=True, many=True)
-    completed_steps = serializers.SerializerMethodField(read_only=True)
     chronograms = ChronogramsSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, required=False)
+    required_steps = serializers.SerializerMethodField()
+    steps = serializers.SerializerMethodField()
     permissions = ('activities.change_activity', )
 
     class Meta:
@@ -281,40 +282,28 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'location',
             'photos',
             'youtube_video_url',
-            'completed_steps',
             'published',
             'certification',
             'enroll_open',
             'last_date',
             'chronograms',
+            'required_steps',
+            'steps',
             'organizer',
             'instructors',
         )
         depth = 1
 
-    def get_completed_steps(self, obj):
 
-        steps_requirements = settings.STEPS_REQUIREMENTS
-        steps = steps_requirements.keys()
-        completed_steps = {}
-        related_fields = [rel.get_accessor_name() for rel in obj._meta.get_all_related_objects()]
-        related_fields += [rel.name for rel in obj._meta.many_to_many]
-        for step in steps:
-            required_attrs = steps_requirements[step]
-            completed = True
-            for attr in required_attrs:
+    def get_required_steps(self,obj):
+        if not obj.photos.count():
+            return settings.PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS
 
-                if attr in related_fields:
-                    if not getattr(obj, attr, None).all():
-                        completed = False
-                        break
-                else:
-                    if not getattr(obj, attr, None):
-                        completed = False
-                        break
+        return settings.REQUIRED_STEPS
 
-            completed_steps[step] = completed
-        return completed_steps
+    def get_steps(self,obj):
+        return settings.ACTIVITY_STEPS
+
 
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())

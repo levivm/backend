@@ -25,20 +25,37 @@ TAGS_MIN_OCCOURRENCE = 15
 
 MAX_ACTIVITY_PHOTOS  = 6
 
-STEPS_REQUIREMENTS = {
-	
-	'general':['title','short_description','large_description','sub_category_id','level','type'],
-	'detail':['content'],
-	'calendars':['chronograms'],
-	'instructors':['instructors'],
-	'location':['location'],''
-	'gallery':['photos'],
-	'return_policy':['return_policy']
+
+PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS = {
+    
+    'general':['title','short_description','sub_category','level'],
+    'calendars':['chronograms'],
+    'gallery':['photos'],
+    'location':['location'],
+
+}
+
+REQUIRED_STEPS = {
+    
+    'general':['title','short_description','sub_category','level'],
+    'location':['location'],
+
+}
+
+ACTIVITY_STEPS = {
+    
+  'general':['title','short_description','sub_category','level'],
+  'detail':['content', 'audience', 'goals', 'methodology', 'requirements', 'extra_info'],
+  'calendars':['chronograms'],
+  'instructors':['instructors'],
+  'location':['location'],''
+  'gallery':['photos'],
+  'return_policy':['return_policy']
 }
 
 RELATED_FIELD_REQUIREMETS = {
-	
-	'gallery':['photos'],
+    
+    'gallery':['photos'],
 
 }
 
