@@ -22,8 +22,13 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
 	
 	url(r'^/(?P<pk>\d+)/publish/?$',ActivitiesViewSet.as_view({'put':'publish'})),
 	url(r'^/(?P<pk>\d+)/unpublish/?$',ActivitiesViewSet.as_view({'put':'unpublish'})),
+<<<<<<< HEAD
 	url(r'^/(?P<activity_pk>\d+)/gallery/?$',ActivityPhotosViewSet.as_view({'get': 'list', 'post': 'create'})),
 	url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$',ActivityPhotosViewSet.as_view({'delete':'destroy'})),
+=======
+	url(r'^/(?P<activity_pk>\d+)/gallery/?$',AcitivityPhotosViewSet.as_view({'get': 'list', 'post': 'create'})),
+	url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$',AcitivityPhotosViewSet.as_view({'delete':'destroy'})),
+>>>>>>> TRUL-185 #in-review endpoint desactivar actividad y algunos fixes
 
 	url(r'^/info/?$',ActivitiesViewSet.as_view({'get':'general_info'})),
 	url(r'^/tags/?$',TagsViewSet.as_view({'get':'list'})),

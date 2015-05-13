@@ -129,6 +129,10 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         activity.unpublish()
         return Response(status.HTTP_200_OK) 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> TRUL-185 #in-review endpoint desactivar actividad y algunos fixes
 
 
 class ActivityPhotosViewSet(viewsets.ModelViewSet):
