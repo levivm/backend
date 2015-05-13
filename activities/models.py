@@ -5,6 +5,8 @@ from django.conf import settings
 from organizers.models import Organizer, Instructor
 from locations.models import Location
 from utils.mixins import AssignPermissionsMixin
+from django.utils.translation import ugettext_lazy as _
+
 
 
 class Category(models.Model):
