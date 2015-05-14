@@ -1,0 +1,21 @@
+[
+{
+    "pk": 1,
+    "model": "locations.location",
+    "fields": {
+        "city": 1,
+        "organizer": null,
+        "address": "jjjj",
+        "point": "(4.5981,-74.0758)"
+    }
+},
+{
+    "pk": 1,
+    "fields": {
+        "point": "(4.5981, -74.0758)",
+        "name": "Bogot\u00e1",
+        "order": 0
+    },
+    "model": "locations.city"
+}
+]

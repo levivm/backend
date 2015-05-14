@@ -196,7 +196,6 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
                     raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
 
     def validate(self, data):
-
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
         if initial_date > closing_sale:

@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase, APIClient
 
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
-                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata']
+                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata','locations_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1

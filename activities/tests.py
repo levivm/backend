@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# "Content-Type: text/plain; charset=UTF-8\n"
 import json
 import tempfile
 
@@ -22,11 +24,9 @@ class ActivitiesListViewTest(BaseViewTest):
         return {
             'sub_category': 1,
             'level': 'P',
-            'short_description': 'Descripción corta',
+            'short_description': "Descripci\u00f3n corta",
             'title': 'Curso de Test',
-            'type': 'CU',
             'category': 1,
-            'large_description': 'Descripción detallada',
             'tags': ['test', 'drive', 'development'],
         }
 
@@ -100,11 +100,11 @@ class GetActivityViewTest(BaseViewTest):
     def test_organizer_should_update_the_activity(self):
         organizer = self.get_organizer_client()
         data = json.dumps({
-            'large_description': 'Otra descripcion detallada'
+            'short_description': 'Otra descripcion corta'
         })
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(b'"large_description":"Otra descripcion detallada"', response.content)
+        self.assertIn(b'"short_description":"Otra descripcion corta"', response.content)
 
     def test_another_organizer_shouldnt_update_the_activity(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
@@ -128,7 +128,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'sessions': [{
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 1,
+                'end_time': now_unix_timestamp + 100,
             }]
         }
 
@@ -274,6 +274,51 @@ class PublishActivityViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+
+class UnpublishActivityViewTest(BaseViewTest):
+    ACTIVITY_ID = 1
+    view = ActivitiesViewSet
+
+    def __init__(self, *args, **kwargs):
+        super(UnpublishActivityViewTest, self).__init__(*args, **kwargs)
+        self.url = '/api/activities/%s/unpublish' % self.ACTIVITY_ID
+
+    def test_url_should_resolve_correctly(self):
+        self.url_resolve_to_view_correctly()
+
+    def test_methods_for_anonymous(self):
+        self.method_should_be(clients=self.client, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.authorization_should_be_require()
+
+    def test_methods_for_student(self):
+        student = self.get_student_client()
+        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_methods_for_organizer(self):
+        organizer = self.get_organizer_client()
+        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_organizer_should_unpublish_the_activity(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        activity.published = True
+        self.assertTrue(activity.published)
+        organizer = self.get_organizer_client()
+        response = organizer.put(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertFalse(activity.published)
+
+    def test_another_organizer_shouldnt_unpublish_the_activity(self):
+        organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
+        response = organizer.put(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class ActivityGalleryViewTest(BaseViewTest):
     url = '/api/activities/1/gallery'
     view = ActivityPhotosViewSet
@@ -303,7 +348,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
         image.save(tmp_file)
         with open(tmp_file.name, 'rb') as fp:
-            response = organizer.post(self.url, data={'photo': fp})
+            response = organizer.post(self.url, data={'photo': fp,'main_photo':True})
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
         expected_filename = bytes('%s' % tmp_file.name.split('/')[-1], 'utf8')
@@ -327,7 +372,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         file = SimpleUploadedFile(imgfile.name, content=imagestring, content_type='image/jpeg')
         request = HttpRequest()
         request.user = user
-        request.data = request.DATA = {'photo': file}
+        request.data = request.DATA = {'photo': file,'main_photo':True}
         request.FILES = {'photo': file}
         serializer = ActivityPhotosSerializer(data=request.data, context={'request': request, 'activity': activity})
         serializer.is_valid(raise_exception=True)

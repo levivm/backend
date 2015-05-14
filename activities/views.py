@@ -34,14 +34,6 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
         chronogram_serializer = self.serializer_class(chronograms, many=True)
         return Response(chronogram_serializer.data)
 
-    def destroy(self,request,*args, **kwargs):
-        chronogram = self.get_object()
-
-        if chronogram.hasAssistants():
-            msg = _("No puede eliminar este calendario, tiene estudiantes inscritos, contactanos")
-            return Response({'detail':msg},status=status.HTTP_400_BAD_REQUEST)
-
-        super(ChronogramsViewSet,self).destroy(request,*args, **kwargs)  
         
 
 
@@ -49,55 +41,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
-
-    # def delete_calendar(self, request, pk=None):
-
-    #     chronogram_id = request.GET.get('id', None)
-
-    #     activity = self.get_object()
-    #     try:
-    #         chronogram = activity.chronograms.get(id=chronogram_id)
-    #     except Chronogram.DoesNotExist:
-    #         msg = _("El Calendario a borrar no existe")
-    #         return Response({str(chronogram_id): msg}, status=status.HTTP_404_NOT_FOUND)
-
-    #     chronogram.delete()
-    #     return Response({'chronogram_id': chronogram_id}, status=status.HTTP_200_OK)
-
-    # def get_calendars(self, request, pk=None):
-    #     activity = self.get_object()
-    #     chronogram = activity.chronograms.all()
-    #     chronogram_serializer = chronogram_serializer = ChronogramsSerializer(chronogram, many=True)
-    #     return Response(chronogram_serializer.data)
-
-    # def update_calendar(self, request, pk=None):
-
-    #     data = request.DATA
-    #     chronogram_id = data.get("id", None)
-    #     activity = self.get_object()
-
-    #     try:
-    #         chronogram = activity.chronograms.get(id=chronogram_id)
-    #     except Chronogram.DoesNotExist:
-    #         msg = _("El calendario a editar no existe")
-    #         return Response({'non_field_errors': [msg]}, status=status.HTTP_404_NOT_FOUND)
-
-    #     chronogram = activity.chronograms.get(id=chronogram_id)
-    #     chronogram_serializer = ChronogramsSerializer(chronogram, data=data, context={'request': request})
-    #     chronogram = None
-    #     if chronogram_serializer.is_valid(raise_exception=True):
-    #         chronogram = chronogram_serializer.save()
-    #     return Response(chronogram_serializer.data)
-
-    # def create_calendar(self, request, pk=None):
-
-    #     data = request.DATA
-
-    #     chronogram_serializer = ChronogramsSerializer(data=data, context={'request': request})
-    #     chronogram = None
-    #     if chronogram_serializer.is_valid(raise_exception=True):
-    #         chronogram = chronogram_serializer.save()
-    #     return Response(chronogram_serializer.data)
 
     def general_info(self, request):
         categories = Category.objects.all()
@@ -128,6 +71,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         activity = self.get_object()
         activity.unpublish()
         return Response(status.HTTP_200_OK) 
+
 
 
 

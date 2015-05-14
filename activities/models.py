@@ -57,15 +57,7 @@ class Activity(AssignPermissionsMixin, models.Model):
         ('4', _('Jueves')),
         ('5', _('Viernes')),
     )
-
-    TYPE_CHOICES = (
-        ('CU', u'Curso'),
-        ('CE', u'Certificación'),
-        ('CL', u'Clase'),
-        ('DP', u'Diplomado'),
-        ('SE', u'Seminario'),
-        ('TA', u'Taller'),
-    )
+    
     permissions = ('organizers.delete_instructor', )
 
     sub_category = models.ForeignKey(SubCategory)
@@ -87,6 +79,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
+
 
 
     def update(self, data):
