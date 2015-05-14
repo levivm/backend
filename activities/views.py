@@ -34,14 +34,6 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
         chronogram_serializer = self.serializer_class(chronograms, many=True)
         return Response(chronogram_serializer.data)
 
-    def destroy(self,request,*args, **kwargs):
-        chronogram = self.get_object()
-
-        if chronogram.hasAssistants():
-            msg = _("No puede eliminar este calendario, tiene estudiantes inscritos, contactanos")
-            return Response({'detail':msg},status=status.HTTP_400_BAD_REQUEST)
-
-        super(ChronogramsViewSet,self).destroy(request,*args, **kwargs)  
         
 
 

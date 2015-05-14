@@ -2,6 +2,7 @@ from rest_framework import status
 from orders.models import Order
 from orders.views import OrdersViewSet
 from utils.tests import BaseViewTest
+from activities.models import Activity
 
 
 class OrdersByActivityViewTest(BaseViewTest):
@@ -20,7 +21,7 @@ class OrdersByActivityViewTest(BaseViewTest):
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
 
-    def test_students_should_create_an_order(self):
+    def test_students_should_create_an_order_if_activity_published(self):
         client = self.get_student_client()
         data = {
             'chronogram': 1,
@@ -32,11 +33,35 @@ class OrdersByActivityViewTest(BaseViewTest):
                 'email': 'asistente@trulii.com',
             }]
         }
+        activity = Activity.objects.get(pk=1)
+        activity.published = True
+        activity.save(update_fields=['published'])
+        self.assertTrue(activity.published)
         response = client.post(self.url, data)
         order = Order.objects.latest('pk')
         expected = bytes('"id":%s' % order.id, 'utf8')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(expected, response.content)
+
+    def test_students_shouldnt_create_an_order_if_activity_unpublished(self):
+        client = self.get_student_client()
+        data = {
+            'chronogram': 1,
+            'amount': 324000,
+            'quantity': 1,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }]
+        }
+        activity = Activity.objects.get(pk=1)
+        activity.published = False
+        activity.save(update_fields=['published'])
+        self.assertFalse(activity.published)
+        response = client.post(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()

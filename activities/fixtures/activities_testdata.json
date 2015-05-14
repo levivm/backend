@@ -21,7 +21,7 @@
       "audience": "",
       "return_policy": "",
       "instructors": [],
-      "location": null,
+      "location": 1,
       "enroll_open": true,
       "tags": [],
       "youtube_video_url": null,

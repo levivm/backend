@@ -26,9 +26,7 @@ class ActivitiesListViewTest(BaseViewTest):
             'level': 'P',
             'short_description': "Descripci\u00f3n corta",
             'title': 'Curso de Test',
-            'type': 'CU',
             'category': 1,
-            'large_description': 'Descripción detallada',
             'tags': ['test', 'drive', 'development'],
         }
 
@@ -102,11 +100,11 @@ class GetActivityViewTest(BaseViewTest):
     def test_organizer_should_update_the_activity(self):
         organizer = self.get_organizer_client()
         data = json.dumps({
-            'large_description': 'Otra descripcion detallada'
+            'short_description': 'Otra descripcion corta'
         })
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(b'"large_description":"Otra descripcion detallada"', response.content)
+        self.assertIn(b'"short_description":"Otra descripcion corta"', response.content)
 
     def test_another_organizer_shouldnt_update_the_activity(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
@@ -130,7 +128,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'sessions': [{
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 1,
+                'end_time': now_unix_timestamp + 100,
             }]
         }
 
@@ -266,7 +264,6 @@ class PublishActivityViewTest(BaseViewTest):
         self.assertFalse(activity.published)
         organizer = self.get_organizer_client()
         response = organizer.put(self.url)
-        print "dsasdasdad",response.content
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
         self.assertTrue(activity.published)
@@ -351,7 +348,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
         image.save(tmp_file)
         with open(tmp_file.name, 'rb') as fp:
-            response = organizer.post(self.url, data={'photo': fp})
+            response = organizer.post(self.url, data={'photo': fp,'main_photo':True})
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
         expected_filename = bytes('%s' % tmp_file.name.split('/')[-1], 'utf8')
@@ -375,7 +372,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         file = SimpleUploadedFile(imgfile.name, content=imagestring, content_type='image/jpeg')
         request = HttpRequest()
         request.user = user
-        request.data = request.DATA = {'photo': file}
+        request.data = request.DATA = {'photo': file,'main_photo':True}
         request.FILES = {'photo': file}
         serializer = ActivityPhotosSerializer(data=request.data, context={'request': request, 'activity': activity})
         serializer.is_valid(raise_exception=True)
