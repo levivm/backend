@@ -187,6 +187,9 @@ class Chronogram(models.Model):
         self.__dict__.update(data)
         self.save()
 
+    def hasAssistants(self):
+        return self.orders.filter(assistants__isnull=False)
+
 
 class Session(models.Model):
     date = models.DateTimeField()
