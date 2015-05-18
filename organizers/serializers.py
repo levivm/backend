@@ -23,6 +23,7 @@ class InstructorsSerializer(serializers.ModelSerializer):
         )
 
 
+
 class OrganizersSerializer(serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UserSerializer()
