@@ -44,7 +44,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail':msg})
 
 
-        if chronogram.assistants_number()>len(assistants_data):
+        if not chronogram.available_capacity() or chronogram.available_capacity()<len(assistants_data):
             msg = _("El cupo de asistentes está lleno")
             raise serializers.ValidationError({'detail':msg})
 

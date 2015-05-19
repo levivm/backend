@@ -180,8 +180,8 @@ class Chronogram(models.Model):
         self.__dict__.update(data)
         self.save()
 
-    def assistants_number(self):
-        return self.orders.filter(assistants__isnull=False).count()
+    def available_capacity(self):
+        return self.capacity - self.orders.filter(assistants__isnull=False).count() 
 
     def get_assistants(self):
         return self.orders.filter(assistants__isnull=False)
