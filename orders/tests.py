@@ -40,6 +40,7 @@ class OrdersByActivityViewTest(BaseViewTest):
         response = client.post(self.url, data)
         order = Order.objects.latest('pk')
         expected = bytes('"id":%s' % order.id, 'utf8')
+        print(response.content)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(expected, response.content)
 

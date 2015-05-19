@@ -251,6 +251,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     chronograms = ChronogramsSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
+    category_display = serializers.SerializerMethodField()
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, required=False)
@@ -271,6 +272,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'tags',
             'category',
             'category_id',
+            'category_display',
             'content',
             'requirements',
             'return_policy',
@@ -310,6 +312,10 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
+
+    def get_category_display(self, obj):
+        return obj.sub_category.category.name
+
 
     def get_level_display(self, obj):
         return obj.get_level_display()
