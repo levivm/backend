@@ -31,12 +31,6 @@ class OrdersViewSet(viewsets.ModelViewSet):
             raise PermissionDenied
 
     def create(self, request, *args, **kwargs):
-        activity_pk = kwargs.get('activity_pk')
-        activity = get_object_or_404(Activity,pk=activity_pk)
-        if not activity.published:
-            msg = _("La actividad no se encuentra activa")
-            return Response({'detail': msg}, status=status.HTTP_400_BAD_REQUEST)
-
         self.student = self._get_student(user=request.user)
         return super(OrdersViewSet, self).create(request, *args, **kwargs)
 

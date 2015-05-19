@@ -1,3 +1,4 @@
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from orders.models import Order, Assistant
 from students.serializer import StudentsSerializer
@@ -30,6 +31,26 @@ class OrdersSerializer(serializers.ModelSerializer):
             'assistants',
             'enroll',
         )
+
+
+    def validate(self,data):
+        chronogram = data.get('chronogram')
+        assistants_data = data.get('assistants')
+        activity = chronogram.activity
+
+
+        if not activity.published:
+            msg = _("La actividad no se encuentra activa")
+            raise serializers.ValidationError({'detail':msg})
+
+
+        if chronogram.assistants_number()>len(assistants_data):
+            msg = _("El cupo de asistentes está lleno")
+            raise serializers.ValidationError({'detail':msg})
+
+        return data
+
+
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
