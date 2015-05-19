@@ -64,7 +64,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     organizer = models.ForeignKey(Organizer)
     tags = models.ManyToManyField(Tags)
     title = models.CharField(max_length=100)
-    short_description = models.CharField(max_length=100)
+    short_description = models.CharField(max_length=300)
     level = models.CharField(choices=LEVEL_CHOICES, max_length=1)
     goals = models.TextField(blank=True)
     methodology = models.TextField(blank=True)
