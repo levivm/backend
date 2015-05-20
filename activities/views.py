@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from activities.tasks import SendEmailChronogramTask
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
@@ -32,6 +33,22 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
 
         chronogram_serializer = self.serializer_class(chronograms, many=True)
         return Response(chronogram_serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        chronogram = self.get_object()
+        if chronogram.orders.count() == 0:
+            return super().destroy(request, *args, **kwargs)
+
+        return Response({'detail': _('No puede eliminar este calendario, tiene estudiantes inscritos, contactanos.')},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        result = super().update(request, *args, **kwargs)
+        chronogram = self.get_object()
+        if chronogram.orders.count() > 0:
+            task = SendEmailChronogramTask()
+            task.apply_async((chronogram.id, ), countdown=1800)
+        return result
 
 
 class ActivitiesViewSet(viewsets.ModelViewSet):

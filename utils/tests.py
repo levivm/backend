@@ -50,7 +50,7 @@ class BaseViewTest(APITestCase):
 
         for client in clients:
             client_method = getattr(client, method.lower())
-            response = client_method(self.url, params)
+            response = client_method(self.url, **params)
             self.assertEqual(response.status_code, status)
 
     def method_get_should_return_data(self, clients, response_data=None):

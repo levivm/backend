@@ -18,7 +18,7 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$', ActivityPhotosViewSet.as_view({'delete': 'destroy'})),
 
     url(r'^/info/?$', ActivitiesViewSet.as_view({'get': 'general_info'})),
-    url(r'^/tags/?$', TagsViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^/tags/?$', TagsViewSet.as_view({'get': 'list', 'post': 'create'  })),
     url(r'^/categories/?$', CategoriesViewSet.as_view({'get': 'list'})),
     url(r'^/subcategories/?$', SubCategoriesViewSet.as_view({'get': 'list'})),
 )
