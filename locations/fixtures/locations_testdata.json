@@ -1,0 +1,20 @@
+[
+  {
+    "pk": 1,
+    "model": "locations.city",
+    "fields": {
+      "name": "Bogotá",
+      "order": 0,
+      "point": "(-75.0758,4.59811)"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "locations.location",
+    "fields": {
+      "address": "Carrera 19C # 86A - 30",
+      "point": "(-75.0758,4.59811)",
+      "city": 1
+    }
+  }
+]

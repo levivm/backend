@@ -6,7 +6,8 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from activities.tasks import SendEmailChronogramTask
+from activities.permissions import IsActivityOwnerOrReadOnly
+from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
@@ -55,7 +56,7 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
 class ActivitiesViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,IsActivityOwner)
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwnerOrReadOnly)
     lookup_url_kwarg = 'activity_pk'
 
     def delete_calendar(self, request, pk=None):
@@ -107,7 +108,6 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
             chronogram = chronogram_serializer.save()
         return Response(chronogram_serializer.data)
 
-
     def set_location(self, request,  *args, **kwargs):
         activity = self.get_object()
         location_data = request.data.copy()
@@ -115,6 +115,10 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         if location_serializer.is_valid(raise_exception=True):
             location = location_serializer.save()
             activity.set_location(location)
+            orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+            if orders:
+                task = SendEmailLocationTask()
+                task.apply_async((activity.id,), countdown=1800)
 
         return Response(location_serializer.data)
 
@@ -133,7 +137,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
 
         return Response(data)
 
-    def publish(self, request, pk):
+    def publish(self, request, **kwargs):
         activity = self.get_object()
         activity.publish()
         return Response(status.HTTP_200_OK)

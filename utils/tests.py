@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase, APIClient
 
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
-                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata']
+                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1
@@ -58,9 +58,7 @@ class BaseViewTest(APITestCase):
         clients = self.__parse_clientes(clients=clients)
 
         for client in clients:
-            print(self.url)
             response = client.get(self.url)
-            print(response.content)
             self.assertEqual(response.status_code, 200)
             self.assertIn(response_data, response.content)
 

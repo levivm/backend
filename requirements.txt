@@ -7,7 +7,7 @@ defusedxml==0.4.1
 dj-database-url==0.3.0
 dj-static==0.0.6
 Django==1.8
--e git+https://github.com/pennersr/django-allauth.git
+-e git+https://github.com/pennersr/django-allauth.git#egg=django-allauth
 django-cors-headers==1.0.0
 -e git+https://github.com/lukaszb/django-guardian@devel#egg=django-guardian
 django-extensions==1.5.2
