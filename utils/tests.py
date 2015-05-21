@@ -58,7 +58,9 @@ class BaseViewTest(APITestCase):
         clients = self.__parse_clientes(clients=clients)
 
         for client in clients:
+            print(self.url)
             response = client.get(self.url)
+            print(response.content)
             self.assertEqual(response.status_code, 200)
             self.assertIn(response_data, response.content)
 

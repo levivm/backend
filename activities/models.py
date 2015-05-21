@@ -137,6 +137,10 @@ class Activity(AssignPermissionsMixin, models.Model):
         self.instructors.clear()
         self.instructors.add(*instructors)
 
+    def set_location(self,location):
+        self.location = location
+        self.save()
+
 
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")

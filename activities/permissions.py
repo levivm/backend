@@ -7,6 +7,10 @@ class IsActivityOwner(permissions.BasePermission):
 
     def has_permission(self, request, view):
         activity_pk = view.kwargs.get('activity_pk')
+        #TODO decidir si es activity_pk o pk. Manejar el caso cuandp
+        #no se necesite el activity_pk en la URL
+        if not activity_pk:
+            return True
         activity = get_object_or_404(Activity, pk=activity_pk)
 
         return request.user.has_perm('activities.change_activity', activity)

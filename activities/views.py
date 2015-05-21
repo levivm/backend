@@ -13,6 +13,7 @@ from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityP
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, ChronogramsSerializer, ActivityPhotosSerializer
+from locations.serializers import LocationsSerializer
 
 
 class ChronogramsViewSet(viewsets.ModelViewSet):
@@ -54,7 +55,8 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
 class ActivitiesViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,IsActivityOwner)
+    lookup_url_kwarg = 'activity_pk'
 
     def delete_calendar(self, request, pk=None):
 
@@ -104,6 +106,17 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         if chronogram_serializer.is_valid(raise_exception=True):
             chronogram = chronogram_serializer.save()
         return Response(chronogram_serializer.data)
+
+
+    def set_location(self, request,  *args, **kwargs):
+        activity = self.get_object()
+        location_data = request.data.copy()
+        location_serializer = LocationsSerializer(data=location_data)
+        if location_serializer.is_valid(raise_exception=True):
+            location = location_serializer.save()
+            activity.set_location(location)
+
+        return Response(location_serializer.data)
 
     def general_info(self, request):
         categories = Category.objects.all()
