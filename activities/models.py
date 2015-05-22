@@ -181,6 +181,7 @@ class Chronogram(models.Model):
         self.save()
 
     def available_capacity(self):
+        print(self.orders.filter(assistants__isnull=False).count(),"1111" )
         return self.capacity - self.orders.filter(assistants__isnull=False).count() 
 
     def get_assistants(self):
