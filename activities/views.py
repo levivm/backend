@@ -118,7 +118,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
             orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
             if orders:
                 task = SendEmailLocationTask()
-                task.apply_async((activity.id,), countdown=1800)
+                task.apply_async((activity.id,), countdown=30)
 
         return Response(location_serializer.data)
 

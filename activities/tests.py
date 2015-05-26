@@ -197,6 +197,9 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             }]
         }
 
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+
     def tearDown(self):
         settings.CELERY_ALWAYS_EAGER = False
 
@@ -221,7 +224,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         # self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
     def test_organizer_should_update_the_chronogram(self):
-        settings.CELERY_ALWAYS_EAGER = True
         organizer = self.get_organizer_client()
         data = self._get_data_to_create_a_chronogram()
         data.update({'session_price': 100000})
@@ -231,7 +233,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.assertIn(b'"session_price":100000', response.content)
 
     def test_email_task_should_create_if_has_students(self):
-        settings.CELERY_ALWAYS_EAGER = True
         organizer = self.get_organizer_client()
         data = self._get_data_to_create_a_chronogram()
         data.update({'session_price': 100000})
@@ -242,7 +243,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.assertEqual(CeleryTask.objects.count(), 1)
 
     def test_email_task_shouldnt_create_if_hasnt_students(self):
-        settings.CELERY_ALWAYS_EAGER = True
         organizer = self.get_organizer_client()
         data = self._get_data_to_create_a_chronogram()
         data.update({'session_price': 100000})
@@ -492,8 +492,8 @@ class UpdateActivityLocationViewTest(BaseViewTest):
             'city': 1
         }
 
-    # def setUp(self):
-    #     settings.CELERY_ALWAYS_EAGER = False
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
 
     def tearDown(self):
         settings.CELERY_ALWAYS_EAGER = False
@@ -533,14 +533,12 @@ class UpdateActivityLocationViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_email_task_should_create_if_has_students(self):
-        settings.CELERY_ALWAYS_EAGER = True
         organizer = self.get_organizer_client()
         data = json.dumps(self.get_data_to_update())
         self.method_should_be(clients=organizer, method='put', status=status.HTTP_200_OK, data=data, content_type='application/json')
         self.assertEqual(CeleryTask.objects.count(), 1)
 
     def test_email_task_shouldnt_create_if_hasnt_students(self):
-        settings.CELERY_ALWAYS_EAGER = True
         organizer = self.get_organizer_client()
         data = json.dumps(self.get_data_to_update())
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
