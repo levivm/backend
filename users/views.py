@@ -223,11 +223,13 @@ class ChangeEmailView(APIView):
 
 class PasswordChange(APIView):
     def post(self, request, *args, **kwargs):
+        
         _super_response = PasswordChangeView()
         _super_response.request = request._request
         _super_response.post(request, *args, **kwargs)
 
         response, form = _set_ajax_response(_super_response)
+        print("response",form.errors)
         return _ajax_response(request, response, form=form)
 
 
