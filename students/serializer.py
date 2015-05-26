@@ -4,20 +4,20 @@ from users.serializers import UserSerializer
 
 
 class StudentsSerializer(serializers.ModelSerializer):
-	user = UserSerializer()
+    user = UserSerializer()
     user_type = serializers.SerializerMethodField()
 
 
-	class Meta:
-		model = Student
-		fields = (
+    class Meta:
+        model = Student
+        fields = (
             'id',
-			'photo',
-			'user',
-			'gender',
-			'user',
-			'user_type',
-			)
+            'photo',
+            'user',
+            'gender',
+            'user',
+            'user_type',
+            )
 
 
     def get_user_type(self, obj):
