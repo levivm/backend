@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from users.serializers import UserSerializer
 from users.forms import UserCreateForm
 from utils.serializers import UnixEpochDateField
