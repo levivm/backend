@@ -232,27 +232,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"session_price":100000', response.content)
 
-    def test_email_task_should_create_if_has_students(self):
-        organizer = self.get_organizer_client()
-        data = self._get_data_to_create_a_chronogram()
-        data.update({'session_price': 100000})
-        data = json.dumps(data)
-        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
-        self.assertTrue(chronogram.orders.count() > 0)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_200_OK, data=data, content_type='application/json')
-        self.assertEqual(CeleryTask.objects.count(), 1)
-
-    def test_email_task_shouldnt_create_if_hasnt_students(self):
-        organizer = self.get_organizer_client()
-        data = self._get_data_to_create_a_chronogram()
-        data.update({'session_price': 100000})
-        data = json.dumps(data)
-        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
-        chronogram.orders.all().delete()
-        self.assertEqual(chronogram.orders.count(), 0)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_200_OK, data=data, content_type='application/json')
-        self.assertEqual(CeleryTask.objects.count(), 0)
-
     def test_organizer_shouldnt_delete_chronogram_if_has_students(self):
         organizer = self.get_organizer_client()
         chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
@@ -532,20 +511,6 @@ class UpdateActivityLocationViewTest(BaseViewTest):
         response = organizer.put(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_email_task_should_create_if_has_students(self):
-        organizer = self.get_organizer_client()
-        data = json.dumps(self.get_data_to_update())
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_200_OK, data=data, content_type='application/json')
-        self.assertEqual(CeleryTask.objects.count(), 1)
-
-    def test_email_task_shouldnt_create_if_hasnt_students(self):
-        organizer = self.get_organizer_client()
-        data = json.dumps(self.get_data_to_update())
-        activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        [chronogram.orders.all().delete() for chronogram in activity.chronograms.all()]
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_200_OK, data=data, content_type='application/json')
-        self.assertEqual(CeleryTask.objects.count(), 0)
-
 
 class SendEmailChronogramTaskTest(BaseViewTest):
     CHRONOGRAM_ID = 1
@@ -557,10 +522,30 @@ class SendEmailChronogramTaskTest(BaseViewTest):
 
     def test_ignore_task_if_there_is_a_pending_task(self):
         task = SendEmailChronogramTask()
-        task.apply((self.CHRONOGRAM_ID, ), countdown=60)
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
         task2 = SendEmailChronogramTask()
-        result = task2.apply((self.CHRONOGRAM_ID, ))
+        result = task2.apply((self.CHRONOGRAM_ID, False))
         self.assertEqual(result.result, None)
+
+    def test_task_should_delete_on_success(self):
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, ), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 0)
+
+    def test_email_task_should_create_if_has_students(self):
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        self.assertTrue(chronogram.orders.count() > 0)
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 1)
+
+    def test_email_task_shouldnt_create_if_hasnt_students(self):
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        chronogram.orders.all().delete()
+        self.assertEqual(chronogram.orders.count(), 0)
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 0)
 
 
 class SendEmailLocationTaskTest(BaseViewTest):
@@ -573,7 +558,29 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
     def test_ignore_task_if_there_is_a_pending_task(self):
         task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID,), countdown=60)
+        task.apply((self.ACTIVITY_ID, False), countdown=60)
         task2 = SendEmailLocationTask()
-        result = task2.apply((self.ACTIVITY_ID,))
+        result = task2.apply((self.ACTIVITY_ID, False))
         self.assertEqual(result.result, None)
+
+    def test_task_should_delete_on_success(self):
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, ))
+        self.assertEqual(CeleryTask.objects.count(), 0)
+
+    def test_email_task_should_create_if_has_students(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+        self.assertGreater(len(orders), 0)
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 1)
+
+    def test_email_task_shouldnt_create_if_hasnt_students(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        [chronogram.orders.all().delete() for chronogram in activity.chronograms.all()]
+        orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+        self.assertEqual(len(orders), 0)
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, False))
+        self.assertEqual(CeleryTask.objects.count(), 0)

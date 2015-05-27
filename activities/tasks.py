@@ -8,24 +8,27 @@ from activities.models import CeleryTask, Chronogram, Activity
 
 class SendEmailTaskMixin(Task):
     abstract = True
+    success_handler = True
 
     def run(self, instance, template, **kwargs):
-        for celery_task in instance.tasks.all():
-            task = self.AsyncResult(celery_task.task_id)
-            if task.state == 'PENDING':
-                break
-        else:
-            context = self.get_context_data()
-            emails = self.get_emails_to(instance)
+        emails = self.get_emails_to(instance)
 
-            for email in emails:
-                get_adapter().send_mail(
-                    template,
-                    email,
-                    context
-                )
-            self.register_task(instance)
-            return 'Task scheduled'
+        if emails:
+            for celery_task in instance.tasks.all():
+                task = self.AsyncResult(celery_task.task_id)
+                if task.state == 'PENDING':
+                    break
+            else:
+                context = self.get_context_data()
+
+                for email in emails:
+                    get_adapter().send_mail(
+                        template,
+                        email,
+                        context
+                    )
+                self.register_task(instance)
+                return 'Task scheduled'
 
     def register_task(self, instance):
         CeleryTask.objects.create(task_id=self.request.id, content_object=instance)
@@ -37,10 +40,16 @@ class SendEmailTaskMixin(Task):
     def get_emails_to(self, instance):
         return []
 
+    def on_success(self, retval, task_id, args, kwargs):
+        if self.success_handler:
+            task = CeleryTask.objects.get(task_id=task_id)
+            task.delete()
+
 
 class SendEmailChronogramTask(SendEmailTaskMixin):
 
-    def run(self, chronogram_id, **kwargs):
+    def run(self, chronogram_id, success_handler=True, **kwargs):
+        self.success_handler = success_handler
         chronogram = Chronogram.objects.get(id=chronogram_id)
         template = 'activities/email/change_chronogram_data'
         return super(SendEmailChronogramTask, self).run(instance=chronogram, template=template)
@@ -53,7 +62,8 @@ class SendEmailChronogramTask(SendEmailTaskMixin):
 
 
 class SendEmailLocationTask(SendEmailTaskMixin):
-    def run(self, activity_id, **kwargs):
+    def run(self, activity_id, success_handler=True, **kwargs):
+        self.success_handler = success_handler
         activity = Activity.objects.get(id=activity_id)
         template = 'activities/email/change_location_data'
         return super(SendEmailLocationTask, self).run(instance=activity, template=template)

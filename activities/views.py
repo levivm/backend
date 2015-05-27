@@ -47,9 +47,8 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         result = super().update(request, *args, **kwargs)
         chronogram = self.get_object()
-        if chronogram.orders.count() > 0:
-            task = SendEmailChronogramTask()
-            task.apply_async((chronogram.id, ), countdown=1800)
+        task = SendEmailChronogramTask()
+        task.apply_async((chronogram.id, ), countdown=1800)
         return result
 
 
@@ -115,10 +114,8 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         if location_serializer.is_valid(raise_exception=True):
             location = location_serializer.save()
             activity.set_location(location)
-            orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
-            if orders:
-                task = SendEmailLocationTask()
-                task.apply_async((activity.id,), countdown=30)
+            task = SendEmailLocationTask()
+            task.apply_async((activity.id,), countdown=1800)
 
         return Response(location_serializer.data)
 
