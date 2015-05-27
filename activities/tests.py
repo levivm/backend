@@ -4,14 +4,16 @@ import json
 import tempfile
 
 from PIL import Image
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.request import HttpRequest
 from django.utils.timezone import now
 from rest_framework import status
 
-from activities.models import Activity, ActivityPhoto, Tags
+from activities.models import Activity, ActivityPhoto, Tags, Chronogram, CeleryTask
 from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
+from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet
 from utils.tests import BaseViewTest
 
@@ -172,8 +174,12 @@ class CalendarsByActivityViewTest(BaseViewTest):
 
 
 class GetCalendarByActivityViewTest(BaseViewTest):
-    url = '/api/activities/1/calendars/1'
     view = ChronogramsViewSet
+    CHRONOGRAM_ID = 1
+
+    def __init__(self, methodName='runTest'):
+        super(GetCalendarByActivityViewTest, self).__init__(methodName)
+        self.url = '/api/activities/1/calendars/%s' % self.CHRONOGRAM_ID
 
     def _get_data_to_create_a_chronogram(self):
         now_unix_timestamp = int(now().timestamp())
@@ -190,6 +196,12 @@ class GetCalendarByActivityViewTest(BaseViewTest):
                 'end_time': now_unix_timestamp + 1,
             }]
         }
+
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -209,7 +221,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
         self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
+        # self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
     def test_organizer_should_update_the_chronogram(self):
         organizer = self.get_organizer_client()
@@ -219,6 +231,19 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"session_price":100000', response.content)
+
+    def test_organizer_shouldnt_delete_chronogram_if_has_students(self):
+        organizer = self.get_organizer_client()
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        self.assertTrue(chronogram.orders.count() > 0)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_400_BAD_REQUEST)
+
+    def test_organizer_should_delete_chronogram_if_hasnt_students(self):
+        organizer = self.get_organizer_client()
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        chronogram.orders.all().delete()
+        self.assertTrue(chronogram.orders.count() == 0)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
     def test_another_organizer_shouldnt_udpate_the_chronogram(self):
         organizer = self.get_organizer_client(self.ANOTHER_ORGANIZER_ID)
@@ -348,7 +373,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
         image.save(tmp_file)
         with open(tmp_file.name, 'rb') as fp:
-            response = organizer.post(self.url, data={'photo': fp,'main_photo':True})
+            response = organizer.post(self.url, data={'photo': fp, 'main_photo': True})
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
         expected_filename = bytes('%s' % tmp_file.name.split('/')[-1], 'utf8')
@@ -358,7 +383,13 @@ class ActivityGalleryViewTest(BaseViewTest):
 
     def test_another_organizer_shouldnt_create_a_photo(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
-        response = organizer.post(self.url)
+        image = Image.new('RGB', (100, 100), color='red')
+        imgfile = tempfile.NamedTemporaryFile(suffix='.jpg')
+        image.save(imgfile)
+        with open(imgfile.name, 'rb') as fp:
+            imagestring = fp.read()
+        file = SimpleUploadedFile(imgfile.name, content=imagestring, content_type='image/jpeg')
+        response = organizer.post(self.url, data={'photo': file, 'main_photo': True})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_permissions_organizer_with_photo(self):
@@ -368,11 +399,11 @@ class ActivityGalleryViewTest(BaseViewTest):
         imgfile = tempfile.NamedTemporaryFile(suffix='.jpg')
         image.save(imgfile)
         with open(imgfile.name, 'rb') as fp:
-             imagestring= fp.read()
+            imagestring = fp.read()
         file = SimpleUploadedFile(imgfile.name, content=imagestring, content_type='image/jpeg')
         request = HttpRequest()
         request.user = user
-        request.data = request.DATA = {'photo': file,'main_photo':True}
+        request.data = request.DATA = {'photo': file, 'main_photo': True}
         request.FILES = {'photo': file}
         serializer = ActivityPhotosSerializer(data=request.data, context={'request': request, 'activity': activity})
         serializer.is_valid(raise_exception=True)
@@ -468,3 +499,133 @@ class ActivityTagsViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(tag.name, 'another tag')
         self.assertIn(b'another tag', response.content)
+
+
+class UpdateActivityLocationViewTest(BaseViewTest):
+    view = ActivitiesViewSet
+    ACTIVITY_ID = 1
+
+    def __init__(self, methodName='runTest'):
+        super().__init__(methodName)
+        self.url = '/api/activities/%s/locations' % self.ACTIVITY_ID
+
+    def get_data_to_update(self):
+        return {
+            'point': [1, 2],
+            'address': 'Calle falsa 123',
+            'city': 1
+        }
+
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
+
+    def test_url_should_resolve_correctly(self):
+        self.url_resolve_to_view_correctly()
+
+    def test_methods_for_anonymous(self):
+        self.method_should_be(clients=self.client, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=self.client, method='post', status=status.HTTP_401_UNAUTHORIZED)
+        self.method_should_be(clients=self.client, method='put', status=status.HTTP_401_UNAUTHORIZED)
+        self.method_should_be(clients=self.client, method='delete', status=status.HTTP_401_UNAUTHORIZED)
+
+    def test_methods_for_student(self):
+        student = self.get_student_client()
+        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_methods_for_organizer(self):
+        organizer = self.get_organizer_client()
+        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_organizer_should_update_location(self):
+        organizer = self.get_organizer_client()
+        data = json.dumps(self.get_data_to_update())
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b'Calle falsa 123', response.content)
+
+    def test_another_organizer_shouldnt_update_location(self):
+        organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
+        response = organizer.put(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class SendEmailChronogramTaskTest(BaseViewTest):
+    CHRONOGRAM_ID = 1
+
+    def test_task_dispatch_if_there_is_not_other_task(self):
+        task = SendEmailChronogramTask()
+        result = task.apply((self.CHRONOGRAM_ID, ))
+        self.assertEqual(result.result, 'Task scheduled')
+
+    def test_ignore_task_if_there_is_a_pending_task(self):
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
+        task2 = SendEmailChronogramTask()
+        result = task2.apply((self.CHRONOGRAM_ID, False))
+        self.assertEqual(result.result, None)
+
+    def test_task_should_delete_on_success(self):
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, ), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 0)
+
+    def test_email_task_should_create_if_has_students(self):
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        self.assertTrue(chronogram.orders.count() > 0)
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 1)
+
+    def test_email_task_shouldnt_create_if_hasnt_students(self):
+        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
+        chronogram.orders.all().delete()
+        self.assertEqual(chronogram.orders.count(), 0)
+        task = SendEmailChronogramTask()
+        task.apply((self.CHRONOGRAM_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 0)
+
+
+class SendEmailLocationTaskTest(BaseViewTest):
+    ACTIVITY_ID = 1
+
+    def test_task_dispatch_if_there_is_not_other_task(self):
+        task = SendEmailLocationTask()
+        result = task.apply((self.ACTIVITY_ID, ))
+        self.assertEqual(result.result, 'Task scheduled')
+
+    def test_ignore_task_if_there_is_a_pending_task(self):
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, False), countdown=60)
+        task2 = SendEmailLocationTask()
+        result = task2.apply((self.ACTIVITY_ID, False))
+        self.assertEqual(result.result, None)
+
+    def test_task_should_delete_on_success(self):
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, ))
+        self.assertEqual(CeleryTask.objects.count(), 0)
+
+    def test_email_task_should_create_if_has_students(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+        self.assertGreater(len(orders), 0)
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, False), countdown=60)
+        self.assertEqual(CeleryTask.objects.count(), 1)
+
+    def test_email_task_shouldnt_create_if_hasnt_students(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        [chronogram.orders.all().delete() for chronogram in activity.chronograms.all()]
+        orders = [order for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+        self.assertEqual(len(orders), 0)
+        task = SendEmailLocationTask()
+        task.apply((self.ACTIVITY_ID, False))
+        self.assertEqual(CeleryTask.objects.count(), 0)

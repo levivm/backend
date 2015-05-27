@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase, APIClient
 
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
-                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata','locations_testdata']
+                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1
@@ -50,7 +50,7 @@ class BaseViewTest(APITestCase):
 
         for client in clients:
             client_method = getattr(client, method.lower())
-            response = client_method(self.url, params)
+            response = client_method(self.url, **params)
             self.assertEqual(response.status_code, status)
 
     def method_get_should_return_data(self, clients, response_data=None):
