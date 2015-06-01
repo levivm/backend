@@ -79,7 +79,6 @@ class OrdersByActivityViewTest(BaseViewTest):
         self.assertFalse(activity.published and chronogram.available_capacity()>=data['quantity'])
         response = client.post(self.url, data)
         order = Order.objects.latest('pk')
-        print(chronogram.available_capacity()>=order.quantity)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 

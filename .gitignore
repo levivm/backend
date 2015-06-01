@@ -3,3 +3,4 @@ trulii/media/*
 trulii/staticfiles/*
 trulii/*.pyc
 .idea
+*.rdb
