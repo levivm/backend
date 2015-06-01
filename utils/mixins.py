@@ -16,6 +16,8 @@ class AssignPermissionsMixin(object):
 
 
 class FileUploadMixin(object):
+
+
     def clean_file(self, file):
         content_type = file.content_type.split('/')[0]
         if content_type in settings.CONTENT_TYPES:
