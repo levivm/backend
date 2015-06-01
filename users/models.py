@@ -52,27 +52,27 @@ def after_email_added(sender, **kwargs):
         old_email.delete()
 
 
-class UserProfile(models.Model):
-    FEMALE, MALE = range(2)
+# class UserProfile(models.Model):
+#     FEMALE, MALE = range(2)
 
-    GENDER_CHOICES = (
-        (MALE, _('Hombre')),
-        (FEMALE, _('Mujer'))
-    )
+#     GENDER_CHOICES = (
+#         (MALE, _('Hombre')),
+#         (FEMALE, _('Mujer'))
+#     )
 
-    USER_TYPES = (
-        ('O', _('Organizador')),
-        ('S', _('Estudiante')),
-    )
+#     USER_TYPES = (
+#         ('O', _('Organizador')),
+#         ('S', _('Estudiante')),
+#     )
 
-    user = models.OneToOneField(User, related_name='profile')
-    user_type = models.CharField(max_length=1, choices=USER_TYPES)
-    gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    photo = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
-    birthday = models.DateField(null=True, blank=True)
-    telephone = models.CharField(max_length=100, null=True, blank=True)
-    bio = models.TextField(null=True, blank=True)
+#     user = models.OneToOneField(User, related_name='profile')
+#     user_type = models.CharField(max_length=1, choices=USER_TYPES)
+#     gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     photo = models.CharField(max_length=100, verbose_name=_("Foto"), null=True, blank=True)
+#     birthday = models.DateField(null=True, blank=True)
+#     telephone = models.CharField(max_length=100, null=True, blank=True)
+#     bio = models.TextField(null=True, blank=True)
 
 
 class RequestSignup(models.Model):
