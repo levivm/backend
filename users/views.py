@@ -29,7 +29,7 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
-from .serializers import RequestSignupsSerializers
+from .serializers import RequestSignupsSerializers,UsersSerializer
 from .models import RequestSignup, OrganizerConfirmation
 
 
@@ -66,6 +66,8 @@ class RequestSignupViewSet(viewsets.ModelViewSet):
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    serializer_class = UsersSerializer
+
 
     def retrieve(self, request):
         user = request.user

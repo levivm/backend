@@ -1,6 +1,6 @@
 from .models import Student
 from rest_framework import serializers
-from users.serializers import UserSerializer
+from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
 from utils.mixins import FileUploadMixin
 
@@ -8,7 +8,7 @@ from utils.mixins import FileUploadMixin
 
 
 class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = UsersSerializer(read_only=True)
     user_type = serializers.SerializerMethodField()
 
 

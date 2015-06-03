@@ -10,7 +10,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # 
 
-class UserSerializer(serializers.ModelSerializer):
+class UsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
