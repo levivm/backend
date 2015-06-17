@@ -29,7 +29,7 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 from .serializers import AuthTokenSerializer
 from utils.forms import FileUploadForm
-from .serializers import UserProfilesSerializer, RequestSignupsSerializers
+from .serializers import RequestSignupsSerializers,UsersSerializer
 from .models import RequestSignup, OrganizerConfirmation
 
 
@@ -66,7 +66,8 @@ class RequestSignupViewSet(viewsets.ModelViewSet):
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserProfilesSerializer
+    serializer_class = UsersSerializer
+
 
     def retrieve(self, request):
         user = request.user
@@ -158,12 +159,12 @@ class RestFacebookLogin(APIView):
             }
 
             return Response(
-                status=200,
+                status=status.HTTP_200_OK,
                 data=data
             )
 
         except Exception as error:
-            return Response(status=401, data={
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data={
                 'detail': error,
             })
 
@@ -223,12 +224,12 @@ class ChangeEmailView(APIView):
 
 class PasswordChange(APIView):
     def post(self, request, *args, **kwargs):
+        
         _super_response = PasswordChangeView()
         _super_response.request = request._request
-        _super_response.post(request, *args, **kwargs)
-
         response, form = _set_ajax_response(_super_response)
         return _ajax_response(request, response, form=form)
+
 
 
 class ConfirmEmail(ConfirmEmailView):

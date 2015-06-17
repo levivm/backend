@@ -2,15 +2,15 @@
 #"Content-Type: text/plain; charset=UTF-8\n"
 
 from rest_framework import serializers,exceptions
-from .models import UserProfile,RequestSignup, OrganizerConfirmation
+from .models import RequestSignup, OrganizerConfirmation
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 #from allauth.account.forms import LoginForm
 
+# 
 
-
-class UserSerializer(serializers.ModelSerializer):
+class UsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
@@ -19,31 +19,10 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
         )
 
-
-class UserProfilesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = (
-            'bio',
-            'id',
-
-        )
-
-
-
-
 class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = OrganizerConfirmation
-
-
-
-
-
-
-
-
 
 class RequestSignupsSerializers(serializers.ModelSerializer):
 

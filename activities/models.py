@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.conf import settings
 
@@ -79,6 +81,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
+    tasks = GenericRelation('CeleryTask')
 
 
 
@@ -161,6 +164,10 @@ class Activity(AssignPermissionsMixin, models.Model):
         self.instructors.clear()
         self.instructors.add(*instructors)
 
+    def set_location(self,location):
+        self.location = location
+        self.save()
+
 
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
@@ -175,14 +182,14 @@ class Chronogram(models.Model):
     number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
     capacity = models.IntegerField()
+    tasks = GenericRelation('CeleryTask')
 
     def update(self, data):
         self.__dict__.update(data)
         self.save()
 
     def available_capacity(self):
-        print(self.orders.filter(assistants__isnull=False).count(),"1111" )
-        return self.capacity - self.orders.filter(assistants__isnull=False).count() 
+        return self.capacity - self.orders.filter(assistants__isnull=False).count()
 
     def get_assistants(self):
         return self.orders.filter(assistants__isnull=False)
@@ -205,3 +212,13 @@ class Review(models.Model):
     author = models.CharField(max_length=200)
     rating = models.IntegerField()
     attributes = models.CharField(max_length=200)
+
+
+class CeleryTask(models.Model):
+    task_id = models.CharField(max_length=40)
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        return self.task_id

@@ -1,11 +1,11 @@
 from rest_framework import serializers
-
-from users.serializers import UserSerializer
+from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
 from utils.serializers import UnixEpochDateField
 from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
+from utils.mixins import FileUploadMixin
 
 
 class InstructorsSerializer(serializers.ModelSerializer):
@@ -24,12 +24,12 @@ class InstructorsSerializer(serializers.ModelSerializer):
 
 
 
-class OrganizersSerializer(serializers.ModelSerializer):
+class OrganizersSerializer(FileUploadMixin,serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
-    user = UserSerializer()
+    user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
-    instructors = InstructorsSerializer(many=True)
-    locations = LocationsSerializer(many=True)
+    instructors = InstructorsSerializer(many=True,read_only=True)
+    locations = LocationsSerializer(many=True,read_only=True)
 
     class Meta:
         model = Organizer
@@ -47,8 +47,12 @@ class OrganizersSerializer(serializers.ModelSerializer):
             'instructors',
             'locations',
         )
-        read_only_fields = ('id', 'photo',)
+        read_only_fields = ('id',)
         depth = 1
+
+    def validate_photo(self, file):
+        return self.clean_file(file)
+        
 
     def get_user_type(self, obj):
         return UserCreateForm.USER_TYPES[0][0]
