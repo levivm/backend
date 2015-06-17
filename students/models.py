@@ -17,4 +17,14 @@ class Student(models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
 
 
+    @classmethod
+    def get_by_email(cls,email):
+
+    	try:
+    		student = cls.objects.get(user__email=email)
+    		return student
+    	except Student.DoesNotExist:
+    		return None
+
+
 User.profile = property(lambda u: Student.objects.get_or_create(user=u)[0])

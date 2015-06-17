@@ -2,10 +2,12 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from orders.models import Order, Assistant
 from students.serializer import StudentsSerializer
+from students.models import Student
 
 
 class AssistantSerializer(serializers.ModelSerializer):
     order = serializers.PrimaryKeyRelatedField(read_only=True)
+    student = serializers.SerializerMethodField()
 
     class Meta:
         model = Assistant
@@ -14,7 +16,14 @@ class AssistantSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
+            'student'
         )
+
+    def get_student(self,obj):
+        student = Student.get_by_email(obj.email)
+        student_serializer = StudentsSerializer(student)
+        return student_serializer.data
+
 
 class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantSerializer(many=True)
