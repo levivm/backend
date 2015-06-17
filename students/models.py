@@ -26,5 +26,14 @@ class Student(models.Model):
     	except Student.DoesNotExist:
     		return None
 
+    def update(self,data):
+        self.__dict__.update(data)
+        self.save()
+
+    def update_base_info(self,data):
+        self.user.__dict__.update(data)
+        self.user.save()
+
+
 
 User.profile = property(lambda u: Student.objects.get_or_create(user=u)[0])
