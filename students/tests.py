@@ -30,10 +30,11 @@ class StudentViewTest(BaseViewTest):
 
     def test_student_should_update(self):
         student = self.get_student_client()
-        data = json.dumps({ 'gender': 1 })
+        data = json.dumps({ 'gender': 1,'user':{'id':1,'first_name':"pablo"} })
         response = student.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"gender":1', response.content)
+        self.assertIn(b'"first_name":"pablo"', response.content)
 
     def test_another_student_shouldnt_update(self):
         student = self.get_student_client(user_id=4)

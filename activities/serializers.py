@@ -320,27 +320,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     def get_level_display(self, obj):
         return obj.get_level_display()
 
-    def _set_location(self, location):
-        city = location["city"]
-        if isinstance(city, dict):
-            city = city["id"]
-
-        point = location["point"]
-        address = location.get("address", "")
-
-        location_data = {
-            'city': city,
-            'point': [point[1], point[0]],
-            'address': address
-
-        }
-
-        location_serializer = LocationsSerializer(data=location_data)
-        value = None
-        if location_serializer.is_valid(raise_exception=True):
-            value = location_serializer.save()
-
-        return value
 
     def validate(self, data):
 
@@ -353,9 +332,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             raise serializers.ValidationError("Usuario no es organizador")
 
         data['organizer'] = organizer
-
-        location_data = request.data.get('location', None)
-        data['location'] = self._set_location(location_data) if location_data else None
 
         return data
 
@@ -380,12 +356,9 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         instructors_data = validated_data.get('instructors', [])
         instance.add_instructors(instructors_data, organizer)
 
-        location = validated_data.get('location', None)
-        del (validated_data['location'])
+        # del (validated_data['location'])
         instance.update(validated_data)
 
-        if location:
-            instance.location = location
 
         instance.save()
 
