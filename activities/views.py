@@ -64,9 +64,8 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         data = request.DATA
 
         chronogram_serializer = ChronogramsSerializer(data=data, context={'request': request})
-        chronogram = None
         if chronogram_serializer.is_valid(raise_exception=True):
-            chronogram = chronogram_serializer.save()
+            chronogram_serializer.save()
         return Response(chronogram_serializer.data)
 
     def set_location(self, request, *args, **kwargs):
