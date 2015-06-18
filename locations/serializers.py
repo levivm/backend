@@ -28,7 +28,7 @@ class PointStrField(serializers.Field):
         return [coords[0],coords[1]]
 
     def to_internal_value(self, data):
-        point  =  "(%s,%s)" % (data[1], data[0])
+        point  =  "(%s,%s)" % (data[0], data[1])
         return point
 
 
@@ -45,6 +45,7 @@ class CitiesSerializer(serializers.ModelSerializer):
 
 class LocationsSerializer(serializers.ModelSerializer):
     city  = serializers.SlugRelatedField(slug_field='id',queryset=City.objects.all(),required=True)
+    # city  = CitiesSerializer()
     point = PointStrField()
     class Meta:
         model = Location
