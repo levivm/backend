@@ -190,7 +190,8 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
                 msg = u'La fecha su sesión debe ser mayor a la anterior'
                 raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
             elif date == n_date:
-
+                # import pdb
+                # pdb.set_trace()
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = u'La hora de inicio de su sesión debe ser después de la sesión anterior'
                     raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
