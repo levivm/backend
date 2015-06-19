@@ -29,7 +29,7 @@ class Instructor(models.Model):
 
         instructors = []
         for ins in instructors_data:
-            # Esto se usará en el futuro para asignar el instructor
+            # Esto se usara en el futuro para asignar el instructor
             # al organizer
             # ins.update({'organizer':organizer})
             instructor = cls.objects.update_or_create(\
