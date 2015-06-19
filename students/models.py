@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class Student(models.Model):
-    FEMALE, MALE = range(2)
+    FEMALE, MALE = range(1,3)
 
     GENDER_CHOICES = (
         (MALE, _('Hombre')),
@@ -15,6 +15,8 @@ class Student(models.Model):
     gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
     created_at = models.DateTimeField(auto_now_add=True)
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
+    birth_date = models.DateTimeField()
+
 
 
     @classmethod

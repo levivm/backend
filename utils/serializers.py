@@ -1,4 +1,5 @@
 from calendar import timegm
+import time as time_a
 from datetime import time, date, datetime
 from rest_framework import serializers
 
@@ -16,9 +17,10 @@ class UnixEpochDateField(serializers.DateTimeField):
             value = datetime.combine(d,value)
 
         try:
-            return timegm(value.timetuple())*1000
+            return time_a.mktime(value.timetuple())*1000
         except (AttributeError, TypeError):
             return None
 
     def to_internal_value(self, value):
+
         return datetime.fromtimestamp(value//1000).replace(second=0)
