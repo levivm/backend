@@ -178,8 +178,10 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             date = session['date'].date()
 
             if date < initial_date.date():
-                msg = u'La sesión no puede empezar antes de la fecha de inicio'
-                raise serializers.ValidationError({'sessions_' + str(i): _(msg)})
+                msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
+                errors    = [{}]*f_range
+                errors[i] = {'date':[msg]} 
+                raise serializers.ValidationError({'sessions':errors})
 
             if not n_session:
                 continue
@@ -187,14 +189,18 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             n_date = n_session['date'].date()
 
             if date > n_date:
-                msg = u'La fecha su sesión debe ser mayor a la anterior'
+                msg = _(u'La fecha su sesión debe ser mayor a la anterior')
+                errors    = [{}]*f_range
+                errors[i] = {'date':[msg]} 
+                raise serializers.ValidationError({'sessions':errors})
+
                 raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
             elif date == n_date:
-                # import pdb
-                # pdb.set_trace()
                 if session['end_time'].time() > n_session['start_time'].time():
-                    msg = u'La hora de inicio de su sesión debe ser después de la sesión anterior'
-                    raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
+                    msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
+                    errors    = [{}]*f_range
+                    errors[i] = {'start_time':[msg]} 
+                    raise serializers.ValidationError({'sessions':errors})
 
     def validate(self, data):
         initial_date = data['initial_date']

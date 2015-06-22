@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-_ = lambda x: x
+from django.utils.translation import ugettext_lazy as _
 
 
 class Organizer(models.Model):
@@ -24,7 +23,7 @@ class Instructor(models.Model):
     website = models.CharField(max_length=200, null=True, blank=True)
 
 
-    @classmethod
+    @classmethod 
     def update_or_create(cls,instructors_data,organizer):
 
         instructors = []
