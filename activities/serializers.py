@@ -180,7 +180,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             if date < initial_date.date():
                 msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
                 errors    = [{}]*f_range
-                errors[i] = {'date':[msg]} 
+                errors[i] = {'date_'+str(0):[msg]} 
                 raise serializers.ValidationError({'sessions':errors})
 
             if not n_session:
@@ -191,7 +191,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             if date > n_date:
                 msg = _(u'La fecha su sesión debe ser mayor a la anterior')
                 errors    = [{}]*f_range
-                errors[i] = {'date':[msg]} 
+                errors[i+1] = {'date_'+str(0):[msg]} 
                 raise serializers.ValidationError({'sessions':errors})
 
                 raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
@@ -199,7 +199,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
                     errors    = [{}]*f_range
-                    errors[i] = {'start_time':[msg]} 
+                    errors[i+1] = {'start_time_'+str(1):[msg]} 
                     raise serializers.ValidationError({'sessions':errors})
 
     def validate(self, data):
@@ -357,7 +357,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         return activity
 
     def update(self, instance, validated_data):
-
         request = self.context['request']
         organizer = validated_data.get('organizer')
         instructors_data = validated_data.get('instructors', [])

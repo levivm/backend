@@ -130,7 +130,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'sessions': [{
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100,
+                'end_time': now_unix_timestamp + 100000,
             }]
         }
 
@@ -193,7 +193,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             'sessions': [{
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 1,
+                'end_time': now_unix_timestamp + 100000,
             }]
         }
 

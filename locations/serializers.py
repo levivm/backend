@@ -1,21 +1,22 @@
 from .models import Location,City
 from ast import literal_eval
 from rest_framework import serializers
+from utils.mixins import AssignPermissionsMixin
 #from django.contrib.gis.geos import Point, fromstr
 
 
 
 # this will be used when postgis is enabled.
-class PointField(serializers.Field):
-    """
-    PointField 
-    """
-    def to_representation(self, obj):
-        return [obj[0],obj[1]]
+# class PointField(serializers.Field):
+#     """
+#     PointField 
+#     """
+#     def to_representation(self, obj):
+#         return [obj[0],obj[1]]
 
-    def to_internal_value(self, data):
-        #point = fromstr("POINT(%s %s)" % (data[1], data[0]))
-        return point
+#     def to_internal_value(self, data):
+#         point = fromstr("POINT(%s %s)" % (data[1], data[0]))
+#         return point
 
 
 
@@ -43,10 +44,13 @@ class CitiesSerializer(serializers.ModelSerializer):
             )
 
 
-class LocationsSerializer(serializers.ModelSerializer):
+
+class LocationsSerializer(AssignPermissionsMixin,serializers.ModelSerializer):
     city  = serializers.SlugRelatedField(slug_field='id',queryset=City.objects.all(),required=True)
-    # city  = CitiesSerializer()
     point = PointStrField()
+    permissions = ('locations.change_location','locations.add_location','locations.delete_location', )
+
+
     class Meta:
         model = Location
         fields = (
@@ -54,4 +58,19 @@ class LocationsSerializer(serializers.ModelSerializer):
             'city',
             'point',
             'address',
+            'organizer'
             )
+
+    def create(self,validated_data):
+        is_organizer_location = self.context.get('organizer_location')
+        instance = super(LocationsSerializer,self).create(validated_data)
+        
+        if not is_organizer_location:
+            return instance
+
+        request = self.context.get('request')
+
+        self.assign_permissions(request.user, instance)
+        return instance
+
+

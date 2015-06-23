@@ -70,6 +70,11 @@
                 "location"
             ],
             [
+                "delete_location",
+                "locations",
+                "location"
+            ],
+            [
                 "add_instructor",
                 "organizers",
                 "instructor"
