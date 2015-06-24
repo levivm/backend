@@ -21,7 +21,7 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
     serializer_class = ChronogramsSerializer
     lookup_url_kwarg = 'calendar_pk'
     model = Chronogram
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,)
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,IsActivityOwnerOrReadOnly)
 
     def get_queryset(self):
         activity_id = self.kwargs.get('activity_pk', None)

@@ -161,6 +161,12 @@ class CalendarsByActivityViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(b'"session_price":123000', response.content)
 
+    def test_other_organizer_shouldnt_create_a_chronogram(self):
+        organizer = self.get_organizer_client(self.ANOTHER_ORGANIZER_ID)        
+        data = json.dumps(self._get_data_to_create_a_chronogram())
+        response = organizer.post(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_organizer_permissions_of_chronogram(self):
         request = HttpRequest()
         request.user = User.objects.get(id=self.ORGANIZER_ID)
