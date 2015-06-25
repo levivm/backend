@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
 from django.utils.translation import ugettext_lazy as _
-from allauth.account.views import ConfirmEmailView
+from allauth.account.views import ConfirmEmailView,LoginView
 from django.http import HttpResponse
 from rest_framework.permissions import AllowAny
 from allauth.socialaccount.models import SocialApp, SocialToken, SocialLogin
@@ -32,6 +32,8 @@ from utils.forms import FileUploadForm
 from .serializers import RequestSignupsSerializers,UsersSerializer
 from .models import RequestSignup, OrganizerConfirmation
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_post_parameters
 
 def _set_ajax_response(_super):
     form_class = _super.get_form_class()
@@ -57,6 +59,10 @@ def get_user_profile_data(user):
         data = StudentsSerializer(profile).data
 
     return data
+
+
+sensitive_post_parameters_m = method_decorator(
+    sensitive_post_parameters('password', 'password1', 'password2'))
 
 
 class RequestSignupViewSet(viewsets.ModelViewSet):
@@ -104,8 +110,26 @@ class ObtainAuthTokenView(APIView):
     renderer_classes = (JSONRenderer,)
     serializer_class = AuthTokenSerializer
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+
+    @sensitive_post_parameters_m
+    def dispatch(self, request, *args, **kwargs):
+
+
+        login_response = LoginView().dispatch(request, *args, **kwargs)
+
+        if (login_response.status_code!=status.HTTP_200_OK):
+            return login_response
+
+        return super(ObtainAuthTokenView, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        auth_data = {
+            'email':request.data.get('login'),
+            'password':request.data.get('password')
+        }
+
+        serializer = self.serializer_class(data=auth_data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
 
@@ -238,6 +262,29 @@ class ConfirmEmail(ConfirmEmailView):
 
         return HttpResponse(
             content_type="application/json", status=200)
+
+
+# class LoginViewTest(APIView,LoginView):
+
+#     @sensitive_post_parameters_m
+#     def dispatch(self, request, *args, **kwargs):
+#         # return LoginView().as_view()
+#         return super(LoginView, self).dispatch(request, *args, **kwargs)
+#         # return super(LoginViewTest, self).dispatch(request, *args, **kwargs)
+
+#     def post(self, request, *args, **kwargs):
+#         # request.POST = SafeExceptionReporterFilter().get_post_parameters(request)
+#         import pdb
+#         pdb.set_trace()
+
+#         # re = sensitive_post_parameters(request)
+#         # request.POST = re 
+        
+#         # request = sensitive_post_parameters_m(request)
+#         login_view = LoginView.as_view()
+#         response   = login_view(request)
+
+#         return response
 
 
 # class SignUpCustomView(SignupView):
