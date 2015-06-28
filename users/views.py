@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout as auth_logout
 from django.utils.translation import ugettext_lazy as _
-from allauth.account.views import ConfirmEmailView,LoginView
+from allauth.account.views import ConfirmEmailView,LoginView,SignupView
 from django.http import HttpResponse
 from rest_framework.permissions import AllowAny
 from allauth.socialaccount.models import SocialApp, SocialToken, SocialLogin
@@ -115,19 +115,37 @@ class ObtainAuthTokenView(APIView):
     def dispatch(self, request, *args, **kwargs):
 
 
-        login_response = LoginView().dispatch(request, *args, **kwargs)
 
-        if (login_response.status_code!=status.HTTP_200_OK):
-            return login_response
+        is_sign_up = request.POST.get('user_type')
+
+        if is_sign_up:
+            signup_response = SignupView().dispatch(request,*args, **kwargs)
+            if (signup_response.status_code!=status.HTTP_200_OK):
+                return signup_response
+        else:
+            login_response  = LoginView().dispatch(request, *args, **kwargs)
+
+            if (login_response.status_code!=status.HTTP_200_OK):
+                return login_response
 
         return super(ObtainAuthTokenView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
 
-        auth_data = {
-            'email':request.data.get('login'),
-            'password':request.data.get('password')
-        }
+        is_sign_up = request.POST.get('user_type')
+        
+        auth_data = {}
+        
+        if is_sign_up:
+            auth_data = {
+                'email':request.data.get('email'),
+                'password':request.data.get('password1'),
+            }
+        else:
+            auth_data = {
+                'email':request.data.get('login'),
+                'password':request.data.get('password')
+            }
 
         serializer = self.serializer_class(data=auth_data, context={'request': request})
         serializer.is_valid(raise_exception=True)
