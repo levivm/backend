@@ -299,6 +299,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'steps',
             'organizer',
             'instructors',
+            'score',
         )
         depth = 1
 
