@@ -7,6 +7,7 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models import Count
 from django.http.request import HttpRequest
 from django.utils.timezone import now
 from rest_framework import status
@@ -14,7 +15,8 @@ from rest_framework import status
 from activities.models import Activity, ActivityPhoto, Tags, Chronogram, CeleryTask
 from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
-from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet
+from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \
+    ActivitiesSearchView
 from utils.tests import BaseViewTest
 
 
@@ -57,9 +59,10 @@ class ActivitiesListViewTest(BaseViewTest):
         data = json.dumps(self._get_data_to_create_an_activity())
         response = organizer.post(self.url, data=data, content_type='application/json')
         activity = Activity.objects.latest('pk')
-        expected = bytes('"id":%s' % activity.id, 'utf8')
+        serializer = ActivitiesSerializer(activity)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn(expected, response.content)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['score'], 0)
 
     def test_organizer_permissions_of_activity(self):
         data = self._get_data_to_create_an_activity()
@@ -76,8 +79,18 @@ class ActivitiesListViewTest(BaseViewTest):
 
 
 class GetActivityViewTest(BaseViewTest):
-    url = '/api/activities/1'
     view = ActivitiesViewSet
+    ACTIVITY_ID = 1
+
+    def __init__(self, methodName='runTest'):
+        super(GetActivityViewTest, self).__init__(methodName)
+        self.url = '/api/activities/%s' % self.ACTIVITY_ID
+
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -101,10 +114,12 @@ class GetActivityViewTest(BaseViewTest):
 
     def test_organizer_should_update_the_activity(self):
         organizer = self.get_organizer_client()
-        data = json.dumps({
-            'short_description': 'Otra descripcion corta'
-        })
+        data = json.dumps({'short_description': 'Otra descripcion corta'})
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 0)
         response = organizer.put(self.url, data=data, content_type='application/json')
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 85.0)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"short_description":"Otra descripcion corta"', response.content)
 
@@ -292,6 +307,7 @@ class PublishActivityViewTest(BaseViewTest):
 
     def test_organizer_should_publish_the_activity(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        activity.published = False
         self.assertFalse(activity.published)
         organizer = self.get_organizer_client()
         response = organizer.put(self.url)
@@ -303,7 +319,6 @@ class PublishActivityViewTest(BaseViewTest):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
         response = organizer.put(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
 
 class UnpublishActivityViewTest(BaseViewTest):
@@ -351,8 +366,12 @@ class UnpublishActivityViewTest(BaseViewTest):
 
 
 class ActivityGalleryViewTest(BaseViewTest):
-    url = '/api/activities/1/gallery'
     view = ActivityPhotosViewSet
+    ACTIVITY_ID = 1
+
+    def __init__(self, methodName='runTest'):
+        super(ActivityGalleryViewTest, self).__init__(methodName)
+        self.url = '/api/activities/%s/gallery' % self.ACTIVITY_ID
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -418,10 +437,29 @@ class ActivityGalleryViewTest(BaseViewTest):
         self.assertFalse(request.user.has_perm('activities.change_activityphoto', activity_photo))
         self.assertTrue(request.user.has_perm('activities.delete_activityphoto', activity_photo))
 
+    def test_method_post_should_recalculate_activity_score(self):
+        settings.CELERY_ALWAYS_EAGER = True
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 0)
+        organizer = self.get_organizer_client()
+        image = Image.new('RGB', (100, 100), color='red')
+        tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
+        image.save(tmp_file)
+        with open(tmp_file.name, 'rb') as fp:
+            organizer.post(self.url, data={'photo': fp, 'main_photo': True})
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 100.0)
+        settings.CELERY_ALWAYS_EAGER = False
+
+
 
 class GetActivityGalleryViewTest(BaseViewTest):
-    url = '/api/activities/1/gallery/1'
     view = ActivityPhotosViewSet
+    ACTIVITY_ID = 1
+
+    def __init__(self, methodName='runTest'):
+        super(GetActivityGalleryViewTest, self).__init__(methodName)
+        self.url = '/api/activities/%s/gallery/1' % self. ACTIVITY_ID
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -444,6 +482,18 @@ class GetActivityGalleryViewTest(BaseViewTest):
         self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_200_OK)
         self.method_should_be(clients=another_organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_method_delete_should_recalculate_activity_score(self):
+        settings.CELERY_ALWAYS_EAGER = True
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        activity.score = 100.0
+        activity.save(update_fields=['score'])
+        self.assertEqual(activity.score, 100.0)
+        organizer = self.get_organizer_client()
+        organizer.delete(self.url)
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertLess(activity.score, 100.0)
+        settings.CELERY_ALWAYS_EAGER = False
 
 
 class ActivityInfoViewTest(BaseViewTest):
@@ -635,3 +685,65 @@ class SendEmailLocationTaskTest(BaseViewTest):
         task = SendEmailLocationTask()
         task.apply((self.ACTIVITY_ID, False))
         self.assertEqual(CeleryTask.objects.count(), 0)
+
+
+class SearchActivitiesViewTest(BaseViewTest):
+    url = '/api/activities/search'
+    view = ActivitiesSearchView
+    ACTIVITY_ID = 1
+
+    def _get_activities_ordered(self, queryset=Activity.objects.all()):
+        return queryset.annotate(number_assistants=Count('chronograms__orders__assistants'))\
+            .order_by('number_assistants', 'chronograms__initial_date')
+
+    def test_url_should_resolve_correctly(self):
+        self.url_resolve_to_view_correctly()
+
+    def test_search_query(self):
+        response = self.client.get(self.url, data={'q': 'curso de yoga', 'city': 1})
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_category(self):
+        response = self.client.get(self.url, data={'category': 1, 'city': 1})
+        activities = self._get_activities_ordered()
+        serializer = ActivitiesSerializer(activities, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertCountEqual(response.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_subcategory(self):
+        response = self.client.get(self.url, data={'subcategory': 1  , 'city': 1})
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertCountEqual(response.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_date(self):
+        response = self.client.get(self.url, data={'date': 1420123380601, 'city': 1})
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_tags(self):
+        response = self.client.get(self.url, data={'q': 'fitness', 'city': 1})
+        activity = Activity.objects.filter(id=2)
+        serializer = ActivitiesSerializer(activity, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_city(self):
+        response = self.client.get(self.url, data={'city': 1})
+        activities = self._get_activities_ordered()
+        serializer = ActivitiesSerializer(activities, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_empty(self):
+        response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])

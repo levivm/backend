@@ -82,8 +82,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
     tasks = GenericRelation('CeleryTask')
-
-
+    score = models.FloatField(default=0)
 
     def update(self, data):
         self.__dict__.update(data)
@@ -110,7 +109,6 @@ class Activity(AssignPermissionsMixin, models.Model):
                         return False
                         # break
         return True
-
 
     @classmethod
     def get_types(cls):
@@ -144,7 +142,6 @@ class Activity(AssignPermissionsMixin, models.Model):
     def unpublish(self):
         self.published = False
         self.save(update_fields=['published'])
-        
 
     def last_sale_date(self):
 
