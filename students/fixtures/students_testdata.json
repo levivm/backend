@@ -7,7 +7,8 @@
         "gender": 1,
         "user": 3,
         "photo": "",
-        "birth_date": "2015-04-15"
+        "birth_date": "2015-04-15",
+        "city":1
 
     }
 },
