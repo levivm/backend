@@ -6,5 +6,13 @@
         "name": "Bogotá",
         "point":"(4.5981, -74.0758)"
     }
+},
+{
+    "pk": 2, 
+    "model": "locations.City", 
+    "fields": {
+        "name": "Barranquilla",
+        "point":"(10.5981, -74.0758)"
+    }
 }
 ]

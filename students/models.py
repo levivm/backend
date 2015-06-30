@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
+from locations.models import City
 
 
 class Student(models.Model):
@@ -16,6 +17,7 @@ class Student(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
+    city = models.ForeignKey(City,null=True)
 
 
 
@@ -30,6 +32,15 @@ class Student(models.Model):
 
     def update(self,data):
         self.__dict__.update(data)
+        city = data.get('city')
+
+        if city:
+            self.city = city
+            
+        self.save()
+
+    def updated_city(self,city):
+        self.city = city
         self.save()
 
     def update_base_info(self,data):

@@ -23,6 +23,7 @@ class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
             'user',
             'user_type',
             'birth_date',
+            'city'
             )
 
     def validate_photo(self, file):
