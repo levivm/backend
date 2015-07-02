@@ -93,6 +93,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
     def verify_organizer_pre_signup_key(self, request, key):
         oc = get_object_or_404(OrganizerConfirmation, key=key)
+
         if oc.used:
             msg = _('Token de confirmacion ha sido usado')
             raise exceptions.ValidationError(msg)
@@ -113,8 +114,6 @@ class ObtainAuthTokenView(APIView):
 
     @sensitive_post_parameters_m
     def dispatch(self, request, *args, **kwargs):
-
-
 
         is_sign_up = request.POST.get('user_type')
 

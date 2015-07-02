@@ -10,8 +10,10 @@ class Organizer(models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     telephone = models.CharField(max_length=100, blank=True)
     youtube_video_url = models.CharField(max_length=100, blank=True)
-    website = models.CharField(max_length=100, blank=True)
+    website  = models.CharField(max_length=100, blank=True)
+    headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
+
 
 
 # Create your models here.
