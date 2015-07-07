@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from .tasks import SendEmailOrganizerConfirmationTask
 from .models import RequestSignup,OrganizerConfirmation
 
 
@@ -8,6 +9,9 @@ def send_verification_email(modeladmin,request,queryset):
     for signup in queryset:
         signup.approved=True
         signup.save()
+        organizer_confirmation = signup.organizerconfirmation
+        task = SendEmailOrganizerConfirmationTask()
+        task.apply_async((organizer_confirmation.id,), countdown=2)
 
 send_verification_email.short_description = "Send organizer verification email"
 
