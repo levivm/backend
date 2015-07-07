@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from locations.models import City
+from django.contrib.contenttypes.fields import GenericRelation
+from utils.models import CeleryTask
+
 
 
 class Student(models.Model):
@@ -18,6 +21,7 @@ class Student(models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
     city = models.ForeignKey(City,null=True)
+    tasks = GenericRelation(CeleryTask)
 
 
 

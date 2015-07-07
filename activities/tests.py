@@ -11,8 +11,8 @@ from django.db.models import Count
 from django.http.request import HttpRequest
 from django.utils.timezone import now
 from rest_framework import status
-
-from activities.models import Activity, ActivityPhoto, Tags, Chronogram, CeleryTask
+from utils.models import CeleryTask
+from activities.models import Activity, ActivityPhoto, Tags, Chronogram
 from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \

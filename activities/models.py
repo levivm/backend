@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.conf import settings
 
@@ -81,7 +80,7 @@ class Activity(AssignPermissionsMixin, models.Model):
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
-    tasks = GenericRelation('CeleryTask')
+    tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
 
     def update(self, data):
@@ -180,7 +179,7 @@ class Chronogram(models.Model):
     number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
     capacity = models.IntegerField()
-    tasks = GenericRelation('CeleryTask')
+    tasks = GenericRelation('utils.CeleryTask')
 
     def update(self, data):
         self.__dict__.update(data)
@@ -212,11 +211,3 @@ class Review(models.Model):
     attributes = models.CharField(max_length=200)
 
 
-class CeleryTask(models.Model):
-    task_id = models.CharField(max_length=40)
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-
-    def __str__(self):
-        return self.task_id
