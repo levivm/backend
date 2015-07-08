@@ -199,7 +199,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
                     errors    = [{}]*f_range
-                    errors[i+1] = {'start_time_'+str(1):[msg]} 
+                    errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
                     raise serializers.ValidationError({'sessions':errors})
 
     def validate(self, data):
