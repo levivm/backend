@@ -114,17 +114,15 @@ class ObtainAuthTokenView(APIView):
 
     @sensitive_post_parameters_m
     def dispatch(self, request, *args, **kwargs):
-
         is_sign_up = request.POST.get('user_type')
-
         if is_sign_up:
             signup_response = SignupView().dispatch(request,*args, **kwargs)
-            if (signup_response.status_code!=status.HTTP_200_OK):
+            if (signup_response.status_code==status.HTTP_400_BAD_REQUEST):
                 return signup_response
         else:
             login_response  = LoginView().dispatch(request, *args, **kwargs)
 
-            if (login_response.status_code!=status.HTTP_200_OK):
+            if (login_response.status_code==status.HTTP_400_BAD_REQUEST):
                 return login_response
 
         return super(ObtainAuthTokenView, self).dispatch(request, *args, **kwargs)
@@ -132,7 +130,6 @@ class ObtainAuthTokenView(APIView):
     def post(self, request, *args, **kwargs):
 
         is_sign_up = request.POST.get('user_type')
-        
         auth_data = {}
         
         if is_sign_up:
@@ -278,7 +275,7 @@ class ConfirmEmail(ConfirmEmailView):
         super(ConfirmEmail, self).post(request, *args, **kwargs)
 
         return HttpResponse(
-            content_type="application/json", status=200)
+            content_type="application/json", status=status.HTTP_200_OK)
 
 
 # class LoginViewTest(APIView,LoginView):

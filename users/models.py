@@ -23,10 +23,15 @@ _ = lambda x: x
 # handler for signal after user singed up
 @receiver(user_signed_up)
 def after_sign_up(sender, **kwargs):
-    request = kwargs['request']
-    user = kwargs['user']
+
+    sociallogin = kwargs.get('sociallogin')
+    user     = kwargs.get('user')
+    request  = kwargs.get('request')
     data = request.POST
-    user_type = data.get('user_type')
+
+    user_type = 'S' if sociallogin else data.get('user_type') 
+    # import pdb
+    # pdb.set_trace()
     group = None
     if user_type == 'S':
         student = Student.objects.create(user=user)
