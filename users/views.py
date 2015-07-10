@@ -278,6 +278,14 @@ class ConfirmEmail(ConfirmEmailView):
             content_type="application/json", status=status.HTTP_200_OK)
 
 
+
+
+
+
+
+
+
+
 # class LoginViewTest(APIView,LoginView):
 
 #     @sensitive_post_parameters_m

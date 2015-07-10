@@ -6,6 +6,7 @@ from organizers.api import OrganizerDetail,InstructorDetail
 from django.conf import settings
 #from users.views import SignUpAjax
 from users.views import ChangeEmailView,PasswordChange,ConfirmEmail,RestFacebookLogin
+from landing.views import ContactFormView
 
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
@@ -24,6 +25,7 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     # url(r'^users/login/', LoginViewTest.as_view()),
+    url(r'^api/contact-us/', ContactFormView.as_view()),
     url(r'^users/email/', ChangeEmailView.as_view()),
     url(r'^users/confirm-email/(?P<key>\w+)/', ConfirmEmail.as_view()),
     url(r'^users/facebook/signup/', RestFacebookLogin.as_view()),
