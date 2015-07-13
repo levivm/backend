@@ -31,7 +31,7 @@ class SendEmailTaskMixin(Task):
 
     def get_email_record_task_data(self,template,task_id,to_email,**kwargs):
 
-        d = {
+        data = {
             'to':to_email,
             'template':template,
             'data': self.get_context_data(kwargs),
@@ -39,7 +39,7 @@ class SendEmailTaskMixin(Task):
         }
 
 
-        return d
+        return data
 
 
     def register_email_record_task(self,template,task_id,to_email,**kwargs):

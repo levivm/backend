@@ -616,6 +616,11 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 class SendEmailChronogramTaskTest(BaseViewTest):
     CHRONOGRAM_ID = 1
 
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
+
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailChronogramTask()
         result = task.apply((self.CHRONOGRAM_ID, ))
@@ -652,12 +657,18 @@ class SendEmailChronogramTaskTest(BaseViewTest):
 class SendEmailLocationTaskTest(BaseViewTest):
     ACTIVITY_ID = 1
 
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
+
+
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailLocationTask()
-        result = task.apply((self.ACTIVITY_ID, ))
+        result = task.apply((self.ACTIVITY_ID, ),)
         self.assertEqual(result.result, 'Task scheduled')
 
-    def test_ignore_task_if_there_is_a_pending_task(self):
+    def test_ignore_task_if_there_is_a_pending_task(self):        
         task = SendEmailLocationTask()
         task.apply((self.ACTIVITY_ID, False), countdown=60)
         task2 = SendEmailLocationTask()

@@ -35,8 +35,8 @@ class ContactFormView(APIView):
         data = request.data.copy()
 
 
-        topic_index    = request.data.get('topic')
-        subtopic_index = request.data.get('subtopic') 
+        topic_index    = request.data.get('topic',2)
+        subtopic_index = request.data.get('subtopic',0) 
 
         topic_data =  contact_form_topics[topic_index]
         topic_name =  list(contact_form_topics[topic_index].keys()).pop()
@@ -44,20 +44,12 @@ class ContactFormView(APIView):
 
         data['topic']    = topic_name
         data['subtopic'] = subtopic
-        # data = {
-        # 	'topic':topic_name,
-        # 	'subtopic':subtopic,
-        # 	'email':request.data.get('email'),
-        # 	'phone_number':email,
-        # 	'description':'hola soy una description',
-        # 	'city':'Bogota',
 
-        # }
-        s = ContactFormsSerializer(data=data)
-        s.is_valid(raise_exception=True)
+        form_serializer = ContactFormsSerializer(data=data)
+        form_serializer.is_valid(raise_exception=True)
         contact_form_data = data
        	task = SendContactFormEmailTask()
        	task.apply_async((None,),contact_form_data, countdown=2)
-        return Response(s.data,status=status.HTTP_200_OK)
+        return Response(form_serializer.data,status=status.HTTP_200_OK)
 
 

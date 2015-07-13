@@ -5,7 +5,7 @@ import urllib.parse
 # from .views import RequestSignupViewSet
 from utils.tests import BaseViewTest
 from .tasks import SendEmailOrganizerConfirmationTask,SendAllAuthEmailTask
-from utils.models import CeleryTask
+from utils.models import EmailTaskRecord
 from users.allauth_adapter import MyAccountAdapter
 from users.views import ObtainAuthTokenView,RestFacebookLogin
 from django.contrib.auth.models import User
@@ -15,100 +15,96 @@ from django.contrib.auth.models import User
 
 
 
-# class RestFacebookLogin(BaseViewTest):
-#     url = '/users/facebook/signup/'
-#     view = RestFacebookLogin
+class RestFacebookLoginTest(BaseViewTest):
+    url = '/users/facebook/signup/'
+    view = RestFacebookLogin
 
-#     def test_url_resolve_to_view_correctly(self):
-#         self.url_resolve_to_view_correctly()
+    def test_url_resolve_to_view_correctly(self):
+        self.url_resolve_to_view_correctly()
 
-#     def _get_facebook_signup_data(self):
-#         #TODO 
-#         #Este token dura dos meses, expires 6 septiembre
-#         #Automatizar para pedir uno nuevo
-#         auth_token  = "CAAWOByANCTUBABAnEZCN0CQUfmumcScZBg6dqaN7aZAHkLZBR4I3"
-#         auth_token += "3CTwTdUGOaYkSeLg6GKfF3x6yZB4KOlp42SF3mZBLPIMYooJAoRXd"
-#         auth_token += "RaMAKVohJ76GieWPyFwX93exyDSbSnI7rC1FVrD3dEFUdF3QzZBgD"
-#         auth_token += "7Px8LI7LyrVNLP7MqsNA1xidZC"
-#         return {
-#             'auth_token': auth_token
-#         }
+    def _get_facebook_signup_data(self):
+        #TODO 
+        #Este token dura dos meses, expires 6 septiembre
+        #Automatizar para pedir uno nuevo
+        auth_token  = "CAAWOByANCTUBABAnEZCN0CQUfmumcScZBg6dqaN7aZAHkLZBR4I3"
+        auth_token += "3CTwTdUGOaYkSeLg6GKfF3x6yZB4KOlp42SF3mZBLPIMYooJAoRXd"
+        auth_token += "RaMAKVohJ76GieWPyFwX93exyDSbSnI7rC1FVrD3dEFUdF3QzZBgD"
+        auth_token += "7Px8LI7LyrVNLP7MqsNA1xidZC"
+        return {
+            'auth_token': auth_token
+        }
 
-#     def test_anonymous_should_signup(self):
+    def test_anonymous_should_signup(self):
 
-#         client = self.client
-#         data   = self._get_facebook_signup_data()
-#         response = client.post(self.url,data=json.dumps(data),content_type='application/json')
+        client = self.client
+        data   = self._get_facebook_signup_data()
+        response = client.post(self.url,data=json.dumps(data),content_type='application/json')
 
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
 
-#     def test_anonymous_should_login(self):
-#         client = self.client
-#         data   = self._get_facebook_signup_data()
-#         #signup
-#         client.post(self.url,data=json.dumps(data),content_type='application/json')
+    def test_anonymous_should_login(self):
+        client = self.client
+        data   = self._get_facebook_signup_data()
+        #signup
+        client.post(self.url,data=json.dumps(data),content_type='application/json')
         
-#         #login
-#         response = client.post(self.url,data=json.dumps(data),content_type='application/json')
+        #login
+        response = client.post(self.url,data=json.dumps(data),content_type='application/json')
 
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
-
-
-# class ObtainAuthTokenTest(BaseViewTest):
-#     url = '/api/users/token/'
-#     view = ObtainAuthTokenView
-
-#     def _get_signup_data(self):
-#         return {
-
-#             'email':'student@trulii.com',
-#             'first_name':'John',
-#             'last_name':'Messi',
-#             'password1':'12345678',
-#             'user_type':'S'
-#         } 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
 
 
-#     def _get_login_data(self):
-#         return {
-#             'login':'student@trulii.com',
-#             'password':"12345678"
-#         }
+class ObtainAuthTokenTest(BaseViewTest):
+    url = '/api/users/token/'
+    view = ObtainAuthTokenView
 
-#     def test_url_resolve_to_view_correctly(self):
-#         self.url_resolve_to_view_correctly()
+    def _get_signup_data(self):
+        return {
 
-#     # def test_methods_for_anonymous(self):
-#     #     client = self.client
-#     #     self.method_should_be(clients=client, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-#     #     self.method_should_be(clients=client, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            'email':'student@trulii.com',
+            'first_name':'John',
+            'last_name':'Messi',
+            'password1':'12345678',
+            'user_type':'S'
+        } 
 
-#     def test_anonymous_should_signup(self):
-#         client = self.client
-#         data   = self._get_signup_data()
-#         enconde_data = urllib.parse.urlencode(data)
-#         response = client.post(self.url,data=enconde_data,\
-#                             content_type='application/x-www-form-urlencoded')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
-#         self.assertTrue(
-#             User.objects.filter(email=data['email']).exists()
-#         )
 
-#     def test_anonymous_should_login(self):
-#         client = self.client
-#         data   = self._get_login_data()
-#         signup_data   = self._get_signup_data()
-#         enconde_data = urllib.parse.urlencode(signup_data)
-#         client.post(self.url,data=enconde_data,\
-#                             content_type='application/x-www-form-urlencoded')
-#         response = client.post(self.url,data=json.dumps(data),content_type='application/json')
-#         expected_email_regex = bytes('"email":"%s"' % data['login'], 'utf8')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
-#         self.assertRegexpMatches(response.content,expected_email_regex)
+    def _get_login_data(self):
+        return {
+            'login':'student@trulii.com',
+            'password':"12345678"
+        }
+
+    def test_url_resolve_to_view_correctly(self):
+        self.url_resolve_to_view_correctly()
+
+
+    def test_anonymous_should_signup(self):
+        client = self.client
+        data   = self._get_signup_data()
+        enconde_data = urllib.parse.urlencode(data)
+        response = client.post(self.url,data=enconde_data,\
+                            content_type='application/x-www-form-urlencoded')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
+        self.assertTrue(
+            User.objects.filter(email=data['email']).exists()
+        )
+
+    def test_anonymous_should_login(self):
+        client = self.client
+        data   = self._get_login_data()
+        signup_data   = self._get_signup_data()
+        enconde_data = urllib.parse.urlencode(signup_data)
+        client.post(self.url,data=enconde_data,\
+                            content_type='application/x-www-form-urlencoded')
+        response = client.post(self.url,data=json.dumps(data),content_type='application/json')
+        expected_email_regex = bytes('"email":"%s"' % data['login'], 'utf8')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
+        self.assertRegexpMatches(response.content,expected_email_regex)
 
 
 
@@ -129,18 +125,14 @@ class SendEmailOrganizerConfirmationTaskTest(BaseViewTest):
         self.assertEqual(result.result, 'Task scheduled')
 
 
-    # def test_ignore_task_if_there_is_a_pending_task(self):
-    #     task = SendEmailOrganizerConfirmationTask()
-    #     task.apply((self.CONFIRMATION_ID, False), countdown=180)
-    #     # task2 = SendEmailOrganizerConfirmationTask()
-    #     # result = task2.apply((self.CONFIRMATION_ID, False))
-    #     # self.assertEqual(result.result, None)
-
-
-    # def test_task_should_delete_on_success(self):
-    #     task = SendEmailOrganizerConfirmationTask()
-    #     task.apply((self.CONFIRMATION_ID, ))
-    #     self.assertEqual(CeleryTask.objects.count(), 0)
+    def test_task_should_send_on_success(self):
+        task = SendEmailOrganizerConfirmationTask()
+        data = {
+            'confirmation_id':self.CONFIRMATION_ID
+        }
+        result = task.apply((self.CONFIRMATION_ID, ),data,)
+        email_task = EmailTaskRecord.objects.get(task_id=result.id)
+        self.assertTrue(email_task.send)
 
 
 class SendAllAuthEmailTaskTest(BaseViewTest):
@@ -181,7 +173,7 @@ class SendAllAuthEmailTaskTest(BaseViewTest):
             'email_data':{
                 'template_prefix':self.password_reset_template_prefix,
                 'email':"h@trulii.com",
-                'context':context
+                'context':json.dumps(context)
             }
 
         }
@@ -195,54 +187,42 @@ class SendAllAuthEmailTaskTest(BaseViewTest):
             'email_data':{
                 'template_prefix':self.password_reset_template_prefix,
                 'email':"h@trulii.com",
-                'context':context
+                'context':json.dumps(context)
             }
 
         }
         
 
-    def test_email_confirmation_task_dispatch_if_there_is_not_other_task(self):
+
+
+
+    def test_email_confirmation_task_dispatch(self):
         task_data = self._get_email_confirmation_task_data()
         task = SendAllAuthEmailTask()
         result = task.apply_async((self.USER_ID,),task_data, countdown=2)
         self.assertEqual(result.result, 'Task scheduled')
 
-    # def test_email_confirmation_task_if_there_is_a_pending_task(self):
-        
-    #     task_data = self._get_email_confirmation_task_data()
-    #     task   = SendAllAuthEmailTask()
-    #     task.apply_async((self.USER_ID,False),task_data, countdown=180)
-    #     task2  = SendAllAuthEmailTask()
-    #     result = task2.apply_async((self.USER_ID,False),task_data)
-    #     self.assertEqual(result.result, None)
-
-    # def test_remail_confirmation_task_should_delete_on_success(self):
-        
-    #     task_data = self._get_email_confirmation_task_data()
-    #     task = SendAllAuthEmailTask()
-    #     task.apply_async((self.USER_ID,),task_data, countdown=2)
-    #     self.assertEqual(CeleryTask.objects.count(), 0)
 
 
-    def test_reset_password_email_task_dispatch_if_there_is_not_other_task(self):
+    def test_remail_confirmation_task_should_been_send_on_success(self):
         
+        task_data = self._get_email_confirmation_task_data()
+        task = SendAllAuthEmailTask()
+        result = task.apply_async((self.USER_ID,),task_data, countdown=2)
+        email_task = EmailTaskRecord.objects.get(task_id=result.id)
+        self.assertTrue(email_task.send)
+
+    def treset_password_email_task_dispatch(self):
         task_data = self._get_password_reset_task_data()
         task = SendAllAuthEmailTask()
         result = task.apply_async((self.USER_ID,),task_data, countdown=2)
         self.assertEqual(result.result, 'Task scheduled')
 
-    # def test_reset_password_email_ignore_task_if_there_is_a_pending_task(self):
-        
-    #     task_data = self._get_password_reset_task_data()
-    #     task   = SendAllAuthEmailTask()
-    #     task.apply_async((self.USER_ID,False),task_data, countdown=180)
-    #     task2  = SendAllAuthEmailTask()
-    #     result = task2.apply_async((self.USER_ID,False),task_data)
-    #     self.assertEqual(result.result, None)
 
-    # def test_reset_password_email_task_should_delete_on_success(self):
+    def test_reset_password_email_task_should_been_send_on_success(self):
         
-    #     task_data = self._get_password_reset_task_data()
-    #     task = SendAllAuthEmailTask()
-    #     task.apply_async((self.USER_ID,),task_data, countdown=2)
-    #     self.assertEqual(CeleryTask.objects.count(), 0)
+        task_data = self._get_password_reset_task_data()
+        task = SendAllAuthEmailTask()
+        result = task.apply_async((self.USER_ID,),task_data, countdown=2)
+        email_task = EmailTaskRecord.objects.get(task_id=result.id)
+        self.assertTrue(email_task.send)
