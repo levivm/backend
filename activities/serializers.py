@@ -74,6 +74,13 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return data
 
     def validate_photo(self, file):
+        # is_stock_image = self.context['request'].data.get('is_stock_image')
+        if True:
+
+            # import pdb
+            # pdb.set_trace()
+            return file
+
         return self.clean_file(file)
 
     def create(self, validated_data):

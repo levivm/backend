@@ -12,7 +12,7 @@ from django.http.request import HttpRequest
 from django.utils.timezone import now
 from rest_framework import status
 from utils.models import CeleryTask
-from activities.models import Activity, ActivityPhoto, Tags, Chronogram
+from activities.models import Activity, ActivityPhoto, Tags, Chronogram,ActivityStockPhoto
 from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \
@@ -392,6 +392,28 @@ class ActivityGalleryViewTest(BaseViewTest):
         self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
+    def test_organizer_should_create_a_photo_from_stock(self):
+        organizer = self.get_organizer_client()
+        url = '%s/auto/' % self.url
+        response = organizer.post(url , data={'subcategory':1})
+        stock_photo  = ActivityStockPhoto.objects.latest('pk')
+        expected_filename = bytes('%s' % \
+                        stock_photo.photo.name.split('/')[-1], 'utf8')
+
+        activity_photo = ActivityPhoto.objects.latest('pk')
+        expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn(expected_id, response.content)
+        self.assertIn(expected_filename, response.content)
+
+    def test_another_organizer_should_create_a_photo_from_stock(self):
+        organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
+        url = '%s/auto/' % self.url
+        response = organizer.post(url , data={'subcategory':1})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
     def test_organizer_should_create_a_photo(self):
         organizer = self.get_organizer_client()
         image = Image.new('RGB', (100, 100), color='red')
@@ -436,6 +458,19 @@ class ActivityGalleryViewTest(BaseViewTest):
         self.assertTrue(request.user.has_perm('activities.add_activityphoto'))
         self.assertFalse(request.user.has_perm('activities.change_activityphoto', activity_photo))
         self.assertTrue(request.user.has_perm('activities.delete_activityphoto', activity_photo))
+
+
+    def test_method_post_to_create_photo_from_stock_should_recalculate_activity_score(self):
+        settings.CELERY_ALWAYS_EAGER = True
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 0)
+        organizer = self.get_organizer_client()
+        url = '%s/auto/' % self.url
+        organizer.post(url , data={'subcategory':1})
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(activity.score, 100.0)
+        settings.CELERY_ALWAYS_EAGER = False
+
 
     def test_method_post_should_recalculate_activity_score(self):
         settings.CELERY_ALWAYS_EAGER = True
