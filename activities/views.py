@@ -13,7 +13,8 @@ from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
-from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
+from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto,\
+                    ActivityStockPhoto
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, ChronogramsSerializer, ActivityPhotosSerializer
@@ -121,22 +122,54 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         return activity.photos.all()
 
     def create(self, request, *args, **kwargs):
-        activity = self.get_activity_object(**kwargs)
-        serializer = ActivityPhotosSerializer(data=request.data, context={'activity': activity, 'request': request})
+        activity       = self.get_activity_object(**kwargs)
+        # is_stock_image = request.data.get('is_stock_image',False)
+
+        serializer = ActivityPhotosSerializer(data=request.data, \
+                            context={'activity': activity, \
+                                     'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         self.calculate_score(activity_id=activity.id)
         headers = self.get_success_headers(serializer.data)
-        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
         return Response(
             data={'activity': activity_serializer.data, 'photo': serializer.data},
             status=status.HTTP_201_CREATED,
             headers=headers)
 
+    def create_from_stock(self, request, *args, **kwargs):
+        sub_category_id = request.data.get('subcategory')
+        # image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
+        activity = self.get_activity_object(**kwargs)
+        photo = ActivityPhoto.create_from_stock(sub_category_id,activity)
+        serializer = ActivityPhotosSerializer(instance=photo)
+
+        self.calculate_score(activity_id=activity.id)
+        headers = self.get_success_headers(serializer.data)
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
+        return Response(
+            data={'activity': activity_serializer.data, 'photo': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
+        # self.create(request,*args,**kwargs)
+        # request_data = request.data.copy()
+        # request_data['photo'] = image
+
+        # ActivityPhotosViewSet
+
+        # import pdb
+        # pdb.set_trace()
+        return Response({})
+
+
     def destroy(self, request, *args, **kwargs):
         gallery_pk = kwargs.get('gallery_pk')
         activity = self.get_activity_object(**kwargs)
-        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
         instance = self.get_object()
         if instance.main_photo:
             msg = _("No puede eliminar la foto principal")

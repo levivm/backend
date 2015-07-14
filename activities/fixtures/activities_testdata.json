@@ -94,6 +94,14 @@
   },
   {
     "pk": 1,
+    "model": "activities.activitystockphoto",
+    "fields": {
+      "photo": "activities_stock/yoga_1.jpg",
+      "sub_category": 1
+    }
+  },
+  {
+    "pk": 1,
     "model": "activities.chronogram",
     "fields": {
       "capacity": 14,
