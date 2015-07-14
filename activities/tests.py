@@ -703,6 +703,7 @@ class SearchActivitiesViewTest(BaseViewTest):
     view = ActivitiesSearchView
     ACTIVITY_ID = 1
 
+
     def _get_activities_ordered(self, queryset=Activity.objects.all()):
         return queryset.annotate(number_assistants=Count('chronograms__orders__assistants'))\
             .order_by('number_assistants', 'chronograms__initial_date')
@@ -714,6 +715,14 @@ class SearchActivitiesViewTest(BaseViewTest):
         response = self.client.get(self.url, data={'q': 'curso de yoga', 'city': 1})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+
+    def test_search_query_organizer_name(self):
+        response = self.client.get(self.url, data={'q': 'XFDG', 'city': 1})
+        activities = self._get_activities_ordered()
+        serializer = ActivitiesSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
