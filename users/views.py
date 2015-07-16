@@ -92,6 +92,8 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
     def verify_organizer_pre_signup_key(self, request, key):
+        import pdb
+        pdb.set_trace()
         oc = get_object_or_404(OrganizerConfirmation, key=key)
 
         if oc.used:

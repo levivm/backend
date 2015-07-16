@@ -16,8 +16,6 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
         self.success_handler = success_handler
         confirmation  = OrganizerConfirmation.objects.get(id=organizer_confirmation_id)
         template = "account/email/request_signup_confirmation"
-        # import pdb
-        # pdb.set_trace()
         return super(SendEmailOrganizerConfirmationTask, self).run(instance=confirmation, template=template,**kwargs)
 
     def get_emails_to(self, confirmation):
@@ -28,7 +26,9 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
         confirmation_id = data.get('confirmation_id')
         confirmation  = OrganizerConfirmation.objects.get(id=confirmation_id)
 
-        confirmation.key = confirmation.generate_key()
+        if not confirmation.key:
+            confirmation.key = confirmation.generate_key()
+            confirmation.save()
 
         data = {
             'activate_url': confirmation.get_confirmation_url(),
