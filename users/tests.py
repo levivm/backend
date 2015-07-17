@@ -5,6 +5,7 @@ import urllib.parse
 # from .views import RequestSignupViewSet
 from utils.tests import BaseViewTest
 from .tasks import SendEmailOrganizerConfirmationTask,SendAllAuthEmailTask
+from .models import RequestSignup
 from utils.models import EmailTaskRecord
 from users.allauth_adapter import MyAccountAdapter
 from users.views import ObtainAuthTokenView,RestFacebookLogin
@@ -106,6 +107,30 @@ class ObtainAuthTokenTest(BaseViewTest):
         self.assertRegexpMatches(response.content,b'"token":"\w{40,40}"')
         self.assertRegexpMatches(response.content,expected_email_regex)
 
+
+class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
+    url = '/admin/users/requestsignup/'
+    REQUEST_SIGNUP_ID = 1
+
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
+
+
+    def _get_send_verification_email_action_data(self):
+        return {'action': 'send_verification_email',\
+                 '_selected_action':self.REQUEST_SIGNUP_ID}
+
+    def test_admin_send_verification_email_action(self):
+        client = self.get_admin_client()
+        data = self._get_send_verification_email_action_data()
+        request_signup = RequestSignup.objects.get(id=self.REQUEST_SIGNUP_ID)
+        self.assertFalse(request_signup.approved)
+        response = client.post(self.url,data)
+        request_signup = RequestSignup.objects.get(id=self.REQUEST_SIGNUP_ID)
+        self.assertTrue(request_signup.approved)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
 
 
 class SendEmailOrganizerConfirmationTaskTest(BaseViewTest):

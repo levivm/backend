@@ -12,7 +12,9 @@ class BaseViewTest(APITestCase):
     ORGANIZER_ID = 1
     ANOTHER_ORGANIZER_ID = 2
     STUDENT_ID = 3
+    ADMIN_ID   = 5
     ANOTHER_STUDENT_ID = 4
+    DUMMY_PASSWORD = 'password'
     __SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
 
     def __get_token(self, user_id):
@@ -24,6 +26,14 @@ class BaseViewTest(APITestCase):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token %s' % token.key)
         return client
+
+    def __get_admin_client_logged_in(self,admin_user):
+        admin_user.set_password(self.DUMMY_PASSWORD)
+        admin_user.save()
+        client = self.client
+        client.login(username=admin_user.username,password=self.DUMMY_PASSWORD)
+        return client
+
 
     def  __parse_clientes(self, clients):
         if not isinstance(clients, list):
@@ -40,6 +50,11 @@ class BaseViewTest(APITestCase):
         user_id = user_id or self.STUDENT_ID
         token = self.__get_token(user_id=user_id)
         return self.__get_client_with_credentials(token=token)
+
+    def get_admin_client(self):
+        admin_id = self.ADMIN_ID
+        admin = User.objects.get(id=admin_id)
+        return self.__get_admin_client_logged_in(admin)
 
     def url_resolve_to_view_correctly(self):
         found = resolve(self.url)

@@ -7,6 +7,8 @@ from .models import RequestSignup,OrganizerConfirmation
 
 def send_verification_email(modeladmin,request,queryset):
     for signup in queryset:
+        # print("RequestSignup",signup.id)
+        # print("RequestSignup",signup.organizerconfirmation.id)
         signup.approved=True
         signup.save()
         organizer_confirmation = signup.organizerconfirmation
@@ -15,6 +17,8 @@ def send_verification_email(modeladmin,request,queryset):
         }
         task = SendEmailOrganizerConfirmationTask()
         task.apply_async((organizer_confirmation.id,),data, countdown=2)
+
+
 
 send_verification_email.short_description = "Send organizer verification email"
 
