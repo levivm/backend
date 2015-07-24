@@ -1,4 +1,3 @@
-import os
 import dj_database_url
 
 
@@ -7,8 +6,6 @@ import dj_database_url
 
 DATABASE_URL  = "postgres://trulii:trulii@localhost:5432/trulii"
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
-print("AsaDASDASD")
-print(DATABASE_URL)
 ################ / DATABASE CONFIG #############
 
 
