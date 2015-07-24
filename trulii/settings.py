@@ -9,11 +9,15 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
 import django.conf.global_settings as DEFAULT_SETTINGS
-import dj_database_url
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# import dj_database_url
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
+
+IS_PRODUCTION = os.environ.get('PRODUCTION_SERVER')
+
+
+DEBUG = True if not IS_PRODUCTION else False
 
 
 
@@ -27,12 +31,8 @@ SECRET_KEY = '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-='
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = True
 
 
-if 'DATABASE_URL' in os.environ:
-
-    DEBUG = False
 
 
 REST_FRAMEWORK = {
@@ -172,37 +172,23 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_FILE_OVERWRITE = False
 
 
-if not DEBUG:
-    from .dev_settings import *
-
-
-else:
-    
-    from .local_settings import *
-
-
 MEDIAFILES_LOCATION = 'media' 
 DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
 MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 
 
-
-
-
-#
 STATICFILES_DIRS = (
     os.path.join(PROJECT_PATH, "static"),
 )
 
-
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
-
-
 STATIC_URL = '/static/'
-
-
-
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
+
+if not DEBUG:
+    from .dev_settings import *
+else:
+    from .local_settings import *
 
 
 from .allauth_settings import *
