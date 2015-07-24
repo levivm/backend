@@ -7,7 +7,6 @@ https://docs.djangoproject.com/en/1.7/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.7/ref/settings/
 """
-
 import django.conf.global_settings as DEFAULT_SETTINGS
 # import dj_database_url
 import os
@@ -15,7 +14,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 IS_PRODUCTION = os.environ.get('PRODUCTION_SERVER')
-print(os.environ.get('PRODUCTION_SERVER'))
+print(os.environ)
+print("12213122122")
+print(os.environ)
+print(os.environ)
 print(os.environ.get('PRODUCTION_SERVER'))
 print(os.environ.get('PRODUCTION_SERVER'))
 
