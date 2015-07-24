@@ -186,7 +186,8 @@ STATIC_URL = '/static/'
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 if not DEBUG:
-    from .dev_settings import *
+    from .prod_settings import *
+    DEBUG = True
 else:
     from .local_settings import *
 
