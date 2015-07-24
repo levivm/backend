@@ -15,7 +15,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 IS_PRODUCTION = os.environ.get('PRODUCTION_SERVER')
-
+print(os.environ.get('PRODUCTION_SERVER'))
+print(os.environ.get('PRODUCTION_SERVER'))
+print(os.environ.get('PRODUCTION_SERVER'))
 
 DEBUG = True if not IS_PRODUCTION else False
 
