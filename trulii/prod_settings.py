@@ -8,6 +8,8 @@ import dj_database_url
 DATABASE_URL  = os.environ.get('RDS_DATABASE_URL')
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
+print("AsaDASDASD")
+print(DATABASE_URL)
 ################ / DATABASE CONFIG #############
 
 
