@@ -185,7 +185,7 @@ MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 if not DEBUG:
     from .prod_settings import *
-    # DEBUG = True
+    DEBUG = True
 else:
     from .local_settings import *
 
