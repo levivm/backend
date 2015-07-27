@@ -16,3 +16,5 @@ CELERY_RESULT_BACKEND = 'redis://localhost/0'
 CELERY_ALWAYS_EAGER = False
 
 ################ / REDIS CONFIG #################
+
+FRONT_SERVER_URL = "http://localhost:8080/"

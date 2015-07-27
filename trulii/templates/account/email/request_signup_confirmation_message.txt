@@ -1,3 +1,3 @@
 {% load i18n %}{% autoescape off %}{% blocktrans %}Organizer {{ organizer }} 
-To confirm this is correct, go to {{ activate_url  }}
+To confirm this is correct, go to {{ activate_url | refactor_allauth_url}}
 {% endblocktrans %}{% endautoescape %}

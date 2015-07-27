@@ -20,4 +20,7 @@ BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost/0'
 CELERY_ALWAYS_EAGER = False 
 
+
 ################ / REDIS CONFIG #################
+
+FRONT_SERVER_URL = "https://dev.trulii.com"
