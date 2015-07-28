@@ -4,6 +4,7 @@ from utils.models import CeleryTask
 from utils.tasks import SendEmailTaskMixin
 # from allauth.account.utils import send_email_confirmation
 from .models import OrganizerConfirmation
+
 from students.models import Student
 from organizers.models import Organizer
 
@@ -23,6 +24,7 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
         return emails
 
     def get_context_data(self,data):
+        from users.allauth_adapter import MyAccountAdapter
         confirmation_id = data.get('confirmation_id')
         confirmation  = OrganizerConfirmation.objects.get(id=confirmation_id)
 
@@ -31,7 +33,8 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
             confirmation.save()
 
         _activate_url = confirmation.get_confirmation_url()
-        activate_url  = SendEmailTaskMixin.set_frontend_url(_activate_url)
+
+        activate_url = MyAccountAdapter().get_frontend_formmated_url(_activate_url)
 
         data = {
             'activate_url': activate_url,
@@ -51,10 +54,6 @@ class SendAllAuthEmailTask(SendEmailTaskMixin):
         account_adapter = kwargs['account_adapter']
         template = kwargs['email_data']['template_prefix']
         email    = kwargs['email_data']['email']
-        _context = kwargs['email_data']['context']
-        _activate_url = _context.get('activate_url')
-        kwargs['email_data']['context']['activate_url'] = \
-                    SendEmailTaskMixin.set_frontend_url(_activate_url)
         msg = account_adapter.render_mail(**kwargs['email_data'])
         msg.send()
 

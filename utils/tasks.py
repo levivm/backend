@@ -61,12 +61,7 @@ class SendEmailTaskMixin(Task):
             email_task_record.send = True
             email_task_record.save()
 
-    @classmethod
-    def set_frontend_url(cls,url):
-        server_url = settings.FRONT_SERVER_URL
-        rest_url   = "/".join(url.split("/")[4:])
-        final_url = server_url + rest_url
-        return final_url
+
 
 
 # class SendEmailTaskMixin(Task):

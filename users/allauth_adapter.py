@@ -24,6 +24,9 @@ class CustomException(APIException):
 class MyAccountAdapter(DefaultAccountAdapter):
 
 
+    PASSWORD_RESET_URL_KEY = 'password_reset_url'
+    ACTIVATE_URL_KEY = 'activate_url'
+
     ALLAUTH_USER_BASE_TEMPLATE= {
         'account/email/email_confirmation': "email_confirmation",
         'account/email/email_confirmation_welcome': "email_confirmation_welcome",
@@ -44,12 +47,25 @@ class MyAccountAdapter(DefaultAccountAdapter):
         return path
 
 
-    def send_mail(self, template_prefix, email, context):
+    
+    def get_frontend_formmated_url(self,url):
+        
+        server_url = settings.FRONT_SERVER_URL
+        rest_url   = "/".join(url.split("/")[4:])
+        final_url = server_url + rest_url
+        return final_url
 
+    def send_mail(self, template_prefix, email, context):
         if template_prefix in self.ALLAUTH_USER_BASE_TEMPLATE:
 
             user = context['user']
             task = SendAllAuthEmailTask()
+            key = self.PASSWORD_RESET_URL_KEY if self.PASSWORD_RESET_URL_KEY in context \
+                                       else self.ACTIVATE_URL_KEY
+            url = context.get(key)
+            if url:
+                context[key] = self.get_frontend_formmated_url(url)
+
             task_data = {
                 'account_adapter':self,
                 'email_data':{
