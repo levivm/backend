@@ -30,8 +30,11 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
             confirmation.key = confirmation.generate_key()
             confirmation.save()
 
+        _activate_url = confirmation.get_confirmation_url()
+        activate_url  = SendEmailTaskMixin.set_frontend_url(_activate_url)
+
         data = {
-            'activate_url': confirmation.get_confirmation_url(),
+            'activate_url': activate_url,
             'organizer': confirmation.requested_signup.name
 
         }
@@ -48,6 +51,10 @@ class SendAllAuthEmailTask(SendEmailTaskMixin):
         account_adapter = kwargs['account_adapter']
         template = kwargs['email_data']['template_prefix']
         email    = kwargs['email_data']['email']
+        _context = kwargs['email_data']['context']
+        _activate_url = _context.get('activate_url')
+        kwargs['email_data']['context']['activate_url'] = \
+                    SendEmailTaskMixin.set_frontend_url(_activate_url)
         msg = account_adapter.render_mail(**kwargs['email_data'])
         msg.send()
 

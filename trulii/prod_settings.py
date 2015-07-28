@@ -23,4 +23,4 @@ CELERY_ALWAYS_EAGER = False
 
 ################ / REDIS CONFIG #################
 
-FRONT_SERVER_URL = "https://dev.trulii.com"
+FRONT_SERVER_URL = "https://dev.trulii.com/"
