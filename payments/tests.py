@@ -56,7 +56,9 @@ class PaymentLogicTest(BaseViewTest):
 
     def test_creditcard_denied(self):
         client = self.get_student_client()
-        response = client.post(self.url, json.dumps(self.get_data()), content_type='application/json')
+        data = self.get_data()
+        data['buyer']['name'] = 'REJECTED'
+        response = client.post(self.url, json.dumps(data), content_type='application/json')
         payments = Payment.objects.all()
         orders = Order.objects.all()
         self.assertEqual(payments.count(), 0)
@@ -66,10 +68,9 @@ class PaymentLogicTest(BaseViewTest):
 
     def test_creditcard_approved(self):
         client = self.get_student_client()
-        # data = self.get_data()
         response = client.post(self.url, json.dumps(self.get_data()), content_type='application/json')
         payments = Payment.objects.all()
         orders = Order.objects.all()
         self.assertEqual(payments.count(), 1)
         self.assertEqual(orders.count(), 2)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

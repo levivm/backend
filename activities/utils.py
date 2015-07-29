@@ -80,7 +80,7 @@ class PaymentUtil(object):
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
         if settings.PAYU_TEST:
-            result = self.test_response(result.json())
+            result = self.test_response(result)
         return self.response(result)
 
     def get_reference_code(self):
