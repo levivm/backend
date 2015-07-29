@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+from activities.utils import PaymentUtil
 from organizers.models import Organizer
 from students.models import Student
 from .models import Order
@@ -30,9 +31,24 @@ class OrdersViewSet(viewsets.ModelViewSet):
         except Organizer.DoesNotExist:
             raise PermissionDenied
 
+    def get_activity(self, **kwargs):
+        return get_object_or_404(Activity, id=kwargs.get('activity_pk'))
+
     def create(self, request, *args, **kwargs):
         self.student = self._get_student(user=request.user)
-        return super(OrdersViewSet, self).create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        activity = self.get_activity(**kwargs)
+        serializer.is_valid(raise_exception=True)
+
+        payment = PaymentUtil(request, activity)
+        charge = payment.creditcard()
+
+        if charge['status'] == 'APPROVED':
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        else:
+            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
 
     def list_by_activity(self, request, *args, **kwargs):
         activity_pk = kwargs.get('activity_pk')

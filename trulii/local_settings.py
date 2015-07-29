@@ -18,3 +18,10 @@ CELERY_ALWAYS_EAGER = False
 ################ / REDIS CONFIG #################
 
 FRONT_SERVER_URL = "http://localhost:8080/"
+
+############### PayU ###########################
+PAYU_API_KEY = '6u39nqhq8ftd0hlvnjfs66eh8c'
+PAYU_MERCHANT_ID = '500238'
+PAYU_API_LOGIN = '11959c415b33d0c'
+PAYU_URL = 'http://stg.api.payulatam.com/payments-api/4.0/service.cgi'
+PAYU_TEST = True

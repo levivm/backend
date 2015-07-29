@@ -8,13 +8,13 @@ from students.models import Student
 
 
 class AssistantSerializer(serializers.ModelSerializer):
-    order = serializers.PrimaryKeyRelatedField(read_only=True)
+    # order = serializers.PrimaryKeyRelatedField(read_only=True)
     student = serializers.SerializerMethodField()
 
     class Meta:
         model = Assistant
         fields = (
-            'order',
+            # 'order',
             'first_name',
             'last_name',
             'email',
@@ -43,25 +43,23 @@ class OrdersSerializer(serializers.ModelSerializer):
             'enroll',
         )
 
-
-    def validate(self,data):
+    def validate(self, data):
         chronogram = data.get('chronogram')
         assistants_data = data.get('assistants')
         activity = chronogram.activity
-
 
         if not activity.published:
             msg = _("La actividad no se encuentra activa")
             raise serializers.ValidationError({'detail':msg})
 
-
         if not chronogram.available_capacity() or chronogram.available_capacity()<len(assistants_data):
             msg = _("El cupo de asistentes está lleno")
             raise serializers.ValidationError({'detail':msg})
 
+        assistant_serializer = AssistantSerializer(data=assistants_data, many=True)
+        assistant_serializer.is_valid(raise_exception=True)
+
         return data
-
-
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
