@@ -77,7 +77,6 @@ class Activity(AssignPermissionsMixin, models.Model):
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length=200, blank=True, null=True)
     instructors = models.ManyToManyField(Instructor, related_name="activities")
-    enroll_open = models.NullBooleanField(default=True)
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
@@ -93,7 +92,6 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         steps_requirements = settings.REQUIRED_STEPS
         steps = steps_requirements.keys()
-        # completed_steps = {}
         related_fields  = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
         related_fields += [rel.name for rel in self._meta.many_to_many]
         for step in steps:
@@ -189,8 +187,6 @@ class ActivityStockPhoto(models.Model):
     @classmethod
     def get_image_by_subcategory(cls,sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
-        # import pdb
-        # pdb.set_trace()
         count = queryset.count()
         random_index = randint(0, count-1) if count else 0
         return queryset[random_index]
@@ -211,6 +207,7 @@ class Chronogram(models.Model):
     number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
     capacity = models.IntegerField()
+    enroll_open = models.NullBooleanField(default=True)
     tasks = GenericRelation('utils.CeleryTask')
 
     def update(self, data):

@@ -299,7 +299,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'youtube_video_url',
             'published',
             'certification',
-            'enroll_open',
             'last_date',
             'chronograms',
             'required_steps',
