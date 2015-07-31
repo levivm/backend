@@ -25,7 +25,7 @@ class PaymentLogicTest(BaseViewTest):
             'card_association': 'visa',
             'chronogram': 1,
             'quantity': 1,
-            'amount': 324000,
+            'amount': 5000,
             'assistants': [{
                 'first_name': 'Asistente',
                 'last_name': 'Asistente',
@@ -44,7 +44,7 @@ class PaymentLogicTest(BaseViewTest):
             'creditCardToken': {
                 'payerId': self.STUDENT_ID,
                 'number': '4111111111111111',
-                'expirationDate': '2018/08',
+                'expirationDate': '2016/09',
                 'name': 'test',
                 'paymentMethod': 'VISA',
             },

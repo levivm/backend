@@ -53,7 +53,7 @@ class PaymentUtil(object):
             },
             'transaction': {
                 'order': {
-                    'accountId': '500538',
+                    'accountId': '539061',
                     'referenceCode': reference_code,
                     'description': self.activity.short_description,
                     'language': 'es',
