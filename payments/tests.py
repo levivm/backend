@@ -25,7 +25,7 @@ class PaymentLogicTest(BaseViewTest):
             'card_association': 'visa',
             'chronogram': 1,
             'quantity': 1,
-            'amount': 5000,
+            'amount': 8000,
             'assistants': [{
                 'first_name': 'Asistente',
                 'last_name': 'Asistente',
