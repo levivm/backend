@@ -54,8 +54,12 @@ class OrdersSerializer(serializers.ModelSerializer):
             msg = _("La actividad no se encuentra activa")
             raise serializers.ValidationError({'detail':msg})
 
+        if not chronogram.enroll_open:
+            msg = _("Las inscripciones están cerradas para esta fecha de inicio")
+            raise serializers.ValidationError({'detail':msg})
 
-        if not chronogram.available_capacity() or chronogram.available_capacity()<len(assistants_data):
+        if not chronogram.available_capacity() or \
+               chronogram.available_capacity()<len(assistants_data):
             msg = _("El cupo de asistentes está lleno")
             raise serializers.ValidationError({'detail':msg})
 
