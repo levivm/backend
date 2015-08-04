@@ -1,5 +1,5 @@
 from activities.models import Category,SubCategory
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -32,7 +32,7 @@ class Command(BaseCommand):
             "Música":['Acordeón',  'Armónica',  'Audio y Producción',  'Bajo',  'Batería',  'Canto',  'DJ',  'Guitarra',  'Piano',  'Saxofón',  'Teclado',  'Teoría',  'Trompeta',  'Violín',  'Violonchelo',  'Otros'],
             "Niños":['Académico',  'Actuación',  'Arte',  'Bailes',  'Campamentos',  'Cocina',  'Deportes',  'Habilidades',  'Idiomas' ,   'Tecnología',  'Otros' ],
             "Profesional":['Académico',   'Arquitectura',   'Comunicación',   'Derecho',   'Docencia',   'Entrenamiento',   'Finanzas',   'Ingeniería',   'Liderazgo',   'Management',   'Marketing',   'Recursos Humanos',   'Medicina',   'Startups',   'Otros'],
-            "Tecnología'":['Animación',  'Desarrollo Web y Móvil' ,  'Diseño Web y Móvil' ,  'Juegos' ,  'Microsoft' ,  'Modelado' ,  'Programación',  'Otros']
+            "Tecnología":['Animación',  'Desarrollo Web y Móvil' ,  'Diseño Web y Móvil' ,  'Juegos' ,  'Microsoft' ,  'Modelado' ,  'Programación',  'Otros']
 
 
 
