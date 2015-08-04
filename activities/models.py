@@ -14,7 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 class Category(models.Model):
     name = models.CharField(max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -22,10 +22,16 @@ class SubCategory(models.Model):
     name = models.CharField(max_length=100)
     category = models.ForeignKey(Category)
 
+    def __str__(self):
+        return self.name
+
 
 class Tags(models.Model):
     name = models.CharField(max_length=100, unique=True)
     occurrences = models.IntegerField(default=1)
+
+    def __str__(self):
+        return self.name
 
     @classmethod
     def update_or_create(cls, tags_name):
@@ -82,6 +88,10 @@ class Activity(AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
+
+
+    def __str__(self):
+        return self.title
 
     def update(self, data):
         self.__dict__.update(data)

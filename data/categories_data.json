@@ -3,7 +3,70 @@
     "pk": 1, 
     "model": "activities.Category", 
     "fields": {
-        "name": "Fitness"
+        "name": "Arte"
+    }
+},
+{
+    "pk": 2, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Danza"
+    }
+},
+{
+    "pk": 3, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Estilo de Vida"
+    }
+},
+{
+    "pk": 4, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Deportes"
+    }
+},
+{
+    "pk": 5, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Gastronomía"
+    }
+},
+{
+    "pk": 6, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Idiomas"
+    }
+},
+{
+    "pk": 7, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Música"
+    }
+},
+{
+    "pk": 8, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Niños"
+    }
+},
+{
+    "pk": 9, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Profesional"
+    }
+},
+{
+    "pk": 10, 
+    "model": "activities.Category", 
+    "fields": {
+        "name": "Tecnología"
     }
 }
 ]
