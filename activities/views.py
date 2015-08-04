@@ -189,8 +189,10 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
+
+    def get_queryset(self):
+        return Category.objects.all().order_by('name')
 
 
 class SubCategoriesViewSet(viewsets.ModelViewSet):
