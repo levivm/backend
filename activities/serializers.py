@@ -46,7 +46,8 @@ class CategoriesSerializer(serializers.ModelSerializer):
         fields = (
             'name',
             'id',
-            'subcategories'
+            'subcategories',
+            'color'
         )
 
 
