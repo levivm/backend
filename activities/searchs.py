@@ -48,6 +48,7 @@ class ActivitySearchEngine(object):
         city = query_params.get('city')
         cost_start = query_params.get('cost_start')
         cost_end   = query_params.get('cost_end')
+        level      = query_params.get('level')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -66,5 +67,8 @@ class ActivitySearchEngine(object):
 
         if cost_start is not None and cost_end is not None:
             query &= Q(chronograms__session_price__range=(cost_start,cost_end))
+
+        if level:
+            query &= Q(level=level)
 
         return query

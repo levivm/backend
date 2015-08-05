@@ -803,9 +803,14 @@ class SearchActivitiesViewTest(BaseViewTest):
             'cost_start':324234,
             'cost_end':340000
         }
-        import pdb
-        pdb.set_trace()
         response = self.client.get(self.url, data=data)
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_level(self):
+        response = self.client.get(self.url, data={'level':'I'})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity,many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
