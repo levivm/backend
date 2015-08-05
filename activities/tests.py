@@ -798,6 +798,19 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
+    def test_search_price_rage(self):
+        data = {
+            'cost_start':324234,
+            'cost_end':340000
+        }
+        import pdb
+        pdb.set_trace()
+        response = self.client.get(self.url, data=data)
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
     def test_search_empty(self):
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)

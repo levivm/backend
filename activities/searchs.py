@@ -46,6 +46,8 @@ class ActivitySearchEngine(object):
         category = query_params.get('category')
         date = query_params.get('date')
         city = query_params.get('city')
+        cost_start = query_params.get('cost_start')
+        cost_end   = query_params.get('cost_end')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -61,5 +63,8 @@ class ActivitySearchEngine(object):
 
         if city is not None:
             query &= Q(location__city=city)
+
+        if cost_start is not None and cost_end is not None:
+            query &= Q(chronograms__session_price__range=(cost_start,cost_end))
 
         return query
