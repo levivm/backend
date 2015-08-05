@@ -42,6 +42,7 @@ class ActivitySearchEngine(object):
 
         return query
 
+
     def filter_query(self, query_params):
         subcategory = query_params.get('subcategory')
         category = query_params.get('category')
@@ -51,6 +52,7 @@ class ActivitySearchEngine(object):
         cost_end   = query_params.get('cost_end')
         level      = query_params.get('level')
         certification = query_params.get('certification')
+        weekends = query_params.get('weekends')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -75,5 +77,10 @@ class ActivitySearchEngine(object):
 
         if bool(certification):
             query &= Q(certification=ast.literal_eval(certification))
+
+        if  weekends:
+            query &= Q(chronograms__is_weekend=True)
+
+
 
         return query

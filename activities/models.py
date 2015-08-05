@@ -219,6 +219,7 @@ class Chronogram(models.Model):
     session_price = models.FloatField()
     capacity = models.IntegerField()
     enroll_open = models.NullBooleanField(default=True)
+    is_weekend = models.NullBooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
     def update(self, data):
