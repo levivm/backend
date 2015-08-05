@@ -816,6 +816,13 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
+    def test_search_certification(self):
+        response = self.client.get(self.url, data={'certification':False})
+        activities = self._get_activities_ordered()
+        serializer = ActivitiesSerializer(activities,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
     def test_search_empty(self):
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)

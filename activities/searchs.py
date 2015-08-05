@@ -1,5 +1,6 @@
 import datetime
 import re
+import ast
 
 from django.db.models import Q
 
@@ -49,6 +50,7 @@ class ActivitySearchEngine(object):
         cost_start = query_params.get('cost_start')
         cost_end   = query_params.get('cost_end')
         level      = query_params.get('level')
+        certification = query_params.get('certification')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -68,7 +70,10 @@ class ActivitySearchEngine(object):
         if cost_start is not None and cost_end is not None:
             query &= Q(chronograms__session_price__range=(cost_start,cost_end))
 
-        if level:
+        if level is not None:
             query &= Q(level=level)
+
+        if bool(certification):
+            query &= Q(certification=ast.literal_eval(certification))
 
         return query
