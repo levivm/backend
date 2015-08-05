@@ -140,6 +140,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             'capacity',
             'sessions',
             'assistants',
+            'is_weekend'
         )
         depth = 1
 
@@ -176,6 +177,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
 
         session_data = data['sessions']
         initial_date = data['initial_date']
+        data['is_weekend'] = True
 
         f_range = len(session_data)
         for i in range(f_range):
@@ -184,6 +186,10 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             n_session = session_data[i + 1] if i + 1 < f_range else None
 
             date = session['date'].date()
+            weekday = date.weekday()
+            if weekday < 5:
+                data['is_weekend'] = False
+                
 
             if date < initial_date.date():
                 msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
@@ -228,7 +234,9 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         Session.objects.bulk_create(_sessions)
 
         request = self.context['request']
+
         self.assign_permissions(request.user, chronogram)
+
 
         return chronogram
 

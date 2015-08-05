@@ -232,6 +232,7 @@ class ActivitiesSearchView(APIView):
         q = request.query_params.get('q')
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
+        # excludes = search.exclude_query(request.query_params)
 
         query = search.get_query(q, ['title', 'short_description', 'content', \
                                      'tags__name','organizer__name'])

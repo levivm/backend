@@ -1,5 +1,6 @@
 import datetime
 import re
+import ast
 
 from django.db.models import Q
 
@@ -41,11 +42,17 @@ class ActivitySearchEngine(object):
 
         return query
 
+
     def filter_query(self, query_params):
         subcategory = query_params.get('subcategory')
         category = query_params.get('category')
         date = query_params.get('date')
         city = query_params.get('city')
+        cost_start = query_params.get('cost_start')
+        cost_end   = query_params.get('cost_end')
+        level      = query_params.get('level')
+        certification = query_params.get('certification')
+        weekends = query_params.get('weekends')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -61,5 +68,19 @@ class ActivitySearchEngine(object):
 
         if city is not None:
             query &= Q(location__city=city)
+
+        if cost_start is not None and cost_end is not None:
+            query &= Q(chronograms__session_price__range=(cost_start,cost_end))
+
+        if level is not None:
+            query &= Q(level=level)
+
+        if bool(certification):
+            query &= Q(certification=ast.literal_eval(certification))
+
+        if  weekends:
+            query &= Q(chronograms__is_weekend=True)
+
+
 
         return query

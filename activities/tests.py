@@ -134,7 +134,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
     view = ChronogramsViewSet
 
     def _get_data_to_create_a_chronogram(self):
-        now_unix_timestamp = int(now().timestamp())
+        now_unix_timestamp = int(now().timestamp())*1000
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
@@ -203,7 +203,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.url = '/api/activities/1/calendars/%s' % self.CHRONOGRAM_ID
 
     def _get_data_to_create_a_chronogram(self):
-        now_unix_timestamp = int(now().timestamp())
+        now_unix_timestamp = int(now().timestamp())*1000
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
@@ -795,6 +795,40 @@ class SearchActivitiesViewTest(BaseViewTest):
         response = self.client.get(self.url, data={'city': 1})
         activities = self._get_activities_ordered()
         serializer = ActivitiesSerializer(activities, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_price_rage(self):
+        data = {
+            'cost_start':10000.0,
+            'cost_end':20000,
+        }
+        response = self.client.get(self.url, data=data)
+        activity = Activity.objects.filter(id=3)
+        serializer = ActivitiesSerializer(activity,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_level(self):
+        response = self.client.get(self.url, data={'level':'I'})
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_certification(self):
+        response = self.client.get(self.url, data={'certification':False})
+        activities = self._get_activities_ordered()
+        serializer = ActivitiesSerializer(activities,many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_search_weekends(self):
+
+        response = self.client.get(self.url, data={'weekends':True})
+        print(len(response.data))
+        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
+        serializer = ActivitiesSerializer(activity,many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
