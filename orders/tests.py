@@ -29,17 +29,7 @@ class OrdersByActivityViewTest(BaseViewTest):
         chronogram.capacity  = 1
         chronogram.orders.all().delete()
         chronogram.save()
-        data = {
-            'chronogram': 1,
-            'amount': 324000,
-            'quantity': 1,
-            'assistants': [{
-                'first_name': 'Asistente',
-                'last_name': 'Asistente',
-                'email': 'asistente@trulii.com',
-            }]
-        }
-
+        data = self.get_payment_data()
         activity = Activity.objects.get(pk=1)
         activity.published = True
         activity.save(update_fields=['published'])
@@ -56,16 +46,7 @@ class OrdersByActivityViewTest(BaseViewTest):
 
     def test_students_shouldnt_create_an_order_if_activity_unpublished_or_hasnt_capacity(self):
         client = self.get_student_client()
-        data = {
-            'amount': 324000,
-            'chronogram': 1,
-            'quantity': 2,
-            'assistants': [{
-                'first_name': 'Asistente',
-                'last_name': 'Asistente',
-                'email': 'asistente@trulii.com',
-            }]
-        }
+        data = self.get_payment_data()
 
         chronogram = Chronogram.objects.get(id=1)
         chronogram.capacity  = 1

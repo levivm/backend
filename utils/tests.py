@@ -1,5 +1,8 @@
+import json
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
+from requests import post
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 
@@ -87,3 +90,42 @@ class BaseViewTest(APITestCase):
             client_method = getattr(self.client, method.lower())
             response = client_method(self.url)
             self.assertEqual(response.status_code, 401)
+
+    def get_token(self):
+        data = {
+            'language': 'es',
+            'command': 'CREATE_TOKEN',
+            'merchant': {
+              'apiLogin': settings.PAYU_API_LOGIN,
+              'apiKey': settings.PAYU_API_KEY,
+            },
+            'creditCardToken': {
+                'payerId': self.STUDENT_ID,
+                'number': '4111111111111111',
+                'expirationDate': '2018/08',
+                'name': 'test',
+                'paymentMethod': 'VISA',
+            },
+        }
+        headers = {'content-type': 'application/json', 'accept': 'application/json'}
+        result = post(url=settings.PAYU_URL, data=json.dumps(data), headers=headers)
+        result = result.json()
+        return result['creditCardToken']['creditCardTokenId']
+
+    def get_payment_data(self):
+        return {
+            'token': self.get_token(),
+            'buyer': {
+                'name': 'APPROVED',
+                'email': 'test@payulatam.com',
+            },
+            'card_association': 'visa',
+            'chronogram': 1,
+            'quantity': 1,
+            'amount': 324000,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }]
+        }

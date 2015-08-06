@@ -63,7 +63,10 @@ class OrdersSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
-        validated_data.update({'student': self.context['view'].student})
+        validated_data.update({
+            'student': self.context['view'].student,
+            'enroll': self.context.get('charge', False)
+        })
         order = Order.objects.create(**validated_data)
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)

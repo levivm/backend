@@ -1,12 +1,45 @@
+import calendar
 import hashlib
 import json
 from django.conf import settings
+from django.utils.timezone import now
 from requests.api import post
 from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
 
 
 class PaymentUtil(object):
+    RESPONSE_CODE = {
+        'ERROR': 'Ocurrió un error general.',
+        'APPROVED': 'La transacción fue aprobada.',
+        'ANTIFRAUD_REJECTED': 'La transacción fue rechazada por el sistema anti-fraude.',
+        'PAYMENT_NETWORK_REJECTED': 'La red financiera rechazó la transacción.',
+        'ENTITY_DECLINED': 'La transacción fue declinada por el banco o por la red financiera debido a un error.',
+        'INTERNAL_PAYMENT_PROVIDER_ERROR': 'Ocurrió un error en el sistema intentando procesar el pago.',
+        'INACTIVE_PAYMENT_PROVIDER': 'El proveedor de pagos no se encontraba activo.',
+        'DIGITAL_CERTIFICATE_NOT_FOUND': 'La red financiera reportó un error en la autenticación.',
+        'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': 'El código de seguridad o la fecha de expiración estaba inválido.',
+        'INSUFFICIENT_FUNDS': 'La cuenta no tenía fondos suficientes.',
+        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': 'La tarjeta de crédito no estaba autorizada para transacciones por Internet.',
+        'INVALID_TRANSACTION': 'La red financiera reportó que la transacción fue inválida.',
+        'INVALID_CARD': 'La tarjeta es inválida.',
+        'EXPIRED_CARD': 'La tarjeta ya expiró.',
+        'RESTRICTED_CARD': 'La tarjeta presenta una restricción.',
+        'CONTACT_THE_ENTITY': 'Debe contactar al banco.',
+        'REPEAT_TRANSACTION': 'Se debe repetir la transacción.',
+        'ENTITY_MESSAGING_ERROR': 'La red financiera reportó un error de comunicaciones con el banco.',
+        'BANK_UNREACHABLE': 'El banco no se encontraba disponible.',
+        'EXCEEDED_AMOUNT': 'La transacción excede un monto establecido por el banco.',
+        'NOT_ACCEPTED_TRANSACTION': 'La transacción no fue aceptada por el banco por algún motivo.',
+        'ERROR_CONVERTING_TRANSACTION_AMOUNTS': 'Ocurrió un error convirtiendo los montos a la moneda de pago.',
+        'EXPIRED_TRANSACTION': 'La transacción expiró.',
+        'PENDING_TRANSACTION_REVIEW': 'La transacción fue detenida y debe ser revisada, esto puede ocurrir por filtros de seguridad.',
+        'PENDING_TRANSACTION_CONFIRMATION': 'La transacción está pendiente de ser confirmada.',
+        'PENDING_TRANSACTION_TRANSMISSION': 'La transacción está pendiente para ser trasmitida a la red financiera. Normalmente esto aplica para transacciones con medios de pago en efectivo.',
+        'PAYMENT_NETWORK_BAD_RESPONSE': 'El mensaje retornado por la red financiera es inconsistente.',
+        'PAYMENT_NETWORK_NO_CONNECTION': 'No se pudo realizar la conexión con la red financiera.',
+        'PAYMENT_NETWORK_NO_RESPONSE': 'La red financiera no respondió.',
+    }
     def __init__(self, request, activity):
         super(PaymentUtil, self).__init__()
         self.request = request
@@ -53,7 +86,7 @@ class PaymentUtil(object):
             },
             'transaction': {
                 'order': {
-                    'accountId': '500538',
+                    'accountId': settings.PAYU_ACCOUNT_ID,
                     'referenceCode': reference_code,
                     'description': self.activity.short_description,
                     'language': 'es',
@@ -84,8 +117,10 @@ class PaymentUtil(object):
         return self.response(result)
 
     def get_reference_code(self):
-        reference = self.activity.title.replace(' ', '')
-        return reference.lower()
+        reference = self.activity.id
+        reference += calendar.timegm(now().timetuple())
+        reference += self.request.user.id
+        return reference
 
     def response(self, result):
         if result['code'] == 'SUCCESS':
@@ -107,9 +142,10 @@ class PaymentUtil(object):
                     'payment': payment,
                 }
             else:
+
                 return {
                     'status': 'ERROR',
-                    'error': 'ERROR',
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Su tarjeta ha sido rechazada'),
                 }
         else:
             return {
@@ -118,14 +154,7 @@ class PaymentUtil(object):
             }
 
     def test_response(self, result):
-        if self.request.data['buyer']['name'] == 'APPROVED':
-            result['code'] = 'SUCCESS'
-            result['transactionResponse']['state'] = 'APPROVED'
-        elif self.request.data['buyer']['name'] == 'REJECTED':
-            result['code'] = 'SUCCESS'
-            result['transactionResponse']['state'] = 'DECLINED'
-        elif self.request.data['buyer']['name'] == 'PENDING':
-            result['code'] = 'SUCCESS'
-            result['transactionResponse']['state'] = 'DECLINED'
+        if result['code'] == 'SUCCESS':
+            result['transactionResponse']['state'] = self.request.data['buyer']['name']
 
         return result

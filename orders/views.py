@@ -44,11 +44,20 @@ class OrdersViewSet(viewsets.ModelViewSet):
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED':
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            serializer.context['charge'] = True
+            # self.perform_create(serializer)
+            # headers = self.get_success_headers(serializer.data)
+            # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            return self.call_create(serializer=serializer)
+        elif charge['status'] == 'PENDING':
+            return self.call_create(serializer=serializer)
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+
+    def call_create(self, serializer):
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def list_by_activity(self, request, *args, **kwargs):
         activity_pk = kwargs.get('activity_pk')
