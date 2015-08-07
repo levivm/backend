@@ -269,6 +269,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
     category = serializers.CharField(write_only=True, required=True)
     category_id = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='id')
+    category_color = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='color')
     location = LocationsSerializer(read_only=True)
     photos = ActivityPhotosSerializer(read_only=True, many=True)
     chronograms = ChronogramsSerializer(read_only=True, many=True)
@@ -296,6 +297,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'category',
             'category_id',
             'category_display',
+            'category_color',
             'content',
             'requirements',
             'return_policy',
