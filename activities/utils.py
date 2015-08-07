@@ -90,6 +90,7 @@ class PaymentUtil(object):
                     'referenceCode': reference_code,
                     'description': self.activity.short_description,
                     'language': 'es',
+                    'notifyUrl': "https://ighouszdqe.localtunnel.me/api/payments/notification",
                     'signature': self.get_signature(reference_code=reference_code, price=amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
@@ -112,6 +113,8 @@ class PaymentUtil(object):
         payu_data = json.dumps(self.get_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
+        import pdb
+        pdb.set_trace()
         if settings.PAYU_TEST:
             result = self.test_response(result)
         return self.response(result)

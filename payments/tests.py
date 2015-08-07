@@ -24,6 +24,7 @@ class PaymentLogicTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(b'Su tarjeta ha sido rechazada', response.content)
 
+
     def test_creditcard_approved(self):
         client = self.get_student_client()
         response = client.post(self.url, json.dumps(self.get_payment_data()), content_type='application/json')
