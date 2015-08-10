@@ -40,7 +40,7 @@ class PaymentLogicTest(BaseViewTest):
         client = self.get_student_client()
         data = self.get_payment_data()
         data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
+        response = client.post(self.url, json.dumpgits(data), content_type='application/json')
         payments = Payment.objects.all()
         orders = Order.objects.all()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
