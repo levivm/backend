@@ -113,8 +113,6 @@ class PaymentUtil(object):
         payu_data = json.dumps(self.get_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
-        import pdb
-        pdb.set_trace()
         if settings.PAYU_TEST:
             result = self.test_response(result)
         return self.response(result)
