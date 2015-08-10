@@ -43,13 +43,9 @@ class OrdersViewSet(viewsets.ModelViewSet):
         payment = PaymentUtil(request, activity)
         charge = payment.creditcard()
 
-        if charge['status'] == 'APPROVED':
-            serializer.context['charge'] = True
-            # self.perform_create(serializer)
-            # headers = self.get_success_headers(serializer.data)
-            # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-            return self.call_create(serializer=serializer)
-        elif charge['status'] == 'PENDING':
+        if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+            serializer.context['status'] = charge['status'].lower()
+            serializer.context['payment'] = charge['payment']
             return self.call_create(serializer=serializer)
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)

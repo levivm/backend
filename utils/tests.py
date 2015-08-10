@@ -9,7 +9,8 @@ from rest_framework.test import APITestCase, APIClient
 
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
-                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata']
+                'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata',
+                'payments_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1
@@ -110,7 +111,11 @@ class BaseViewTest(APITestCase):
         headers = {'content-type': 'application/json', 'accept': 'application/json'}
         result = post(url=settings.PAYU_URL, data=json.dumps(data), headers=headers)
         result = result.json()
-        return result['creditCardToken']['creditCardTokenId']
+        try:
+            token = result['creditCardToken']['creditCardTokenId']
+        except:
+            raise Exception('Missing token', result)
+        return token
 
     def get_payment_data(self):
         return {

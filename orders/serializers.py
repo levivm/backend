@@ -40,7 +40,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'amount',
             'quantity',
             'assistants',
-            'enroll',
+            'status',
         )
 
     def validate(self, data):
@@ -65,7 +65,8 @@ class OrdersSerializer(serializers.ModelSerializer):
         assistants_data = validated_data.pop('assistants')
         validated_data.update({
             'student': self.context['view'].student,
-            'enroll': self.context.get('charge', False)
+            'status': self.context['status'],
+            'payment': self.context['payment'],
         })
         order = Order.objects.create(**validated_data)
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
