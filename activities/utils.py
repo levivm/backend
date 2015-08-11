@@ -90,6 +90,7 @@ class PaymentUtil(object):
                     'referenceCode': reference_code,
                     'description': self.activity.short_description,
                     'language': 'es',
+                    'notifyUrl': "https://ighouszdqe.localtunnel.me/api/payments/notification",
                     'signature': self.get_signature(reference_code=reference_code, price=amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
