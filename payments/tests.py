@@ -1,19 +1,28 @@
 import json
-
 from rest_framework import status
 
-from orders.models import Order, ORDER_APPROVED_STATUS,ORDER_CANCELLED_STATUS,\
-        ORDER_PENDING_STATUS
+from orders.models import Order
 from orders.views import OrdersViewSet
 from payments.models import Payment
 from utils.tests import BaseViewTest
 from django.conf import settings
+from .tasks import SendPaymentEmailTask
+from utils.models import EmailTaskRecord
+from activities.utils import PaymentUtil
+
+
 
 
 class PaymentLogicTest(BaseViewTest):
     url = '/api/activities/1/orders'
     payu_callback_url = '/api/payments/notification/'
     view = OrdersViewSet
+    ORDER_ID  = 1
+
+    def setUp(self):
+        settings.CELERY_ALWAYS_EAGER = True
+    def tearDown(self):
+        settings.CELERY_ALWAYS_EAGER = False
 
     def get_payments_count(self):
         return Payment.objects.count()
@@ -31,6 +40,7 @@ class PaymentLogicTest(BaseViewTest):
         self.assertEqual(payu_callback_response.status_code,status.HTTP_404_NOT_FOUND)
 
     def test_payu_confirmation_url_transaction_expired(self):
+
         client = self.get_student_client()
         data = self.get_payment_data()
         data['buyer']['name'] = 'PENDING'
@@ -48,6 +58,7 @@ class PaymentLogicTest(BaseViewTest):
         self.assertEqual(payu_callback_response.status_code,status.HTTP_200_OK)
 
     def test_payu_confirmation_url_transaction_declined(self):
+        settings.CELERY_ALWAYS_EAGER = True
         client = self.get_student_client()
         data = self.get_payment_data()
         data['buyer']['name'] = 'PENDING'
@@ -63,6 +74,7 @@ class PaymentLogicTest(BaseViewTest):
         orders = Order.objects.filter(id=order_id)
         self.assertEqual(orders.count(),0)
         self.assertEqual(payu_callback_response.status_code,status.HTTP_200_OK)
+        settings.CELERY_ALWAYS_EAGER = False
 
     def test_payu_confirmation_url_transaction_approved(self):
         client = self.get_student_client()
@@ -78,7 +90,7 @@ class PaymentLogicTest(BaseViewTest):
         }
         payu_callback_response = client.post(self.payu_callback_url,data=data)
         order = Order.objects.get(id=order_id)
-        self.assertEqual(order.status,ORDER_APPROVED_STATUS)
+        self.assertEqual(order.status,Order.ORDER_APPROVED_STATUS)
         self.assertEqual(payu_callback_response.status_code,status.HTTP_200_OK)
 
     def test_creditcard_declined(self):
@@ -104,6 +116,7 @@ class PaymentLogicTest(BaseViewTest):
         last_order = Order.objects.latest('pk')
         self.assertEqual(last_order.status, 'approved')
         self.assertEqual(last_order.assistants.count(), 1)
+        settings.CELERY_ALWAYS_EAGER = False
 
     def test_creditcard_pending(self):
         payments_count = self.get_payments_count()
@@ -130,3 +143,27 @@ class PaymentLogicTest(BaseViewTest):
         self.assertEqual(self.get_payments_count(), payments_count)
         self.assertEqual(self.get_orders_count(), orders_count)
         self.assertIn(b'ERROR', response.content)
+
+    def test_payment_approved_notification_email_task(self):
+        order = Order.objects.get(id=self.ORDER_ID)
+        order.change_status(Order.ORDER_APPROVED_STATUS)
+        task = SendPaymentEmailTask()
+        result = task.apply_async((order.id,), countdown=4)
+        email_task = EmailTaskRecord.objects.get(task_id=result.id)
+        self.assertTrue(email_task.send)
+
+    def test_payu_declined_notification_email_task(self):
+        order = Order.objects.get(id=self.ORDER_ID)
+        order.change_status(Order.ORDER_DECLINED_STATUS)
+        task_data={
+            'transaction_error':PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL\
+                                        .get('ENTITY_DECLINED','Error')
+        }
+        task = SendPaymentEmailTask()
+        result = task.apply((order.id,),task_data, countdown=4)
+        email_task = EmailTaskRecord.objects.get(task_id=result.id)        
+        self.assertTrue(email_task.send)
+        orders = Order.objects.filter(id=self.ORDER_ID)
+        self.assertEqual(orders.count(), 0)
+
+

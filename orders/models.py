@@ -11,15 +11,19 @@ TOKEN_SIZE = 5
 def generate_token(size=TOKEN_SIZE):
     return ''.join(random.sample(string.ascii_uppercase, size))
 
-ORDER_APPROVED_STATUS  = 'approved'
-ORDER_PENDING_STATUS   = 'pending'
-ORDER_CANCELLED_STATUS = 'cancelled'
-
 class Order(models.Model):
+
+    ORDER_APPROVED_STATUS  = 'approved'
+    ORDER_PENDING_STATUS   = 'pending'
+    ORDER_CANCELLED_STATUS = 'cancelled'
+    ORDER_DECLINED_STATUS  = 'declined'
+
+
     STATUS = (
         (ORDER_APPROVED_STATUS, _('Aprobada')),
         (ORDER_PENDING_STATUS, _('Pendiente')),
         (ORDER_CANCELLED_STATUS,_('Cancelada')),
+        (ORDER_DECLINED_STATUS,_('Declinada')),
     )
     chronogram = models.ForeignKey(Chronogram, related_name='orders')
     student = models.ForeignKey(Student, related_name='orders')
