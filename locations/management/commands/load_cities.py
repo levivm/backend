@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     def load_cities(self,*args, **options):
         data = self.get_data()
-        _cities = map(lambda x:City(name=x['name'],point=['point']),data)
+        _cities = map(lambda x:City(name=x['name'],point=x['point']),data)
         City.objects.bulk_create(_cities)
 
 
