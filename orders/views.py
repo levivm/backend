@@ -49,9 +49,9 @@ class OrdersViewSet(viewsets.ModelViewSet):
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
             response = self.call_create(serializer=serializer)
-            # if charge['status'] == 'APPROVED':
-            task = SendPaymentEmailTask()
-            task.apply_async((response.data['id'],), countdown=4)
+            if charge['status'] == 'APPROVED':
+                task = SendPaymentEmailTask()
+                task.apply_async((response.data['id'],), countdown=4)
             return response
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
