@@ -1,14 +1,40 @@
+import string
+import random
 from django.db import models
 from activities.models import Chronogram
+from payments.models import Payment
 from students.models import Student
+from django.utils.translation import ugettext_lazy as _
 
+
+TOKEN_SIZE = 5
+def generate_token(size=TOKEN_SIZE):
+    return ''.join(random.sample(string.ascii_uppercase, size))
 
 class Order(models.Model):
+
+    ORDER_APPROVED_STATUS  = 'approved'
+    ORDER_PENDING_STATUS   = 'pending'
+    ORDER_CANCELLED_STATUS = 'cancelled'
+    ORDER_DECLINED_STATUS  = 'declined'
+
+
+    STATUS = (
+        (ORDER_APPROVED_STATUS, _('Aprobada')),
+        (ORDER_PENDING_STATUS, _('Pendiente')),
+        (ORDER_CANCELLED_STATUS,_('Cancelada')),
+        (ORDER_DECLINED_STATUS,_('Declinada')),
+    )
     chronogram = models.ForeignKey(Chronogram, related_name='orders')
     student = models.ForeignKey(Student, related_name='orders')
     amount = models.FloatField()
     quantity = models.IntegerField()
-    enroll = models.BooleanField(default=False)
+    status = models.CharField(choices=STATUS, max_length=15, default='pending')
+    payment = models.OneToOneField(Payment)
+
+    def change_status(self,status):
+        self.status = status
+        self.save()
 
 
 class Assistant(models.Model):
@@ -16,3 +42,4 @@ class Assistant(models.Model):
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
     email = models.EmailField()
+    token = models.CharField(default=generate_token, max_length=TOKEN_SIZE)

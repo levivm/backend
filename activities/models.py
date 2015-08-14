@@ -3,12 +3,13 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.conf import settings
 from random import randint
+from django.db.models.aggregates import Sum
+from django.db.models.query_utils import Q
 
 from organizers.models import Organizer, Instructor
 from locations.models import Location
 from utils.mixins import AssignPermissionsMixin
 from django.utils.translation import ugettext_lazy as _
-
 
 
 class Category(models.Model):
@@ -53,10 +54,10 @@ class Tags(models.Model):
 
 class Activity(AssignPermissionsMixin, models.Model):
     LEVEL_CHOICES = (
-        ('P',_('Principiante')),
-        ('I',_('Intermedio')),
-        ('A',_('Avanzado')),
-        ('N',_('No Aplica'))
+        ('P', _('Principiante')),
+        ('I', _('Intermedio')),
+        ('A', _('Avanzado')),
+        ('N', _('No Aplica'))
     )
 
     DAY_CHOICES = (
@@ -66,8 +67,8 @@ class Activity(AssignPermissionsMixin, models.Model):
         ('4', _('Jueves')),
         ('5', _('Viernes')),
     )
-    
-    permissions = ('organizers.delete_instructor', )
+
+    permissions = ('organizers.delete_instructor',)
 
     sub_category = models.ForeignKey(SubCategory)
     organizer = models.ForeignKey(Organizer)
@@ -100,7 +101,6 @@ class Activity(AssignPermissionsMixin, models.Model):
 
     def steps_completed(self):
 
-
         steps_requirements = settings.REQUIRED_STEPS
         steps = steps_requirements.keys()
         related_fields  = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
@@ -110,11 +110,11 @@ class Activity(AssignPermissionsMixin, models.Model):
             for attr in required_attrs:
 
                 if attr in related_fields:
-                    if not getattr(self,attr,None).all():
+                    if not getattr(self, attr, None).all():
                         return False
                         # break
                 else:
-                    if not  getattr(self,attr,None):
+                    if not getattr(self, attr, None):
                         return False
                         # break
         return True
@@ -161,7 +161,6 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         return chronograms[0]['sessions__date']
 
-
     def add_instructors(self, instructors_data, organizer):
         instructors = Instructor.update_or_create(instructors_data, organizer)
 
@@ -171,7 +170,7 @@ class Activity(AssignPermissionsMixin, models.Model):
         self.instructors.clear()
         self.instructors.add(*instructors)
 
-    def set_location(self,location):
+    def set_location(self, location):
         self.location = location
         self.save()
 
@@ -181,34 +180,22 @@ class ActivityPhoto(models.Model):
     activity = models.ForeignKey(Activity, related_name="photos")
     main_photo = models.BooleanField(default=False)
 
-
     @classmethod
-    def create_from_stock(cls,sub_category_id,activity):
+    def create_from_stock(cls, sub_category_id, activity):
         image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-        return cls.objects.create(activity=activity,photo=image.photo,main_photo=True)
-
-
+        return cls.objects.create(activity=activity, photo=image.photo, main_photo=True)
 
 
 class ActivityStockPhoto(models.Model):
     photo = models.ImageField(upload_to="activities_stock")
     sub_category = models.ForeignKey(SubCategory)
 
-
     @classmethod
-    def get_image_by_subcategory(cls,sub_category):
+    def get_image_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         count = queryset.count()
-        random_index = randint(0, count-1) if count else 0
+        random_index = randint(0, count - 1) if count else 0
         return queryset[random_index]
-
-
-
-
-
-
-
-
 
 
 class Chronogram(models.Model):
@@ -227,14 +214,10 @@ class Chronogram(models.Model):
         self.save()
 
     def available_capacity(self):
-        return self.capacity - self.orders.filter(assistants__isnull=False).count()
-
-    def get_assistants(self):
-        return self.orders.filter(assistants__isnull=False)
-
-
-    def hasAssistants(self):
-        return self.orders.filter(assistants__isnull=False)
+        #TODO cambiar filtro por constantes
+        assistants = self.orders.filter(Q(status='approved') | Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
+        assistants = assistants['num_assistants'] or 0
+        return self.capacity - assistants
 
 
 class Session(models.Model):
@@ -250,5 +233,3 @@ class Review(models.Model):
     author = models.CharField(max_length=200)
     rating = models.IntegerField()
     attributes = models.CharField(max_length=200)
-
-

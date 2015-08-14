@@ -76,6 +76,7 @@ INSTALLED_APPS = (
     'allauth.socialaccount.providers.facebook',
     'orders',
     'guardian',
+    'payments',
 )
 
 

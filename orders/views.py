@@ -5,11 +5,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+from activities.utils import PaymentUtil
 from organizers.models import Organizer
 from students.models import Student
 from .models import Order
 from activities.models import Activity
 from .serializers import OrdersSerializer
+from payments.tasks import  SendPaymentEmailTask
 
 
 
@@ -30,9 +32,34 @@ class OrdersViewSet(viewsets.ModelViewSet):
         except Organizer.DoesNotExist:
             raise PermissionDenied
 
+    def get_activity(self, **kwargs):
+        return get_object_or_404(Activity, id=kwargs.get('activity_pk'))
+
     def create(self, request, *args, **kwargs):
         self.student = self._get_student(user=request.user)
-        return super(OrdersViewSet, self).create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        activity = self.get_activity(**kwargs)
+        serializer.is_valid(raise_exception=True)
+
+        payment = PaymentUtil(request, activity)
+        charge = payment.creditcard()
+
+        if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+
+            serializer.context['status'] = charge['status'].lower()
+            serializer.context['payment'] = charge['payment']
+            response = self.call_create(serializer=serializer)
+            if charge['status'] == 'APPROVED':
+                task = SendPaymentEmailTask()
+                task.apply_async((response.data['id'],), countdown=4)
+            return response
+        else:
+            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+
+    def call_create(self, serializer):
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def list_by_activity(self, request, *args, **kwargs):
         activity_pk = kwargs.get('activity_pk')

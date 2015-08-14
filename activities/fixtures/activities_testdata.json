@@ -104,7 +104,7 @@
     "model": "activities.chronogram",
     "fields": {
       "capacity": 14,
-      "session_price": 324234.0,
+      "session_price": 8000.0,
       "initial_date": "2015-05-01T14:43:00.601Z",
       "activity": 1,
       "closing_sale": "2015-05-10T14:43:00.601Z",

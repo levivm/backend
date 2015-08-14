@@ -24,3 +24,8 @@ CELERY_ALWAYS_EAGER = False
 ################ / REDIS CONFIG #################
 
 FRONT_SERVER_URL = "https://dev.trulii.com/"
+PAYU_API_KEY = '6RK49XdJYozqO05lnIJQonnbEx'
+PAYU_MERCHANT_ID = '537033'
+PAYU_API_LOGIN = 'xvoZMctc645I2Nc'
+PAYU_URL = 'https://api.payulatam.com/payments-api/4.0/service.cgi'
+PAYU_TEST = True

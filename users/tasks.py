@@ -1,12 +1,7 @@
 import json
-from celery import Task
-from utils.models import CeleryTask
 from utils.tasks import SendEmailTaskMixin
 # from allauth.account.utils import send_email_confirmation
 from .models import OrganizerConfirmation
-
-from students.models import Student
-from organizers.models import Organizer
 
 
 
@@ -17,7 +12,8 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
         self.success_handler = success_handler
         confirmation  = OrganizerConfirmation.objects.get(id=organizer_confirmation_id)
         template = "account/email/request_signup_confirmation"
-        return super(SendEmailOrganizerConfirmationTask, self).run(instance=confirmation, template=template,**kwargs)
+        return super(SendEmailOrganizerConfirmationTask, self).run(instance=confirmation, \
+                        template=template,**kwargs)
 
     def get_emails_to(self, confirmation):
         emails = [confirmation.requested_signup.email]
