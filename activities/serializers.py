@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from activities.models import Activity, Category, SubCategory, Tags, Chronogram, Session, ActivityPhoto
 from locations.serializers import LocationsSerializer
-from orders.serializers import AssistantSerializer
+from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from utils.mixins import AssignPermissionsMixin, FileUploadMixin
@@ -251,7 +251,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             assistants.append(order.assistants.all())
 
         assistants = [item for sublist in assistants for item in sublist]
-        assistants_serialzer = AssistantSerializer(assistants, many=True)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True)
         return assistants_serialzer.data
 
 

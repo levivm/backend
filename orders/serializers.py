@@ -7,9 +7,14 @@ from students.serializer import StudentsSerializer
 from students.models import Student
 
 
-class AssistantSerializer(serializers.ModelSerializer):
+class AssistantsSerializer(serializers.ModelSerializer):
     # order = serializers.PrimaryKeyRelatedField(read_only=True)
     student = serializers.SerializerMethodField()
+    token   = serializers.SerializerMethodField()
+
+    def get_token(self,obj):
+        if self.context.get('show_token'):
+            return obj.token
 
     class Meta:
         model = Assistant
@@ -18,7 +23,8 @@ class AssistantSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
-            'student'
+            'student',
+            'token'
         )
 
     def get_student(self,obj):
@@ -28,8 +34,9 @@ class AssistantSerializer(serializers.ModelSerializer):
 
 
 class OrdersSerializer(serializers.ModelSerializer):
-    assistants = AssistantSerializer(many=True)
+    assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
+    amount = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Order
@@ -37,11 +44,15 @@ class OrdersSerializer(serializers.ModelSerializer):
             'id',
             'chronogram',
             'student',
-            'amount',
             'quantity',
             'assistants',
+            'amount',
             'status',
         )
+
+
+    def validate_amount(self,obj):
+        return obj.chronogram.session_price*obj.quantity
 
     def validate(self, data):
         chronogram = data.get('chronogram')
@@ -56,7 +67,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             msg = _("El cupo de asistentes está lleno")
             raise serializers.ValidationError({'detail':msg})
 
-        assistant_serializer = AssistantSerializer(data=assistants_data, many=True)
+        assistant_serializer = AssistantsSerializer(data=assistants_data, many=True)
         assistant_serializer.is_valid(raise_exception=True)
 
         return data
@@ -68,7 +79,11 @@ class OrdersSerializer(serializers.ModelSerializer):
             'status': self.context['status'],
             'payment': self.context['payment'],
         })
-        order = Order.objects.create(**validated_data)
+        order = Order(**validated_data)
+        chronogram   = order.chronogram
+        order.amount = chronogram.session_price * order.quantity
+        order.save()
+        # order = Order.objects.create(**validated_data)
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)
         return order

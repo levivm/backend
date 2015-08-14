@@ -11,6 +11,7 @@ from students.models import Student
 from .models import Order
 from activities.models import Activity
 from .serializers import OrdersSerializer
+from payments.tasks import  SendPaymentEmailTask
 
 
 
@@ -44,9 +45,14 @@ class OrdersViewSet(viewsets.ModelViewSet):
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
-            return self.call_create(serializer=serializer)
+            response = self.call_create(serializer=serializer)
+            # if charge['status'] == 'APPROVED':
+            task = SendPaymentEmailTask()
+            task.apply_async((response.data['id'],), countdown=4)
+            return response
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
 

@@ -6,6 +6,8 @@ from django.utils.timezone import now
 from requests.api import post
 from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
+from django.utils.translation import ugettext_lazy as _
+
 
 
 class PaymentUtil(object):
@@ -40,6 +42,51 @@ class PaymentUtil(object):
         'PAYMENT_NETWORK_NO_CONNECTION': 'No se pudo realizar la conexión con la red financiera.',
         'PAYMENT_NETWORK_NO_RESPONSE': 'La red financiera no respondió.',
     }
+
+    RESPONSE_CODE_NOTIFICATION_URL = {
+        'ERROR': _('Ocurrió un error general.'),
+        'APPROVED': _('La transacción fue aprobada.'),
+        'ANTIFRAUD_REJECTED': _('La transacción fue rechazada por el sistema anti-fraude.'),
+        'PAYMENT_NETWORK_REJECTED': _('La red financiera rechazó la transacción.'),
+        'BANK_ACCOUNT_ACTIVATION_ERROR':_('Débito automático no permitido'),
+        'BANK_ACCOUNT_NOT_AUTHORIZED_FOR_AUTOMATIC_DEBIT': _('Débito automático no permitido'),
+        'INVALID_AGENCY_BANK_ACCOUNT': _('Débito automático no permitido'),
+        'INVALID_BANK_ACCOUNT': _('Débito automático no permitido'),
+        'INVALID_BANK': _('Débito automático no permitido'),
+        'FIX_NOT_REQUIRED': _('Error'),
+        'AUTOMATICALLY_FIXED_AND_SUCCESS_REVERSAL': _('Error'),
+        'AUTOMATICALLY_FIXED_AND_UNSUCCESS_REVERSAL': _('Error'),
+        'AUTOMATIC_FIXED_NOT_SUPPORTED': _('Error'),
+        'NOT_FIXED_FOR_ERROR_STATE': _('Error'),
+        'ERROR_FIXING_AND_REVERSING': _('Error'),
+        'ERROR_FIXING_INCOMPLETE_DATA': _('Error'),
+        'PAYMENT_NETWORK_BAD_RESPONSE': _('Error'),
+        'ABANDONED_TRANSACTION': _('Transacción abandonada por el pagador'),
+        'ENTITY_DECLINED': _('La transacción fue declinada por el banco o por la red financiera debido a un error.'),
+        'INTERNAL_PAYMENT_PROVIDER_ERROR': _('Ocurrió un error en el sistema intentando procesar el pago.'),
+        'INACTIVE_PAYMENT_PROVIDER': _('El proveedor de pagos no se encontraba activo.'),
+        'DIGITAL_CERTIFICATE_NOT_FOUND': _('La red financiera reportó un error en la autenticación.'),
+        'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': _('El código de seguridad o la fecha de expiración estaba inválido.'),
+        'INSUFFICIENT_FUNDS': _('La cuenta no tenía fondos suficientes.'),
+        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': _('La tarjeta de crédito no estaba autorizada para transacciones por Internet.'),
+        'INVALID_TRANSACTION': _('La red financiera reportó que la transacción fue inválida.'),
+        'INVALID_CARD': _('La tarjeta es inválida.'),
+        'EXPIRED_CARD': _('La tarjeta ya expiró.'),
+        'RESTRICTED_CARD': _('La tarjeta presenta una restricción.'),
+        'CONTACT_THE_ENTITY': _('Debe contactar al banco.'),
+        'REPEAT_TRANSACTION': _('Se debe repetir la transacción.'),
+        'ENTITY_MESSAGING_ERROR': _('La red financiera reportó un error de comunicaciones con el banco.'),
+        'BANK_UNREACHABLE': _('El banco no se encontraba disponible.'),
+        'EXCEEDED_AMOUNT': _('La transacción excede un monto establecido por el banco.'),
+        'NOT_ACCEPTED_TRANSACTION': _('La transacción no fue aceptada por el banco por algún motivo.'),
+        'ERROR_CONVERTING_TRANSACTION_AMOUNTS': _('Ocurrió un error convirtiendo los montos a la moneda de pago.'),
+        'EXPIRED_TRANSACTION': _('La transacción expiró.'),
+        'PAYMENT_NETWORK_BAD_RESPONSE': _('El mensaje retornado por la red financiera es inconsistente.'),
+        'PAYMENT_NETWORK_NO_CONNECTION': _('No se pudo realizar la conexión con la red financiera.'),
+        'PAYMENT_NETWORK_NO_RESPONSE': _('La red financiera no respondió.'),
+    }
+
+
     def __init__(self, request, activity):
         super(PaymentUtil, self).__init__()
         self.request = request
@@ -126,7 +173,7 @@ class PaymentUtil(object):
     def response(self, result):
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':' credit',
+                'payment_type':'credit',
                 'card_type': self.card_association.lower(),
                 'transaction_id': result['transactionResponse']['transactionId'],
             }
