@@ -139,9 +139,8 @@ class BaseViewTest(APITestCase):
         return {
             'buyer': {
                 'name': 'PENDING',
-                'email': 'test@payulatam.com',
+                'email': 'levi@trulii.com',
             },
-            'PSE':True,
             'chronogram': 1,
             'activity':1,
             'quantity': 1,
