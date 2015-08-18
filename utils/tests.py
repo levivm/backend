@@ -134,3 +134,21 @@ class BaseViewTest(APITestCase):
                 'email': 'asistente@trulii.com',
             }]
         }
+
+    def get_payment_pse_data(self):
+        return {
+            'buyer': {
+                'name': 'PENDING',
+                'email': 'test@payulatam.com',
+            },
+            'PSE':True,
+            'chronogram': 1,
+            'activity':1,
+            'quantity': 1,
+            'amount': 8000,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }]
+        }

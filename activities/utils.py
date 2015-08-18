@@ -87,10 +87,11 @@ class PaymentUtil(object):
     }
 
 
-    def __init__(self, request, activity):
+    def __init__(self, request, activity=None):
         super(PaymentUtil, self).__init__()
         self.request = request
-        self.activity = activity
+        if activity:
+            self.activity = activity
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
 
     def get_signature(self, reference_code, price):
@@ -137,7 +138,7 @@ class PaymentUtil(object):
                     'referenceCode': reference_code,
                     'description': self.activity.short_description,
                     'language': 'es',
-                    'notifyUrl': "https://ighouszdqe.localtunnel.me/api/payments/notification",
+                    'notifyUrl': settings.PAYU_NOTIFY_URL,
                     'signature': self.get_signature(reference_code=reference_code, price=amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
@@ -201,8 +202,141 @@ class PaymentUtil(object):
                 'error': 'ERROR'
             }
 
+    def pse_response(self,result):
+        if result['code'] == 'SUCCESS':
+            payment_data = {
+                'payment_type':'debit',
+                # 'card_type': self.card_association.lower(),
+                'transaction_id': result['transactionResponse']['transactionId'],
+            }
+            if result['transactionResponse']['state'] == 'PENDING':
+                payment = PaymentModel.objects.create(**payment_data)
+                return {
+                    'status': 'PENDING',
+                    'bank_url':result['extraParameters']['BANK_URL'],
+                    'payment': payment,
+                }
+            # elif result['transactionResponse']['state'] == 'PENDING':
+            #     payment = PaymentModel.objects.create(**payment_data)
+            #     return {
+            #         'status': 'PENDING',
+            #         'payment': payment,
+            #     }
+            else:
+
+                return {
+                    'status': 'ERROR',
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Su tarjeta ha sido rechazada'),
+                }
+        else:
+            return {
+                'status': 'ERROR',
+                'error': 'ERROR'
+            }
+
     def test_response(self, result):
         if result['code'] == 'SUCCESS':
             result['transactionResponse']['state'] = self.request.data['buyer']['name']
 
         return result
+
+    def pse_test_response(self,result):
+        if result['code'] == 'SUCCESS':        
+            result['transactionResponse']['state'] = self.request.data['buyer']['name']
+            result.update({
+                    'extraParameters':{
+                        'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
+                                    ElectronicPayment.bancolombia?\
+                                    PAYMENT_ID=21429692224921982576571322905"
+                    }
+                })
+
+        return result
+
+
+    def get_payu_pse_data(self):
+        amount = self.get_amount()
+        reference_code = self.get_reference_code()
+                    # 'buyer': self.get_buyer(),
+        return {
+           "language": "es",
+           "command": "SUBMIT_TRANSACTION",
+            'merchant': {
+                'apiLogin': settings.PAYU_API_LOGIN,
+                'apiKey': settings.PAYU_API_KEY,
+            },
+           "transaction": {
+              "order": {
+                 "accountId": settings.PAYU_ACCOUNT_ID,
+                 "referenceCode": reference_code,
+                 "description": "payment test",
+                 "language": "es",
+                 "signature": self.get_signature(reference_code=reference_code, price=amount),
+                 "notifyUrl": settings.PAYU_NOTIFY_URL,
+                 "additionalValues": {
+                    "TX_VALUE": {
+                       "value": amount,
+                       "currency": "COP"
+                    }
+                 },
+                 "buyer": self.get_buyer()
+              },
+              # "payer": {
+              #    "fullName": "First name and second payer name",
+              #    "emailAddress": "payer_test@test.com",
+              #    "contactPhone": "7563126"
+              # },
+              # "extraParameters": {
+              #    "RESPONSE_URL": "http://www.test.com/response",
+              #    "PSE_REFERENCE1": "127.0.0.1",
+              #    "FINANCIAL_INSTITUTION_CODE": "1007",
+              #    "USER_TYPE": "N",
+              #    "PSE_REFERENCE2": "CC",
+              #    "PSE_REFERENCE3": "123456789"
+              # },
+              "type": "AUTHORIZATION_AND_CAPTURE",
+              "paymentMethod": "PSE",
+              "paymentCountry": "CO",
+              # "ipAddress": "127.0.0.1",
+              # "cookie": "pt1t38347bs6jc9ruv2ecpv7o2",
+              # "userAgent": "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0"
+           },
+           "test": settings.PAYU_TEST
+        }
+
+
+    def pse_payu_payment(self):
+        payu_data = json.dumps(self.get_payu_pse_data())
+        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+        result = result.json()
+        if settings.PAYU_TEST:
+            result = self.pse_test_response(result)
+        return self.pse_response(result)
+
+    def get_bank_list_payu_data(self):
+        return {
+            "language": "es",
+            "command": "GET_BANKS_LIST",
+            "merchant": {
+                "apiLogin": settings.PAYU_API_LOGIN,
+                "apiKey": settings.PAYU_API_KEY,
+            },
+           "bankListInformation": {
+              "paymentMethod": "PSE",
+              "paymentCountry": "CO"
+           },
+           "test": settings.PAYU_TEST,
+
+        }
+
+    def get_bank_list(self):
+        payu_data = json.dumps(self.get_bank_list_payu_data())
+        result = post(url=settings.PAYU_URL, data=payu_data, headers={'content-type': 'application/json', 'accept': 'application/json'})
+        result = result.json()
+        return result
+
+
+
+
+
+
