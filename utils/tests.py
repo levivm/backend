@@ -139,7 +139,7 @@ class BaseViewTest(APITestCase):
         return {
             'response_url': settings.PAYU_RESPONSE_URL,
             'pse_reference1': '127.0.0.1',
-            'financial_institution_code': '10072',
+            'financial_institution_code': '1007',
             'user_type': 'J',
             'pse_reference2': 'NIT',
             'pse_reference3': '900823805'
