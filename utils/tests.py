@@ -143,7 +143,7 @@ class BaseViewTest(APITestCase):
                  "USER_TYPE": "J",
                  "PSE_REFERENCE2": "NIT",
                  "PSE_REFERENCE3": "900823805"
-              },
+              }
 
     def get_payment_pse_data(self):
         return {

@@ -261,6 +261,7 @@ class PaymentUtil(object):
     def get_payu_pse_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
+        print("ss",self.get_extra_pse_parameters())
                     # 'buyer': self.get_buyer(),
         return {
            "language": "es",
