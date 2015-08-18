@@ -29,5 +29,5 @@ PAYU_MERCHANT_ID = '537033'
 PAYU_ACCOUNT_ID = '539061'
 PAYU_API_LOGIN = 'xvoZMctc645I2Nc'
 PAYU_URL = 'https://api.payulatam.com/payments-api/4.0/service.cgi'
-PAYU_TEST = True
+PAYU_TEST = False
 PAYU_NOTIFY_URL = "https://api.trulii.com/api/payments/notification"
