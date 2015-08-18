@@ -119,6 +119,10 @@ class PaymentUtil(object):
             'emailAddress': data['email'],
         }
 
+    def get_extra_pse_parameters(self):
+        data = self.request.data.get('buyer_pse_data')
+        return data
+
     def get_creditcard_association(self):
         return self.request.data['card_association'].upper()
 
@@ -286,14 +290,7 @@ class PaymentUtil(object):
               #    "emailAddress": "payer_test@test.com",
               #    "contactPhone": "7563126"
               # },
-              # "extraParameters": {
-              #    "RESPONSE_URL": "http://www.test.com/response",
-              #    "PSE_REFERENCE1": "127.0.0.1",
-              #    "FINANCIAL_INSTITUTION_CODE": "1007",
-              #    "USER_TYPE": "N",
-              #    "PSE_REFERENCE2": "CC",
-              #    "PSE_REFERENCE3": "123456789"
-              # },
+              "extraParameters": self.get_extra_pse_parameters(),
               "type": "AUTHORIZATION_AND_CAPTURE",
               "paymentMethod": "PSE",
               "paymentCountry": "CO",
@@ -307,8 +304,10 @@ class PaymentUtil(object):
 
     def pse_payu_payment(self):
         payu_data = json.dumps(self.get_payu_pse_data())
+
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
+        print("RESUKTTTT",result)
         if settings.PAYU_TEST:
             result = self.pse_test_response(result)
         return self.pse_response(result)

@@ -135,12 +135,23 @@ class BaseViewTest(APITestCase):
             }]
         }
 
+    def get_buyer_pse_data(self):
+        return {
+                 "RESPONSE_URL": settings.PAYU_RESPONSE_URL,
+                 "PSE_REFERENCE1": "127.0.0.1",
+                 "FINANCIAL_INSTITUTION_CODE": "10072",
+                 "USER_TYPE": "J",
+                 "PSE_REFERENCE2": "NIT",
+                 "PSE_REFERENCE3": "900823805"
+              },
+
     def get_payment_pse_data(self):
         return {
             'buyer': {
                 'name': 'PENDING',
                 'email': 'levi@trulii.com',
             },
+            'buyer_pse_data':self.get_buyer_pse_data(),
             'chronogram': 1,
             'activity':1,
             'quantity': 1,

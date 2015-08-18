@@ -46,7 +46,7 @@ class PayUPSE(viewsets.ViewSet):
         payment_util = PaymentUtil(request,activity)
         charge = payment_util.pse_payu_payment()
         logger.error("ESTO ES EL URL DE PAGO --------------------\n")
-        logger.error(charge['bank_url'])
+        logger.error(charge)
         logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
         return Response(status=200)
 
