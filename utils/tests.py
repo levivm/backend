@@ -137,13 +137,13 @@ class BaseViewTest(APITestCase):
 
     def get_buyer_pse_data(self):
         return {
-                 "RESPONSE_URL": settings.PAYU_RESPONSE_URL,
-                 "PSE_REFERENCE1": "127.0.0.1",
-                 "FINANCIAL_INSTITUTION_CODE": "10072",
-                 "USER_TYPE": "J",
-                 "PSE_REFERENCE2": "NIT",
-                 "PSE_REFERENCE3": "900823805"
-              }
+            'response_url': settings.PAYU_RESPONSE_URL,
+            'pse_reference1': '127.0.0.1',
+            'financial_institution_code': '10072',
+            'user_type': 'J',
+            'pse_reference2': 'NIT',
+            'pse_reference3': '900823805'
+        }
 
     def get_payment_pse_data(self):
         return {

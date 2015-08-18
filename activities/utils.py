@@ -217,7 +217,7 @@ class PaymentUtil(object):
                 payment = PaymentModel.objects.create(**payment_data)
                 return {
                     'status': 'PENDING',
-                    'bank_url':result['extraParameters']['BANK_URL'],
+                    'bank_url':result['transactionResponse']['extraParameters']['BANK_URL'],
                     'payment': payment,
                 }
             # elif result['transactionResponse']['state'] == 'PENDING':
