@@ -126,6 +126,7 @@ class BaseViewTest(APITestCase):
             },
             'card_association': 'visa',
             'chronogram': 1,
+            'payment_method':'cc',
             'quantity': 1,
             'amount': 324000,
             'assistants': [{
@@ -137,13 +138,12 @@ class BaseViewTest(APITestCase):
 
     def get_buyer_pse_data(self):
         return {
-                 "RESPONSE_URL": settings.PAYU_RESPONSE_URL,
-                 "PSE_REFERENCE1": "127.0.0.1",
-                 "FINANCIAL_INSTITUTION_CODE": "1007",
-                 "USER_TYPE": "j",
-                 "PSE_REFERENCE2": "NIT",
-                 "PSE_REFERENCE3": "900823805"
-              }
+             "response_url": settings.PAYU_RESPONSE_URL,
+             "financial_institution_code": "1007",
+             "user_type": "J",
+             "pse_reference2": "NIT",
+             "pse_reference3": "900823805"
+        }
 
     def get_payment_pse_data(self):
         return {
@@ -154,6 +154,7 @@ class BaseViewTest(APITestCase):
             'buyer_pse_data':self.get_buyer_pse_data(),
             'chronogram': 1,
             'activity':1,
+            'payment_method':'pse',
             'quantity': 1,
             'amount': 8000,
             'assistants': [{

@@ -33,7 +33,7 @@ class PayUPSE(viewsets.ViewSet):
 
     def payment_response(self,request):
         logger.error("ESTO ES LA RESPUESTA DE PSE --------------------\n")
-        logger.error(json.dumps(request.POST))
+        logger.error(json.dumps(request.GET))
         logger.error("ESTO ES LA RESPUESTA DE PSE ////////------------\n")
         return Response(request.data)
 
@@ -47,11 +47,21 @@ class PayUPSE(viewsets.ViewSet):
         charge = payment_util.pse_payu_payment()
         logger.error("ESTO ES EL URL DE PAGO --------------------\n")
         logger.error(charge)
+        import pdb
+        pdb.set_trace()
         logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
-        return Response(status=200)
+        return Response(charge,status=status.HTTP_200_OK)
 
 
 class PayUNotificationPayment(APIView):
+
+    PSE_METHOD_PAYMENT_ID = '4'
+    CC_METHOD_PAYMENT_ID  = '2'
+
+    def _run_transaction_approved_task(self,order,data):
+        order.change_status(Order.ORDER_APPROVED_STATUS)
+        task = SendPaymentEmailTask()
+        task.apply_async((order.id,), countdown=4)
 
     def _run_transaction_declined_task(self,order,data):
         order.change_status(Order.ORDER_DECLINED_STATUS)
@@ -65,13 +75,40 @@ class PayUNotificationPayment(APIView):
         task.apply_async((order.id,),task_data, countdown=4)
 
 
+
+    def _proccess_pse_payment(self,payment,data):
+        #state_pol response_code_pol
+        #     4            1           Transacción aprobada
+        #     6            5           Transacción fallida
+        #     6            4           Transacción rechazada
+        #     12          9994         Transacción pendiente, por favor revisar si el débito fue realizado en el banco.
+        #response_code_pol
+        #state_pol
+        transaction_status = data.get('state_pol')
+        response_code_pol = data.get('response_code_pol')
+
+        if transaction_status == settings.TRANSACTION_APPROVED_CODE:
+            pass
+
+        pass
+
+
+
     def post(self, request, *args, **kwargs):
 
         #The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
         
         data   = request.POST
+        
+        payment_method = data.get('payment_method_type')
+
+        if payment_method == self.PSE_METHOD_PAYMENT_ID:
+            pass
+
+
         transaction_status = data.get('state_pol')
         transaction_id = data.get('transaction_id')
+
         logger.error(json.dumps(request.POST))
 
         try:

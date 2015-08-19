@@ -107,10 +107,19 @@ class PaymentUtil(object):
         signature.update(bytes(signature_string, 'utf8'))
         return signature.hexdigest()
 
+    def get_client_ip(self,request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
     def get_amount(self):
         id = self.request.data.get('chronogram')
         chronogram = Chronogram.objects.get(id=id)
         return chronogram.session_price * self.request.data['quantity']
+
 
     def get_buyer(self):
         data = self.request.data.get('buyer')
@@ -121,6 +130,7 @@ class PaymentUtil(object):
 
     def get_extra_pse_parameters(self):
         data = self.request.data.get('buyer_pse_data')
+        data['pse_reference1'] = self.get_client_ip(self.request)
         return data
 
     def get_creditcard_association(self):
@@ -210,7 +220,6 @@ class PaymentUtil(object):
         if result['code'] == 'SUCCESS':
             payment_data = {
                 'payment_type':'debit',
-                # 'card_type': self.card_association.lower(),
                 'transaction_id': result['transactionResponse']['transactionId'],
             }
             if result['transactionResponse']['state'] == 'PENDING':
@@ -219,13 +228,8 @@ class PaymentUtil(object):
                     'status': 'PENDING',
                     'bank_url':result['transactionResponse']['extraParameters']['BANK_URL'],
                     'payment': payment,
+
                 }
-            # elif result['transactionResponse']['state'] == 'PENDING':
-            #     payment = PaymentModel.objects.create(**payment_data)
-            #     return {
-            #         'status': 'PENDING',
-            #         'payment': payment,
-            #     }
             else:
 
                 return {
@@ -247,21 +251,19 @@ class PaymentUtil(object):
     def pse_test_response(self,result):
         if result['code'] == 'SUCCESS':        
             result['transactionResponse']['state'] = self.request.data['buyer']['name']
-            result.update({
+            result['transactionResponse'].update({
                     'extraParameters':{
                         'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
                                     ElectronicPayment.bancolombia?\
                                     PAYMENT_ID=21429692224921982576571322905"
                     }
                 })
-
         return result
 
 
     def get_payu_pse_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
-        print("ss",self.get_extra_pse_parameters())
                     # 'buyer': self.get_buyer(),
         return {
            "language": "es",
@@ -286,11 +288,6 @@ class PaymentUtil(object):
                  },
                  "buyer": self.get_buyer()
               },
-              # "payer": {
-              #    "fullName": "First name and second payer name",
-              #    "emailAddress": "payer_test@test.com",
-              #    "contactPhone": "7563126"
-              # },
               "extraParameters": self.get_extra_pse_parameters(),
               "type": "AUTHORIZATION_AND_CAPTURE",
               "paymentMethod": "PSE",
@@ -308,8 +305,8 @@ class PaymentUtil(object):
 
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
-        print("RESUKTTTT",result)
         if settings.PAYU_TEST:
+
             result = self.pse_test_response(result)
         return self.pse_response(result)
 

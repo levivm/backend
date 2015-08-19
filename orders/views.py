@@ -35,13 +35,51 @@ class OrdersViewSet(viewsets.ModelViewSet):
     def get_activity(self, **kwargs):
         return get_object_or_404(Activity, id=kwargs.get('activity_pk'))
 
+
+    def _payment_cc(self,payment,serializer):
+        charge = payment.creditcard()
+
+        if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+
+            serializer.context['status'] = charge['status'].lower()
+            serializer.context['payment'] = charge['payment']
+            response = self.call_create(serializer=serializer)
+            if charge['status'] == 'APPROVED':
+                task = SendPaymentEmailTask()
+                task.apply_async((response.data['id'],), countdown=4)
+            return response
+        else:
+            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+
+        # return Response()
+
+    def _payment_pse(self,payment,serializer):
+        charge = payment.pse_payu_payment()
+
+        if charge['status'] == 'PENDING':
+
+            serializer.context['status'] = charge['status'].lower()
+            serializer.context['payment'] = charge['payment']
+            self.call_create(serializer=serializer)
+            # if charge['status'] == 'APPROVED':
+            #     task = SendPaymentEmailTask()
+            #     task.apply_async((response.data['id'],), countdown=4)
+            return Response({'bank_url':charge['bank_url']})
+        else:
+            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+
+
     def create(self, request, *args, **kwargs):
         self.student = self._get_student(user=request.user)
         serializer = self.get_serializer(data=request.data)
         activity = self.get_activity(**kwargs)
         serializer.is_valid(raise_exception=True)
+        payment_method = request.data.get('payment_method')
 
         payment = PaymentUtil(request, activity)
+        return getattr(self,'_payment_'+payment_method)(payment,serializer)
+
+
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':

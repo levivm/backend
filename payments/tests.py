@@ -116,7 +116,6 @@ class PaymentLogicTest(BaseViewTest):
     #     last_order = Order.objects.latest('pk')
     #     self.assertEqual(last_order.status, 'approved')
     #     self.assertEqual(last_order.assistants.count(), 1)
-    #     settings.CELERY_ALWAYS_EAGER = False
 
     # def test_creditcard_pending(self):
     #     payments_count = self.get_payments_count()
@@ -167,16 +166,24 @@ class PaymentLogicTest(BaseViewTest):
     #     self.assertEqual(orders.count(), 0)
     #     
 
-class PayUPSETest(BaseViewTest):
-    url = '/api/payments/pse'
     def test_pse_payment(self):
         client = self.get_student_client()
         data = json.dumps(self.get_payment_pse_data())
-        r = client.post(self.url, data , content_type='application/json')
-        print(r)
-        import pdb
-        pdb.set_trace()
+        response = client.post(self.url, data , content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
 
+# class PayUPSETest(BaseViewTest):
+#     # url = '/api/payments/pse'
+#     url = '/api/activities/1/orders'
+
+#     def test_pse_payment(self):
+#         client = self.get_student_client()
+#         data = json.dumps(self.get_payment_pse_data())
+#         response = client.post(self.url, data , content_type='application/json')
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
+        
 
 # class PaymentBankListTest(BaseViewTest):
 #     url = '/api/payments/pse/banks'
