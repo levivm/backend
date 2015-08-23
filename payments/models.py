@@ -16,3 +16,4 @@ class Payment(models.Model):
     payment_type = models.CharField(choices=PAYMENT_TYPE, max_length=10)
     card_type = models.CharField(choices=CARD_TYPE, max_length=25)
     transaction_id = models.CharField(max_length=150)
+    last_four_digits = models.CharField(max_length=5)

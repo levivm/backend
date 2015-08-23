@@ -80,19 +80,19 @@ class OrdersViewSet(viewsets.ModelViewSet):
         return getattr(self,'_payment_'+payment_method)(payment,serializer)
 
 
-        charge = payment.creditcard()
+        # charge = payment.creditcard()
 
-        if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+        # if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
 
-            serializer.context['status'] = charge['status'].lower()
-            serializer.context['payment'] = charge['payment']
-            response = self.call_create(serializer=serializer)
-            if charge['status'] == 'APPROVED':
-                task = SendPaymentEmailTask()
-                task.apply_async((response.data['id'],), countdown=4)
-            return response
-        else:
-            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+        #     serializer.context['status'] = charge['status'].lower()
+        #     serializer.context['payment'] = charge['payment']
+        #     response = self.call_create(serializer=serializer)
+        #     if charge['status'] == 'APPROVED':
+        #         task = SendPaymentEmailTask()
+        #         task.apply_async((response.data['id'],), countdown=4)
+        #     return response
+        # else:
+        #     return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
 
     def call_create(self, serializer):
         self.perform_create(serializer)

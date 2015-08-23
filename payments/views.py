@@ -10,6 +10,7 @@ from orders.models import Order
 from rest_framework import status
 from activities.utils import PaymentUtil
 from orders.serializers import OrdersSerializer
+from django.utils.translation import ugettext_lazy as _
 import logging
 import json
 
@@ -61,14 +62,19 @@ class PayUNotificationPayment(APIView):
     def _run_transaction_approved_task(self,order,data):
         order.change_status(Order.ORDER_APPROVED_STATUS)
         task = SendPaymentEmailTask()
-        task.apply_async((order.id,), countdown=4)
+        task_data = {
+            'payment_method':data.get('payment_method_type')
+        }
+        task.apply_async((order.id,),task_data, countdown=4)
 
-    def _run_transaction_declined_task(self,order,data):
-        order.change_status(Order.ORDER_DECLINED_STATUS)
+    def _run_transaction_declined_task(self,order,data,msg='Error',\
+                    status=Order.ORDER_DECLINED_STATUS):
+        order.change_status(status)
         error = data.get('response_message_pol')
         task_data={
             'transaction_error':PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL\
-                                        .get(error,'Error')
+                                        .get(error,msg),
+            'payment_method': data.get('payment_method_type')
         }
         
         task = SendPaymentEmailTask()
@@ -76,54 +82,50 @@ class PayUNotificationPayment(APIView):
 
 
 
-    def _proccess_pse_payment(self,payment,data):
+    def _proccess_pse_payment(self,order,data):
         #state_pol response_code_pol
         #     4            1           Transacción aprobada
         #     6            5           Transacción fallida
         #     6            4           Transacción rechazada
-        #     12          9994         Transacción pendiente, por favor revisar si el débito fue realizado en el banco.
-        #response_code_pol
-        #state_pol
+        #     12          9994         Transacción pendiente, por favor revisar si el \
+        #                                       débito fue realizado en el banco.
+
         transaction_status = data.get('state_pol')
         response_code_pol = data.get('response_code_pol')
 
         if transaction_status == settings.TRANSACTION_APPROVED_CODE:
-            pass
+            self._run_transaction_approved_task(order,data)
 
-        pass
+        elif transaction_status == settings.TRANSACTION_DECLINED_CODE\
+             and response_code_pol == settings.RESPONSE_CODE_POL_FAILED:
+            _msg = _('Transacción Fallida')
+            self._run_transaction_declined_task(order,data,_msg)
+
+        elif transaction_status == settings.TRANSACTION_DECLINED_CODE\
+             and response_code_pol == settings.RESPONSE_CODE_POL_DECLINED:
+            _msg = _('Transacción Rechazada')
+            self._run_transaction_declined_task(order,data,_msg)
+
+        elif transaction_status == settings.TRANSACTION_PENDING_PSE_CODE:
+            _msg  = 'Transacción pendiente, por favor revisar'
+            _msg += 'si el débito fue realizado en el banco.'
+            _msg  = _(_msg)
+            self._run_transaction_declined_task(order,data,_msg,Order.ORDER_PENDING_STATUS)
 
 
+        return Response(status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-
-        #The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
-        
-        data   = request.POST
-        
-        payment_method = data.get('payment_method_type')
-
-        if payment_method == self.PSE_METHOD_PAYMENT_ID:
-            pass
-
+    def _proccess_cc_payment(self,order,data):
 
         transaction_status = data.get('state_pol')
-        transaction_id = data.get('transaction_id')
-
-        logger.error(json.dumps(request.POST))
-
-        try:
-            payment = Payment.objects.get(transaction_id=transaction_id)
-        except Payment.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        order = payment.order
 
         if   transaction_status == settings.TRANSACTION_APPROVED_CODE:
             
             if order.status == Order.ORDER_PENDING_STATUS:
-                order.change_status(Order.ORDER_APPROVED_STATUS)
-                task = SendPaymentEmailTask()
-                task.apply_async((order.id,), countdown=4)
+                self._run_transaction_approved_task(order,data)
+                # order.change_status(Order.ORDER_APPROVED_STATUS)
+                # task = SendPaymentEmailTask()
+                # task.apply_async((order.id,), countdown=4)
 
             
         elif transaction_status == settings.TRANSACTION_DECLINED_CODE:
@@ -138,4 +140,30 @@ class PayUNotificationPayment(APIView):
                 self._run_transaction_declined_task(order,data)
 
         return Response(status=status.HTTP_200_OK)
+
+
+    def post(self, request, *args, **kwargs):
+
+        #The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
+        
+        data   = request.POST
+
+
+        transaction_id = data.get('transaction_id')
+
+        logger.error(json.dumps(request.POST))
+
+        try:
+            payment = Payment.objects.get(transaction_id=transaction_id)
+        except Payment.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        order = payment.order
+
+        payment_method = data.get('payment_method_type')
+
+        if payment_method == settings.PSE_METHOD_PAYMENT_ID:
+            return self._proccess_pse_payment(order,data)
+        else:
+            return self._proccess_cc_payment(order,data)
 
