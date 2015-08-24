@@ -77,6 +77,7 @@ INSTALLED_APPS = (
     'orders',
     'guardian',
     'payments',
+    'reviews',
 )
 
 

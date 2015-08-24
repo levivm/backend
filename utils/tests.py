@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase, APIClient
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
                 'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata',
-                'payments_testdata']
+                'payments_testdata', 'reviews_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1
@@ -20,6 +20,7 @@ class BaseViewTest(APITestCase):
     ANOTHER_STUDENT_ID = 4
     DUMMY_PASSWORD = 'password'
     __SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+    headers = { 'content_type': 'application/json' }
 
     def __get_token(self, user_id):
         user = User.objects.get(id=user_id)

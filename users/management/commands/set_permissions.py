@@ -1,3 +1,4 @@
+import pdb
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand, CommandError
 
@@ -51,6 +52,11 @@ class Command(BaseCommand):
                     'change',
                     'delete'
                 ]
+            },
+            'reviews': {
+                'review': [
+                    'change'
+                ]
             }
         }
 
@@ -60,11 +66,6 @@ class Command(BaseCommand):
     def set_student_permissions(self):
         students, created = Group.objects.get_or_create(name='Students')
         students_permissions = {
-            'activities': {
-                'review': [
-                    'add'
-                ]
-            },
             'orders': {
                 'order': [
                     'add'
@@ -76,6 +77,11 @@ class Command(BaseCommand):
             'students': {
                 'student': [
                     'change'
+                ]
+            },
+            'reviews': {
+                'review': [
+                    'add'
                 ]
             }
         }

@@ -13,7 +13,7 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class Category(models.Model):
-    name  = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
 
     def __str__(self):
@@ -91,7 +91,6 @@ class Activity(AssignPermissionsMixin, models.Model):
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
 
-
     def __str__(self):
         return self.title
 
@@ -103,7 +102,7 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         steps_requirements = settings.REQUIRED_STEPS
         steps = steps_requirements.keys()
-        related_fields  = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
+        related_fields = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
         related_fields += [rel.name for rel in self._meta.many_to_many]
         for step in steps:
             required_attrs = steps_requirements[step]
@@ -214,8 +213,9 @@ class Chronogram(models.Model):
         self.save()
 
     def available_capacity(self):
-        #TODO cambiar filtro por constantes
-        assistants = self.orders.filter(Q(status='approved') | Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
+        # TODO cambiar filtro por constantes
+        assistants = self.orders.filter(Q(status='approved') | Q(status='pending')).aggregate(
+            num_assistants=Sum('quantity'))
         assistants = assistants['num_assistants'] or 0
         return self.capacity - assistants
 
@@ -225,11 +225,3 @@ class Session(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     chronogram = models.ForeignKey(Chronogram, related_name="sessions")
-
-
-class Review(models.Model):
-    description = models.CharField(max_length=200)
-    activity = models.ForeignKey(Activity)
-    author = models.CharField(max_length=200)
-    rating = models.IntegerField()
-    attributes = models.CharField(max_length=200)

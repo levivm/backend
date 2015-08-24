@@ -38,6 +38,7 @@ urlpatterns = patterns('',
     url(r'^api/students/', include('students.urls')),
  	url(r'^api/payments/', include('payments.urls')),
     url(r'^api/', include('orders.urls')),
+ 	url(r'^api/', include('reviews.urls')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 
  #    url(r'^organizers/', include('organizers.urls')),
