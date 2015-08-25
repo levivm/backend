@@ -1,0 +1,13 @@
+[
+{
+    "model": "reviews.review",
+    "fields": {
+        "rating": 4,
+        "comment": "Liked!",
+        "reply": "",
+        "activity": 1,
+        "author": 1
+    },
+    "pk": 1
+}
+]
