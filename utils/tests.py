@@ -73,12 +73,12 @@ class BaseViewTest(APITestCase):
             response = client_method(self.url, **params)
             self.assertEqual(response.status_code, status)
 
-    def method_get_should_return_data(self, clients, response_data=None):
+    def method_get_should_return_data(self, clients, data=None, response_data=None):
         response_data = response_data or b'"id":1'
         clients = self.__parse_clientes(clients=clients)
 
         for client in clients:
-            response = client.get(self.url)
+            response = client.get(self.url, data)
             self.assertEqual(response.status_code, 200)
             self.assertIn(response_data, response.content)
 
