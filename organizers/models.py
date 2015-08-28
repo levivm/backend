@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-_ = lambda x: x
+from django.utils.translation import ugettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
+from utils.models import CeleryTask
 
 
 class Organizer(models.Model):
@@ -11,8 +12,12 @@ class Organizer(models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     telephone = models.CharField(max_length=100, blank=True)
     youtube_video_url = models.CharField(max_length=100, blank=True)
-    website = models.CharField(max_length=100, blank=True)
+    website  = models.CharField(max_length=100, blank=True)
+    headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
+    tasks = GenericRelation(CeleryTask)
+
+
 
 
 # Create your models here.
@@ -24,12 +29,12 @@ class Instructor(models.Model):
     website = models.CharField(max_length=200, null=True, blank=True)
 
 
-    @classmethod
+    @classmethod 
     def update_or_create(cls,instructors_data,organizer):
 
         instructors = []
         for ins in instructors_data:
-            # Esto se usará en el futuro para asignar el instructor
+            # Esto se usara en el futuro para asignar el instructor
             # al organizer
             # ins.update({'organizer':organizer})
             instructor = cls.objects.update_or_create(\

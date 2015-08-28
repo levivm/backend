@@ -15,35 +15,88 @@
     }
   },
   {
+    "pk": 2,
+    "model": "activities.subcategory",
+    "fields": {
+      "category": 1,
+      "name": "Crossfit"
+    }
+  },
+  {
     "pk": 1,
     "model": "activities.activity",
     "fields": {
-      "audience": "",
-      "return_policy": "",
-      "instructors": [],
+      "audience": "Audiencia",
+      "return_policy": "Politica de retorno",
+      "instructors": [1],
       "location": 1,
-      "enroll_open": true,
-      "tags": [],
-      "youtube_video_url": null,
-      "published": false,
+      "tags": [1],
+      "youtube_video_url": "https://www.youtube.com/?v=123798324",
+      "published": true,
       "short_description": "Descripci\u00f3n corta",
       "level": "I",
-      "extra_info": "",
+      "extra_info": "Informacion adicional",
       "title": "Yoga",
       "content": "Algo",
-      "methodology": "",
+      "methodology": "Metodologia",
       "organizer": 1,
       "sub_category": 1,
-      "goals": "",
-      "requirements": ""
+      "goals": "Objetivos",
+      "requirements": "Requisitos",
+      "score": 0
     }
   },
   {
     "pk": 1,
     "model": "activities.activityphoto",
     "fields": {
-      "photo": "activities/yoga_three_panel_f5J1YYb.jpg",
-      "activity": 1
+      "photo": "activities/yoga_1.jpg",
+      "activity": 1,
+      "main_photo": false
+    }
+  },
+  {
+    "pk": 12,
+    "model": "activities.activityphoto",
+    "fields": {
+      "photo": "activities/yoga_2.jpg",
+      "activity": 1,
+      "main_photo": false
+    }
+  },
+  {
+    "pk": 3,
+    "model": "activities.activityphoto",
+    "fields": {
+      "photo": "activities/yoga_3.jpg",
+      "activity": 1,
+      "main_photo": false
+    }
+  },
+  {
+    "pk": 4,
+    "model": "activities.activityphoto",
+    "fields": {
+      "photo": "activities/yoga_4.jpg",
+      "activity": 1,
+      "main_photo": false
+    }
+  },
+  {
+    "pk": 5,
+    "model": "activities.activityphoto",
+    "fields": {
+      "photo": "activities/yoga_5.jpg",
+      "activity": 1,
+      "main_photo": false
+    }
+  },
+  {
+    "pk": 1,
+    "model": "activities.activitystockphoto",
+    "fields": {
+      "photo": "activities_stock/yoga_1.jpg",
+      "sub_category": 1
     }
   },
   {
@@ -51,29 +104,69 @@
     "model": "activities.chronogram",
     "fields": {
       "capacity": 14,
-      "session_price": 324234.0,
+      "session_price": 8000.0,
       "initial_date": "2015-05-01T14:43:00.601Z",
       "activity": 1,
       "closing_sale": "2015-05-10T14:43:00.601Z",
-      "number_of_sessions": 1
+      "number_of_sessions": 1,
+      "is_weekend": true
     }
   },
   {
     "pk": 1,
     "model": "activities.session",
     "fields": {
-      "date": "2015-05-01T14:43:00.601Z",
+      "date": "2015-08-12T14:43:00.601Z",
       "start_time": "16:00:00.552",
       "chronogram": 1,
       "end_time": "19:00:00.552"
     }
   },
-  {
+    {
     "pk": 1,
     "model": "activities.tags",
     "fields": {
       "occurrences": 23,
       "name": "yoga"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "activities.tags",
+    "fields": {
+      "occurrences": 23,
+      "name": "fitness"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "activities.activity",
+    "fields": {
+      "audience": "",
+      "return_policy": "",
+      "instructors": [],
+      "location": 1,
+      "tags": [2],
+      "youtube_video_url": null,
+      "published": true,
+      "short_description": "Descripci\u00f3n corta para actividad 2",
+      "level": "P",
+      "extra_info": "",
+      "title": "Crossfit",
+      "content": "Clases de crossfit",
+      "methodology": "",
+      "organizer": 1,
+      "sub_category": 2,
+      "goals": "",
+      "requirements": ""
+    }
+  },
+  {
+    "pk": 2,
+    "model": "activities.activityphoto",
+    "fields": {
+      "photo": "activities/crossfit.jpg",
+      "activity": 2
     }
   }
 ]

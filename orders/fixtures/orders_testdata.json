@@ -3,10 +3,11 @@
     "model": "orders.order",
     "fields": {
         "quantity": 2,
-        "enroll": false,
+        "status": "pending",
         "chronogram": 1,
         "amount": 648468.0,
-        "student": 1
+        "student": 1,
+        "payment": 1
     },
     "pk": 1
 },

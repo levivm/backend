@@ -1,0 +1,12 @@
+[
+{
+    "model": "payments.payment",
+    "fields": {
+        "date": "2015-05-01T14:43:00.601Z",
+        "payment_type": "credit",
+        "card_type": "visa",
+        "transaction_id": "123987123982713"
+    },
+    "pk": 1
+}
+]

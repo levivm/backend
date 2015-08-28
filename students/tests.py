@@ -68,3 +68,42 @@ class ActivitiesByStudentViewTest(BaseViewTest):
     def test_other_student_shouldnt_get_the_activitites(self):
         student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
         self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
+
+# class SendEmailStudentSignupTaskTest(BaseViewTest):
+#     STUDENT_ID = 1
+#     # url = '/api/students/1/activities'
+
+#     def test_task_dispatch_if_there_is_not_other_task(self):
+#         # student = self.get_student_client()
+#         # from rest_framework.test import APIRequestFactory
+#         # factory = APIRequestFactory()
+#         # data = {
+#         #     'first_name':'first_name',
+#         #     'last_name':'last_name',
+#         #     'login':'lolpe@gmail.com',
+#         #     'password':'19737450',
+#         #     'user_type':'S'
+#         # }
+#         # student = self.get_student_client()
+#         # request = factory.post('/api/users/signup', data, format='json')
+#         # import pdb
+#         # pdb.set_trace()
+#         task = SendEmailStudentSignupTask()
+#         # task.request = request
+#         result = task.apply((self.STUDENT_ID, ),)
+#         self.assertEqual(result.result, 'Task scheduled')
+
+#     def test_ignore_task_if_there_is_a_pending_task(self):
+#         task = SendEmailStudentSignupTask()
+#         task.apply((self.STUDENT_ID, False), countdown=60)
+#         task2 = SendEmailStudentSignupTask()
+#         result = task2.apply((self.STUDENT_ID, False))
+#         self.assertEqual(result.result, None)
+
+
+#     def test_task_should_delete_on_success(self):
+#         task = SendEmailStudentSignupTask()
+#         task.apply((self.STUDENT_ID, ))
+#         self.assertEqual(CeleryTask.objects.count(), 0)
+
+

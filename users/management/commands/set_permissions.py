@@ -38,7 +38,8 @@ class Command(BaseCommand):
             'locations': {
                 'location': [
                     'add',
-                    'change'
+                    'change',
+                    'delete',
                 ]
             },
             'organizers': {

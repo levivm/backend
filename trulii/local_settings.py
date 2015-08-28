@@ -1,21 +1,28 @@
-import os
-
-PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'trulii',  # Or path to database file if using sqlite3.
-        'USER': 'trulii',
-        'PASSWORD': 'trulii',
-        'HOST': 'localhost',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',  # Set to empty string for default.
-    }
-}
+import dj_database_url
 
 
-# Celery
+
+################ DATABASE CONFIG ##############
+
+DATABASE_URL  = "postgres://trulii:trulii@localhost:5432/trulii"
+DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
+################ / DATABASE CONFIG #############
+
+
+################ REDIS CONFIG ##################
+
 BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost/0'
 CELERY_ALWAYS_EAGER = False
+
+################ / REDIS CONFIG #################
+
+FRONT_SERVER_URL = "http://localhost:8080/"
+
+############### PayU ###########################
+PAYU_API_KEY = '6u39nqhq8ftd0hlvnjfs66eh8c'
+PAYU_MERCHANT_ID = '500238'
+PAYU_API_LOGIN = '11959c415b33d0c'
+PAYU_ACCOUNT_ID = '500538'
+PAYU_URL = 'http://stg.api.payulatam.com/payments-api/4.0/service.cgi'
+PAYU_TEST = True

@@ -38,6 +38,7 @@ class OrganizersSerializer(FileUploadMixin,serializers.ModelSerializer):
             'user',
             'name',
             'bio',
+            'headline',
             'website',
             'youtube_video_url',
             'telephone',

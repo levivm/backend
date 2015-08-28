@@ -18,13 +18,10 @@
 
 
 
-  //$scope.startOpened = false;
   var vm = this;
-  //vm.start_date = "asdasd";
+
   activate();
   initialize();
-  //this.openStartDate = 
-  //console.log(,"SCOPE");
 
   vm.calendar  = calendar;
   

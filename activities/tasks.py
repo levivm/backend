@@ -3,10 +3,10 @@ from __future__ import absolute_import
 from allauth.account.adapter import get_adapter
 from celery import Task
 
-from activities.models import CeleryTask, Chronogram, Activity
+from activities.models import  Chronogram, Activity
+from utils.models import CeleryTask
 
-
-class SendEmailTaskMixin(Task):
+class SendEmailActivityEditTaskMixin(Task):
     abstract = True
     success_handler = True
 
@@ -46,7 +46,7 @@ class SendEmailTaskMixin(Task):
             task.delete()
 
 
-class SendEmailChronogramTask(SendEmailTaskMixin):
+class SendEmailChronogramTask(SendEmailActivityEditTaskMixin):
 
     def run(self, chronogram_id, success_handler=True, **kwargs):
         self.success_handler = success_handler
@@ -61,7 +61,7 @@ class SendEmailChronogramTask(SendEmailTaskMixin):
         return emails
 
 
-class SendEmailLocationTask(SendEmailTaskMixin):
+class SendEmailLocationTask(SendEmailActivityEditTaskMixin):
     def run(self, activity_id, success_handler=True, **kwargs):
         self.success_handler = success_handler
         activity = Activity.objects.get(id=activity_id)
@@ -73,3 +73,35 @@ class SendEmailLocationTask(SendEmailTaskMixin):
         assistants = [item for sublist in assistants for item in sublist]
         emails = [assistant.email for assistant in assistants]
         return emails
+
+
+class ActivityScoreTask(Task):
+
+    def run(self, activity_id, *args, **kwargs):
+        activity = Activity.objects.get(id=activity_id)
+        details = self.get_detail_value(activity)
+        gallery = self.get_gallery_value(activity)
+        instructors = self.get_instructors_value(activity)
+        return_policy = self.get_return_policy_value(activity)
+        activity.score = details + gallery + instructors + return_policy
+        activity.save(update_fields=['score'])
+
+    def get_detail_value(self, activity):
+        objective = 0.15 * bool(activity.goals)
+        requirements = 0.2 * bool(activity.requirements)
+        content = 0.4 * bool(activity.content)
+        audience = 0.05 * bool(activity.audience)
+        methodology = 0.1 * bool(activity.methodology)
+        extra_info = 0.1 * bool(activity.extra_info)
+        return 45 * (objective + requirements + content + audience + methodology + extra_info)
+
+    def get_gallery_value(self, activity):
+        video = 0.2 * bool(activity.youtube_video_url)
+        gallery = (0.8 * activity.photos.filter(main_photo=False).count()) / 5.0
+        return 30 * (video + gallery)
+
+    def get_instructors_value(self, activity):
+        return 15 * bool(activity.instructors.count())
+
+    def get_return_policy_value(self, activity):
+        return 10 * bool(activity.return_policy)

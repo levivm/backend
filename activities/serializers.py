@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from activities.models import Activity, Category, SubCategory, Tags, Chronogram, Session, ActivityPhoto
 from locations.serializers import LocationsSerializer
-from orders.serializers import AssistantSerializer
+from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from utils.mixins import AssignPermissionsMixin, FileUploadMixin
@@ -46,7 +46,8 @@ class CategoriesSerializer(serializers.ModelSerializer):
         fields = (
             'name',
             'id',
-            'subcategories'
+            'subcategories',
+            'color'
         )
 
 
@@ -74,6 +75,13 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return data
 
     def validate_photo(self, file):
+        # is_stock_image = self.context['request'].data.get('is_stock_image')
+        if True:
+
+            # import pdb
+            # pdb.set_trace()
+            return file
+
         return self.clean_file(file)
 
     def create(self, validated_data):
@@ -132,6 +140,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             'capacity',
             'sessions',
             'assistants',
+            'is_weekend'
         )
         depth = 1
 
@@ -168,6 +177,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
 
         session_data = data['sessions']
         initial_date = data['initial_date']
+        data['is_weekend'] = True
 
         f_range = len(session_data)
         for i in range(f_range):
@@ -176,10 +186,16 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             n_session = session_data[i + 1] if i + 1 < f_range else None
 
             date = session['date'].date()
+            weekday = date.weekday()
+            if weekday < 5:
+                data['is_weekend'] = False
+                
 
             if date < initial_date.date():
-                msg = u'La sesión no puede empezar antes de la fecha de inicio'
-                raise serializers.ValidationError({'sessions_' + str(i): _(msg)})
+                msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
+                errors    = [{}]*f_range
+                errors[i] = {'date_'+str(0):[msg]} 
+                raise serializers.ValidationError({'sessions':errors})
 
             if not n_session:
                 continue
@@ -187,13 +203,18 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             n_date = n_session['date'].date()
 
             if date > n_date:
-                msg = u'La fecha su sesión debe ser mayor a la anterior'
+                msg = _(u'La fecha su sesión debe ser mayor a la anterior')
+                errors    = [{}]*f_range
+                errors[i+1] = {'date_'+str(0):[msg]} 
+                raise serializers.ValidationError({'sessions':errors})
+
                 raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
             elif date == n_date:
-
                 if session['end_time'].time() > n_session['start_time'].time():
-                    msg = u'La hora de inicio de su sesión debe ser después de la sesión anterior'
-                    raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
+                    msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
+                    errors    = [{}]*f_range
+                    errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
+                    raise serializers.ValidationError({'sessions':errors})
 
     def validate(self, data):
         initial_date = data['initial_date']
@@ -213,7 +234,9 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         Session.objects.bulk_create(_sessions)
 
         request = self.context['request']
+
         self.assign_permissions(request.user, chronogram)
+
 
         return chronogram
 
@@ -237,7 +260,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             assistants.append(order.assistants.all())
 
         assistants = [item for sublist in assistants for item in sublist]
-        assistants_serialzer = AssistantSerializer(assistants, many=True)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True)
         return assistants_serialzer.data
 
 
@@ -246,6 +269,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
     category = serializers.CharField(write_only=True, required=True)
     category_id = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='id')
+    category_color = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='color')
     location = LocationsSerializer(read_only=True)
     photos = ActivityPhotosSerializer(read_only=True, many=True)
     chronograms = ChronogramsSerializer(read_only=True, many=True)
@@ -273,6 +297,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'category',
             'category_id',
             'category_display',
+            'category_color',
             'content',
             'requirements',
             'return_policy',
@@ -285,13 +310,13 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'youtube_video_url',
             'published',
             'certification',
-            'enroll_open',
             'last_date',
             'chronograms',
             'required_steps',
             'steps',
             'organizer',
             'instructors',
+            'score',
         )
         depth = 1
 
@@ -350,7 +375,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         return activity
 
     def update(self, instance, validated_data):
-
         request = self.context['request']
         organizer = validated_data.get('organizer')
         instructors_data = validated_data.get('instructors', [])

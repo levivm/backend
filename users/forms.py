@@ -60,17 +60,15 @@ class UserCreateForm(forms.Form):
         email = data.get('email')
 
         if user_type == settings.ORGANIZER_TYPE:
-            try:
-                oc = OrganizerConfirmation.objects.\
-                    select_related('requested_signup').\
-                    get(requested_signup__email=email)
-                oc.used = True
-                oc.save()
-                return data
+            oc = OrganizerConfirmation.objects.\
+                select_related('requested_signup').\
+                filter(requested_signup__email=email).count()
 
-            except OrganizerConfirmation.DoesNotExist:
+            if not oc:
                 msg = _("Este correo no ha sido previamente validado")
                 raise forms.ValidationError(msg) 
+
+            return data
 
         return data
 
@@ -80,4 +78,14 @@ class UserCreateForm(forms.Form):
         user.first_name = self.cleaned_data['first_name']
         user.last_name  = self.cleaned_data['last_name']
         user.user_type  = self.cleaned_data['user_type']
+
+        if user.user_type == settings.ORGANIZER_TYPE:
+
+            email = self.cleaned_data['email']
+            ocs = OrganizerConfirmation.objects.\
+                    select_related('requested_signup').\
+                    filter(requested_signup__email=email)
+
+            ocs.update(used=True)
+
         user.save()

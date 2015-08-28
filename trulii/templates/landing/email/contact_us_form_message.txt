@@ -1,0 +1,9 @@
+contact form 
+
+
+Topico: {{topic}}
+Subtopico: {{subtopic}}
+Email: {{email}}
+Teléfono: {{phone_number}}
+Descripción: {{description}}
+Ciudad: {{city}}

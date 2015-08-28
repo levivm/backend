@@ -80,7 +80,8 @@
 
       var request = $http({
         method: 'post',
-        url: '/users/signup/',
+        url: api.token(),
+        // url: '/users/signup/',
         data:_parseParam({
           password1: password,
           email: email,

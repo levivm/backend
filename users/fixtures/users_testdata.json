@@ -114,5 +114,35 @@
         "username": "hadmin"
     },
     "pk": 5
+},
+{
+    "model": "users.requestsignup",
+    "fields": {
+        "email": "organizador@trulii.com",
+        "name": "Trulii",
+        "telephone": "4828356",
+        "want_to_teach": "I want to teach some good stuff",
+        "city": 1,
+        "approved": false
+    },
+    "pk": 1
+},
+{
+    "model": "users.organizerconfirmation",
+    "fields": {
+        "requested_signup": 1
+    },
+    "pk":1
+},
+{
+    "pk": 1, 
+    "model": "socialaccount.SocialApp", 
+    "fields": {
+        "name": "trulii",
+        "client_id":"1563536137193781",
+        "secret":"9fecd238829796fd99109283aca7d4ff",
+        "provider":"facebook",
+        "sites":[1]
+    }
 }
 ]

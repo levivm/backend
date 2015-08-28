@@ -9,6 +9,11 @@ from django.utils.translation import ugettext_lazy as _
 from django.http import HttpResponseBadRequest
 from rest_framework.exceptions import APIException
 from django.http import Http404
+from users.tasks import SendAllAuthEmailTask
+
+
+
+
 
 
 
@@ -19,40 +24,59 @@ class CustomException(APIException):
 class MyAccountAdapter(DefaultAccountAdapter):
 
 
+    PASSWORD_RESET_URL_KEY = 'password_reset_url'
+    ACTIVATE_URL_KEY = 'activate_url'
+
+    ALLAUTH_USER_BASE_TEMPLATE= {
+        'account/email/email_confirmation': "email_confirmation",
+        'account/email/email_confirmation_welcome': "email_confirmation_welcome",
+        'account/email/email_confirmation_signup': "email_confirmation_welcome",
+        'account/email/password_reset_key': "password_reset_key",
+    }
+
+
+
     def get_login_redirect_url(self, request):
         path = "home"
         return path
 
-
-    # def save_user(self, request, sociallogin, form=None):
-    #     user = super(MyAccountAdapter, self).save_user(request, sociallogin, form=form)
-    #     self.login( request, user)
-    #     return user
 
     def get_email_confirmation_redirect_url(self,request):
 
         path = "/email/confirm/success/"
         return path
 
-    # def populate_username(self,request,user):
-    #     raise forms.ValidationError(_("This username is already taken. Please "
-    #                                   "choose another."))
 
+    
+    def get_frontend_formmated_url(self,url):
+        
+        server_url = settings.FRONT_SERVER_URL
+        rest_url   = "/".join(url.split("/")[4:])
+        final_url = server_url + rest_url
+        return final_url
 
-    # def is_email_verified(self,request,email):
-    #     user_type = request.POST.get('user_type',None) 
-    #     validate = True
-    #     if user_type == 'O':
-    #         try:
-    #             OrganizerConfirmation.objects.\
-    #                 select_related('requested_signup').\
-    #                 get(requested_signup__email=email)
+    def send_mail(self, template_prefix, email, context):
+        if template_prefix in self.ALLAUTH_USER_BASE_TEMPLATE:
 
-    #         except OrganizerConfirmation.DoesNotExist:
-    #             raise Http404
-    #             raise CustomException(detail="No mira no pude")
-    #             raise HttpResponseBadRequest(_("Este correo no tiene permiso para registro"))
-    #             raise forms.ValidationError(_("This username is already taken. Please "
-    #                                           "choose another."))
+            user = context['user']
+            task = SendAllAuthEmailTask()
+            key = self.PASSWORD_RESET_URL_KEY if self.PASSWORD_RESET_URL_KEY in context \
+                                       else self.ACTIVATE_URL_KEY
+            url = context.get(key)
+            if url:
+                context[key] = self.get_frontend_formmated_url(url)
 
-    #     return False
+            task_data = {
+                'account_adapter':self,
+                'email_data':{
+                    'template_prefix':template_prefix,
+                    'email':email,
+                    'context':context
+                }
+
+            }
+            task.apply_async((user.id,),task_data, countdown=2)
+        else:
+            super(MyAccountAdapter, self).send_mail(template_prefix,
+                                                              email,
+                                                              context)

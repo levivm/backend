@@ -44,6 +44,7 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 # 'save' method, accepting the newly signed up user as its only parameter.
 ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.UserCreateForm' 
 
+
 # When signing up, let the user type in their password twice to avoid typ-o's.
 ACCOUNT_SIGNUP_PASSWORD_VERIFICATION = False
 
@@ -77,7 +78,7 @@ ACCOUNT_USERNAME_REQUIRED = False
 # Attempt to bypass the signup form by using fields (e.g. username, email)
 # retrieved from the social account provider. If a conflict arises due to a
 # duplicate e-mail address the signup form will still kick in.
-# SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # Enable support for django-avatar. When enabled, the profile image of the
 # user is copied locally into django-avatar at signup. Default is
@@ -88,7 +89,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 # SOCIALACCOUNT_PROVIDERS
 
 ACCOUNT_ADAPTER = 'users.allauth_adapter.MyAccountAdapter'
-
+# SOCIALACCOUNT_ADAPTER = "users.allauth_socialadapter.MySocialAccountAdapter"
+SOCIALACCOUNT_EMAIL_REQUIRED = False
 LOGIN_REDIRECT_URL = 'home'
 SOCIALACCOUNT_EMAIL_VERIFICATION = False
 SOCIALACCOUNT_QUERY_EMAIL = True

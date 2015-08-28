@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+from django.db.models.aggregates import Count
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from activities.mixins import CalculateActivityScoreMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
+from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
-from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto
+from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto,\
+                    ActivityStockPhoto
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, ChronogramsSerializer, ActivityPhotosSerializer
@@ -21,7 +25,7 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
     serializer_class = ChronogramsSerializer
     lookup_url_kwarg = 'calendar_pk'
     model = Chronogram
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,)
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,IsActivityOwnerOrReadOnly)
 
     def get_queryset(self):
         activity_id = self.kwargs.get('activity_pk', None)
@@ -52,21 +56,16 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
         return result
 
 
-class ActivitiesViewSet(viewsets.ModelViewSet):
+class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitiesSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwnerOrReadOnly)
     lookup_url_kwarg = 'activity_pk'
 
-
-    def create_calendar(self, request, pk=None):
-
-        data = request.DATA
-
-        chronogram_serializer = ChronogramsSerializer(data=data, context={'request': request})
-        if chronogram_serializer.is_valid(raise_exception=True):
-            chronogram_serializer.save()
-        return Response(chronogram_serializer.data)
+    def partial_update(self, request, *args, **kwargs):
+        response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
+        self.calculate_score(kwargs[self.lookup_url_kwarg])
+        return response
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
@@ -112,7 +111,7 @@ class ActivitiesViewSet(viewsets.ModelViewSet):
         return Response(status.HTTP_200_OK)
 
 
-class ActivityPhotosViewSet(viewsets.ModelViewSet):
+class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
     model = ActivityPhoto
     serializer_class = ActivityPhotosSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwner)
@@ -123,26 +122,60 @@ class ActivityPhotosViewSet(viewsets.ModelViewSet):
         return activity.photos.all()
 
     def create(self, request, *args, **kwargs):
-        activity = self.get_activity_object(**kwargs)
-        serializer = ActivityPhotosSerializer(data=request.data, context={'activity': activity, 'request': request})
+        activity       = self.get_activity_object(**kwargs)
+        # is_stock_image = request.data.get('is_stock_image',False)
+
+        serializer = ActivityPhotosSerializer(data=request.data, \
+                            context={'activity': activity, \
+                                     'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        self.calculate_score(activity_id=activity.id)
         headers = self.get_success_headers(serializer.data)
-        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
         return Response(
             data={'activity': activity_serializer.data, 'photo': serializer.data},
             status=status.HTTP_201_CREATED,
             headers=headers)
 
+    def create_from_stock(self, request, *args, **kwargs):
+        sub_category_id = request.data.get('subcategory')
+        # image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
+        activity = self.get_activity_object(**kwargs)
+        photo = ActivityPhoto.create_from_stock(sub_category_id,activity)
+        serializer = ActivityPhotosSerializer(instance=photo)
+
+        self.calculate_score(activity_id=activity.id)
+        headers = self.get_success_headers(serializer.data)
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
+        return Response(
+            data={'activity': activity_serializer.data, 'photo': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
+        # self.create(request,*args,**kwargs)
+        # request_data = request.data.copy()
+        # request_data['photo'] = image
+
+        # ActivityPhotosViewSet
+
+        # import pdb
+        # pdb.set_trace()
+        return Response({})
+
+
     def destroy(self, request, *args, **kwargs):
         gallery_pk = kwargs.get('gallery_pk')
         activity = self.get_activity_object(**kwargs)
-        activity_serializer = self.get_activity_serializer(instance=activity, context={'request': request})
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
         instance = self.get_object()
         if instance.main_photo:
             msg = _("No puede eliminar la foto principal")
             return Response({'detail': msg}, status=status.HTTP_200_OK)
         self.perform_destroy(instance)
+        self.calculate_score(activity_id=activity.id)
         return Response(
             data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
             status=status.HTTP_200_OK)
@@ -156,8 +189,10 @@ class ActivityPhotosViewSet(viewsets.ModelViewSet):
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
+
+    def get_queryset(self):
+        return Category.objects.all().order_by('name')
 
 
 class SubCategoriesViewSet(viewsets.ModelViewSet):
@@ -190,3 +225,27 @@ class ListCategories(APIView):
             'subcategory': SubCategoriesSerializer(subcategories, many=True).data,
         }
         return Response(data)
+
+
+class ActivitiesSearchView(APIView):
+    def get(self, request, **kwargs):
+        q = request.query_params.get('q')
+        search = ActivitySearchEngine()
+        filters = search.filter_query(request.query_params)
+        # excludes = search.exclude_query(request.query_params)
+
+        query = search.get_query(q, ['title', 'short_description', 'content', \
+                                     'tags__name','organizer__name'])
+        if query:
+            activities = Activity.objects.filter(query)
+        else:
+            activities = Activity.objects.all()
+
+        activities = activities.filter(filters)\
+            .annotate(number_assistants=Count('chronograms__orders__assistants'))\
+            .order_by('number_assistants', 'chronograms__initial_date')
+            # .order_by('score', 'number_assistants', 'chronograms__initial_date')
+
+        serializer = ActivitiesSerializer(activities, many=True)
+        result = serializer.data
+        return Response(result)

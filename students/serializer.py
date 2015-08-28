@@ -3,13 +3,14 @@ from rest_framework import serializers
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
 from utils.mixins import FileUploadMixin
-
+from utils.serializers import UnixEpochDateField
 
 
 
 class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
     user = UsersSerializer()
     user_type = serializers.SerializerMethodField()
+    birth_date = UnixEpochDateField()
 
 
     class Meta:
@@ -21,6 +22,8 @@ class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
             'gender',
             'user',
             'user_type',
+            'birth_date',
+            'city'
             )
 
     def validate_photo(self, file):
