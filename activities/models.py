@@ -8,6 +8,7 @@ from django.db.models.query_utils import Q
 
 from organizers.models import Organizer, Instructor
 from locations.models import Location
+from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.mixins import AssignPermissionsMixin
 from django.utils.translation import ugettext_lazy as _
 
@@ -161,18 +162,15 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         return chronograms[0]['sessions__date']
 
-    def add_instructors(self, instructors_data, organizer):
-        instructors = Instructor.update_or_create(instructors_data, organizer)
-
-        for instructor in instructors:
-            self.assign_permissions(organizer.user, instructor)
-
-        self.instructors.clear()
-        self.instructors.add(*instructors)
-
     def set_location(self, location):
         self.location = location
         self.save()
+
+    def can_associate_instructor(self):
+        if self.instructors.count() < MAX_ACTIVITY_INSTRUCTORS:
+            return True
+
+        return False
 
 
 class ActivityPhoto(models.Model):

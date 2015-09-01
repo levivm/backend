@@ -119,7 +119,7 @@ class GetActivityViewTest(BaseViewTest):
         self.assertEqual(activity.score, 0)
         response = organizer.put(self.url, data=data, content_type='application/json')
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        self.assertEqual(activity.score, 85.0)
+        self.assertEqual(activity.score, 100.0)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"short_description":"Otra descripcion corta"', response.content)
 

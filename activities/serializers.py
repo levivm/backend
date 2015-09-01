@@ -376,14 +376,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         request = self.context['request']
-        organizer = validated_data.get('organizer')
-        instructors_data = validated_data.get('instructors', [])
-        instance.add_instructors(instructors_data, organizer)
-
-        # del (validated_data['location'])
         instance.update(validated_data)
-
-
         instance.save()
 
         _tags = request.DATA.get('tags')
