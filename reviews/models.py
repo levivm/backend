@@ -9,3 +9,8 @@ class Review(models.Model):
     reply = models.CharField(blank=True, max_length=480)
     activity = models.ForeignKey(Activity, related_name='reviews')
     author = models.ForeignKey(Student, related_name='reviews')
+
+    class Meta:
+        permissions = (
+            ('report_review', 'Report review'),
+        )

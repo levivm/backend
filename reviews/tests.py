@@ -2,7 +2,7 @@ import json
 from rest_framework import status
 from activities.models import Activity
 from reviews.models import Review
-from reviews.views import ReviewsViewSet, ReviewListByOrganizerViewSet, ReviewListByStudentViewSet
+from reviews.views import ReviewsViewSet, ReviewListByOrganizerViewSet, ReviewListByStudentViewSet, ReportReviewView
 from utils.tests import BaseViewTest
 
 
@@ -46,9 +46,11 @@ class CreateReviewViewTest(BaseViewTest):
         student = self.get_student_client()
         data = self.get_test_data()
         response = student.post(self.url, data=json.dumps(data), **self.headers)
+        review = Review.objects.latest('pk')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Review.objects.count(), reviews_count + 1)
         self.assertEqual(activity.reviews.count(), activity_reviews + 1)
+        self.assertTrue(activity.organizer.user.has_perm(perm='reviews.report_review', obj=review))
 
     def test_another_student_shouldnt_create_a_review(self):
         reviews_count = Review.objects.count()
@@ -165,3 +167,32 @@ class ReviewListByStudentViewTest(BaseViewTest):
     def test_another_student_shouldnt_get_the_reviews(self):
         student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
         self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
+
+
+class ReportReviewViewTest(BaseViewTest):
+    url = '/api/reviews/1/report'
+    view = ReportReviewView
+
+    def test_url_resolve_to_view_correctly(self):
+        self.url_resolve_to_view_correctly()
+
+    def test_anonymous_methods(self):
+        self.authorization_should_be_require(safe_methods=True)
+
+    def test_student_methods(self):
+        student = self.get_student_client()
+        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_organizer_methods(self):
+        organizer = self.get_organizer_client()
+        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_organizer_should_report_a_review(self):
+        organizer = self.get_organizer_client()
+        response = organizer.post(self.url, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
+from reviews.permissions import CanReportReview
+from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
 from utils.pagination import PaginationBySize
@@ -109,3 +111,14 @@ class ReviewListByStudentViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(student.reviews.all())
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+
+class ReportReviewView(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    permission_classes = (IsAuthenticated, CanReportReview)
+
+    def report(self, request, *args, **kwargs):
+        review = self.get_object()
+        task = SendReportReviewEmailTask()
+        task.delay(review.id)
+        return Response()

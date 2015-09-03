@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url
+from reviews.views import ReportReviewView
 from .views import ReviewsViewSet, ReviewListByOrganizerViewSet, ReviewListByStudentViewSet
 
 urlpatterns = patterns('',
@@ -6,4 +7,5 @@ urlpatterns = patterns('',
     url(r'^reviews/(?P<pk>\d+)/?$', ReviewsViewSet.as_view({'put': 'reply'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/reviews/?$', ReviewListByOrganizerViewSet.as_view({'get': 'list'})),
     url(r'^students/(?P<student_pk>\d+)/reviews/?$', ReviewListByStudentViewSet.as_view({'get': 'list'})),
+    url(r'^reviews/(?P<pk>\d+)/report/?$', ReportReviewView.as_view({'post': 'report'})),
 )
