@@ -136,6 +136,9 @@ class PaymentUtil(object):
     def get_creditcard_association(self):
         return self.request.data['card_association'].upper()
 
+    def get_last_four_digits(self):
+        return self.request.data['last_four_digits']
+
     def get_payu_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
@@ -172,6 +175,7 @@ class PaymentUtil(object):
 
     def creditcard(self):
         self.card_association = self.get_creditcard_association()
+        self.last_four_digits = self.get_last_four_digits()
         payu_data = json.dumps(self.get_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
@@ -188,10 +192,12 @@ class PaymentUtil(object):
     def response(self, result):
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':'credit',
+                'payment_type':'CC',
                 'card_type': self.card_association.lower(),
                 'transaction_id': result['transactionResponse']['transactionId'],
+                'last_four_digits':self.last_four_digits
             }
+            print("4 ultimos digitos: ",self.last_four_digits)
             if result['transactionResponse']['state'] == 'APPROVED':
                 payment = PaymentModel.objects.create(**payment_data)
                 return {
@@ -219,7 +225,7 @@ class PaymentUtil(object):
     def pse_response(self,result):
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':'debit',
+                'payment_type':'PSE',
                 'transaction_id': result['transactionResponse']['transactionId'],
             }
             if result['transactionResponse']['state'] == 'PENDING':

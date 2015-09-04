@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
 from requests import post
+from payments.models import Payment
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 
@@ -124,9 +125,10 @@ class BaseViewTest(APITestCase):
                 'name': 'APPROVED',
                 'email': 'test@payulatam.com',
             },
+            'last_four_digits':'1111',
             'card_association': 'visa',
             'chronogram': 1,
-            'payment_method':'cc',
+            'payment_method':Payment.CC_PAYMENT_TYPE,
             'quantity': 1,
             'amount': 324000,
             'assistants': [{
@@ -154,7 +156,7 @@ class BaseViewTest(APITestCase):
             'buyer_pse_data':self.get_buyer_pse_data(),
             'chronogram': 1,
             'activity':1,
-            'payment_method':'pse',
+            'payment_method':Payment.PSE_PAYMENT_TYPE,
             'quantity': 1,
             'amount': 8000,
             'assistants': [{

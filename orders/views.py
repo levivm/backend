@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
 from activities.utils import PaymentUtil
+from payments.models import Payment
 from organizers.models import Organizer
 from students.models import Student
 from .models import Order
@@ -77,7 +78,13 @@ class OrdersViewSet(viewsets.ModelViewSet):
         payment_method = request.data.get('payment_method')
 
         payment = PaymentUtil(request, activity)
-        return getattr(self,'_payment_'+payment_method)(payment,serializer)
+
+        if payment_method == Payment.CC_PAYMENT_TYPE:
+            return self._payment_cc(payment,serializer)
+        elif payment_method == Payment.PSE_PAYMENT_TYPE:
+            return self._payment_pse(payment,serializer)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
         # charge = payment.creditcard()

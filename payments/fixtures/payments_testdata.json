@@ -3,7 +3,7 @@
     "model": "payments.payment",
     "fields": {
         "date": "2015-05-01T14:43:00.601Z",
-        "payment_type": "credit",
+        "payment_type": "CC",
         "card_type": "visa",
         "transaction_id": "123987123982713"
     },
