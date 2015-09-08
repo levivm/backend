@@ -1,6 +1,7 @@
 import pdb
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand, CommandError
+from trulii.constants import ORGANIZER_PERMISSIONS, STUDENT_PERMISSIONS
 
 
 class Command(BaseCommand):
@@ -12,92 +13,17 @@ class Command(BaseCommand):
 
     def set_organizer_permissions(self):
         organizers, created = Group.objects.get_or_create(name='Organizers')
-        organizers_permissions = {
-            'activities': {
-                'tags': [
-                    'add'
-                ],
-                'activity': [
-                    'add',
-                    'change'
-                ],
-                'activityphoto': [
-                    'add',
-                    'delete'
-                ],
-                'chronogram': [
-                    'add',
-                    'change',
-                    'delete'
-                ],
-                'session': [
-                    'add',
-                    'change',
-                    'delete'
-                ]
-            },
-            'locations': {
-                'location': [
-                    'add',
-                    'change',
-                    'delete',
-                ]
-            },
-            'organizers': {
-                'organizer': [
-                    'change'
-                ],
-                'instructor': [
-                    'add',
-                    'change',
-                    'delete'
-                ]
-            },
-            'reviews': {
-                'review': [
-                    'change'
-                ]
-            }
-        }
-
-        permissions = self.get_permissions_list(organizers_permissions)
+        permissions = self.get_permissions_list(ORGANIZER_PERMISSIONS)
         self.add_permissions(organizers, permissions)
 
     def set_student_permissions(self):
         students, created = Group.objects.get_or_create(name='Students')
-        students_permissions = {
-            'orders': {
-                'order': [
-                    'add'
-                ],
-                'assistant': [
-                    'add'
-                ]
-            },
-            'students': {
-                'student': [
-                    'change'
-                ]
-            },
-            'reviews': {
-                'review': [
-                    'add'
-                ]
-            }
-        }
-
-        permissions = self.get_permissions_list(students_permissions)
+        permissions = self.get_permissions_list(STUDENT_PERMISSIONS)
         self.add_permissions(students, permissions)
 
     def add_permissions(self, group, permissions):
         group.permissions.add(*permissions)
 
     def get_permissions_list(self, permissions):
-        permissions_list = []
-
-        for app, values in permissions.items():
-            for model, perms in values.items():
-                for perm in perms:
-                    permissions_list.append(Permission.objects.get_by_natural_key('%s_%s' % (perm, model), app, model))
-
-        return permissions_list
+        return [Permission.objects.get_by_natural_key('%s_%s' % (codename, p['model']), p['app'], p['model'])
+                for p in permissions for codename in p['codenames']]

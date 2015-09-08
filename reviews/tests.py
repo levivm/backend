@@ -1,198 +1,236 @@
-import json
+from django.conf import settings
+from django.contrib.auth.models import Permission
+from guardian.shortcuts import assign_perm
+from model_mommy import mommy
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.reverse import reverse
+from rest_framework.test import APITestCase, APIClient
+
 from activities.models import Activity
+from orders.models import Order
 from reviews.models import Review
-from reviews.views import ReviewsViewSet, ReviewListByOrganizerViewSet, ReviewListByStudentViewSet, ReportReviewView
-from utils.tests import BaseViewTest
+
+class BaseAPITestCase(APITestCase):
+    """
+    Base class to initialize the test cases
+    """
+
+    def setUp(self):
+        # Users
+        self.student = mommy.make_recipe('students.student')
+        self.organizer = mommy.make_recipe('organizers.organizer')
+        self.another_student = mommy.make_recipe('students.student')
+        self.another_organizer = mommy.make_recipe('organizers.organizer')
+
+        # API Clients
+        self.student_client = self.get_client(user=self.student.user)
+        self.organizer_client = self.get_client(user=self.organizer.user)
+        self.another_student_client = self.get_client(user=self.another_student.user)
+        self.another_organizer_client = self.get_client(user=self.another_organizer.user)
+
+    def get_client(self, user):
+        """
+        Authenticate a user and return the client
+        """
+        token = mommy.make(Token, user=user)
+        client = APIClient()
+        client.force_authenticate(user=user, token=token)
+        return client
 
 
-class CreateReviewViewTest(BaseViewTest):
-    ACTIVITY_ID = 1
-    view = ReviewsViewSet
+class ReviewAPITest(BaseAPITestCase):
+    """
+    Class to test the Review API functionality
+    """
 
-    def __init__(self, methodName='runTest'):
-        super(CreateReviewViewTest, self).__init__(methodName)
-        self.url = '/api/activities/%s/reviews' % self.ACTIVITY_ID
+    def setUp(self):
+        # Calling the super (initialization)
+        super(ReviewAPITest, self).setUp()
 
-    def get_test_data(self):
-        return {
-            'rating': 4,
-            'comment': 'De pana!',
-        }
+        # Methods data
+        self.post = {'rating': 4, 'comment': 'First comment!'}
+        self.put = {'rating': 2, 'reply': 'Thank you!'}
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+        # Objects needed
+        self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
+        self.order = mommy.make(Order, student=self.student, chronogram__activity=self.activity)
+        self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
 
-    def test_anonymous_methods(self):
-        self.authorization_should_be_require(safe_methods=True)
+        # URLs
+        self.list_by_organizer_url = reverse('review_rest_api', kwargs={'organizer_pk': self.organizer.id})
+        self.list_by_student_url = reverse('review_rest_api', kwargs={'student_pk': self.student.id})
+        self.create_url = reverse('review_rest_api', kwargs={'activity_pk': self.activity.id})
+        self.retrieve_update_delete_url = reverse('review_rest_api', kwargs={'pk': self.review.id})
+        self.report_url = reverse('report_review_api', kwargs={'pk': self.review.id})
 
-    def test_organizer_methods(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Counters
+        self.review_count = Review.objects.count()
+        self.activity_reviews = self.activity.reviews.count()
 
-    def test_student_methods(self):
-        student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+    def test_list_by_organizer(self):
+        """
+        Test to list the reviews by organizer
+        """
 
-    def test_student_should_create_a_review(self):
-        reviews_count = Review.objects.count()
-        activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        activity_reviews = activity.reviews.count()
-        student = self.get_student_client()
-        data = self.get_test_data()
-        response = student.post(self.url, data=json.dumps(data), **self.headers)
-        review = Review.objects.latest('pk')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Review.objects.count(), reviews_count + 1)
-        self.assertEqual(activity.reviews.count(), activity_reviews + 1)
-        self.assertTrue(activity.organizer.user.has_perm(perm='reviews.report_review', obj=review))
+        # Anonymous should return a list of reviews
+        response = self.client.get(self.list_by_organizer_url)
+        self.assertContains(response, self.post.get('comment'))
 
-    def test_another_student_shouldnt_create_a_review(self):
-        reviews_count = Review.objects.count()
-        student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
-        data = self.get_test_data()
-        response = student.post(self.url, data=json.dumps(data), **self.headers)
+        # Student should return a list of reviews
+        response = self.student_client.get(self.list_by_organizer_url)
+        self.assertContains(response, self.post.get('comment'))
+
+        # Organizer should return a list of reviews
+        response = self.organizer_client.get(self.list_by_organizer_url)
+        self.assertContains(response, self.post.get('comment'))
+
+    def test_list_by_student(self):
+        """
+        Test to list the reviews of a student
+        """
+
+        # Anonymous should return unathorized
+        response = self.client.get(self.list_by_student_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should not get the reviews
+        response = self.organizer_client.get(self.list_by_student_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(Review.objects.count(), reviews_count)
 
+        # Student who is not the owner should not get the reviews
+        response = self.another_student_client.get(self.list_by_student_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-class ReplyReviewViewTest(BaseViewTest):
-    REVIEW_ID = 1
-    view = ReviewsViewSet
+        # Student owner should get the reviews
+        response = self.student_client.get(self.list_by_student_url)
+        self.assertContains(response, self.post.get('comment'))
 
-    def __init__(self, methodName='runTest'):
-        super(ReplyReviewViewTest, self).__init__(methodName)
-        self.url = '/api/reviews/%s' % self.REVIEW_ID
+    def test_create(self):
+        """
+        Test to create a review [POST]
+        """
 
-    def get_test_data(self):
-        return {
-            'reply': 'Gracias',
-            'rating': 2,
-        }
+        # Set permissions
+        permission = Permission.objects.get_by_natural_key('add_review', 'reviews', 'review')
+        permission.user_set.add(self.student.user, self.another_student.user)
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+        # Anonymous should return unauthorized
+        response = self.client.post(self.create_url, self.post)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_anonymous_methods(self):
-        self.authorization_should_be_require(safe_methods=True)
+        # Organizer should return forbidden
+        response = self.organizer_client.post(self.create_url, self.post)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_student_methods(self):
-        student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Student without order should not create a review
+        response = self.another_student_client.post(self.create_url, self.post)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_organizer_methods(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Student should create a review
+        response = self.student_client.post(self.create_url, self.post)
+        review = Review.objects.get(id=response.data['id'])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(Review.objects.count(), self.review_count + 1)
+        self.assertEqual(self.activity.reviews.count(), self.activity_reviews + 1)
+        self.assertTrue(self.activity.organizer.user.has_perm(perm='reviews.reply_review', obj=review))
+        self.assertTrue(self.activity.organizer.user.has_perm(perm='reviews.report_review', obj=review))
 
-    def test_organizer_should_reply_a_review(self):
-        organizer = self.get_organizer_client()
-        data = self.get_test_data()
-        response = organizer.put(self.url, data=json.dumps(data), **self.headers)
-        review = Review.objects.get(id=self.REVIEW_ID)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(review.reply, 'Gracias')
-        self.assertEqual(review.rating, 4)
+    def test_retrieve(self):
+        """
+        Test to retrieve a review [GET]
+        """
 
-    def test_another_organizer_shouldnt_reply_a_review(self):
-        organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
-        data = self.get_test_data()
-        response = organizer.put(self.url, data=json.dumps(data), **self.headers)
-        review = Review.objects.get(id=self.REVIEW_ID)
+        # Anonymous should return unauthorized
+        response = self.client.get(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should not retrive a review
+        response = self.organizer_client.get(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        # Student should not retrive a review
+        response = self.student_client.get(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update(self):
+        """
+        Test to reply a review [PUT]
+        """
+
+        # Set permissions
+        permission = Permission.objects.get_by_natural_key('change_review', 'reviews', 'review')
+        permission.user_set.add(self.organizer.user, self.another_organizer.user)
+        assign_perm('reviews.reply_review', user_or_group=self.organizer.user, obj=self.review)
+
+        # Anonymous should return unauthorized
+        response = self.client.put(self.retrieve_update_delete_url, self.put)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should not reply a review
+        response = self.student_client.put(self.retrieve_update_delete_url, self.put)
+        review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(review.reply, '')
 
+        # Organizer should not reply a review if he is not the owner of the activity
+        response = self.another_organizer_client.put(self.retrieve_update_delete_url, self.put)
+        review = Review.objects.get(id=self.review.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(review.reply, '')
 
-class ReviewListByOrganizerViewTest(BaseViewTest):
-    url = '/api/organizers/1/reviews/'
-    view = ReviewListByOrganizerViewSet
-    data = {'page': 1, 'page_size': 10}
+        # Organizer should reply a review
+        response = self.organizer_client.put(self.retrieve_update_delete_url, self.put)
+        review = Review.objects.get(id=self.review.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(review.reply, 'Thank you!')
+        self.assertEqual(review.rating, 4)
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+    def test_delete(self):
+        """
+        Test to delete a review [DELETE]
+        """
 
-    def test_anonymous_methods(self):
-        self.method_get_should_return_data(clients=self.client)
-        self.authorization_should_be_require()
+        # Anoymous should return unauthorized
+        response = self.client.delete(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_student_methods(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student, data=self.data)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Student should not delete a review
+        response = self.student_client.delete(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_organizer_methods(self):
-        organizer = self.get_organizer_client()
-        self.method_get_should_return_data(clients=organizer, data=self.data)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Organizer should not delete a review
+        response = self.organizer_client.delete(self.retrieve_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Review.objects.count(), self.review_count)
 
+    def test_report(self):
+        """
+        Test report a review [POST]
+        """
+        # Set Celery
+        settings.CELERY_ALWAYS_EAGER = True
 
-class ReviewListByStudentViewTest(BaseViewTest):
-    url = '/api/students/1/reviews'
-    view = ReviewListByStudentViewSet
-    data = {'page': 1, 'page_size': 10}
+        # Set permissions
+        assign_perm('reviews.report_review', user_or_group=self.organizer.user, obj=self.review)
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+        # Anonymous should return unauthorized
+        response = self.client.post(self.report_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_anonymous_methods(self):
-        self.authorization_should_be_require(safe_methods=True)
+        # Student should not report a review
+        response = self.student_client.post(self.report_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_organizer_methods(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        # Organizer who is not the owner should not report a review
+        response = self.another_organizer_client.post(self.report_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_student_methods(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
-
-    def test_another_student_shouldnt_get_the_reviews(self):
-        student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
-        self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
-
-
-class ReportReviewViewTest(BaseViewTest):
-    url = '/api/reviews/1/report'
-    view = ReportReviewView
-
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
-
-    def test_anonymous_methods(self):
-        self.authorization_should_be_require(safe_methods=True)
-
-    def test_student_methods(self):
-        student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_organizer_methods(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_organizer_should_report_a_review(self):
-        organizer = self.get_organizer_client()
-        response = organizer.post(self.url, **self.headers)
+        # Organizer owner should report a review
+        response = self.organizer_client.post(self.report_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
-from reviews.permissions import CanReportReview
+from reviews.permissions import CanReportReview, CanReplyReview
 from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
@@ -17,7 +17,7 @@ from utils.pagination import PaginationBySize
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.all()
-    permission_classes = (DjangoModelPermissions, )
+    permission_classes = (DjangoModelPermissions, CanReplyReview,)
 
     def get_student(self, request):
         try:
@@ -54,23 +54,17 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         return activity
 
     def reply(self, request, *args, **kwargs):
-        organizer = self.get_organizer(request)
         review = self.get_object()
-        activity = review.activity
-        if self.allowed_to_reply(organizer, activity):
-            review = self.get_object()
-            review.reply = request.data.get('reply')
-            review.save(update_fields=['reply'])
-            return Response('OK')
-
-        raise PermissionDenied
+        review.reply = request.data.get('reply')
+        review.save(update_fields=['reply'])
+        return Response('OK')
 
 
 class ReviewListByOrganizerViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.all()
     pagination_class = PaginationBySize
-    permission_classes = (DjangoModelPermissionsOrAnonReadOnly, )
+    permission_classes = (DjangoModelPermissionsOrAnonReadOnly,)
 
     def get_organizer(self, **kwargs):
         return get_object_or_404(Organizer, pk=kwargs.get('organizer_pk'))

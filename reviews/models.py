@@ -13,4 +13,5 @@ class Review(models.Model):
     class Meta:
         permissions = (
             ('report_review', 'Report review'),
+            ('reply_review', 'Reply review'),
         )
