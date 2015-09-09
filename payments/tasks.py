@@ -10,6 +10,8 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
     def run(self, order_id, success_handler=True, **kwargs):
         self.success_handler = success_handler
         order  = Order.objects.get(id=order_id)
+        import pdb
+        pdb.set_trace()
 
         payment_method = kwargs.get('payment_method')
         if payment_method == settings.CC_METHOD_PAYMENT_ID:

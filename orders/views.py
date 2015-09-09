@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from rest_framework import viewsets,status
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -13,6 +14,7 @@ from .models import Order
 from activities.models import Activity
 from .serializers import OrdersSerializer
 from payments.tasks import  SendPaymentEmailTask
+
 
 
 
@@ -47,7 +49,11 @@ class OrdersViewSet(viewsets.ModelViewSet):
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
                 task = SendPaymentEmailTask()
-                task.apply_async((response.data['id'],), countdown=4)
+                task_data = {
+                   'payment_method':settings.CC_METHOD_PAYMENT_ID
+                }
+                task.apply_async((response.data['id'],),task_data, countdown=2)
+
             return response
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
@@ -62,9 +68,6 @@ class OrdersViewSet(viewsets.ModelViewSet):
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
             self.call_create(serializer=serializer)
-            # if charge['status'] == 'APPROVED':
-            #     task = SendPaymentEmailTask()
-            #     task.apply_async((response.data['id'],), countdown=4)
             return Response({'bank_url':charge['bank_url']})
         else:
             return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
@@ -86,20 +89,6 @@ class OrdersViewSet(viewsets.ModelViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
-        # charge = payment.creditcard()
-
-        # if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
-
-        #     serializer.context['status'] = charge['status'].lower()
-        #     serializer.context['payment'] = charge['payment']
-        #     response = self.call_create(serializer=serializer)
-        #     if charge['status'] == 'APPROVED':
-        #         task = SendPaymentEmailTask()
-        #         task.apply_async((response.data['id'],), countdown=4)
-        #     return response
-        # else:
-        #     return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
 
     def call_create(self, serializer):
         self.perform_create(serializer)

@@ -197,7 +197,6 @@ class PaymentUtil(object):
                 'transaction_id': result['transactionResponse']['transactionId'],
                 'last_four_digits':self.last_four_digits
             }
-            print("4 ultimos digitos: ",self.last_four_digits)
             if result['transactionResponse']['state'] == 'APPROVED':
                 payment = PaymentModel.objects.create(**payment_data)
                 return {

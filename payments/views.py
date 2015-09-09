@@ -48,8 +48,6 @@ class PayUPSE(viewsets.ViewSet):
         charge = payment_util.pse_payu_payment()
         logger.error("ESTO ES EL URL DE PAGO --------------------\n")
         logger.error(charge)
-        import pdb
-        pdb.set_trace()
         logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
         return Response(charge,status=status.HTTP_200_OK)
 
@@ -65,7 +63,7 @@ class PayUNotificationPayment(APIView):
         task_data = {
             'payment_method':data.get('payment_method_type')
         }
-        task.apply_async((order.id,),task_data, countdown=4)
+        task = task.apply_async((order.id,),task_data, countdown=4)
 
     def _run_transaction_declined_task(self,order,data,msg='Error',\
                     status=Order.ORDER_DECLINED_STATUS):
