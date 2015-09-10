@@ -1,13 +1,18 @@
 import calendar
 import hashlib
 import json
+
 from django.conf import settings
+from django.http.response import HttpResponse
+from django.template.context import Context, RequestContext
+from django.template.loader import get_template, render_to_string
 from django.utils.timezone import now
 from requests.api import post
-from activities.models import Chronogram
-from payments.models import Payment as PaymentModel
+from weasyprint import HTML
 from django.utils.translation import ugettext_lazy as _
 
+from activities.models import Chronogram
+from payments.models import Payment as PaymentModel
 
 
 class PaymentUtil(object):
@@ -206,3 +211,26 @@ class PaymentUtil(object):
             result['transactionResponse']['state'] = self.request.data['buyer']['name']
 
         return result
+
+
+class RenderToPDF(object):
+    """
+    Class to generate and return a PDF file from html template
+    """
+    headers = {'content_type': 'application/pdf'}
+
+    def __init__(self, template_src, context_data):
+        super(RenderToPDF, self).__init__()
+        # self.template = get_template(template_src)
+        # self.context = Context(context_data)
+        self.template_src = template_src
+        self.context_data = context_data
+
+    def render(self):
+        # html_string = self.template.render(self.context)
+        htmlstring = render_to_string(template_name=self.template_src, context=self.context_data)
+        html = HTML(string=htmlstring, encoding='utf-8')
+        main_doc = html.render()
+        pdf = main_doc.write_pdf()
+
+        return HttpResponse(pdf, **self.headers)

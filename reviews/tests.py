@@ -3,40 +3,12 @@ from django.contrib.auth.models import Permission
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
-from rest_framework.test import APITestCase, APIClient
 
 from activities.models import Activity
 from orders.models import Order
 from reviews.models import Review
-
-class BaseAPITestCase(APITestCase):
-    """
-    Base class to initialize the test cases
-    """
-
-    def setUp(self):
-        # Users
-        self.student = mommy.make_recipe('students.student')
-        self.organizer = mommy.make_recipe('organizers.organizer')
-        self.another_student = mommy.make_recipe('students.student')
-        self.another_organizer = mommy.make_recipe('organizers.organizer')
-
-        # API Clients
-        self.student_client = self.get_client(user=self.student.user)
-        self.organizer_client = self.get_client(user=self.organizer.user)
-        self.another_student_client = self.get_client(user=self.another_student.user)
-        self.another_organizer_client = self.get_client(user=self.another_organizer.user)
-
-    def get_client(self, user):
-        """
-        Authenticate a user and return the client
-        """
-        token = mommy.make(Token, user=user)
-        client = APIClient()
-        client.force_authenticate(user=user, token=token)
-        return client
+from utils.tests import BaseAPITestCase
 
 
 class ReviewAPITest(BaseAPITestCase):

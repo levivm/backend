@@ -219,6 +219,9 @@ class Chronogram(models.Model):
         assistants = assistants['num_assistants'] or 0
         return self.capacity - assistants
 
+    def get_assistants(self):
+        return [a for o in self.orders.all() for a in o.assistants.all()]
+
 
 class Session(models.Model):
     date = models.DateTimeField()

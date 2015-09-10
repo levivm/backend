@@ -17,7 +17,8 @@ class Organizer(models.Model):
     bio = models.TextField(blank=True)
     tasks = GenericRelation(CeleryTask)
 
-
+    def __str__(self):
+        return '<%s: %s>' % (self.__class_.__name__, self.user.username)
 
 
 # Create your models here.

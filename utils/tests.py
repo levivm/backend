@@ -2,6 +2,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
+from model_mommy import mommy
 from requests import post
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
@@ -135,3 +136,29 @@ class BaseViewTest(APITestCase):
                 'email': 'asistente@trulii.com',
             }]
         }
+
+
+class BaseAPITestCase(APITestCase):
+    """
+    Base class to initialize the test cases
+    """
+
+    def setUp(self):
+        # Users
+        self.student, self.another_student = mommy.make_recipe('students.student', _quantity=2)
+        self.organizer, self.another_organizer = mommy.make_recipe('organizers.organizer', _quantity=2)
+
+        # API Clients
+        self.student_client = self.get_client(user=self.student.user)
+        self.organizer_client = self.get_client(user=self.organizer.user)
+        self.another_student_client = self.get_client(user=self.another_student.user)
+        self.another_organizer_client = self.get_client(user=self.another_organizer.user)
+
+    def get_client(self, user):
+        """
+        Authenticate a user and return the client
+        """
+        token = mommy.make(Token, user=user)
+        client = APIClient()
+        client.force_authenticate(user=user, token=token)
+        return client

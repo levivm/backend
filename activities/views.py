@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 from django.db.models.aggregates import Count
+from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from activities.mixins import CalculateActivityScoreMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
+from activities.utils import RenderToPDF
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto,\
@@ -249,3 +252,24 @@ class ActivitiesSearchView(APIView):
         serializer = ActivitiesSerializer(activities, many=True)
         result = serializer.data
         return Response(result)
+
+class ActivitiesDownloadAssistantsView(GenericAPIView):
+    """
+    View to download the assistant of an activity
+    """
+
+    queryset = Activity.objects.all()
+    lookup_url_kwarg = 'activity_pk'
+    permission_classes = (IsActivityOwner, )
+
+    def get(self, request, *args, **kwargs):
+        activity = self.get_object()
+        calendars = activity.chronograms.all()
+
+        data = {
+            'activity': activity,
+            'calendars': calendars,
+        }
+        render_to_pdf = RenderToPDF(template_src='activities/assistant_list.html', context_data=data)
+        return render_to_pdf.render()
+        # return HttpResponse()
