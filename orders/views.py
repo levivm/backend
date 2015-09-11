@@ -56,7 +56,8 @@ class OrdersViewSet(viewsets.ModelViewSet):
 
             return response
         else:
-            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+            error = {'generalError':[charge['error']]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
         # return Response()
 
@@ -70,7 +71,8 @@ class OrdersViewSet(viewsets.ModelViewSet):
             self.call_create(serializer=serializer)
             return Response({'bank_url':charge['bank_url']})
         else:
-            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+            error = {'generalError':[charge['error']]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
 
     def create(self, request, *args, **kwargs):
