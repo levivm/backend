@@ -73,10 +73,8 @@ class OrdersSerializer(serializers.ModelSerializer):
 
         if not chronogram.available_capacity() or \
                chronogram.available_capacity()<len(assistants_data):
-            pass
-
-        msg = _("El cupo de asistentes está lleno")
-        raise serializers.ValidationError({'generalError':msg})
+            msg = _("El cupo de asistentes está lleno")
+            raise serializers.ValidationError({'generalError':msg})
 
         assistant_serializer = AssistantsSerializer(data=assistants_data, many=True)
         assistant_serializer.is_valid(raise_exception=True)
