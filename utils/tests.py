@@ -20,6 +20,7 @@ class BaseViewTest(APITestCase):
     ANOTHER_STUDENT_ID = 4
     DUMMY_PASSWORD = 'password'
     __SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+    headers = {'content_type': 'application/json'}
 
     def __get_token(self, user_id):
         user = User.objects.get(id=user_id)

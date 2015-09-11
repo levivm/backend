@@ -146,13 +146,13 @@ class ByOrganizerViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_methods_for_student(self):
         student = self.get_student_client()
         self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
