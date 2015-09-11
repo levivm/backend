@@ -2,6 +2,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
+from model_mommy import mommy
 from requests import post
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
@@ -10,7 +11,7 @@ from rest_framework.test import APITestCase, APIClient
 class BaseViewTest(APITestCase):
     fixtures = ['orders_testdata', 'students_testdata', 'activities_testdata', 'organizers_testdata', 'users_testdata',
                 'groups_testdata', 'object_permissions_testdata', 'instructors_testdata', 'locations_testdata',
-                'payments_testdata']
+                'payments_testdata', 'reviews_testdata']
     url = None
     view = None
     ORGANIZER_ID = 1
@@ -20,7 +21,7 @@ class BaseViewTest(APITestCase):
     ANOTHER_STUDENT_ID = 4
     DUMMY_PASSWORD = 'password'
     __SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
-    headers = {'content_type': 'application/json'}
+    headers = { 'content_type': 'application/json' }
 
     def __get_token(self, user_id):
         user = User.objects.get(id=user_id)
@@ -73,12 +74,12 @@ class BaseViewTest(APITestCase):
             response = client_method(self.url, **params)
             self.assertEqual(response.status_code, status)
 
-    def method_get_should_return_data(self, clients, response_data=None):
+    def method_get_should_return_data(self, clients, data=None, response_data=None):
         response_data = response_data or b'"id":1'
         clients = self.__parse_clientes(clients=clients)
 
         for client in clients:
-            response = client.get(self.url)
+            response = client.get(self.url, data)
             self.assertEqual(response.status_code, 200)
             self.assertIn(response_data, response.content)
 
@@ -135,3 +136,29 @@ class BaseViewTest(APITestCase):
                 'email': 'asistente@trulii.com',
             }]
         }
+
+
+class BaseAPITestCase(APITestCase):
+    """
+    Base class to initialize the test cases
+    """
+
+    def setUp(self):
+        # Users
+        self.student, self.another_student = mommy.make_recipe('students.student', _quantity=2)
+        self.organizer, self.another_organizer = mommy.make_recipe('organizers.organizer', _quantity=2)
+
+        # API Clients
+        self.student_client = self.get_client(user=self.student.user)
+        self.organizer_client = self.get_client(user=self.organizer.user)
+        self.another_student_client = self.get_client(user=self.another_student.user)
+        self.another_organizer_client = self.get_client(user=self.another_organizer.user)
+
+    def get_client(self, user):
+        """
+        Authenticate a user and return the client
+        """
+        token = mommy.make(Token, user=user)
+        client = APIClient()
+        client.force_authenticate(user=user, token=token)
+        return client

@@ -134,5 +134,22 @@
       ],
       "object_pk": "1"
   }
+},
+{
+  "pk": 9,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "report_review",
+          "reviews",
+          "review"
+      ],
+      "content_type": [
+          "reviews",
+          "review"
+      ],
+      "object_pk": "1"
+  }
 }
 ]

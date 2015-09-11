@@ -7,9 +7,12 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.http.request import HttpRequest
 from django.utils.timezone import now
+from guardian.shortcuts import assign_perm
+from model_mommy import mommy
 from rest_framework import status
 from utils.models import CeleryTask
 from activities.models import Activity, ActivityPhoto, Tags, Chronogram,ActivityStockPhoto
@@ -17,7 +20,7 @@ from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, 
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \
     ActivitiesSearchView
-from utils.tests import BaseViewTest
+from utils.tests import BaseViewTest, BaseAPITestCase
 
 
 class ActivitiesListViewTest(BaseViewTest):
@@ -836,3 +839,47 @@ class SearchActivitiesViewTest(BaseViewTest):
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+
+class ActivityAPITest(BaseAPITestCase):
+    """
+    Class to test the activity rest api functionality
+    """
+
+    def setUp(self):
+        # Initialize
+        super(ActivityAPITest, self).setUp()
+
+        # Objects
+        self.activity = mommy.make(Activity, organizer=self.organizer)
+
+        # URLs
+        self.download_list_url = reverse('download_assistants', kwargs={'activity_pk': self.activity.id})
+
+    def test_download_assistant_list(self):
+        """
+        Test download pdf with the assistants activity
+        """
+
+        # Objects
+        mommy.make(Chronogram, activity=self.activity)
+
+        # Set permissions
+        assign_perm(perm='activities.change_activity', user_or_group=self.organizer.user, obj=self.activity)
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.download_list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should not download the list
+        response = self.student_client.get(self.download_list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer who is not the activity owner should not download the list
+        response = self.another_organizer_client.get(self.download_list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer owner should get the file
+        response = self.organizer_client.get(self.download_list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b'PDF', response.content)

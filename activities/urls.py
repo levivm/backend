@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from activities.views import ActivitiesSearchView
+from activities.views import ActivitiesSearchView, ActivitiesDownloadAssistantsView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
     SubCategoriesViewSet, TagsViewSet, ChronogramsViewSet, \
     ActivityPhotosViewSet
@@ -26,4 +26,6 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/categories/?$', CategoriesViewSet.as_view({'get': 'list'})),
     url(r'^/subcategories/?$', SubCategoriesViewSet.as_view({'get': 'list'})),
     url(r'^/search/?$', ActivitiesSearchView.as_view()),
+
+    url(r'^/(?P<activity_pk>\d+)/download/?$', ActivitiesDownloadAssistantsView.as_view(), name='download_assistants'),
 )

@@ -93,6 +93,11 @@
                 "change_organizer",
                 "organizers",
                 "organizer"
+            ],
+            [
+                "change_review",
+                "reviews",
+                "review"
             ]
         ]
     },
@@ -105,7 +110,7 @@
         "permissions": [
             [
                 "add_review",
-                "activities",
+                "reviews",
                 "review"
             ],
             [

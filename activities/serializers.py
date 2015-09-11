@@ -362,7 +362,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        _tags = request.DATA.get('tags')
+        _tags = request.data.get('tags')
 
         tags = Tags.update_or_create(_tags)
         if 'category' in validated_data:
@@ -379,7 +379,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         instance.update(validated_data)
         instance.save()
 
-        _tags = request.DATA.get('tags')
+        _tags = request.data.get('tags')
         if _tags:
             tags = Tags.update_or_create(_tags)
             instance.tags.clear()

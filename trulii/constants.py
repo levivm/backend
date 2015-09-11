@@ -8,6 +8,77 @@
 ORGANIZER_TYPE = 'O'
 STUDENT_TYPE   = 'S'
 
+STUDENT_PERMISSIONS = (
+    {
+        'app': 'orders',
+        'model': 'order',
+        'codenames': ('add',),
+    },
+    {
+        'app': 'orders',
+        'model': 'assistant',
+        'codenames': ('add',),
+    },
+    {
+        'app': 'students',
+        'model': 'student',
+        'codenames': ('change',),
+    },
+    {
+        'app': 'reviews',
+        'model': 'review',
+        'codenames': ('add',),
+    },
+)
+
+ORGANIZER_PERMISSIONS = (
+    {
+        'app': 'activities',
+        'model': 'tags',
+        'codenames': ('add',),
+    },
+    {
+        'app': 'activities',
+        'model': 'activity',
+        'codenames': ('add', 'change'),
+    },
+    {
+        'app': 'activities',
+        'model': 'activityphoto',
+        'codenames': ('add', 'delete'),
+    },
+    {
+        'app': 'activities',
+        'model': 'chronogram',
+        'codenames': ('add', 'change', 'delete'),
+    },
+    {
+        'app': 'activities',
+        'model': 'session',
+        'codenames': ('add', 'change', 'delete'),
+    },
+    {
+        'app': 'locations',
+        'model': 'location',
+        'codenames': ('add', 'change', 'delete'),
+    },
+    {
+        'app': 'organizers',
+        'model': 'organizer',
+        'codenames': ('change',),
+    },
+    {
+        'app': 'organizers',
+        'model': 'instructor',
+        'codenames': ('add', 'change', 'delete'),
+    },
+    {
+        'app': 'reviews',
+        'model': 'review',
+        'codenames': ('change',),
+    },
+)
+
 
 #UTILS CONSTANTS
 
