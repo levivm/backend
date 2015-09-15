@@ -7,6 +7,8 @@ from requests.api import post
 from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
 from django.utils.translation import ugettext_lazy as _
+from payments.serializers import PaymentsPSEDataSerializer
+
 
 
 
@@ -128,10 +130,26 @@ class PaymentUtil(object):
             'emailAddress': data['email'],
         }
 
+    def get_payer(self):
+        data = self.request.data.get('buyer')
+        return {
+            "fullName": data['name'],
+            "emailAddress": data['payerEmail'],
+            "contactPhone": data['contactPhone']
+        }
+
     def get_extra_pse_parameters(self):
         data = self.request.data.get('buyer_pse_data')
-        data['pse_reference1'] = self.get_client_ip(self.request)
-        return data
+
+        return {
+
+            'financial_institution_code':data['bank'],
+            'user_type':data['userType'],
+            'PSE_REFERENCE1':self.get_client_ip(self.request),
+            'PSE_REFERENCE2':data['idType'],
+            'PSE_REFERENCE3':data['idNumber'],
+
+        }
 
     def get_creditcard_association(self):
         return self.request.data['card_association'].upper()
@@ -239,7 +257,7 @@ class PaymentUtil(object):
 
                 return {
                     'status': 'ERROR',
-                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Su tarjeta ha sido rechazada'),
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Hubo un error al procesar su transacción'),
                 }
         else:
             return {
@@ -293,6 +311,7 @@ class PaymentUtil(object):
                  },
                  "buyer": self.get_buyer()
               },
+              "payer": self.get_payer(),
               "extraParameters": self.get_extra_pse_parameters(),
               "type": "AUTHORIZATION_AND_CAPTURE",
               "paymentMethod": "PSE",
@@ -305,13 +324,22 @@ class PaymentUtil(object):
         }
 
 
-    def pse_payu_payment(self):
-        payu_data = json.dumps(self.get_payu_pse_data())
+    def validate_pse_payment_data(self):
+        pse_post_data = self.request.data.get('buyer_pse_data')
+        pse_post_data.update(self.request.data.get('buyer'))
+        print(pse_post_data,"PSE DATA POSTED")
+        serializer = PaymentsPSEDataSerializer(data=pse_post_data)
+        serializer.is_valid(raise_exception=True)
 
+
+
+    def pse_payu_payment(self):
+        self.validate_pse_payment_data()
+        payu_data = json.dumps(self.get_payu_pse_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
-        if settings.PAYU_TEST:
 
+        if settings.PAYU_TEST:
             result = self.pse_test_response(result)
         return self.pse_response(result)
 
@@ -331,11 +359,17 @@ class PaymentUtil(object):
 
         }
 
+    def bank_list_response(self,result):
+        try:
+            result = result.json()
+            return result.get('banks',{})
+        except Exception as e:
+            return {}
+
     def get_bank_list(self):
         payu_data = json.dumps(self.get_bank_list_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers={'content-type': 'application/json', 'accept': 'application/json'})
-        result = result.json()
-        return result
+        return self.bank_list_response(result)
 
 
 

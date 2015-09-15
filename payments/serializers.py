@@ -11,3 +11,15 @@ class PaymentsSerializer(serializers.ModelSerializer):
             'id'
             )
 
+
+
+
+class PaymentsPSEDataSerializer(serializers.Serializer):
+
+	payerEmail = serializers.EmailField()
+	name  = serializers.CharField()
+	contactPhone  = serializers.CharField()
+	bank     = serializers.CharField()
+	idType   = serializers.CharField()
+	userType = serializers.CharField()
+	idNumber = serializers.CharField()

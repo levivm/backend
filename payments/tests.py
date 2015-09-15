@@ -375,12 +375,12 @@ class PaymentLogicTest(BaseViewTest):
 #         orders = Order.objects.filter(id=self.ORDER_ID)
 #         self.assertEqual(orders.count(), 1) 
 
-# class PaymentBankListTest(BaseViewTest):
-#     url = '/api/payments/pse/banks'
+class PaymentBankListTest(BaseViewTest):
+    url = '/api/payments/pse/banks'
 
-#     def test_get_pse_bank_list(self):
-#         client = self.get_student_client()
-#         response = client.get(self.url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertIn(b'"description":"BANCOLOMBIA QA"', response.content)
+    def test_get_pse_bank_list(self):
+        client = self.get_student_client()
+        response = client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b'"description":"BANCOLOMBIA QA"', response.content)
 

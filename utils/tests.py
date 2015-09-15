@@ -143,8 +143,8 @@ class BaseViewTest(APITestCase):
              "response_url": settings.PAYU_RESPONSE_URL,
              "financial_institution_code": "1007",
              "user_type": "J",
-             "pse_reference2": "NIT",
-             "pse_reference3": "900823805"
+             "PSE_REFERENCE2": "NIT",
+             "PSE_REFENRENCE3": "900823805"
         }
 
     def get_payment_pse_data(self):
