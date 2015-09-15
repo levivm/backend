@@ -63,7 +63,7 @@ class OrdersByActivityViewTest(BaseViewTest):
         
         self.assertFalse(activity.published and chronogram.available_capacity()>=data['quantity'] and \
                         chronogram.enroll_open)
-        response = client.post(self.url, data)
+        response = client.post(self.url, json.dumps(data),content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_methods_for_organizer(self):

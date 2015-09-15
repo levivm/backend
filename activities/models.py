@@ -5,6 +5,7 @@ from django.conf import settings
 from random import randint
 from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
+from random import Random
 
 from organizers.models import Organizer, Instructor
 from locations.models import Location
@@ -177,10 +178,10 @@ class ActivityPhoto(models.Model):
     activity = models.ForeignKey(Activity, related_name="photos")
     main_photo = models.BooleanField(default=False)
 
-    @classmethod
-    def create_from_stock(cls, sub_category_id, activity):
-        image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-        return cls.objects.create(activity=activity, photo=image.photo, main_photo=True)
+    # @classmethod
+    # def create_from_stock(cls, sub_category_id, activity):
+    #     image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
+    #     return cls.objects.create(activity=activity, photo=image.photo, main_photo=True)
 
 
 class ActivityStockPhoto(models.Model):
@@ -188,11 +189,24 @@ class ActivityStockPhoto(models.Model):
     sub_category = models.ForeignKey(SubCategory)
 
     @classmethod
-    def get_image_by_subcategory(cls, sub_category):
+    def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         count = queryset.count()
-        random_index = randint(0, count - 1) if count else 0
-        return queryset[random_index]
+        # random_index = randint(0, count - 1) if count else 0
+        #TO-DO remove top_count if, we need to fill out stock photos
+        top_count = settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS
+        if count < top_count:
+            top_count = count
+
+        random_indexes = Random().sample(range(0,count),top_count)  if count else []
+
+        images = []
+
+        for index in random_indexes:
+            images.append(queryset[index])
+
+
+        return images
 
 
 class Chronogram(models.Model):

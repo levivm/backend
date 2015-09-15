@@ -13,7 +13,6 @@ from activities.mixins import CalculateActivityScoreMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
-from activities.utils import RenderToPDF
 
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Chronogram, ActivityPhoto,\
@@ -142,21 +141,24 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers)
 
-    def create_from_stock(self, request, *args, **kwargs):
-        sub_category_id = request.data.get('subcategory')
-        # image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-        activity = self.get_activity_object(**kwargs)
-        photo = ActivityPhoto.create_from_stock(sub_category_id,activity)
-        serializer = ActivityPhotosSerializer(instance=photo)
 
-        self.calculate_score(activity_id=activity.id)
-        headers = self.get_success_headers(serializer.data)
-        activity_serializer = self.get_activity_serializer(instance=activity, \
-                                context={'request': request})
-        return Response(
-            data={'activity': activity_serializer.data, 'photo': serializer.data},
-            status=status.HTTP_201_CREATED,
-            headers=headers)
+        
+
+    # def create_from_stock(self, request, *args, **kwargs):
+    #     sub_category_id = request.data.get('subcategory')
+    #     # image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
+    #     activity = self.get_activity_object(**kwargs)
+    #     photo = ActivityPhoto.create_from_stock(sub_category_id,activity)
+    #     serializer = ActivityPhotosSerializer(instance=photo)
+
+    #     self.calculate_score(activity_id=activity.id)
+    #     headers = self.get_success_headers(serializer.data)
+    #     activity_serializer = self.get_activity_serializer(instance=activity, \
+    #                             context={'request': request})
+    #     return Response(
+    #         data={'activity': activity_serializer.data, 'photo': serializer.data},
+    #         status=status.HTTP_201_CREATED,
+    #         headers=headers)
         # self.create(request,*args,**kwargs)
         # request_data = request.data.copy()
         # request_data['photo'] = image
@@ -201,6 +203,16 @@ class CategoriesViewSet(viewsets.ModelViewSet):
 class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
+
+
+    def get_pool_from_stock(self,request,*args, **kwargs):
+        sub_category_id = kwargs.get('subcategory_id')
+        photos     = ActivityStockPhoto.get_images_by_subcategory(sub_category_id)
+        serializer = ActivityPhotosSerializer(photos,many=True)
+
+        return Response(
+            data={'photos': serializer.data},
+            status=status.HTTP_200_OK)
 
 
 class TagsViewSet(viewsets.ModelViewSet):
@@ -252,24 +264,3 @@ class ActivitiesSearchView(APIView):
         serializer = ActivitiesSerializer(activities, many=True)
         result = serializer.data
         return Response(result)
-
-class ActivitiesDownloadAssistantsView(GenericAPIView):
-    """
-    View to download the assistant of an activity
-    """
-
-    queryset = Activity.objects.all()
-    lookup_url_kwarg = 'activity_pk'
-    permission_classes = (IsActivityOwner, )
-
-    def get(self, request, *args, **kwargs):
-        activity = self.get_object()
-        calendars = activity.chronograms.all()
-
-        data = {
-            'activity': activity,
-            'calendars': calendars,
-        }
-        render_to_pdf = RenderToPDF(template_src='activities/assistant_list.html', context_data=data)
-        return render_to_pdf.render()
-        # return HttpResponse()
