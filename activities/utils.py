@@ -143,8 +143,8 @@ class PaymentUtil(object):
 
         return {
 
-            'financial_institution_code':data['bank'],
-            'user_type':"J",
+            'FINANCIAL_INSTITUTION_CODE':data['bank'],
+            'USER_TYPE':data['userType'],
             'PSE_REFERENCE1':self.get_client_ip(self.request),
             'PSE_REFERENCE2':data['idType'],
             'PSE_REFERENCE3':data['idNumber'],
@@ -327,7 +327,6 @@ class PaymentUtil(object):
     def validate_pse_payment_data(self):
         pse_post_data = self.request.data.get('buyer_pse_data')
         pse_post_data.update(self.request.data.get('buyer'))
-        print(pse_post_data,"PSE DATA POSTED")
         serializer = PaymentsPSEDataSerializer(data=pse_post_data)
         serializer.is_valid(raise_exception=True)
 
@@ -336,7 +335,6 @@ class PaymentUtil(object):
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
         payu_data = json.dumps(self.get_payu_pse_data())
-        print("PSE DATAAAAAAA",payu_data)
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
 
