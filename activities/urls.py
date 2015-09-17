@@ -18,9 +18,9 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/(?P<activity_pk>\d+)/publish/?$', ActivitiesViewSet.as_view({'put': 'publish'})),
 	url(r'^/(?P<activity_pk>\d+)/unpublish/?$',ActivitiesViewSet.as_view({'put':'unpublish'})),
     url(r'^/(?P<activity_pk>\d+)/locations/?$', ActivitiesViewSet.as_view({'put': 'set_location'})),
-    # url(r'^/(?P<activity_pk>\d+)/gallery/auto/?$', ActivityPhotosViewSet.as_view({'post': 'create_from_stock'})),
-    url(r'^/(?P<activity_pk>\d+)/gallery/?$', ActivityPhotosViewSet.as_view({'post': 'create'})),
-    url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$', ActivityPhotosViewSet.as_view({'delete': 'destroy'})),
+    url(r'^/(?P<activity_pk>\d+)/gallery/cover/?$', ActivityPhotosViewSet.as_view({'post': 'set_cover_from_stock'}),name="set_cover_from_stock"),
+    url(r'^/(?P<activity_pk>\d+)/gallery/?$', ActivityPhotosViewSet.as_view({'post': 'create'}),name="upload_activity_photo"),
+    url(r'^/(?P<activity_pk>\d+)/gallery/(?P<gallery_pk>\d+)/?$', ActivityPhotosViewSet.as_view({'delete': 'destroy'}),name="delete_activity_photo"),
 
 
 

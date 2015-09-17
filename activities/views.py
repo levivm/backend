@@ -137,37 +137,28 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         activity_serializer = self.get_activity_serializer(instance=activity, \
                                 context={'request': request})
         return Response(
-            data={'activity': activity_serializer.data, 'photo': serializer.data},
+            data={'activity': activity_serializer.data, 'picture': serializer.data},
             status=status.HTTP_201_CREATED,
             headers=headers)
 
 
-        
+    def set_cover_from_stock(self,request,*args,**kwargs):
+        activity   = self.get_activity_object(**kwargs)
+        cover_id = request.data.get('cover_id')
+        stock_cover_picture = get_object_or_404(ActivityStockPhoto, pk=cover_id)
+        photo = ActivityPhoto.create_from_stock(stock_cover_picture,activity)
 
-    # def create_from_stock(self, request, *args, **kwargs):
-    #     sub_category_id = request.data.get('subcategory')
-    #     # image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-    #     activity = self.get_activity_object(**kwargs)
-    #     photo = ActivityPhoto.create_from_stock(sub_category_id,activity)
-    #     serializer = ActivityPhotosSerializer(instance=photo)
+        serializer = ActivityPhotosSerializer(instance=photo)
 
-    #     self.calculate_score(activity_id=activity.id)
-    #     headers = self.get_success_headers(serializer.data)
-    #     activity_serializer = self.get_activity_serializer(instance=activity, \
-    #                             context={'request': request})
-    #     return Response(
-    #         data={'activity': activity_serializer.data, 'photo': serializer.data},
-    #         status=status.HTTP_201_CREATED,
-    #         headers=headers)
-        # self.create(request,*args,**kwargs)
-        # request_data = request.data.copy()
-        # request_data['photo'] = image
+        # self.calculate_score(activity_id=activity.id)
+        headers = self.get_success_headers(serializer.data)
+        activity_serializer = self.get_activity_serializer(instance=activity, \
+                                context={'request': request})
+        return Response(
+            data={'activity': activity_serializer.data, 'picture': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
 
-        # ActivityPhotosViewSet
-
-        # import pdb
-        # pdb.set_trace()
-        return Response({})
 
 
     def destroy(self, request, *args, **kwargs):
