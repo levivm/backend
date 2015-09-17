@@ -175,7 +175,7 @@ class Activity(AssignPermissionsMixin, models.Model):
 
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
-    activity = models.ForeignKey(Activity, related_name="photos")
+    activity = models.ForeignKey(Activity, related_name="pictures")
     main_photo = models.BooleanField(default=False)
 
     @classmethod

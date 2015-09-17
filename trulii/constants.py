@@ -101,7 +101,7 @@ PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS = {
     
     'general':['title','short_description','sub_category','level'],
     'calendars':['chronograms'],
-    'gallery':['photos'],
+    'gallery':['pictures'],
     'location':['location'],
 
 }
@@ -120,13 +120,13 @@ ACTIVITY_STEPS = {
   'calendars':['chronograms'],
   'instructors':['instructors'],
   'location':['location'],''
-  'gallery':['photos'],
+  'gallery':['pictures'],
   'return_policy':['return_policy']
 }
 
 RELATED_FIELD_REQUIREMETS = {
     
-    'gallery':['photos'],
+    'gallery':['pictures'],
 
 }
 

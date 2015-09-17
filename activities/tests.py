@@ -928,6 +928,6 @@ class SubCategoriesViewTest(BaseAPITestCase):
         response = self.client.get(self.get_covers_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(b'photos', response.content)
+        self.assertIn(b'pictures', response.content)
         self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS, \
-                        len(response.data.get('photos')))
+                        len(response.data.get('pictures')))

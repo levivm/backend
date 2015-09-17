@@ -97,7 +97,7 @@ class ActivityScoreTask(Task):
 
     def get_gallery_value(self, activity):
         video = 0.2 * bool(activity.youtube_video_url)
-        gallery = (0.8 * activity.photos.filter(main_photo=False).count()) / 5.0
+        gallery = (0.8 * activity.pictures.filter(main_photo=False).count()) / 5.0
         return 30 * (video + gallery)
 
     def get_instructors_value(self, activity):

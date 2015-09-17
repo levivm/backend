@@ -121,7 +121,7 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         activity = self.get_activity_object(**self.kwargs)
-        return activity.photos.all()
+        return activity.pictures.all()
 
     def create(self, request, *args, **kwargs):
         activity       = self.get_activity_object(**kwargs)
@@ -198,11 +198,11 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
 
     def get_pool_from_stock(self,request,*args, **kwargs):
         sub_category_id = kwargs.get('subcategory_id')
-        photos     = ActivityStockPhoto.get_images_by_subcategory(sub_category_id)
-        serializer = ActivityPhotosSerializer(photos,many=True)
+        pictures     = ActivityStockPhoto.get_images_by_subcategory(sub_category_id)
+        serializer = ActivityPhotosSerializer(pictures,many=True)
 
         return Response(
-            data={'photos': serializer.data},
+            data={'pictures': serializer.data},
             status=status.HTTP_200_OK)
 
 
