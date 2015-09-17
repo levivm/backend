@@ -178,15 +178,23 @@ class ActivityPhoto(models.Model):
     activity = models.ForeignKey(Activity, related_name="photos")
     main_photo = models.BooleanField(default=False)
 
-    # @classmethod
-    # def create_from_stock(cls, sub_category_id, activity):
-    #     image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-    #     return cls.objects.create(activity=activity, photo=image.photo, main_photo=True)
+    @classmethod
+    def create_from_stock(cls, stock_cover, activity):
+        return cls.objects.create(activity=activity, photo=stock_cover.photo, main_photo=True)
 
 
 class ActivityStockPhoto(models.Model):
     photo = models.ImageField(upload_to="activities_stock")
     sub_category = models.ForeignKey(SubCategory)
+
+
+    # @classmethod
+    # def get_cover(cls,cover_id):
+    #     try:
+    #         cover = cls.objects.get(id=cover_id)
+    #     except ActivityStockPhoto.DoesNotExist:
+
+
 
     @classmethod
     def get_images_by_subcategory(cls, sub_category):
