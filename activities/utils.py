@@ -144,7 +144,7 @@ class PaymentUtil(object):
         return {
 
             'financial_institution_code':data['bank'],
-            'user_type':data['userType'],
+            'user_type':"J",
             'PSE_REFERENCE1':self.get_client_ip(self.request),
             'PSE_REFERENCE2':data['idType'],
             'PSE_REFERENCE3':data['idNumber'],
@@ -336,6 +336,7 @@ class PaymentUtil(object):
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
         payu_data = json.dumps(self.get_payu_pse_data())
+        print("PSE DATAAAAAAA",payu_data)
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
 
