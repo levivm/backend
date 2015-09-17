@@ -309,7 +309,7 @@ class PaymentUtil(object):
                        "currency": "COP"
                     }
                  },
-                 "buyer": self.get_buyer()
+                 "buyer": self.get_payer()
               },
               "payer": self.get_payer(),
               "extraParameters": self.get_extra_pse_parameters(),
