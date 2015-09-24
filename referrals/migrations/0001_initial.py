@@ -7,15 +7,15 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('students', '0006_student_city'),
+        ('students', '0009_auto_20150917_1133'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Coupon',
             fields=[
-                ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
-                ('code', models.CharField(unique=True, max_length='15')),
+                ('id', models.AutoField(serialize=False, verbose_name='ID', primary_key=True, auto_created=True)),
+                ('name', models.CharField(unique=True, max_length=20)),
                 ('amount', models.IntegerField()),
                 ('coupon_type', models.CharField(choices=[('global', 'Global'), ('referral', 'Referral')], default='referral', max_length=15)),
             ],
@@ -23,17 +23,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Redeem',
             fields=[
-                ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
-                ('used', models.BooleanField()),
-                ('date', models.DateTimeField(auto_now_add=True)),
+                ('id', models.AutoField(serialize=False, verbose_name='ID', primary_key=True, auto_created=True)),
+                ('token', models.CharField(unique=True, max_length=20)),
+                ('used', models.BooleanField(default=False)),
+                ('date_created', models.DateTimeField(auto_now_add=True)),
+                ('date_used', models.DateField(editable=False)),
                 ('coupon', models.ForeignKey(to='referrals.Coupon')),
                 ('student', models.ForeignKey(to='students.Student')),
             ],
+            options={
+                'abstract': False,
+            },
         ),
         migrations.CreateModel(
             name='Referral',
             fields=[
-                ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
+                ('id', models.AutoField(serialize=False, verbose_name='ID', primary_key=True, auto_created=True)),
                 ('ip_address', models.GenericIPAddressField()),
                 ('referred', models.ForeignKey(to='students.Student', related_name='referreds')),
                 ('referrer', models.ForeignKey(to='students.Student', related_name='referrers')),
@@ -41,7 +46,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='coupon',
-            name='owners',
-            field=models.ManyToManyField(through='referrals.Redeem', to='students.Student'),
+            name='redeems',
+            field=models.ManyToManyField(to='students.Student', through='referrals.Redeem'),
         ),
     ]

@@ -1,3 +1,5 @@
+from django.core import signing
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -22,6 +24,9 @@ class Student(models.Model):
     city = models.ForeignKey(City, null=True)
     tasks = GenericRelation(CeleryTask)
     referrer_code = models.CharField(max_length=20, unique=True)
+
+    def __str__(self):
+        return self.user.username
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -57,10 +62,16 @@ class Student(models.Model):
     def generate_referrer_code(self):
         precode = '%(first_name)s%(last_name)s' % {
             'first_name': self.user.first_name.split(' ')[0].lower(),
-            'last_name': self.user.last_name.split(' ')[0][0].lower(),
+            'last_name': self.user.last_name.split(' ')[0][0].lower() if self.user.last_name else '',
         }
         code_count = Student.objects.filter(referrer_code__startswith=precode).count() + 1
         return '%s%s' % (precode, code_count)
+
+    def get_referral_url(self):
+        return reverse('referrals:referrer', kwargs={'referrer_code': self.referrer_code})
+
+    def get_referral_hash(self):
+        return signing.dumps({'referrer_code': self.referrer_code})
 
 
 User.profile = property(lambda u: Student.objects.get_or_create(user=u)[0])

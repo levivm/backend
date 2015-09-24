@@ -2,19 +2,18 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import orders.models
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0002_auto_20150428_1453'),
+        ('students', '0008_auto_20150917_1133'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='assistant',
-            name='token',
-            field=models.CharField(max_length=5),
+        migrations.AlterField(
+            model_name='student',
+            name='referrer_code',
+            field=models.CharField(unique=True, max_length=20),
         ),
     ]

@@ -1,6 +1,6 @@
 import json
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import resolve
 from model_mommy import mommy
 from requests import post
@@ -144,6 +144,10 @@ class BaseAPITestCase(APITestCase):
     """
 
     def setUp(self):
+        # Groups
+        mommy.make(Group, name='Students')
+        mommy.make(Group, name='Organizers')
+
         # Users
         self.student, self.another_student = mommy.make_recipe('students.student', _quantity=2)
         self.organizer, self.another_organizer = mommy.make_recipe('organizers.organizer', _quantity=2)

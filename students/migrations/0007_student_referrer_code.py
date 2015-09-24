@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='student',
             name='referrer_code',
-            field=models.CharField(unique=True, max_length=20, default=1234),
+            field=models.CharField(null=True, default=None, max_length=20),
             preserve_default=False,
         ),
     ]
