@@ -163,6 +163,8 @@ class RestFacebookLogin(APIView):
     permission_classes = (AllowAny,)
 
     def dispatch(self, *args, **kwargs):
+        import pdb
+        pdb.set_trace()
         return super(RestFacebookLogin, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):

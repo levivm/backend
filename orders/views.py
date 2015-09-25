@@ -62,7 +62,7 @@ class OrdersViewSet(viewsets.ModelViewSet):
         # return Response()
 
     def _payment_pse(self,payment,serializer):
-        charge = payment.pse_payu_payment()
+        charge = payment.pse_payu_payment()        
 
         if charge['status'] == 'PENDING':
 

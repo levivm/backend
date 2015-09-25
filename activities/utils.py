@@ -4,10 +4,12 @@ import json
 from django.conf import settings
 from django.utils.timezone import now
 from requests.api import post
+from utils.exceptions import ServiceUnavailable
 from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
 from django.utils.translation import ugettext_lazy as _
 from payments.serializers import PaymentsPSEDataSerializer
+from rest_framework.exceptions import APIException
 
 
 
@@ -202,9 +204,11 @@ class PaymentUtil(object):
         return self.response(result)
 
     def get_reference_code(self):
-        reference = self.activity.id
-        reference += calendar.timegm(now().timetuple())
-        reference += self.request.user.id
+        activity_id  = self.activity.id
+        timestamp    = calendar.timegm(now().timetuple())
+        user_id      = self.request.user.id
+        chronogram_id = self.request.data.get('chronogram') 
+        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, chronogram_id)
         return reference
 
     def response(self, result):
@@ -334,12 +338,21 @@ class PaymentUtil(object):
 
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
-        payu_data = json.dumps(self.get_payu_pse_data())
-        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
-        result = result.json()
-
+        result = {}
         if settings.PAYU_TEST:
+            result = {
+                'code':'SUCCESS',
+                'transactionResponse':{
+                    'transactionId':'21429692224921982576571322905'
+                }
+            }
             result = self.pse_test_response(result)
+        else:
+            payu_data = json.dumps(self.get_payu_pse_data())
+            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+            result = result.json()
+        # if settings.PAYU_TEST:
+        #     result = self.pse_test_response(result)
         return self.pse_response(result)
 
     def get_bank_list_payu_data(self):
@@ -361,9 +374,9 @@ class PaymentUtil(object):
     def bank_list_response(self,result):
         try:
             result = result.json()
-            return result.get('banks',{})
+            return result['banks']
         except Exception as e:
-            return {}
+            raise ServiceUnavailable
 
     def get_bank_list(self):
         payu_data = json.dumps(self.get_bank_list_payu_data())

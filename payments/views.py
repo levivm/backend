@@ -121,9 +121,6 @@ class PayUNotificationPayment(APIView):
             
             if order.status == Order.ORDER_PENDING_STATUS:
                 self._run_transaction_approved_task(order,data)
-                # order.change_status(Order.ORDER_APPROVED_STATUS)
-                # task = SendPaymentEmailTask()
-                # task.apply_async((order.id,), countdown=4)
 
             
         elif transaction_status == settings.TRANSACTION_DECLINED_CODE:
