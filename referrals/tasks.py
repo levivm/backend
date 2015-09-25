@@ -8,11 +8,12 @@ from utils.tasks import SendEmailTaskMixin
 class SendReferralEmailTask(SendEmailTaskMixin):
     def run(self, student_id, **kwargs):
         self.student = Student.objects.get(id=student_id)
+        self.kwargs = kwargs
         template = "referrals/email/referral_cc"
         return super(SendReferralEmailTask, self).run(instance=self.student, template=template, **kwargs)
 
     def get_emails_to(self, *args, **kwargs):
-        return kwargs.get('emails')
+        return self.kwargs.get('emails')
 
     def get_context_data(self, data):
         return {
