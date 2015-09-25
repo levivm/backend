@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from referrals.models import Referral
-from referrals.tasks import CreateReferralCuoponTask, CreateReferralTask
+from referrals.tasks import CreateReferralCouponTask, CreateReferralTask
 from students.models import Student
 
 
@@ -39,7 +39,7 @@ class ReferralMixin(APIView):
 
         if self.referrer and (self.referrer.id != referred_id):
             create_referral_task = CreateReferralTask()
-            create_coupons_task = CreateReferralCuoponTask()
+            create_coupons_task = CreateReferralCouponTask()
             group(
                 create_referral_task.s(self.referrer.id, referred_id, self.ip_address),
                 create_coupons_task.s(self.referrer.id, referred_id)

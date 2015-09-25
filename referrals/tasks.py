@@ -35,12 +35,12 @@ class CreateReferralTask(Task):
         referral, created = Referral.objects.get_or_create(
             referrer=referrer,
             referred=referred,
-            ip_address=ip_address,
+            defaults={'ip_address': ip_address},
         )
 
         return referral
 
-class CreateReferralCuoponTask(Task):
+class CreateReferralCouponTask(Task):
     """ Task to create a coupon and its relation with the student """
 
     def run(self, referrer_id, referred_id, *args, **kwargs):

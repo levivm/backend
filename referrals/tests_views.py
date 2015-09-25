@@ -37,8 +37,8 @@ class InviteAPITest(BaseAPITestCase):
         self.another_student.user.save()
 
         # Coupons
-        mommy.make(Coupon, name='referrer')
-        mommy.make(Coupon, name='referred')
+        self.referrer_coupon = mommy.make(Coupon, name='referrer')
+        self.referred_coupon = mommy.make(Coupon, name='referred')
 
         # SocialApp
         mommy.make(SocialApp,
@@ -238,29 +238,3 @@ class InviteAPITest(BaseAPITestCase):
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)
-
-    def test_duplicates(self):
-        """
-        Test to shouldnt duplicate a referral nor coupons
-        """
-
-        mommy.make(Referral, referrer=self.student, referred=self.another_student)
-
-        data = {
-            'login': self.another_student.user.email,
-            'password': self.password,
-        }
-
-        # Cookies
-        self.client.cookies['refhash'] = self.student.get_referral_hash()
-
-        # Counters
-        referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
-
-        response = self.client.post(self.signup_login_url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
-        self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
-        self.assertEqual(Referral.objects.count(), referral_counter)
-        self.assertEqual(Redeem.objects.count(), redeem_counter)
-
