@@ -1,17 +1,20 @@
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from rest_framework import viewsets,status
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
 from activities.utils import PaymentUtil
+from payments.models import Payment
 from organizers.models import Organizer
 from students.models import Student
 from .models import Order
 from activities.models import Activity
 from .serializers import OrdersSerializer
 from payments.tasks import  SendPaymentEmailTask
+
 
 
 
@@ -35,13 +38,8 @@ class OrdersViewSet(viewsets.ModelViewSet):
     def get_activity(self, **kwargs):
         return get_object_or_404(Activity, id=kwargs.get('activity_pk'))
 
-    def create(self, request, *args, **kwargs):
-        self.student = self._get_student(user=request.user)
-        serializer = self.get_serializer(data=request.data)
-        activity = self.get_activity(**kwargs)
-        serializer.is_valid(raise_exception=True)
 
-        payment = PaymentUtil(request, activity)
+    def _payment_cc(self,payment,serializer):
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
@@ -51,10 +49,48 @@ class OrdersViewSet(viewsets.ModelViewSet):
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
                 task = SendPaymentEmailTask()
-                task.apply_async((response.data['id'],), countdown=4)
+                task_data = {
+                   'payment_method':settings.CC_METHOD_PAYMENT_ID
+                }
+                task.apply_async((response.data['id'],),task_data, countdown=2)
+
             return response
         else:
-            return Response(charge['error'], status=status.HTTP_400_BAD_REQUEST)
+            error = {'generalError':[charge['error']]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+        # return Response()
+
+    def _payment_pse(self,payment,serializer):
+        charge = payment.pse_payu_payment()        
+
+        if charge['status'] == 'PENDING':
+
+            serializer.context['status'] = charge['status'].lower()
+            serializer.context['payment'] = charge['payment']
+            self.call_create(serializer=serializer)
+            return Response({'bank_url':charge['bank_url']})
+        else:
+            error = {'generalError':[charge['error']]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def create(self, request, *args, **kwargs):
+        self.student = self._get_student(user=request.user)
+        serializer = self.get_serializer(data=request.data)
+        activity = self.get_activity(**kwargs)
+        serializer.is_valid(raise_exception=True)
+        payment_method = request.data.get('payment_method')
+
+        payment = PaymentUtil(request, activity)
+
+        if payment_method == Payment.CC_PAYMENT_TYPE:
+            return self._payment_cc(payment,serializer)
+        elif payment_method == Payment.PSE_PAYMENT_TYPE:
+            return self._payment_pse(payment,serializer)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
     def call_create(self, serializer):
         self.perform_create(serializer)

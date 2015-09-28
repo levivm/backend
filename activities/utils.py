@@ -8,7 +8,13 @@ from django.template.context import Context, RequestContext
 from django.template.loader import get_template, render_to_string
 from django.utils.timezone import now
 from requests.api import post
+from utils.exceptions import ServiceUnavailable
+from activities.models import Chronogram
+from payments.models import Payment as PaymentModel
 from django.utils.translation import ugettext_lazy as _
+from payments.serializers import PaymentsPSEDataSerializer
+from rest_framework.exceptions import APIException
+
 
 from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
@@ -91,10 +97,11 @@ class PaymentUtil(object):
     }
 
 
-    def __init__(self, request, activity):
+    def __init__(self, request, activity=None):
         super(PaymentUtil, self).__init__()
         self.request = request
-        self.activity = activity
+        if activity:
+            self.activity = activity
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
 
     def get_signature(self, reference_code, price):
@@ -110,10 +117,19 @@ class PaymentUtil(object):
         signature.update(bytes(signature_string, 'utf8'))
         return signature.hexdigest()
 
+    def get_client_ip(self,request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
     def get_amount(self):
         id = self.request.data.get('chronogram')
         chronogram = Chronogram.objects.get(id=id)
         return chronogram.session_price * self.request.data['quantity']
+
 
     def get_buyer(self):
         data = self.request.data.get('buyer')
@@ -122,8 +138,32 @@ class PaymentUtil(object):
             'emailAddress': data['email'],
         }
 
+    def get_payer(self):
+        data = self.request.data.get('buyer')
+        return {
+            "fullName": data['name'],
+            "emailAddress": data['payerEmail'],
+            "contactPhone": data['contactPhone']
+        }
+
+    def get_extra_pse_parameters(self):
+        data = self.request.data.get('buyer_pse_data')
+
+        return {
+
+            'FINANCIAL_INSTITUTION_CODE':data['bank'],
+            'USER_TYPE':data['userType'],
+            'PSE_REFERENCE1':self.get_client_ip(self.request),
+            'PSE_REFERENCE2':data['idType'],
+            'PSE_REFERENCE3':data['idNumber'],
+
+        }
+
     def get_creditcard_association(self):
         return self.request.data['card_association'].upper()
+
+    def get_last_four_digits(self):
+        return self.request.data['last_four_digits']
 
     def get_payu_data(self):
         amount = self.get_amount()
@@ -139,9 +179,9 @@ class PaymentUtil(object):
                 'order': {
                     'accountId': settings.PAYU_ACCOUNT_ID,
                     'referenceCode': reference_code,
-                    'description': self.activity.short_description,
+                    'description': self.get_payment_description(),
                     'language': 'es',
-                    'notifyUrl': "https://ighouszdqe.localtunnel.me/api/payments/notification",
+                    'notifyUrl': settings.PAYU_NOTIFY_URL,
                     'signature': self.get_signature(reference_code=reference_code, price=amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
@@ -155,12 +195,17 @@ class PaymentUtil(object):
                 'type': 'AUTHORIZATION_AND_CAPTURE',
                 'paymentMethod': self.card_association,
                 'paymentCountry': 'CO',
+                'userAgent': self.get_user_agent(),
+                'deviceSessionId': self.get_deviceSessionId(),
+                'cookie': self.get_cookie()
+
             },
             'test': settings.PAYU_TEST
         }
 
     def creditcard(self):
         self.card_association = self.get_creditcard_association()
+        self.last_four_digits = self.get_last_four_digits()
         payu_data = json.dumps(self.get_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
@@ -168,18 +213,37 @@ class PaymentUtil(object):
             result = self.test_response(result)
         return self.response(result)
 
+    def get_cookie(self):
+        return self.request.auth.key
+
+    def get_deviceSessionId(self):
+        return self.request.data.get('deviceSessionId')
+
+
+
+    def get_user_agent(self):
+        return self.request.META.get('HTTP_USER_AGENT')
+
+    def get_payment_description(self):
+        description = "Inscripción de actividad {}".format(self.activity.title)
+        description = str(_(description))
+        return description
+
     def get_reference_code(self):
-        reference = self.activity.id
-        reference += calendar.timegm(now().timetuple())
-        reference += self.request.user.id
+        activity_id  = self.activity.id
+        timestamp    = calendar.timegm(now().timetuple())
+        user_id      = self.request.user.id
+        chronogram_id = self.request.data.get('chronogram') 
+        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, chronogram_id)
         return reference
 
     def response(self, result):
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':'credit',
+                'payment_type':'CC',
                 'card_type': self.card_association.lower(),
                 'transaction_id': result['transactionResponse']['transactionId'],
+                'last_four_digits':self.last_four_digits
             }
             if result['transactionResponse']['state'] == 'APPROVED':
                 payment = PaymentModel.objects.create(**payment_data)
@@ -205,9 +269,145 @@ class PaymentUtil(object):
                 'error': 'ERROR'
             }
 
+    def pse_response(self,result):
+        if result['code'] == 'SUCCESS':
+            payment_data = {
+                'payment_type':'PSE',
+                'transaction_id': result['transactionResponse']['transactionId'],
+            }
+            if result['transactionResponse']['state'] == 'PENDING':
+                payment = PaymentModel.objects.create(**payment_data)
+                return {
+                    'status': 'PENDING',
+                    'bank_url':result['transactionResponse']['extraParameters']['BANK_URL'],
+                    'payment': payment,
+
+                }
+            else:
+
+                return {
+                    'status': 'ERROR',
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Hubo un error al procesar su transacción'),
+                }
+        else:
+            return {
+                'status': 'ERROR',
+                'error': 'ERROR'
+            }
+
     def test_response(self, result):
         if result['code'] == 'SUCCESS':
             result['transactionResponse']['state'] = self.request.data['buyer']['name']
 
         return result
+
+    def pse_test_response(self,result):
+        if result['code'] == 'SUCCESS':        
+            result['transactionResponse']['state'] = self.request.data['buyer']['name']
+            result['transactionResponse'].update({
+                    'extraParameters':{
+                        'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
+                                    ElectronicPayment.bancolombia?\
+                                    PAYMENT_ID=21429692224921982576571322905"
+                    }
+                })
+        return result
+
+
+    def get_payu_pse_data(self):
+        amount = self.get_amount()
+        reference_code = self.get_reference_code()
+                    # 'buyer': self.get_buyer(),
+        return {
+           "language": "es",
+           "command": "SUBMIT_TRANSACTION",
+            'merchant': {
+                'apiLogin': settings.PAYU_API_LOGIN,
+                'apiKey': settings.PAYU_API_KEY,
+            },
+           "transaction": {
+              "order": {
+                 "accountId": settings.PAYU_ACCOUNT_ID,
+                 "referenceCode": reference_code,
+                 "description": self.get_payment_description(),
+                 "language": "es",
+                 "signature": self.get_signature(reference_code=reference_code, price=amount),
+                 "notifyUrl": settings.PAYU_NOTIFY_URL,
+                 "additionalValues": {
+                    "TX_VALUE": {
+                       "value": amount,
+                       "currency": "COP"
+                    }
+                 },
+                 "buyer": self.get_payer()
+              },
+              "payer": self.get_payer(),
+              "extraParameters": self.get_extra_pse_parameters(),
+              "type": "AUTHORIZATION_AND_CAPTURE",
+              "paymentMethod": "PSE",
+              "paymentCountry": "CO",
+              "ipAddress": self.get_client_ip(self.request),
+              "cookie": self.get_cookie(),
+              "userAgent": self.get_user_agent(),
+           },
+           "test": settings.PAYU_TEST
+        }
+
+
+    def validate_pse_payment_data(self):
+        pse_post_data = self.request.data.get('buyer_pse_data')
+        pse_post_data.update(self.request.data.get('buyer'))
+        serializer = PaymentsPSEDataSerializer(data=pse_post_data)
+        serializer.is_valid(raise_exception=True)
+
+
+
+    def pse_payu_payment(self):
+        self.validate_pse_payment_data()
+        result = {}
+        if settings.PAYU_TEST:
+            payu_data = json.dumps(self.get_payu_pse_data())
+            print("Pay U PSE DATA",payu_data)
+            result = {
+                'code':'SUCCESS',
+                'transactionResponse':{
+                    'transactionId':'21429692224921982576571322905'
+                }
+            }
+            result = self.pse_test_response(result)
+        else:
+            payu_data = json.dumps(self.get_payu_pse_data())
+            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+            result = result.json()
+        # if settings.PAYU_TEST:
+        #     result = self.pse_test_response(result)
+        return self.pse_response(result)
+
+    def get_bank_list_payu_data(self):
+        return {
+            "language": "es",
+            "command": "GET_BANKS_LIST",
+            "merchant": {
+                "apiLogin": settings.PAYU_API_LOGIN,
+                "apiKey": settings.PAYU_API_KEY,
+            },
+           "bankListInformation": {
+              "paymentMethod": "PSE",
+              "paymentCountry": "CO"
+           },
+           "test": settings.PAYU_TEST,
+
+        }
+
+    def bank_list_response(self,result):
+        try:
+            result = result.json()
+            return result['banks']
+        except Exception as e:
+            raise ServiceUnavailable
+
+    def get_bank_list(self):
+        payu_data = json.dumps(self.get_bank_list_payu_data())
+        result = post(url=settings.PAYU_URL, data=payu_data, headers={'content-type': 'application/json', 'accept': 'application/json'})
+        return self.bank_list_response(result)
 

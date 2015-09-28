@@ -4,6 +4,7 @@ from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import resolve
 from model_mommy import mommy
 from requests import post
+from payments.models import Payment
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 
@@ -126,8 +127,10 @@ class BaseViewTest(APITestCase):
                 'name': 'APPROVED',
                 'email': 'test@payulatam.com',
             },
+            'last_four_digits':'1111',
             'card_association': 'visa',
             'chronogram': 1,
+            'payment_method':Payment.CC_PAYMENT_TYPE,
             'quantity': 1,
             'amount': 324000,
             'assistants': [{
@@ -137,6 +140,35 @@ class BaseViewTest(APITestCase):
             }]
         }
 
+    def get_buyer_pse_data(self):
+        return {
+             "response_url": settings.PAYU_RESPONSE_URL,
+             "bank": "1007",
+             "userType": "J",
+             "idType": "NIT",
+             "idNumber": "900823805",
+        }
+
+    def get_payment_pse_data(self):
+        return {
+            'buyer': {
+                'name': 'PENDING',
+                'payerEmail': 'levi@trulii.com',
+                 'contactPhone':"222222"
+
+            },
+            'buyer_pse_data':self.get_buyer_pse_data(),
+            'chronogram': 1,
+            'activity':1,
+            'payment_method':Payment.PSE_PAYMENT_TYPE,
+            'quantity': 1,
+            'amount': 8000,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }]
+        }
 
 class BaseAPITestCase(APITestCase):
     """

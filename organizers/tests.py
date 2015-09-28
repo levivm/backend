@@ -131,7 +131,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
     def test_organizer_permissions_of_location(self):
         request = HttpRequest()
         request.user = User.objects.get(id=self.ORGANIZER_ID)
-        request.data = request.DATA = self._get_location_data()
+        request.data = request.data = self._get_location_data()
         serializer = LocationsSerializer(data=request.data, \
                                          context={'request': request, 'organizer_location': True})
         serializer.is_valid(raise_exception=True)

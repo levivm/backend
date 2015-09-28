@@ -55,23 +55,26 @@ class OrdersSerializer(serializers.ModelSerializer):
         return obj.chronogram.session_price*obj.quantity
 
     def validate(self, data):
+
+
         chronogram = data.get('chronogram')
         assistants_data = data.get('assistants')
         activity = chronogram.activity
 
         if not activity.published:
             msg = _("La actividad no se encuentra activa")
-            raise serializers.ValidationError({'detail':msg})
+            raise serializers.ValidationError({'generalError':msg})
 
         if not chronogram.enroll_open:
             msg = _("Las inscripciones están cerradas para esta fecha de inicio")
-            raise serializers.ValidationError({'detail':msg})
+            raise serializers.ValidationError({'generalError':msg})
+
+
 
         if not chronogram.available_capacity() or \
                chronogram.available_capacity()<len(assistants_data):
-
             msg = _("El cupo de asistentes está lleno")
-            raise serializers.ValidationError({'detail':msg})
+            raise serializers.ValidationError({'generalError':msg})
 
         assistant_serializer = AssistantsSerializer(data=assistants_data, many=True)
         assistant_serializer.is_valid(raise_exception=True)

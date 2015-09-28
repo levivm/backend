@@ -47,7 +47,8 @@ class ChronogramsViewSet(viewsets.ModelViewSet):
         if chronogram.orders.count() == 0:
             return super().destroy(request, *args, **kwargs)
 
-        return Response({'detail': _('No puede eliminar este calendario, tiene estudiantes inscritos, contactanos.')},
+        return Response({'detail': _('No puede eliminar este calendario, \
+                            tiene estudiantes inscritos, contactanos.')},
                         status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
@@ -158,7 +159,6 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
             data={'activity': activity_serializer.data, 'picture': serializer.data},
             status=status.HTTP_201_CREATED,
             headers=headers)
-
 
 
     def destroy(self, request, *args, **kwargs):

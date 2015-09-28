@@ -1,5 +1,6 @@
 from utils.tasks import SendEmailTaskMixin
 from orders.models import Order
+from django.conf import settings
 from orders.serializers import OrdersSerializer,AssistantsSerializer
 from .serializers import PaymentsSerializer
 from activities.serializers import ChronogramsSerializer, ActivitiesSerializer
@@ -9,10 +10,23 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
     def run(self, order_id, success_handler=True, **kwargs):
         self.success_handler = success_handler
         order  = Order.objects.get(id=order_id)
-        if order.status == Order.ORDER_APPROVED_STATUS:
-            template = "payments/email/payment_approved_cc"
-        elif order.status == Order.ORDER_DECLINED_STATUS:
-            template = "payments/email/payment_declined_cc"
+
+        payment_method = kwargs.get('payment_method')
+        if payment_method == settings.CC_METHOD_PAYMENT_ID:
+
+            if order.status == Order.ORDER_APPROVED_STATUS:
+                template = "payments/email/payment_approved_cc"
+            elif order.status == Order.ORDER_DECLINED_STATUS:
+                template = "payments/email/payment_declined_cc"
+        elif payment_method == settings.PSE_METHOD_PAYMENT_ID:
+            if order.status == Order.ORDER_APPROVED_STATUS:
+                template = "payments/email/payment_approved_pse"
+            elif order.status == Order.ORDER_DECLINED_STATUS:
+                template = "payments/email/payment_declined_pse"
+            elif order.status == Order.ORDER_PENDING_STATUS:
+                template = "payments/email/payment_pending_pse"
+
+
 
 
         kwargs['order'] = order
@@ -53,14 +67,15 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
 
 
     def on_success(self, retval, task_id, args,kwargs):
-
         super(SendPaymentEmailTask, self).on_success(retval, \
                             task_id,args,kwargs)
         order_id = args[0]
         order = Order.objects.get(id=order_id)
 
-        if not order.status == Order.ORDER_APPROVED_STATUS:
+        if not order.status == Order.ORDER_APPROVED_STATUS and not \
+            order.status == Order.ORDER_PENDING_STATUS:
             order.delete()
+
 
 
 # class SendPaymentDeclainedEmailTask(SendEmailTaskMixin):

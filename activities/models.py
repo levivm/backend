@@ -233,9 +233,10 @@ class Chronogram(models.Model):
         self.save()
 
     def available_capacity(self):
-        # TODO cambiar filtro por constantes
-        assistants = self.orders.filter(Q(status='approved') | Q(status='pending')).aggregate(
-            num_assistants=Sum('quantity'))
+        #TODO cambiar filtro por constantes
+        assistants = self.orders.filter(Q(status='approved') | \
+                            Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
+
         assistants = assistants['num_assistants'] or 0
         return self.capacity - assistants
 
