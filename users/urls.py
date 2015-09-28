@@ -4,7 +4,7 @@ from .views import PhotoUploadView,UsersViewSet,ObtainAuthTokenView, RequestSign
 
 urlpatterns = patterns('',
 
-	url(r'^token/', ObtainAuthTokenView.as_view()),
+	url(r'^token/', ObtainAuthTokenView.as_view(), name='signup_login'),
     url(r'^upload/photo/?$', PhotoUploadView.as_view()),
     url(r'^current/?$', UsersViewSet.as_view({'get':'retrieve'})),
     url(r'^logout/?$', UsersViewSet.as_view({'post':'logout'})),

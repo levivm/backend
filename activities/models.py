@@ -5,15 +5,17 @@ from django.conf import settings
 from random import randint
 from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
+from random import Random
 
 from organizers.models import Organizer, Instructor
 from locations.models import Location
+from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.mixins import AssignPermissionsMixin
 from django.utils.translation import ugettext_lazy as _
 
 
 class Category(models.Model):
-    name  = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
 
     def __str__(self):
@@ -91,7 +93,6 @@ class Activity(AssignPermissionsMixin, models.Model):
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
 
-
     def __str__(self):
         return self.title
 
@@ -103,7 +104,7 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         steps_requirements = settings.REQUIRED_STEPS
         steps = steps_requirements.keys()
-        related_fields  = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
+        related_fields = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
         related_fields += [rel.name for rel in self._meta.many_to_many]
         for step in steps:
             required_attrs = steps_requirements[step]
@@ -161,41 +162,59 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         return chronograms[0]['sessions__date']
 
-    def add_instructors(self, instructors_data, organizer):
-        instructors = Instructor.update_or_create(instructors_data, organizer)
-
-        for instructor in instructors:
-            self.assign_permissions(organizer.user, instructor)
-
-        self.instructors.clear()
-        self.instructors.add(*instructors)
-
     def set_location(self, location):
         self.location = location
         self.save()
 
+    def can_associate_instructor(self):
+        if self.instructors.count() < MAX_ACTIVITY_INSTRUCTORS:
+            return True
+
+        return False
+
 
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
-    activity = models.ForeignKey(Activity, related_name="photos")
+    activity = models.ForeignKey(Activity, related_name="pictures")
     main_photo = models.BooleanField(default=False)
 
     @classmethod
-    def create_from_stock(cls, sub_category_id, activity):
-        image = ActivityStockPhoto.get_image_by_subcategory(sub_category_id)
-        return cls.objects.create(activity=activity, photo=image.photo, main_photo=True)
+    def create_from_stock(cls, stock_cover, activity):
+        return cls.objects.create(activity=activity, photo=stock_cover.photo, main_photo=True)
 
 
 class ActivityStockPhoto(models.Model):
     photo = models.ImageField(upload_to="activities_stock")
     sub_category = models.ForeignKey(SubCategory)
 
+
+    # @classmethod
+    # def get_cover(cls,cover_id):
+    #     try:
+    #         cover = cls.objects.get(id=cover_id)
+    #     except ActivityStockPhoto.DoesNotExist:
+
+
+
     @classmethod
-    def get_image_by_subcategory(cls, sub_category):
+    def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         count = queryset.count()
-        random_index = randint(0, count - 1) if count else 0
-        return queryset[random_index]
+        # random_index = randint(0, count - 1) if count else 0
+        #TO-DO remove top_count if, we need to fill out stock photos
+        top_count = settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS
+        if count < top_count:
+            top_count = count
+
+        random_indexes = Random().sample(range(0,count),top_count)  if count else []
+
+        images = []
+
+        for index in random_indexes:
+            images.append(queryset[index])
+
+
+        return images
 
 
 class Chronogram(models.Model):
@@ -217,8 +236,12 @@ class Chronogram(models.Model):
         #TODO cambiar filtro por constantes
         assistants = self.orders.filter(Q(status='approved') | \
                             Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
+
         assistants = assistants['num_assistants'] or 0
         return self.capacity - assistants
+
+    def get_assistants(self):
+        return [a for o in self.orders.all() for a in o.assistants.all()]
 
 
 class Session(models.Model):
@@ -226,11 +249,3 @@ class Session(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     chronogram = models.ForeignKey(Chronogram, related_name="sessions")
-
-
-class Review(models.Model):
-    description = models.CharField(max_length=200)
-    activity = models.ForeignKey(Activity)
-    author = models.CharField(max_length=200)
-    rating = models.IntegerField()
-    attributes = models.CharField(max_length=200)

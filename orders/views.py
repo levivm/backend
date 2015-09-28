@@ -132,3 +132,9 @@ class OrdersViewSet(viewsets.ModelViewSet):
         orders = student.orders.all()
         serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)
+
+    def list_by_organizer(self, request, *args, **kwargs):
+        organizer = self._get_organizer(user=request.user)
+        orders = Order.objects.filter(chronogram__activity__organizer=organizer)
+        serializer = self.get_serializer(orders, many=True)
+        return Response(serializer.data)

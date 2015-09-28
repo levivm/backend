@@ -117,5 +117,39 @@
       ],
       "object_pk": "1"
   }
+},
+{
+  "pk": 8,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "change_instructor",
+          "organizers",
+          "instructor"
+      ],
+      "content_type": [
+          "organizers",
+          "instructor"
+      ],
+      "object_pk": "1"
+  }
+},
+{
+  "pk": 9,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "report_review",
+          "reviews",
+          "review"
+      ],
+      "content_type": [
+          "reviews",
+          "review"
+      ],
+      "object_pk": "1"
+  }
 }
 ]

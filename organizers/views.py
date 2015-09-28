@@ -1,7 +1,11 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework import viewsets
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import viewsets, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+from activities.models import Activity
+from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
@@ -10,7 +14,7 @@ from organizers.models import Instructor
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Organizer
 from .serializers import OrganizersSerializer, InstructorsSerializer
-from .permissions import IsCurrentUserSameOrganizer
+from .permissions import IsCurrentUserSameOrganizer, IsOrganizer
 
 
 def signup(request):
@@ -23,7 +27,7 @@ class OrganizerViewSet(viewsets.ModelViewSet):
     """
     queryset = Organizer.objects.all()
     serializer_class = OrganizersSerializer
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,)
     lookup_url_kwarg = 'organizer_pk'
 
     def activities(self, request, **kwargs):
@@ -33,7 +37,6 @@ class OrganizerViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-
 class OrganizerLocationViewSet(viewsets.ModelViewSet):
     """
     A viewset that provides the standard actions
@@ -41,17 +44,17 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationsSerializer
     permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer, \
-                          DjangoObjectPermissionsOrAnonReadOnly, )
+                          DjangoObjectPermissionsOrAnonReadOnly,)
     lookup_url_kwarg = 'organizer_pk'
 
-    def set_location(self,request,organizer_pk=None):
+    def set_location(self, request, organizer_pk=None):
         organizer = Organizer.objects.get(id=organizer_pk)
         location_data = request.data.copy()
 
         location_data['organizer'] = organizer.id
 
-        location_serializer = LocationsSerializer(data=location_data,\
-                                   context={'request': request,'organizer_location':True})
+        location_serializer = LocationsSerializer(data=location_data, \
+                                                  context={'request': request, 'organizer_location': True})
         if location_serializer.is_valid(raise_exception=True):
             organizer.locations.all().delete()
             location = location_serializer.save()
@@ -60,15 +63,66 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
         return Response(location_serializer.data)
 
 
-
-
-class InstructorViewSet(viewsets.ModelViewSet):
+class OrganizerInstructorViewSet(viewsets.ModelViewSet):
     model = Instructor
     serializer_class = InstructorsSerializer
-    lookup_url_kwarg = 'instructor_pk'
-    permission_classes = (IsAuthenticated, DjangoObjectPermissions, )
+    permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer, DjangoObjectPermissions,)
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         organizer_id = self.kwargs.get('organizer_pk', None)
         organizer = get_object_or_404(Organizer, pk=organizer_id)
         return organizer.instructors.all()
+
+
+class InstructorViewSet(viewsets.ModelViewSet):
+    queryset = Instructor.objects.all()
+    serializer_class = InstructorsSerializer
+    permission_classes = (IsAuthenticated, IsOrganizer, DjangoObjectPermissions)
+
+
+class ActivityInstructorViewSet(viewsets.ModelViewSet):
+    model = Instructor
+    serializer_class = InstructorsSerializer
+    permission_classes = (IsAuthenticated, IsActivityOwner, DjangoObjectPermissions)
+    ERROR = {
+        'max_instructors': _('La actividad ya ha alcanzado el máximo de instructores.'),
+    }
+
+    def get_activity(self):
+        return get_object_or_404(Activity, pk=self.kwargs.get('activity_pk'))
+
+    def get_queryset(self):
+        activity = self.get_activity()
+        return activity.instructors.all()
+
+    def create(self, request, *args, **kwargs):
+        activity = self.get_activity()
+        if activity.can_associate_instructor():
+            response = super(ActivityInstructorViewSet, self).create(request, *args, **kwargs)
+            instructor = Instructor.objects.get(id=response.data['id'])
+            activity.instructors.add(instructor)
+            return response
+
+        return Response(self.ERROR['max_instructors'], status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self):
+        obj = get_object_or_404(Instructor, pk=self.kwargs.get('pk'))
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        activity = self.get_activity()
+        if activity.can_associate_instructor():
+            response = super(ActivityInstructorViewSet, self).update(request, *args, **kwargs)
+            instructor = self.get_object()
+            activity.instructors.add(instructor)
+            return response
+
+        return Response(self.ERROR['max_instructors'], status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        instructor = self.get_object()
+        activity = self.get_activity()
+        activity.instructors.remove(instructor)
+        return Response(status=status.HTTP_204_NO_CONTENT)

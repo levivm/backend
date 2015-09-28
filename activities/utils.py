@@ -1,7 +1,11 @@
 import calendar
 import hashlib
 import json
+
 from django.conf import settings
+from django.http.response import HttpResponse
+from django.template.context import Context, RequestContext
+from django.template.loader import get_template, render_to_string
 from django.utils.timezone import now
 from requests.api import post
 from utils.exceptions import ServiceUnavailable
@@ -12,6 +16,8 @@ from payments.serializers import PaymentsPSEDataSerializer
 from rest_framework.exceptions import APIException
 
 
+from activities.models import Chronogram
+from payments.models import Payment as PaymentModel
 
 
 class PaymentUtil(object):
@@ -216,7 +222,7 @@ class PaymentUtil(object):
 
 
     def get_user_agent(self):
-        return self.request.META['HTTP_USER_AGENT']
+        return self.request.META.get('HTTP_USER_AGENT')
 
     def get_payment_description(self):
         description = "Inscripción de actividad {}".format(self.activity.title)
@@ -340,7 +346,7 @@ class PaymentUtil(object):
               "type": "AUTHORIZATION_AND_CAPTURE",
               "paymentMethod": "PSE",
               "paymentCountry": "CO",
-              "ipAddress": self.get_client_ip(),
+              "ipAddress": self.get_client_ip(self.request),
               "cookie": self.get_cookie(),
               "userAgent": self.get_user_agent(),
            },
@@ -404,9 +410,4 @@ class PaymentUtil(object):
         payu_data = json.dumps(self.get_bank_list_payu_data())
         result = post(url=settings.PAYU_URL, data=payu_data, headers={'content-type': 'application/json', 'accept': 'application/json'})
         return self.bank_list_response(result)
-
-
-
-
-
 

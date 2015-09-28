@@ -1,0 +1,7 @@
+Datos del review
+
+
+ReviewID:{{review.id}}
+Organizador:{{review.activity.organizer.name}}
+Comentario:{{review.comment}}
+Respuesta:{{review.reply}}

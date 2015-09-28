@@ -5,11 +5,13 @@ from utils.serializers import UnixEpochDateField
 from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
-from utils.mixins import FileUploadMixin
+from utils.mixins import FileUploadMixin, AssignPermissionsMixin
 
 
-class InstructorsSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
+class InstructorsSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    organizer = serializers.PrimaryKeyRelatedField(read_only=True)
+    permissions = ('organizers.change_instructor', 'organizers.delete_instructor')
 
     class Meta:
         model = Instructor
@@ -22,14 +24,20 @@ class InstructorsSerializer(serializers.ModelSerializer):
             'website',
         )
 
+    def create(self, validated_data):
+        organizer = self.context['request'].user.organizer_profile
+        validated_data.update({ 'organizer': organizer })
+        instance = super(InstructorsSerializer, self).create(validated_data)
+        self.assign_permissions(user=instance.organizer.user, instance=instance)
+        return instance
 
 
-class OrganizersSerializer(FileUploadMixin,serializers.ModelSerializer):
+class OrganizersSerializer(FileUploadMixin, serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
-    instructors = InstructorsSerializer(many=True,read_only=True)
-    locations = LocationsSerializer(many=True,read_only=True)
+    instructors = InstructorsSerializer(many=True, read_only=True)
+    locations = LocationsSerializer(many=True, read_only=True)
 
     class Meta:
         model = Organizer
@@ -53,7 +61,6 @@ class OrganizersSerializer(FileUploadMixin,serializers.ModelSerializer):
 
     def validate_photo(self, file):
         return self.clean_file(file)
-        
 
     def get_user_type(self, obj):
         return UserCreateForm.USER_TYPES[0][0]

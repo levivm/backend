@@ -51,7 +51,7 @@ class SendEmailTaskMixin(Task):
         data = {}
         return data
 
-    def get_emails_to(self, instance):
+    def get_emails_to(self, *args, **kwargs):
         return []
 
     def on_success(self, retval, task_id, args, kwargs):

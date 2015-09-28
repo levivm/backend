@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='assistant',
             name='token',
-            field=models.CharField(default=orders.models.generate_token, max_length=5),
+            field=models.CharField(max_length=5),
         ),
     ]

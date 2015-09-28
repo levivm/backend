@@ -64,7 +64,7 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
 
     def validate(self, data):
         activity = self.context['activity']
-        photos_count = activity.photos.count()
+        photos_count = activity.pictures.count()
 
         if photos_count >= settings.MAX_ACTIVITY_PHOTOS:
             msg = _(u'Ya excedió el número máximo de imágenes por actividad.')
@@ -271,7 +271,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     category_id = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='id')
     category_color = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='color')
     location = LocationsSerializer(read_only=True)
-    photos = ActivityPhotosSerializer(read_only=True, many=True)
+    pictures = ActivityPhotosSerializer(read_only=True, many=True)
     chronograms = ChronogramsSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
@@ -306,7 +306,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'goals',
             'methodology',
             'location',
-            'photos',
+            'pictures',
             'youtube_video_url',
             'published',
             'certification',
@@ -322,7 +322,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
 
     def get_required_steps(self,obj):
-        if not obj.photos.count():
+        if not obj.pictures.count():
             return settings.PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS
 
         return settings.REQUIRED_STEPS
@@ -376,14 +376,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         request = self.context['request']
-        organizer = validated_data.get('organizer')
-        instructors_data = validated_data.get('instructors', [])
-        instance.add_instructors(instructors_data, organizer)
-
-        # del (validated_data['location'])
         instance.update(validated_data)
-
-
         instance.save()
 
         _tags = request.data.get('tags')
