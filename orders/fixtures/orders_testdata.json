@@ -17,7 +17,8 @@
         "last_name": "forero",
         "first_name": "harvey",
         "order": 1,
-        "email": "h@trulii.com"
+        "email": "h@trulii.com",
+        "token": "1234"
     },
     "pk": 1
 },
@@ -27,7 +28,8 @@
         "last_name": "vasquez",
         "first_name": "levi",
         "order": 1,
-        "email": "l@trulii.com"
+        "email": "l@trulii.com",
+        "token": "5678"
     },
     "pk": 2
 }

@@ -1,17 +1,17 @@
-from .models import Student
 from rest_framework import serializers
+
+from .models import Student
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
 from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField
 
 
-
-class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
+class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
     user = UsersSerializer()
     user_type = serializers.SerializerMethodField()
     birth_date = UnixEpochDateField()
-
+    referrer_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = Student
@@ -23,8 +23,9 @@ class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
             'user',
             'user_type',
             'birth_date',
-            'city'
-            )
+            'city',
+            'referrer_code',
+        )
 
     def validate_photo(self, file):
         return self.clean_file(file)
@@ -32,7 +33,7 @@ class StudentsSerializer(FileUploadMixin,serializers.ModelSerializer):
     def get_user_type(self, obj):
         return UserCreateForm.USER_TYPES[1][0]
 
-    def update(self,instance,validated_data):
+    def update(self, instance, validated_data):
         instance.update(validated_data)
         instance.update_base_info(validated_data['user'])
         return instance

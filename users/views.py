@@ -1,39 +1,40 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+from allauth.account.views import ConfirmEmailView, LoginView, SignupView
 from allauth.account.views import _ajax_response, \
     PasswordChangeView, EmailView
-from rest_framework import viewsets, exceptions
-from rest_framework.parsers import FileUploadParser, FormParser, MultiPartParser, JSONParser
-from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
-from rest_framework.views import APIView
-from django.contrib.auth.models import User
-from rest_framework import status
-from django.http import HttpResponseRedirect
-from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import logout as auth_logout
-from django.utils.translation import ugettext_lazy as _
-from allauth.account.views import ConfirmEmailView,LoginView,SignupView
-from django.http import HttpResponse
-from rest_framework.permissions import AllowAny
+from allauth.socialaccount.helpers import complete_social_login
 from allauth.socialaccount.models import SocialApp, SocialToken, SocialLogin
 from allauth.socialaccount.providers.facebook.views import fb_complete_login
-from allauth.socialaccount.helpers import complete_social_login
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.debug import sensitive_post_parameters
+from rest_framework import status
+from rest_framework import viewsets, exceptions
+from rest_framework.authtoken.models import Token
+from rest_framework.parsers import FileUploadParser, FormParser, MultiPartParser, JSONParser
+from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from utils.form_utils import ajax_response
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
-from students.serializer import StudentsSerializer
+from referrals.mixins import ReferralMixin
 from students.models import Student
-from .serializers import AuthTokenSerializer
+from students.serializer import StudentsSerializer
+from utils.form_utils import ajax_response
 from utils.forms import FileUploadForm
-from .serializers import RequestSignupsSerializers,UsersSerializer
 from .models import RequestSignup, OrganizerConfirmation
+from .serializers import AuthTokenSerializer
+from .serializers import RequestSignupsSerializers, UsersSerializer
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.debug import sensitive_post_parameters
 
 def _set_ajax_response(_super):
     form_class = _super.get_form_class()
@@ -74,7 +75,6 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
 
-
     def retrieve(self, request):
         user = request.user
 
@@ -84,7 +84,6 @@ class UsersViewSet(viewsets.ModelViewSet):
         data = get_user_profile_data(user)
 
         return Response(data)
-
 
     def logout(self, request):
 
@@ -104,44 +103,26 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(request_signup_data, status=status.HTTP_200_OK)
 
 
-class ObtainAuthTokenView(APIView):
+class ObtainAuthTokenView(ReferralMixin):
     throttle_classes = ()
     permission_classes = ()
     parser_classes = (FormParser, MultiPartParser, JSONParser,)
     renderer_classes = (JSONRenderer,)
     serializer_class = AuthTokenSerializer
 
-
     @sensitive_post_parameters_m
     def dispatch(self, request, *args, **kwargs):
-        is_sign_up = request.POST.get('user_type')
-        if is_sign_up:
-            signup_response = SignupView().dispatch(request,*args, **kwargs)
-            if (signup_response.status_code==status.HTTP_400_BAD_REQUEST):
-                return signup_response
-        else:
-            login_response  = LoginView().dispatch(request, *args, **kwargs)
-
-            if (login_response.status_code==status.HTTP_400_BAD_REQUEST):
-                return login_response
-
+        self.is_sign_up = request.POST.get('user_type')
+        self.request_copy = request
         return super(ObtainAuthTokenView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        response = self.register_or_login(*args, **kwargs)
 
-        is_sign_up = request.POST.get('user_type')
-        auth_data = {}
-        
-        if is_sign_up:
-            auth_data = {
-                'email':request.data.get('email'),
-                'password':request.data.get('password1'),
-            }
-        else:
-            auth_data = {
-                'email':request.data.get('login'),
-                'password':request.data.get('password')
-            }
+        if response:
+            return response
+
+        auth_data = self.get_auth_data()
 
         serializer = self.serializer_class(data=auth_data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -150,10 +131,36 @@ class ObtainAuthTokenView(APIView):
         user_data = get_user_profile_data(user)
 
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'user': user_data})
+        data = {'token': token.key, 'user': user_data}
+        return super(ObtainAuthTokenView, self).post(data, request, *args, **kwargs)
+
+    def get_auth_data(self):
+        if self.is_sign_up:
+            auth_data = {
+                'email': self.request.data.get('email'),
+                'password': self.request.data.get('password1'),
+            }
+        else:
+            auth_data = {
+                'email': self.request.data.get('login'),
+                'password': self.request.data.get('password')
+            }
+
+        return auth_data
+
+    def register_or_login(self, *args, **kwargs):
+        if self.is_sign_up:
+            signup_response = SignupView().dispatch(self.request_copy, *args, **kwargs)
+            if (signup_response.status_code == status.HTTP_400_BAD_REQUEST):
+                return signup_response
+
+        else:
+            login_response = LoginView().dispatch(self.request_copy, *args, **kwargs)
+            if (login_response.status_code == status.HTTP_400_BAD_REQUEST):
+                return login_response
 
 
-class RestFacebookLogin(APIView):
+class RestFacebookLogin(ReferralMixin):
     """
     Login or register a user based on an authentication token coming
     from Facebook.
@@ -196,10 +203,11 @@ class RestFacebookLogin(APIView):
                 'token': token.key,
             }
 
-            return Response(
-                status=status.HTTP_200_OK,
-                data=data
-            )
+            # return Response(
+            #     status=status.HTTP_200_OK,
+            #     data=data
+            # )
+            return super(RestFacebookLogin, self).post(data, request, *args, **kwargs)
 
         except Exception as error:
             return Response(status=status.HTTP_401_UNAUTHORIZED, data={
@@ -209,7 +217,6 @@ class RestFacebookLogin(APIView):
 
 class PhotoUploadView(APIView):
     parser_classes = (FileUploadParser,)
-
 
     def post(self, request):
         user = self.request.user
@@ -262,12 +269,10 @@ class ChangeEmailView(APIView):
 
 class PasswordChange(APIView):
     def post(self, request, *args, **kwargs):
-        
         _super_response = PasswordChangeView()
         _super_response.request = request._request
         response, form = _set_ajax_response(_super_response)
         return _ajax_response(request, response, form=form)
-
 
 
 class ConfirmEmail(ConfirmEmailView):
@@ -276,15 +281,6 @@ class ConfirmEmail(ConfirmEmailView):
 
         return HttpResponse(
             content_type="application/json", status=status.HTTP_200_OK)
-
-
-
-
-
-
-
-
-
 
 # class LoginViewTest(APIView,LoginView):
 
@@ -301,7 +297,7 @@ class ConfirmEmail(ConfirmEmailView):
 
 #         # re = sensitive_post_parameters(request)
 #         # request.POST = re 
-        
+
 #         # request = sensitive_post_parameters_m(request)
 #         login_view = LoginView.as_view()
 #         response   = login_view(request)

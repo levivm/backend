@@ -1,0 +1,3 @@
+{{ name }} te ha invitado a registrate en Trulii
+
+Aceptar la invictación: {{invite.url}}
