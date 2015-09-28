@@ -69,7 +69,7 @@ class ActivitiesListViewTest(BaseViewTest):
         user = User.objects.get(id=self.ORGANIZER_ID)
         request = HttpRequest()
         request.user = user
-        request.data = request.DATA = data
+        request.data = request.data = data
         serializer = ActivitiesSerializer(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         activity = serializer.create(validated_data=serializer.validated_data)
@@ -185,7 +185,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
     def test_organizer_permissions_of_chronogram(self):
         request = HttpRequest()
         request.user = User.objects.get(id=self.ORGANIZER_ID)
-        request.data = request.DATA = self._get_data_to_create_a_chronogram()
+        request.data = request.data = self._get_data_to_create_a_chronogram()
         serializer = ChronogramsSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         chronogram = serializer.create(validated_data=serializer.validated_data)
@@ -450,7 +450,7 @@ class ActivityGalleryViewTest(BaseViewTest):
         file = SimpleUploadedFile(imgfile.name, content=imagestring, content_type='image/jpeg')
         request = HttpRequest()
         request.user = user
-        request.data = request.DATA = {'photo': file, 'main_photo': True}
+        request.data = request.data = {'photo': file, 'main_photo': True}
         request.FILES = {'photo': file}
         serializer = ActivityPhotosSerializer(data=request.data, context={'request': request, 'activity': activity})
         serializer.is_valid(raise_exception=True)

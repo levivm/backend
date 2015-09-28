@@ -1,4 +1,4 @@
-mensaje de pago con tdc pay u
+mensaje de pago con PSE pay u
 
 
 Nombre Actividad:{{activity.title}}

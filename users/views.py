@@ -163,8 +163,6 @@ class RestFacebookLogin(APIView):
     permission_classes = (AllowAny,)
 
     def dispatch(self, *args, **kwargs):
-        import pdb
-        pdb.set_trace()
         return super(RestFacebookLogin, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -172,7 +170,6 @@ class RestFacebookLogin(APIView):
         try:
             original_request = request._request
             auth_token = request.data.get('auth_token', '')
-
             # Find the token matching the passed Auth token
             app = SocialApp.objects.get(provider='facebook')
             fb_auth_token = SocialToken(app=app, token=auth_token)
@@ -279,68 +276,3 @@ class ConfirmEmail(ConfirmEmailView):
         return HttpResponse(
             content_type="application/json", status=status.HTTP_200_OK)
 
-
-
-
-
-
-
-
-
-
-# class LoginViewTest(APIView,LoginView):
-
-#     @sensitive_post_parameters_m
-#     def dispatch(self, request, *args, **kwargs):
-#         # return LoginView().as_view()
-#         return super(LoginView, self).dispatch(request, *args, **kwargs)
-#         # return super(LoginViewTest, self).dispatch(request, *args, **kwargs)
-
-#     def post(self, request, *args, **kwargs):
-#         # request.POST = SafeExceptionReporterFilter().get_post_parameters(request)
-#         import pdb
-#         pdb.set_trace()
-
-#         # re = sensitive_post_parameters(request)
-#         # request.POST = re 
-        
-#         # request = sensitive_post_parameters_m(request)
-#         login_view = LoginView.as_view()
-#         response   = login_view(request)
-
-#         return response
-
-
-# class SignUpCustomView(SignupView):
-
-
-#     def post(self, request, *args, **kwargs):
-
-
-#         form_class = self.get_form_class()
-#         form = self.get_form(form_class)
-#         if form.is_valid():
-
-#             email = form.cleaned_data.get('email',None)
-#             user_type = form.cleaned_data.get('user_type','S')
-#             if user_type == settings.ORGANIZER_TYPE:
-#                 try:
-#                     oc = OrganizerConfirmation.objects.\
-#                         select_related('requested_signup').\
-#                         get(requested_signup__email=email)
-#                     oc.used = True
-#                     oc.save()
-
-#                 except OrganizerConfirmation.DoesNotExist:
-#                     msg = unicode(_("Este correo no ha sido previamente validado"))
-#                     response_data = {'form_errors':{'email':[msg]}}
-
-#                     return HttpResponse(json.dumps(response_data),
-#                         content_type="application/json",status=400)
-
-#             response = self.form_valid(form)
-#         else:
-#             response = self.form_invalid(form)
-
-
-#         return _ajax_response(request,response,form=form)

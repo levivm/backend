@@ -173,7 +173,7 @@ class PaymentUtil(object):
                 'order': {
                     'accountId': settings.PAYU_ACCOUNT_ID,
                     'referenceCode': reference_code,
-                    'description': self.activity.short_description,
+                    'description': self.get_payment_description(),
                     'language': 'es',
                     'notifyUrl': settings.PAYU_NOTIFY_URL,
                     'signature': self.get_signature(reference_code=reference_code, price=amount),
@@ -189,6 +189,10 @@ class PaymentUtil(object):
                 'type': 'AUTHORIZATION_AND_CAPTURE',
                 'paymentMethod': self.card_association,
                 'paymentCountry': 'CO',
+                'userAgent': self.get_user_agent(),
+                'deviceSessionId': self.get_deviceSessionId(),
+                'cookie': self.get_cookie()
+
             },
             'test': settings.PAYU_TEST
         }
@@ -202,6 +206,22 @@ class PaymentUtil(object):
         if settings.PAYU_TEST:
             result = self.test_response(result)
         return self.response(result)
+
+    def get_cookie(self):
+        return self.request.auth.key
+
+    def get_deviceSessionId(self):
+        return self.request.data.get('deviceSessionId')
+
+
+
+    def get_user_agent(self):
+        return self.request.META['HTTP_USER_AGENT']
+
+    def get_payment_description(self):
+        description = "Inscripción de actividad {}".format(self.activity.title)
+        description = str(_(description))
+        return description
 
     def get_reference_code(self):
         activity_id  = self.activity.id
@@ -303,7 +323,7 @@ class PaymentUtil(object):
               "order": {
                  "accountId": settings.PAYU_ACCOUNT_ID,
                  "referenceCode": reference_code,
-                 "description": "payment test",
+                 "description": self.get_payment_description(),
                  "language": "es",
                  "signature": self.get_signature(reference_code=reference_code, price=amount),
                  "notifyUrl": settings.PAYU_NOTIFY_URL,
@@ -320,9 +340,9 @@ class PaymentUtil(object):
               "type": "AUTHORIZATION_AND_CAPTURE",
               "paymentMethod": "PSE",
               "paymentCountry": "CO",
-              # "ipAddress": "127.0.0.1",
-              # "cookie": "pt1t38347bs6jc9ruv2ecpv7o2",
-              # "userAgent": "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0"
+              "ipAddress": self.get_client_ip(),
+              "cookie": self.get_cookie(),
+              "userAgent": self.get_user_agent(),
            },
            "test": settings.PAYU_TEST
         }
@@ -340,6 +360,8 @@ class PaymentUtil(object):
         self.validate_pse_payment_data()
         result = {}
         if settings.PAYU_TEST:
+            payu_data = json.dumps(self.get_payu_pse_data())
+            print("Pay U PSE DATA",payu_data)
             result = {
                 'code':'SUCCESS',
                 'transactionResponse':{
