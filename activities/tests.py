@@ -423,13 +423,13 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.tmp_file = tmp_file        
 
         #URLs
-        self.set_cover_from_stock_url = reverse('set_cover_from_stock', \
+        self.set_cover_from_stock_url = reverse('activities:set_cover_from_stock', \
                 kwargs={'activity_pk': self.activity.id})
 
-        self.upload_activity_photo_url = reverse('upload_activity_photo', \
+        self.upload_activity_photo_url = reverse('activities:upload_activity_photo', \
                 kwargs={'activity_pk': self.activity.id})
 
-        self.delete_activity_photo_url = reverse('delete_activity_photo', \
+        self.delete_activity_photo_url = reverse('activities:delete_activity_photo', \
                 kwargs={'activity_pk': self.another_activity.id,
                         'gallery_pk':self.activity_photo.id})
 
@@ -888,7 +888,6 @@ class SearchActivitiesViewTest(BaseViewTest):
     def test_search_weekends(self):
 
         response = self.client.get(self.url, data={'weekends':True})
-        print(len(response.data))
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity,many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

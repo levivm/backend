@@ -60,20 +60,20 @@ class OrdersSerializer(serializers.ModelSerializer):
         chronogram = data.get('chronogram')
         assistants_data = data.get('assistants')
         activity = chronogram.activity
-
+        
         if not activity.published:
-            msg = _("La actividad no se encuentra activa")
+            msg = str(_("La actividad no se encuentra activa"))
             raise serializers.ValidationError({'generalError':msg})
 
         if not chronogram.enroll_open:
-            msg = _("Las inscripciones están cerradas para esta fecha de inicio")
+            msg = str(_("Las inscripciones están cerradas para esta fecha de inicio"))
             raise serializers.ValidationError({'generalError':msg})
 
 
 
         if not chronogram.available_capacity() or \
                chronogram.available_capacity()<len(assistants_data):
-            msg = _("El cupo de asistentes está lleno")
+            msg = str(_("El cupo de asistentes está lleno"))
             raise serializers.ValidationError({'generalError':msg})
 
         assistant_serializer = AssistantsSerializer(data=assistants_data, many=True)
@@ -84,9 +84,9 @@ class OrdersSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
         validated_data.update({
-            'student': self.context['view'].student,
-            'status': self.context['status'],
-            'payment': self.context['payment'],
+            'student': self.context.get('view').student,
+            'status': self.context.get('status'),
+            'payment': self.context.get('payment'),
         })
         order = Order(**validated_data)
         chronogram   = order.chronogram

@@ -1,158 +1,276 @@
 import json
 from rest_framework import status
+from model_mommy import mommy
+from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
+from django.utils.translation import ugettext_lazy as _
+
+
+
 from orders.models import Order
 from orders.views import OrdersViewSet
 from utils.tests import BaseViewTest
+from utils.tests import BaseAPITestCase
 from activities.models import Activity,Chronogram
 
 
-class OrdersByActivityViewTest(BaseViewTest):
-    url = '/api/activities/1/orders'
-    view = OrdersViewSet
-    CHRONOGRAM_ID = 1 
-    ACTIVITY_ID = 1
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+class OrdersAPITest(BaseAPITestCase):
+    """Test orders viewset"""
 
-    def test_methods_for_anonymous(self):
-        self.authorization_should_be_require(safe_methods=True)
 
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
 
-    def test_students_should_create_an_order_if_activity_has_capacity_and_is_published_and_enroll_is_open(self):
-        client = self.get_student_client()
+
+    def setUp(self):
+        super(OrdersAPITest, self).setUp()
         
-        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
-        chronogram.capacity  = 1
-        chronogram.enroll_open  = True
-        chronogram.orders.all().delete()
-        chronogram.save()
-        data = self.get_payment_data()
-        activity = Activity.objects.get(pk=1)
-        activity.published = True
-        activity.save(update_fields=['published'])
-
-        self.assertTrue(chronogram.available_capacity()>=data['quantity'] \
-                       and activity.published and chronogram.enroll_open)        
-
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order = Order.objects.latest('pk')
-        expected = bytes('"id":%s' % order.id, 'utf8')
         
-            
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn(expected, response.content)
+        #Create Activities objects
+        self.activity = mommy.make(Activity, organizer=self.organizer, \
+                                   published=True)
+        self.other_activity = mommy.make(Activity, organizer=self.organizer, \
+                                   published=True)
 
-    def test_students_shouldnt_create_an_order_if_activity_unpublished_or_hasnt_capacity(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
+        self.active_activity = mommy.make(Activity, published=True)
 
-        chronogram = Chronogram.objects.get(id=self.CHRONOGRAM_ID)
-        chronogram.capacity  = 1
-        chronogram.enroll_open  = False
-        chronogram.save()
+        self.inactive_activity = mommy.make(Activity)
 
-        activity = Activity.objects.get(pk=self.ACTIVITY_ID)
-        activity.published = False
-        activity.save(update_fields=['published'])
+
+        #Create Calendards objects
+        self.calendar = mommy.make(Chronogram, activity=self.activity)
+
+        self.other_calendar = mommy.make(Chronogram, activity=self.other_activity)
+
+        self.free_calendar = mommy.make(Chronogram, is_free=True, \
+                                       activity=self.active_activity, capacity=10)
         
-        self.assertFalse(activity.published and chronogram.available_capacity()>=data['quantity'] and \
-                        chronogram.enroll_open)
-        response = client.post(self.url, json.dumps(data),content_type='application/json')
+        self.inactive_calendar = mommy.make(Chronogram, activity=self.inactive_activity)
+
+        self.full_calendar = mommy.make(Chronogram, activity=self.active_activity, \
+                                        capacity=0)
+
+        self.closed_enroll_calendar = mommy.make(Chronogram, activity=self.active_activity, \
+                                                 enroll_open=False)
+
+
+
+        #Create Orders objects
+        mommy.make(Order,student=self.student,_quantity=2)
+
+        mommy.make(Order,chronogram=self.calendar,_quantity=2)
+
+        mommy.make(Order,chronogram=self.other_calendar,_quantity=2)
+
+        self.order = mommy.make(Order,student=self.student)
+
+        self.another_other = mommy.make(Order)
+
+
+
+        # URLs
+        self.orders_by_activity_url = reverse('orders:create_or_list_by_activity',
+                        kwargs = {'activity_pk':self.activity.id})
+
+        self.orders_by_student_url = reverse('orders:list_by_student',
+                        kwargs = {'student_pk':self.student.id})
+
+        self.orders_by_organizer_url = reverse('orders:list_by_organizer',
+                        kwargs = {'organizer_pk':self.organizer.id})
+
+
+        self.order_retrieve_url = reverse('orders:retrieve',
+                        kwargs = {'order_pk':self.order.id})
+
+        self.another_order_retrieve_url = reverse('orders:retrieve',
+                        kwargs = {'order_pk':self.another_other.id})
+
+        self.create_order_url = reverse('orders:create_or_list_by_activity',
+                        kwargs = {'activity_pk':self.active_activity.id})
+
+        self.create_inactive_activity_order_url = reverse('orders:create_or_list_by_activity',
+                        kwargs = {'activity_pk':self.inactive_activity.id})
+
+
+        #Set permissions
+        permission = Permission.objects.get_by_natural_key('add_order',\
+                            'orders', 'order')
+        permission.user_set.add(self.student.user)
+
+        #counts
+        self.orders_count = Order.objects.all().count()
+        self.student_orders_count = Order.objects.filter(student=self.student).count()
+        self.activity_orders_count = Order.objects.filter(chronogram=self.calendar).count()
+        self.organizer_orders_count = Order.objects.\
+                    filter(chronogram__activity__organizer=self.organizer).count()
+
+
+    def get_order_data(self,activity_id,calendar_id):
+        return {             
+            'chronogram': calendar_id,
+            'activity': activity_id,
+            'quantity': 1,
+            'amount': 8000,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }]
+        }
+
+    def test_list_by_activity(self):
+        """ 
+        Test to list orders by activities owned by an organizer 
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.orders_by_activity_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        #A student should not list an activity oders
+        response = self.student_client.get(self.orders_by_activity_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        #List activity orders
+        response = self.organizer_client.get(self.orders_by_activity_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), self.activity_orders_count)
+
+
+    def test_list_by_student(self):
+        """ 
+        Test to list orders by student
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.orders_by_student_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+        #An organizer should not list student oders
+        response = self.organizer_client.get(self.orders_by_student_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        #List order owned by a student
+        response = self.student_client.get(self.orders_by_student_url)
+        orders_owner = response.data[0].get('student').get('id')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), self.student_orders_count)
+        self.assertEqual(orders_owner, self.student.id)
+
+    def test_list_by_organizer(self):
+        """ 
+        Test to list orders by organizer
+        """
+
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.orders_by_organizer_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+        #A Student should not list student oders
+        response = self.student_client.get(self.orders_by_organizer_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        #List order owned by an organizer
+        response = self.organizer_client.get(self.orders_by_organizer_url)
+        order_id = response.data[0].get('id')
+        orders_owner = Order.objects.get(id=order_id).chronogram.\
+                                          activity.organizer.id
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), self.organizer_orders_count)
+        self.assertEqual(orders_owner, self.organizer.id)
+
+    def test_retrieve(self):
+        """ 
+        Test to retrieve an order by pk
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.order_retrieve_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        #An organizer should not retrieve student oders
+        response = self.organizer_client.get(self.order_retrieve_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        #A student should not retrieve other student order
+        response = self.student_client.get(self.another_order_retrieve_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        #A student should retrieve his order
+        response = self.student_client.get(self.order_retrieve_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_create_closed_enroll_calender_order(self):
+        """Test to create an order over an calendar with closed enrollment"""
+
+        post_data = self.get_order_data(self.active_activity.id,self.closed_enroll_calendar.id)
+
+        #A student should not create an order if the activity is inactive
+        response = self.student_client.post(self.create_order_url,\
+                                            post_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Order.objects.count(),self.orders_count)
 
 
-    def test_another_organizer_shouldnt_get_the_order(self):
-        organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_404_NOT_FOUND)
+    def test_create_full_calender_order(self):
+        """Test to create an order over an full calendar"""
+
+        post_data = self.get_order_data(self.active_activity.id,self.full_calendar.id)
+
+        #A student should not create an order if the activity is inactive
+        response = self.student_client.post(self.create_order_url,\
+                                            post_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Order.objects.count(),self.orders_count)
 
 
-class GetSingleOrderViewTest(BaseViewTest):
-    url = '/api/orders/1'
-    view = OrdersViewSet
+    def test_create_inactive_activity_order(self):
+        """Test to create an order over an inactive activity"""
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+        post_data = self.get_order_data(self.inactive_activity.id,self.inactive_calendar.id)
 
-    def test_authorization_should_be_require(self):
-        self.authorization_should_be_require(safe_methods=True)
-
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
-
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
-
-    def test_another_student_shouldnt_get_the_order(self):
-        student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
-        self.method_should_be(clients=student, method='get', status=status.HTTP_404_NOT_FOUND)
+        # Anonymous should return unauthorized
+        response = self.client.post(self.create_inactive_activity_order_url,post_data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ByStudentViewTest(BaseViewTest):
-    url = '/api/students/1/orders'
-    view = OrdersViewSet
-
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
-
-    def test_authorization_should_be_require(self):
-        self.authorization_should_be_require(safe_methods=True)
-
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
-
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+        #An organizer should not create a free order 
+        response = self.organizer_client.post(self.create_inactive_activity_order_url,post_data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class ByOrganizerViewTest(BaseViewTest):
-    url = '/api/organizers/1/orders'
-    view = OrdersViewSet
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+        #A student should not create an order if the activity is inactive
+        response = self.student_client.post(self.create_inactive_activity_order_url,\
+                                            post_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Order.objects.count(),self.orders_count)
 
-    def test_authorization_should_be_require(self):
-        self.authorization_should_be_require(safe_methods=True)
 
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+    def test_create_free_order(self):
+        """ 
+        Test to create a order over a free calendar
+        """
 
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+        #Post data
+        post_data = self.get_order_data(self.active_activity.id, self.free_calendar.id)
+
+        # Anonymous should return unauthorized
+        response = self.client.post(self.create_order_url,post_data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+        #An organizer should not create a free order 
+        response = self.organizer_client.post(self.create_order_url,post_data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        #A student should create a free order
+        response = self.student_client.post(self.create_order_url,post_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Order.objects.count(),self.orders_count + 1)
