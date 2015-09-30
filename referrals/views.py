@@ -1,6 +1,7 @@
 from rest_framework.generics import GenericAPIView, get_object_or_404
 from rest_framework.response import Response
 
+
 from referrals.permissions import IsStudent
 from referrals.tasks import SendReferralEmailTask
 from students.models import Student

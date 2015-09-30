@@ -172,6 +172,13 @@ class Activity(AssignPermissionsMixin, models.Model):
 
         return False
 
+    def get_orders(self):
+        chronograms = self.chronograms.all()
+        orders = [c.orders.all() for c in chronograms]
+        orders = [order for sublist in orders for order in sublist]
+        return orders
+
+
 
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
@@ -226,6 +233,7 @@ class Chronogram(models.Model):
     capacity = models.IntegerField()
     enroll_open = models.NullBooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
+    is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
     def update(self, data):

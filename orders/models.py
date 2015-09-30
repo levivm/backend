@@ -26,7 +26,7 @@ class Order(models.Model):
     amount = models.FloatField()
     quantity = models.IntegerField()
     status = models.CharField(choices=STATUS, max_length=15, default='pending')
-    payment = models.OneToOneField(Payment)
+    payment = models.OneToOneField(Payment,null=True)
 
     def change_status(self,status):
         self.status = status
@@ -37,4 +37,4 @@ class Assistant(Tokenizable):
     order = models.ForeignKey(Order, related_name='assistants')
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
-    email = models.EmailField()
+    email = models.EmailField(blank=True)

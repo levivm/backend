@@ -210,17 +210,16 @@ class PayUPSETest(BaseViewTest):
         client = self.get_student_client()
         data = json.dumps(self.get_payment_pse_data())
         response = client.post(self.url, data , content_type='application/json')
-        print("RESPONSE ",response.content)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
 
-    # def test_pse_payment_declined(self):
-    #     client = self.get_student_client()
-    #     data = self.get_payment_pse_data()
-    #     data['buyer']['name'] = 'DECLINED'
-    #     data = json.dumps(data)
-    #     response = client.post(self.url, data , content_type='application/json')
-    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_pse_payment_declined(self):
+        client = self.get_student_client()
+        data = self.get_payment_pse_data()
+        data['buyer']['name'] = 'DECLINED'
+        data = json.dumps(data)
+        response = client.post(self.url, data , content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_payu_confirmation_url_pse_transaction_declined(self):
         client = self.get_student_client()

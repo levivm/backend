@@ -302,15 +302,22 @@ class PaymentUtil(object):
         return result
 
     def pse_test_response(self,result):
-        if result['code'] == 'SUCCESS':        
-            result['transactionResponse']['state'] = self.request.data['buyer']['name']
-            result['transactionResponse'].update({
-                    'extraParameters':{
-                        'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
-                                    ElectronicPayment.bancolombia?\
-                                    PAYMENT_ID=21429692224921982576571322905"
-                    }
-                })
+        if result['code'] == 'SUCCESS':
+            if self.request.data['buyer']['name'] == 'PENDING':
+
+                result['transactionResponse']['state'] = self.request.data['buyer']['name']
+                result['transactionResponse'].update({
+                        'extraParameters':{
+                            'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
+                                        ElectronicPayment.bancolombia?\
+                                        PAYMENT_ID=21429692224921982576571322905"
+                        }
+                    })
+            else:
+                result['transactionResponse']['state'] = self.request.data['buyer']['name']
+                result['transactionResponse']['responseCode'] = \
+                            PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL['ERROR']
+
         return result
 
 
@@ -367,7 +374,6 @@ class PaymentUtil(object):
         result = {}
         if settings.PAYU_TEST:
             payu_data = json.dumps(self.get_payu_pse_data())
-            print("Pay U PSE DATA",payu_data)
             result = {
                 'code':'SUCCESS',
                 'transactionResponse':{
