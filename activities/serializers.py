@@ -140,7 +140,8 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             'capacity',
             'sessions',
             'assistants',
-            'is_weekend'
+            'is_weekend',
+            'is_free'
         )
         depth = 1
 
