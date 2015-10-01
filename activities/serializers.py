@@ -11,7 +11,7 @@ from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from utils.mixins import AssignPermissionsMixin, FileUploadMixin
-from utils.serializers import UnixEpochDateField
+from utils.serializers import UnixEpochDateField,RemovableSerializerFieldMixin
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
         depth = 1
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategoriesSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
 
     class Meta:
@@ -75,8 +75,8 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return data
 
     def validate_photo(self, file):
-        # is_stock_image = self.context['request'].data.get('is_stock_image')
-        if True:
+        is_stock_image = self.context['request'].data.get('is_stock_image')
+        if not is_stock_image:
 
             # import pdb
             # pdb.set_trace()
@@ -268,15 +268,12 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
 class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
     sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
-    category = serializers.CharField(write_only=True, required=True)
-    category_id = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='id')
-    category_color = serializers.SlugRelatedField(source='sub_category.category', read_only=True, slug_field='color')
+    category = serializers.SerializerMethodField()
     location = LocationsSerializer(read_only=True)
     pictures = ActivityPhotosSerializer(read_only=True, many=True)
     chronograms = ChronogramsSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
-    category_display = serializers.SerializerMethodField()
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, required=False)
@@ -296,9 +293,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'level_display',
             'tags',
             'category',
-            'category_id',
-            'category_display',
-            'category_color',
             'content',
             'requirements',
             'return_policy',
@@ -339,6 +333,10 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
 
+    def get_category(self, obj):
+        return CategoriesSerializer(instance=obj.sub_category.category,\
+                    remove_fields = ['subcategories']).data
+
     def get_category_display(self, obj):
         return obj.sub_category.category.name
 
@@ -355,7 +353,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         try:
             organizer = Organizer.objects.get(user=user)
         except Organizer.DoesNotExist:
-            raise serializers.ValidationError("Usuario no es organizador")
+            raise serializers.ValidationError(_msg("Usuario no es organizador"))
 
         data['organizer'] = organizer
 

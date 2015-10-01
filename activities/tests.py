@@ -913,7 +913,7 @@ class SubCategoriesViewTest(BaseAPITestCase):
                 _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         # URLs
-        self.get_covers_url = reverse('get_covers_photos', \
+        self.get_covers_url = reverse('activities:get_covers_photos', \
             kwargs={'subcategory_id': self.sub_category.id})
 
 

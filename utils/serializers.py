@@ -24,3 +24,16 @@ class UnixEpochDateField(serializers.DateTimeField):
     def to_internal_value(self, value):
 
         return datetime.fromtimestamp(value//1000).replace(second=0)
+
+
+class RemovableSerializerFieldMixin(object):
+
+
+    def __init__(self, *args, **kwargs):
+        remove_fields = kwargs.pop('remove_fields', None)
+        super(RemovableSerializerFieldMixin, self).__init__(*args, **kwargs)
+
+        if remove_fields:
+            # for multiple fields in a list
+            for field_name in remove_fields:
+                self.fields.pop(field_name)

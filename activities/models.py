@@ -11,6 +11,7 @@ from organizers.models import Organizer, Instructor
 from locations.models import Location
 from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.mixins import AssignPermissionsMixin
+from utils.behaviors import Updateable
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -54,7 +55,7 @@ class Tags(models.Model):
         return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
 
 
-class Activity(AssignPermissionsMixin, models.Model):
+class Activity(Updateable, AssignPermissionsMixin, models.Model):
     LEVEL_CHOICES = (
         ('P', _('Principiante')),
         ('I', _('Intermedio')),
@@ -95,10 +96,6 @@ class Activity(AssignPermissionsMixin, models.Model):
 
     def __str__(self):
         return self.title
-
-    def update(self, data):
-        self.__dict__.update(data)
-        self.save()
 
     def steps_completed(self):
 
@@ -224,7 +221,7 @@ class ActivityStockPhoto(models.Model):
         return images
 
 
-class Chronogram(models.Model):
+class Chronogram(Updateable, models.Model):
     activity = models.ForeignKey(Activity, related_name="chronograms")
     initial_date = models.DateTimeField()
     closing_sale = models.DateTimeField()
@@ -236,9 +233,6 @@ class Chronogram(models.Model):
     is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
-    def update(self, data):
-        self.__dict__.update(data)
-        self.save()
 
     def available_capacity(self):
         #TODO cambiar filtro por constantes

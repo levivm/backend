@@ -30,11 +30,11 @@ class ReviewAPITest(BaseAPITestCase):
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
 
         # URLs
-        self.list_by_organizer_url = reverse('review_rest_api', kwargs={'organizer_pk': self.organizer.id})
-        self.list_by_student_url = reverse('review_rest_api', kwargs={'student_pk': self.student.id})
-        self.create_url = reverse('review_rest_api', kwargs={'activity_pk': self.activity.id})
-        self.retrieve_update_delete_url = reverse('review_rest_api', kwargs={'pk': self.review.id})
-        self.report_url = reverse('report_review_api', kwargs={'pk': self.review.id})
+        self.list_by_organizer_url = reverse('reviews:list_by_organizer', kwargs={'organizer_pk': self.organizer.id})
+        self.list_by_student_url = reverse('reviews:list_by_student', kwargs={'student_pk': self.student.id})
+        self.create_url = reverse('reviews:create', kwargs={'activity_pk': self.activity.id})
+        self.retrieve_update_delete_url = reverse('reviews:reply', kwargs={'pk': self.review.id})
+        self.report_url = reverse('reviews:report', kwargs={'pk': self.review.id})
 
         # Counters
         self.review_count = Review.objects.count()

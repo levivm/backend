@@ -23,3 +23,16 @@ class Tokenizable(models.Model):
 
             if not self._meta.model.objects.filter(token=token).exists():
                 return token
+
+
+class Updateable(models.Model):
+
+
+    class Meta:
+        abstract = True
+
+
+    def update(self,data):
+        for (key, value) in data.items():
+            setattr(self, key, value)
+        self.save()

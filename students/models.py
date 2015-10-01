@@ -4,11 +4,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from locations.models import City
+from utils.behaviors import Updateable
 from django.contrib.contenttypes.fields import GenericRelation
 from utils.models import CeleryTask
 
 
-class Student(models.Model):
+
+class Student(Updateable, models.Model):
     FEMALE, MALE = range(1, 3)
 
     GENDER_CHOICES = (
@@ -41,19 +43,6 @@ class Student(models.Model):
             return student
         except Student.DoesNotExist:
             return None
-
-    def update(self, data):
-        self.__dict__.update(data)
-        city = data.get('city')
-
-        if city:
-            self.city = city
-
-        self.save()
-
-    def updated_city(self, city):
-        self.city = city
-        self.save()
 
     def update_base_info(self, data):
         self.user.__dict__.update(data)
