@@ -361,27 +361,20 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        _tags = request.data.get('tags')
+        tags = request.data.get('tags')
 
-        tags = Tags.update_or_create(_tags)
         if 'category' in validated_data:
             del validated_data['category']
         activity = Activity.objects.create(**validated_data)
-        activity.tags.clear()
-        activity.tags.add(*tags)
+        activity.update_tags(tags)
 
         self.assign_permissions(request.user, activity)
         return activity
 
     def update(self, instance, validated_data):
         request = self.context['request']
+        tags = request.data.get('tags')
         instance.update(validated_data)
-        instance.save()
-
-        _tags = request.data.get('tags')
-        if _tags:
-            tags = Tags.update_or_create(_tags)
-            instance.tags.clear()
-            instance.tags.add(*tags)
+        instance.update_tags(tags)
 
         return instance

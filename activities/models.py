@@ -139,6 +139,14 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             })
         return levels
 
+    def update_tags(self,data):
+        self.tags.clear()
+        if data:
+            tags = Tags.update_or_create(data)
+            self.tags.clear()
+            self.tags.add(*tags)
+
+
     def publish(self):
         if self.steps_completed():
             self.published = True
