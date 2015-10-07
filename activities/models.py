@@ -192,6 +192,7 @@ class ActivityPhoto(models.Model):
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):
+        cls.objects.filter(activity=activity, main_photo=True).delete()
         return cls.objects.create(activity=activity, photo=stock_cover.photo, main_photo=True)
 
 

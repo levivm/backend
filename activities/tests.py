@@ -475,6 +475,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+
         # Organizer should create a photo from existing stock
         # and activity score should be updated
 
