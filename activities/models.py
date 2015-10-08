@@ -208,14 +208,10 @@ class ActivityStockPhoto(models.Model):
     #     except ActivityStockPhoto.DoesNotExist:
 
 
-
     @classmethod
-    def get_images_by_subcategory(cls, sub_category):
-        queryset = cls.objects.filter(sub_category=sub_category)
-        count = queryset.count()
-        # random_index = randint(0, count - 1) if count else 0
-        #TO-DO remove top_count if, we need to fill out stock photos
-        top_count = settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS
+    def get_random_pictures(cls,pictures_queryset,needed_pictures):
+        count = pictures_queryset.count()
+        top_count = needed_pictures
         if count < top_count:
             top_count = count
 
@@ -224,10 +220,63 @@ class ActivityStockPhoto(models.Model):
         images = []
 
         for index in random_indexes:
-            images.append(queryset[index])
+            images.append(pictures_queryset[index])
 
 
         return images
+
+
+
+
+    @classmethod
+    def get_random_category_pictures(cls,sub_category,needed_pictures):
+        pictures = cls.objects.filter(sub_category__category=sub_category.category)
+        return cls.get_random_pictures(pictures,needed_pictures)
+
+
+
+
+
+
+    @classmethod
+    def get_images_by_subcategory(cls, sub_category):
+        queryset = cls.objects.filter(sub_category=sub_category)
+        sub_category_pictures = cls.get_random_pictures(queryset,\
+                                    settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+
+        sub_category_pictures_amount = len(sub_category_pictures)
+        enough_pictures = False if sub_category_pictures_amount < \
+                                   settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS else True
+
+        if not enough_pictures:
+            needed_pictures_amount = abs(sub_category_pictures_amount - \
+                                        settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+
+            category_pictures = cls.get_random_category_pictures(sub_category,\
+                                        needed_pictures_amount)
+
+            sub_category_pictures += category_pictures
+
+
+        # category_images 
+        return sub_category_pictures
+
+        # count = queryset.count()
+        # # random_index = randint(0, count - 1) if count else 0
+        # #TO-DO remove top_count if, we need to fill out stock photos
+        # top_count = settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS
+        # if count < top_count:
+        #     top_count = count
+
+        # random_indexes = Random().sample(range(0,count),top_count)  if count else []
+
+        # images = []
+
+        # for index in random_indexes:
+        #     images.append(queryset[index])
+
+
+        # return images
 
 
 class Chronogram(Updateable, models.Model):

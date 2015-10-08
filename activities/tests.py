@@ -16,7 +16,7 @@ from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 from utils.models import CeleryTask
-from activities.models import Activity, ActivityPhoto, Tags, Chronogram,ActivityStockPhoto,SubCategory
+from activities.models import Activity, ActivityPhoto, Tags, Chronogram,ActivityStockPhoto,SubCategory,Category
 from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \
@@ -907,15 +907,43 @@ class SubCategoriesViewTest(BaseAPITestCase):
     def setUp(self):
         super(SubCategoriesViewTest, self).setUp()
 
-        # Objects
-        self.sub_category = mommy.make(SubCategory, name='Yoga')
-        self.activity_stock_photos = mommy.make(ActivityStockPhoto,\
+        ## Objects
+        self.category =  mommy.make(Category)
+        self.sub_category = mommy.make(SubCategory, name='Yoga', category = self.category)
+        self.another_sub_category = mommy.make(SubCategory,category = self.category)
+        #sub_category stock photos
+        mommy.make(ActivityStockPhoto,\
                 sub_category=self.sub_category,\
                 _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+
+        #another_sub_category stock photos
+        mommy.make(ActivityStockPhoto,\
+                sub_category=self.another_sub_category,\
+                _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS - 1)
+
 
         # URLs
         self.get_covers_url = reverse('activities:get_covers_photos', \
             kwargs={'subcategory_id': self.sub_category.id})
+
+        self.get_covers_url_another_subcategory = reverse('activities:get_covers_photos', \
+            kwargs={'subcategory_id': self.another_sub_category.id})
+        
+
+
+    def test_get_covers_photos_from_subcategory_with_not_enough_pictures(self):
+        """
+        Test get covers photos by given SubCategory even when that SubCategory has not
+        enough photos 
+        """
+        #Stock photo should returns settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
+        #from stock even when given sub_category has not required amount of pictures
+        response = self.client.get(self.get_covers_url_another_subcategory)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b'pictures', response.content)
+        self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS, \
+                        len(response.data.get('pictures')))
+
 
 
 
@@ -924,6 +952,8 @@ class SubCategoriesViewTest(BaseAPITestCase):
         Test get covers photos by given SubCategory
         """
 
+        #Stock photo should returns settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
+        # photos from stock
         response = self.client.get(self.get_covers_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

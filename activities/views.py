@@ -194,11 +194,12 @@ class CategoriesViewSet(viewsets.ModelViewSet):
 class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
+    lookup_url_kwarg = 'subcategory_id'
 
 
     def get_pool_from_stock(self,request,*args, **kwargs):
-        sub_category_id = kwargs.get('subcategory_id')
-        pictures     = ActivityStockPhoto.get_images_by_subcategory(sub_category_id)
+        sub_category = self.get_object()
+        pictures     = ActivityStockPhoto.get_images_by_subcategory(sub_category)
         serializer = ActivityPhotosSerializer(pictures,many=True)
 
         return Response(
