@@ -1,6 +1,6 @@
 from celery import Task
 
-from referrals.models import Referral, Coupon, Redeem
+from referrals.models import Referral, CouponType, Coupon, Redeem
 from students.models import Student
 from utils.tasks import SendEmailTaskMixin
 
@@ -50,17 +50,15 @@ class CreateReferralCouponTask(Task):
         referred = Student.objects.get(id=referred_id)
 
         # Coupons
-        referrer_coupon = Coupon.objects.get(name='referrer')
-        referred_coupon = Coupon.objects.get(name='referred')
+        referrer_type = CouponType.objects.get(name='referrer')
+        referred_type = CouponType.objects.get(name='referred')
 
-        self.create_redeem(student=referrer, coupon=referrer_coupon)
-        self.create_redeem(student=referred, coupon=referred_coupon)
+        self.create_redeem(student=referrer, coupon_type=referrer_type)
+        self.create_redeem(student=referred, coupon_type=referred_type)
 
     @staticmethod
-    def create_redeem(student, coupon):
-        redeem, created = Redeem.objects.get_or_create(
-            student=student,
-            coupon=coupon,
-        )
+    def create_redeem(student, coupon_type):
+        coupon, created = Coupon.objects.get_or_create(coupon_type=coupon_type)
+        redeem, created = Redeem.objects.get_or_create(student=student, coupon=coupon)
 
         return redeem

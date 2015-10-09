@@ -87,6 +87,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'student': self.context.get('view').student,
             'status': self.context.get('status'),
             'payment': self.context.get('payment'),
+            'coupon': self.context.get('coupon'),
         })
         order = Order(**validated_data)
         chronogram   = order.chronogram

@@ -1,12 +1,11 @@
 from allauth.socialaccount.models import SocialApp
-
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from model_mommy import mommy
 from rest_framework import status
 
-from referrals.models import Referral, Coupon, Redeem
+from referrals.models import Referral, CouponType, Coupon, Redeem
 from students.models import Student
 from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
@@ -37,8 +36,8 @@ class InviteAPITest(BaseAPITestCase):
         self.another_student.user.save()
 
         # Coupons
-        self.referrer_coupon = mommy.make(Coupon, name='referrer')
-        self.referred_coupon = mommy.make(Coupon, name='referred')
+        self.referrer_coupon = mommy.make(CouponType, name='referrer')
+        self.referred_coupon = mommy.make(CouponType, name='referred')
 
         # SocialApp
         mommy.make(SocialApp,
@@ -68,9 +67,9 @@ class InviteAPITest(BaseAPITestCase):
 
     def get_facebook_data(self):
         return {
-            'auth_token': "CAAWOByANCTUBAEU6rtjWRCdiv04HW7RqQnx9JVV8PWdUAlDjGn9fQh" \
-                          "ZCjHM0LEaTTv1U4vjH5A23zlZCUZAdDpUMyAgsf2veZCQQf4Y5FMcFUj" \
-                          "ZCLT2uNFlvCEBiTCaTcN5etZCF7xUSJlB4mqa7AZC87ZCb4amIh5QNf7" \
+            'auth_token': "CAAWOByANCTUBAEU6rtjWRCdiv04HW7RqQnx9JVV8PWdUAlDjGn9fQh"
+                          "ZCjHM0LEaTTv1U4vjH5A23zlZCUZAdDpUMyAgsf2veZCQQf4Y5FMcFUj"
+                          "ZCLT2uNFlvCEBiTCaTcN5etZCF7xUSJlB4mqa7AZC87ZCb4amIh5QNf7"
                           "AIbIa13y5JAdbek0Ev"
         }
 
@@ -141,7 +140,7 @@ class InviteAPITest(BaseAPITestCase):
 
         # Counters
         referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
@@ -153,10 +152,12 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(new_student.user.get_full_name(), '%s %s' % (data['first_name'], data['last_name']))
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
-        self.assertEqual(Redeem.objects.count(), redeem_counter + 2)
+        self.assertEqual(Coupon.objects.count(), redeem_counter + 2)
         self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__name='referrer').exists())
-        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__name='referred').exists())
+        self.assertTrue(Coupon.objects.filter(coupon_type__name='referrer').exists())
+        self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
+        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
 
     def test_invitation_blocked_ip(self):
         """
@@ -169,7 +170,7 @@ class InviteAPITest(BaseAPITestCase):
 
         # Counters
         referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
@@ -179,7 +180,7 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(Student.objects.filter(user__first_name=data['first_name']).exists())
         self.assertEqual(Referral.objects.count(), referral_counter)
-        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertEqual(Coupon.objects.count(), redeem_counter)
 
     def test_login(self):
         """
@@ -192,13 +193,13 @@ class InviteAPITest(BaseAPITestCase):
 
         # Counters
         referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         response = self.client.post(self.signup_login_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)
-        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertEqual(Coupon.objects.count(), redeem_counter)
 
     def test_accept_invitation_facebook(self):
         """
@@ -208,7 +209,7 @@ class InviteAPITest(BaseAPITestCase):
 
         # Counters
         referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
@@ -218,10 +219,12 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
-        self.assertEqual(Redeem.objects.count(), redeem_counter + 2)
+        self.assertEqual(Coupon.objects.count(), redeem_counter + 2)
         self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__name='referrer').exists())
-        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__name='referred').exists())
+        self.assertTrue(Coupon.objects.filter(coupon_type__name='referrer').exists())
+        self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
+        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
 
     def test_facebook_login(self):
         """
@@ -231,10 +234,57 @@ class InviteAPITest(BaseAPITestCase):
 
         # Counters
         referral_counter = Referral.objects.count()
-        redeem_counter = Redeem.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         response = self.client.post(self.facebook_signup_login_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)
-        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertEqual(Coupon.objects.count(), redeem_counter)
+
+
+class ValidateCouponTest(BaseAPITestCase):
+    """
+    Class to test if a coupon is valid
+    """
+
+    def setUp(self):
+        super(ValidateCouponTest, self).setUp()
+
+        # Coupons
+        self.referrer_type = mommy.make(CouponType, name='referrer')
+        self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type=self.referrer_type)
+
+        # URLs
+        self.validate_url = reverse('referrals:validate_coupon', args=(self.redeem.coupon.token,))
+
+        # Coupons
+
+    def test_valid(self):
+        """
+        Test if a coupon is valid
+        """
+
+        data = {'coupon_code': self.redeem.coupon.token}
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.validate_url, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should return forbidden
+        response = self.organizer_client.get(self.validate_url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should validate
+        response = self.student_client.get(self.validate_url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+
+    def test_invalid(self):
+        """
+        Test if a coupon is invalid
+        """
+
+        data = {'coupon_code': 'REFERRAL-00000'}
+
+        response = self.student_client.get(self.validate_url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

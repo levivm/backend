@@ -11,9 +11,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='redeem',
-            name='date_used',
-            field=models.DateField(editable=False, null=True),
+        migrations.RenameField(
+            model_name='coupontype',
+            old_name='coupon_type',
+            new_name='type',
         ),
     ]

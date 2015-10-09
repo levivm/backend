@@ -18,6 +18,7 @@ class ReferralMixin(APIView):
     is_sign_up = False
     referrer = None
     ip_address = None
+    headers = None
 
     def dispatch(self, request, *args, **kwargs):
         self.referrer = self.get_referrer(request=request)
@@ -25,10 +26,9 @@ class ReferralMixin(APIView):
 
         if self.referrer and Referral.objects.filter(ip_address=self.ip_address).count() > 2:
             response = Response(_('No puede registrar un invitación más de dos veces desde la misma IP.'),
-                            status=status.HTTP_400_BAD_REQUEST)
+                                status=status.HTTP_400_BAD_REQUEST)
             self.headers = self.default_response_headers
             return self.finalize_response(request, response, *args, **kwargs)
-
 
         return super(ReferralMixin, self).dispatch(request, *args, **kwargs)
 

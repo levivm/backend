@@ -6,7 +6,7 @@ celery==3.1.18
 defusedxml==0.4.1
 dj-database-url==0.3.0
 dj-static==0.0.6
-Django==1.8
+Django==1.8.5
 -e git+https://github.com/pennersr/django-allauth.git@fe8c28e1c37ab17cef52ede1a46bdb1a2a717c48#egg=django_allauth-dev
 django-cors-headers==1.0.0
 django-extensions==1.5.2
@@ -34,6 +34,6 @@ PyYAML==3.11
 redis==2.10.3
 requests==2.6.0
 requests-oauthlib==0.4.2
-six==1.9.0
+six==1.10.0
 static3==0.5.1
 yolk==0.4.3

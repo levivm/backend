@@ -6,7 +6,6 @@ import tempfile
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.http.request import HttpRequest
@@ -14,12 +13,14 @@ from django.contrib.auth.models import Permission
 from django.utils.timezone import now
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
+
 from rest_framework import status
+
 from utils.models import CeleryTask
-from activities.models import Activity, ActivityPhoto, Tags, Chronogram,ActivityStockPhoto,SubCategory
-from activities.serializers import ActivitiesSerializer, ChronogramsSerializer, ActivityPhotosSerializer
+from activities.models import Activity, ActivityPhoto, Tags, Chronogram, ActivityStockPhoto, SubCategory
+from activities.serializers import ActivitiesSerializer, ChronogramsSerializer
 from activities.tasks import SendEmailChronogramTask, SendEmailLocationTask
-from activities.views import ActivitiesViewSet, ChronogramsViewSet, ActivityPhotosViewSet, TagsViewSet, \
+from activities.views import ActivitiesViewSet, ChronogramsViewSet, TagsViewSet, \
     ActivitiesSearchView
 from utils.tests import BaseViewTest, BaseAPITestCase
 
@@ -138,7 +139,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
     view = ChronogramsViewSet
 
     def _get_data_to_create_a_chronogram(self):
-        now_unix_timestamp = int(now().timestamp())*1000
+        now_unix_timestamp = int(now().timestamp()) * 1000
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
@@ -181,7 +182,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
         self.assertIn(b'"session_price":123000', response.content)
 
     def test_other_organizer_shouldnt_create_a_chronogram(self):
-        organizer = self.get_organizer_client(self.ANOTHER_ORGANIZER_ID)        
+        organizer = self.get_organizer_client(self.ANOTHER_ORGANIZER_ID)
         data = json.dumps(self._get_data_to_create_a_chronogram())
         response = organizer.post(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -207,7 +208,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.url = '/api/activities/1/calendars/%s' % self.CHRONOGRAM_ID
 
     def _get_data_to_create_a_chronogram(self):
-        now_unix_timestamp = int(now().timestamp())*1000
+        now_unix_timestamp = int(now().timestamp()) * 1000
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
@@ -370,68 +371,63 @@ class UnpublishActivityViewTest(BaseViewTest):
 
 
 class ActivityGalleryAPITest(BaseAPITestCase):
-
     def _set_permissions(self):
         # Set permissions
-        permission = Permission.objects.get_by_natural_key('add_activityphoto',\
-                            'activities', 'activityphoto')
+        permission = Permission.objects.get_by_natural_key('add_activityphoto',
+                                                           'activities', 'activityphoto')
         permission.user_set.add(self.organizer.user, self.another_organizer.user)
 
-        permission = Permission.objects.get_by_natural_key('delete_activityphoto',\
-                            'activities', 'activityphoto')
+        permission = Permission.objects.get_by_natural_key('delete_activityphoto',
+                                                           'activities', 'activityphoto')
         permission.user_set.add(self.organizer.user, self.another_organizer.user)
 
-
-        permission = Permission.objects.get_by_natural_key('change_activity',\
-                            'activities', 'activity')
+        permission = Permission.objects.get_by_natural_key('change_activity',
+                                                           'activities', 'activity')
         permission.user_set.add(self.organizer.user, self.another_organizer.user)
 
-
-        assign_perm('activities.change_activity', \
+        assign_perm('activities.change_activity',
                     user_or_group=self.organizer.user, obj=self.activity)
 
-        assign_perm('activities.change_activity', \
+        assign_perm('activities.change_activity',
                     user_or_group=self.organizer.user, obj=self.another_activity)
 
-
     def setUp(self):
-
         super(ActivityGalleryAPITest, self).setUp()
 
         settings.CELERY_ALWAYS_EAGER = True
 
 
-        #Objects
-        self.another_activity = mommy.make(Activity, organizer=self.organizer, \
-                                   published=True,score=4.8)
-        self.activity = mommy.make(Activity, organizer=self.organizer, \
+        # Objects
+        self.another_activity = mommy.make(Activity, organizer=self.organizer,
+                                           published=True, score=4.8)
+        self.activity = mommy.make(Activity, organizer=self.organizer,
                                    published=True)
 
         self.sub_category = mommy.make(SubCategory)
-        self.activity_stock_photo = mommy.make(ActivityStockPhoto,\
-                sub_category=self.sub_category)
-        self.activity_photo = mommy.make(ActivityPhoto,activity=self.another_activity)
+        self.activity_stock_photo = mommy.make(ActivityStockPhoto,
+                                               sub_category=self.sub_category)
+        self.activity_photo = mommy.make(ActivityPhoto, activity=self.another_activity)
 
 
 
         # Methods data
-        self.set_from_cover_post = {'cover_id':self.activity_stock_photo.id}
+        self.set_from_cover_post = {'cover_id': self.activity_stock_photo.id}
 
         image = Image.new('RGB', (100, 100), color='red')
         tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
         image.save(tmp_file)
-        self.tmp_file = tmp_file        
+        self.tmp_file = tmp_file
 
-        #URLs
-        self.set_cover_from_stock_url = reverse('activities:set_cover_from_stock', \
-                kwargs={'activity_pk': self.activity.id})
+        # URLs
+        self.set_cover_from_stock_url = reverse('activities:set_cover_from_stock',
+                                                kwargs={'activity_pk': self.activity.id})
 
-        self.upload_activity_photo_url = reverse('activities:upload_activity_photo', \
-                kwargs={'activity_pk': self.activity.id})
+        self.upload_activity_photo_url = reverse('activities:upload_activity_photo',
+                                                 kwargs={'activity_pk': self.activity.id})
 
-        self.delete_activity_photo_url = reverse('activities:delete_activity_photo', \
-                kwargs={'activity_pk': self.another_activity.id,
-                        'gallery_pk':self.activity_photo.id})
+        self.delete_activity_photo_url = reverse('activities:delete_activity_photo',
+                                                 kwargs={'activity_pk': self.another_activity.id,
+                                                         'gallery_pk': self.activity_photo.id})
 
 
         # Counters
@@ -447,31 +443,31 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         organizer = self.organizer_client
 
-        #Set permissions 
+        # Set permissions
         self._set_permissions()
 
 
         # Anonymous should return unauthorized
         with open(self.tmp_file.name, 'rb') as fp:
-            response = self.client.post(self.upload_activity_photo_url , \
-                                 {'photo':fp,'main_photo':False})
+            response = self.client.post(self.upload_activity_photo_url,
+                                        {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(ActivityPhoto.objects.count(), self.activity_photos_count)
 
         # Student should return forbidden
         with open(self.tmp_file.name, 'rb') as fp:
-            response = self.student_client.post(self.upload_activity_photo_url , \
-                                 {'photo':fp,'main_photo':False})
+            response = self.student_client.post(self.upload_activity_photo_url,
+                                                {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(ActivityPhoto.objects.count(),\
+        self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
 
 
         # Organizer should not create a photo if he is not activity owner
         with open(self.tmp_file.name, 'rb') as fp:
-            response = self.another_organizer_client.post(\
-                       self.upload_activity_photo_url ,
-                                 {'photo':fp,'main_photo':False})
+            response = self.another_organizer_client.post(
+                self.upload_activity_photo_url,
+                {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
@@ -481,25 +477,23 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(self.activity.score, 0)
 
         with open(self.tmp_file.name, 'rb') as fp:
-            response = organizer.post(self.upload_activity_photo_url , \
-                                 {'photo':fp,'main_photo':False})
+            response = organizer.post(self.upload_activity_photo_url,
+                                      {'photo': fp, 'main_photo': False})
 
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
 
         expected_filename = bytes('%s' % \
-                        activity_photo.photo.name.split('/')[-1], 'utf8')
+                                  activity_photo.photo.name.split('/')[-1], 'utf8')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(expected_id, response.content)
         self.assertIn(expected_filename, response.content)
-        self.assertEqual(ActivityPhoto.objects.count(),\
+        self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count + 1)
         self.assertEqual(Activity.objects.latest('pk').score, 4.8)
-        self.assertTrue(self.organizer.user.has_perm(\
-                perm='activities.delete_activityphoto', obj=activity_photo))
-
-
+        self.assertTrue(self.organizer.user.has_perm(
+            perm='activities.delete_activityphoto', obj=activity_photo))
 
     def test_create_from_stock(self):
         """
@@ -508,44 +502,43 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         organizer = self.organizer_client
 
-        #Set permissions 
+        # Set permissions
         self._set_permissions()
 
         # Anonymous should return unauthorized
-        response = self.client.post(self.set_cover_from_stock_url, \
+        response = self.client.post(self.set_cover_from_stock_url,
                                     self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(ActivityPhoto.objects.count(), \
-                    self.activity_photos_count)
+        self.assertEqual(ActivityPhoto.objects.count(),
+                         self.activity_photos_count)
 
         # Student should return forbidden
-        response = self.student_client.post(self.set_cover_from_stock_url,\
+        response = self.student_client.post(self.set_cover_from_stock_url,
                                             self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(ActivityPhoto.objects.count(),\
+        self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
 
 
         # Organizer should not create a photo if he is not activity owner
-        response = self.another_organizer_client.post(\
-                                self.set_cover_from_stock_url , \
-                                self.set_from_cover_post)
+        response = self.another_organizer_client.post(
+            self.set_cover_from_stock_url,
+            self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
         # Organizer should create a photo from existing stock
-        response = organizer.post(self.set_cover_from_stock_url , \
-                                 self.set_from_cover_post)
-        stock_photo  = ActivityStockPhoto.objects.latest('pk')
+        response = organizer.post(self.set_cover_from_stock_url,
+                                  self.set_from_cover_post)
+        stock_photo = ActivityStockPhoto.objects.latest('pk')
         expected_filename = bytes('%s' % \
-                        stock_photo.photo.name.split('/')[-1], 'utf8')
+                                  stock_photo.photo.name.split('/')[-1], 'utf8')
 
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(expected_id, response.content)
         self.assertIn(expected_filename, response.content)
-
 
     def test_delete(self):
         """
@@ -554,43 +547,43 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         organizer = self.organizer_client
 
-        #Set permissions
+        # Set permissions
         self._set_permissions()
-        assign_perm('activities.delete_activityphoto', \
-            user_or_group=self.organizer.user, obj=self.activity_photo)
+        assign_perm('activities.delete_activityphoto',
+                    user_or_group=self.organizer.user, obj=self.activity_photo)
 
 
         # Anonymous should return unauthorized
         response = self.client.post(self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(ActivityPhoto.objects.count(), \
-                self.activity_photos_count)
+        self.assertEqual(ActivityPhoto.objects.count(),
+                         self.activity_photos_count)
 
 
 
         # Student should return forbidden
         response = self.student_client.post(self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(ActivityPhoto.objects.count(), \
-                    self.activity_photos_count)
+        self.assertEqual(ActivityPhoto.objects.count(),
+                         self.activity_photos_count)
 
 
         # Organizer should not delete a photo if he is not activity owner
-        response = self.another_organizer_client.post(\
-                                self.delete_activity_photo_url)
+        response = self.another_organizer_client.post(
+            self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(ActivityPhoto.objects.count(), \
-                    self.activity_photos_count)
+        self.assertEqual(ActivityPhoto.objects.count(),
+                         self.activity_photos_count)
 
 
         # Organizer should delete a photo from his activity
         self.assertEqual(self.another_activity.score, 4.8)
         response = organizer.delete(self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(ActivityPhoto.objects.count(),\
+        self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count - 1)
-        self.assertEqual(Activity.objects.get(\
-                    id=self.another_activity.id).score, 0.0)
+        self.assertEqual(Activity.objects.get(
+            id=self.another_activity.id).score, 0.0)
 
 
 class ActivityInfoViewTest(BaseViewTest):
@@ -715,12 +708,13 @@ class SendEmailChronogramTaskTest(BaseViewTest):
 
     def setUp(self):
         settings.CELERY_ALWAYS_EAGER = True
+
     def tearDown(self):
         settings.CELERY_ALWAYS_EAGER = False
 
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailChronogramTask()
-        result = task.apply((self.CHRONOGRAM_ID, ))
+        result = task.apply((self.CHRONOGRAM_ID,))
         self.assertEqual(result.result, 'Task scheduled')
 
     def test_ignore_task_if_there_is_a_pending_task(self):
@@ -732,7 +726,7 @@ class SendEmailChronogramTaskTest(BaseViewTest):
 
     def test_task_should_delete_on_success(self):
         task = SendEmailChronogramTask()
-        task.apply((self.CHRONOGRAM_ID, ), countdown=60)
+        task.apply((self.CHRONOGRAM_ID,), countdown=60)
         self.assertEqual(CeleryTask.objects.count(), 0)
 
     def test_email_task_should_create_if_has_students(self):
@@ -756,16 +750,16 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
     def setUp(self):
         settings.CELERY_ALWAYS_EAGER = True
+
     def tearDown(self):
         settings.CELERY_ALWAYS_EAGER = False
 
-
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailLocationTask()
-        result = task.apply((self.ACTIVITY_ID, ),)
+        result = task.apply((self.ACTIVITY_ID,), )
         self.assertEqual(result.result, 'Task scheduled')
 
-    def test_ignore_task_if_there_is_a_pending_task(self):        
+    def test_ignore_task_if_there_is_a_pending_task(self):
         task = SendEmailLocationTask()
         task.apply((self.ACTIVITY_ID, False), countdown=60)
         task2 = SendEmailLocationTask()
@@ -774,7 +768,7 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
     def test_task_should_delete_on_success(self):
         task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID, ))
+        task.apply((self.ACTIVITY_ID,))
         self.assertEqual(CeleryTask.objects.count(), 0)
 
     def test_email_task_should_create_if_has_students(self):
@@ -800,9 +794,8 @@ class SearchActivitiesViewTest(BaseViewTest):
     view = ActivitiesSearchView
     ACTIVITY_ID = 1
 
-
     def _get_activities_ordered(self, queryset=Activity.objects.all()):
-        return queryset.annotate(number_assistants=Count('chronograms__orders__assistants'))\
+        return queryset.annotate(number_assistants=Count('chronograms__orders__assistants')) \
             .order_by('number_assistants', 'chronograms__initial_date')
 
     def test_url_should_resolve_correctly(self):
@@ -814,7 +807,6 @@ class SearchActivitiesViewTest(BaseViewTest):
         serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
-
 
     def test_search_query_organizer_name(self):
         response = self.client.get(self.url, data={'q': 'XFDG', 'city': 1})
@@ -832,7 +824,7 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.data, serializer.data)
 
     def test_search_subcategory(self):
-        response = self.client.get(self.url, data={'subcategory': 1  , 'city': 1})
+        response = self.client.get(self.url, data={'subcategory': 1, 'city': 1})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -862,34 +854,33 @@ class SearchActivitiesViewTest(BaseViewTest):
 
     def test_search_price_rage(self):
         data = {
-            'cost_start':10000.0,
-            'cost_end':20000,
+            'cost_start': 10000.0,
+            'cost_end': 20000,
         }
         response = self.client.get(self.url, data=data)
         activity = Activity.objects.filter(id=3)
-        serializer = ActivitiesSerializer(activity,many=True)
+        serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_level(self):
-        response = self.client.get(self.url, data={'level':'I'})
+        response = self.client.get(self.url, data={'level': 'I'})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity,many=True)
+        serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_certification(self):
-        response = self.client.get(self.url, data={'certification':False})
+        response = self.client.get(self.url, data={'certification': False})
         activities = self._get_activities_ordered()
-        serializer = ActivitiesSerializer(activities,many=True)
+        serializer = ActivitiesSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_weekends(self):
-
-        response = self.client.get(self.url, data={'weekends':True})
+        response = self.client.get(self.url, data={'weekends': True})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity,many=True)
+        serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
@@ -899,24 +890,19 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.data, [])
 
 
-
 class SubCategoriesViewTest(BaseAPITestCase):
-
-    
     def setUp(self):
         super(SubCategoriesViewTest, self).setUp()
 
         # Objects
         self.sub_category = mommy.make(SubCategory, name='Yoga')
-        self.activity_stock_photos = mommy.make(ActivityStockPhoto,\
-                sub_category=self.sub_category,\
-                _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+        self.activity_stock_photos = mommy.make(ActivityStockPhoto,
+                                                sub_category=self.sub_category,
+                                                _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         # URLs
-        self.get_covers_url = reverse('activities:get_covers_photos', \
-            kwargs={'subcategory_id': self.sub_category.id})
-
-
+        self.get_covers_url = reverse('activities:get_covers_photos',
+                                      kwargs={'subcategory_id': self.sub_category.id})
 
     def test_get_covers_photos_from_subcategory(self):
         """
@@ -927,5 +913,5 @@ class SubCategoriesViewTest(BaseAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'pictures', response.content)
-        self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS, \
-                        len(response.data.get('pictures')))
+        self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
+                         len(response.data.get('pictures')))

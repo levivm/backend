@@ -1,6 +1,7 @@
 from django.conf import settings
 from model_mommy import mommy
-from referrals.models import Referral, Redeem, Coupon
+
+from referrals.models import Referral, Coupon, CouponType, Redeem
 from referrals.tasks import CreateReferralTask, CreateReferralCouponTask
 from utils.tests import BaseAPITestCase
 
@@ -63,37 +64,44 @@ class CreateReferralCouponTaskTest(BaseAPITestCase):
         settings.CELERY_ALWAYS_EAGER = True
 
         # Coupons
-        self.referrer_coupon = mommy.make(Coupon, name='referrer')
-        self.referred_coupon = mommy.make(Coupon, name='referred')
+        self.referrer_type = mommy.make(CouponType, name='referrer')
+        self.referred_type = mommy.make(CouponType, name='referred')
 
     def test_create(self):
         """
         Test to create the coupons
         """
 
-        redeem_counter = Redeem.objects.count()
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         # Call the task
         task = CreateReferralCouponTask()
         task.delay(self.student.id, self.another_student.id)
 
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 2)
         self.assertEqual(Redeem.objects.count(), redeem_counter + 2)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=self.referrer_coupon).exists())
-        self.assertTrue(Redeem.objects.filter(student=self.another_student, coupon=self.referred_coupon).exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.referrer_type).exists())
+        self.assertTrue(
+            Redeem.objects.filter(student=self.another_student, coupon__coupon_type=self.referred_type).exists())
 
     def test_duplicate(self):
         """
         Test should not duplicate the coupons
         """
 
-        mommy.make(Redeem, student=self.student, coupon=self.referrer_coupon)
-        mommy.make(Redeem, student=self.another_student, coupon=self.referred_coupon)
+        referrer_coupon = mommy.make(Coupon, coupon_type=self.referrer_type)
+        referred_coupon = mommy.make(Coupon, coupon_type=self.referred_type)
+        mommy.make(Redeem, student=self.student, coupon=referrer_coupon)
+        mommy.make(Redeem, student=self.another_student, coupon=referred_coupon)
 
         # Counter
+        coupon_counter = Coupon.objects.count()
         redeem_counter = Redeem.objects.count()
 
         # Call the task
         task = CreateReferralCouponTask()
         task.delay(self.student.id, self.another_student.id)
 
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)
