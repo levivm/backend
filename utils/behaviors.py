@@ -34,5 +34,8 @@ class Updateable(models.Model):
 
     def update(self,data):
         for (key, value) in data.items():
-            setattr(self, key, value)
+            try:
+                setattr(self, key, value)
+            except TypeError:
+                pass
         self.save()

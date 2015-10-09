@@ -98,7 +98,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return self.title
 
     def steps_completed(self):
-
         steps_requirements = settings.REQUIRED_STEPS
         steps = steps_requirements.keys()
         related_fields = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
