@@ -18,7 +18,7 @@ class Organizer(models.Model):
     tasks = GenericRelation(CeleryTask)
 
     def __str__(self):
-        return '<%s: %s>' % (self.__class_.__name__, self.user.username)
+        return '%s' % (self.user.username)
 
 
 # Create your models here.
