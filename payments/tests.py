@@ -386,13 +386,13 @@ class PayUPSETest(BaseViewTest):
 #         self.assertIn(b'"description":"BANCOLOMBIA QA"', response.content)
 
 
-class PaymentWithCouponTest(BaseAPITestCase):
+class PaymentCreditCardWithCouponTest(BaseAPITestCase):
     """
     Test class PaymentUtil
     """
 
     def setUp(self):
-        super(PaymentWithCouponTest, self).setUp()
+        super(PaymentCreditCardWithCouponTest, self).setUp()
 
         # Objects
         self.calendar = mommy.make(Chronogram, session_price=100000.0, capacity=20, activity__published=True)
@@ -522,6 +522,135 @@ class PaymentWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.count(), order_counter)
 
 
+class PaymentPSEWithCouponTest(BaseAPITestCase):
+    """
+    Test class PaymentUtil
+    """
+
+    def setUp(self):
+        super(PaymentPSEWithCouponTest, self).setUp()
+
+        # Objects
+        self.calendar = mommy.make(Chronogram, session_price=100000.0, capacity=20, activity__published=True)
+        self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
+        self.payment = mommy.make(Payment)
+        self.post_data = self.get_post_data()
+
+        # URLs
+        self.create_read_url = reverse('orders:create_or_list_by_activity',
+                                       kwargs={'activity_pk': self.calendar.activity.id})
+
+        # Set permissions
+        permission = Permission.objects.get_by_natural_key('add_order', 'orders', 'order')
+        permission.user_set.add(self.student.user)
+        permission.user_set.add(self.another_student.user)
+
+    def get_post_data(self):
+        return {
+            'buyer': {
+                'name': 'PENDING',
+                'payerEmail': 'levi@trulii.com',
+                'contactPhone': "222222"
+
+            },
+            'buyer_pse_data': {
+                "response_url": settings.PAYU_RESPONSE_URL,
+                "bank": "1007",
+                "userType": "J",
+                "idType": "NIT",
+                "idNumber": "900823805",
+            },
+            'chronogram': self.calendar.id,
+            'activity': self.calendar.activity.id,
+            'payment_method': Payment.PSE_PAYMENT_TYPE,
+            'quantity': 1,
+            'amount': 200000,
+            'assistants': [{
+                'first_name': 'Asistente',
+                'last_name': 'Asistente',
+                'email': 'asistente@trulii.com',
+            }],
+            'coupon_code': self.redeem.coupon.token,
+        }
+
+    @mock.patch('activities.utils.PaymentUtil.pse_payu_payment')
+    def test_success(self, pse_payu_payment):
+        """
+        Test success payment with PSE and a coupon
+        """
+        # Counter
+        order_counter = Order.objects.count()
+
+        # Patch the PayU call
+        pse_payu_payment.return_value = {
+            'status': 'PENDING',
+            'payment': self.payment,
+            'bank_url': 'https://pse.todo1.com/',
+        }
+
+        response = self.student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
+        self.assertEqual(Order.objects.count(), order_counter + 1)
+        self.assertTrue(Order.objects.filter(coupon=self.redeem.coupon, status=Order.ORDER_PENDING_STATUS,
+                                             chronogram=self.calendar, student=self.student,
+                                             payment=self.payment).exists())
+
+    @mock.patch('activities.utils.PaymentUtil.pse_payu_payment')
+    def test_fail(self, pse_payu_payment):
+        """
+        Test failed payment with PSE and a coupon
+        """
+        # Counter
+        order_counter = Order.objects.count()
+
+        # Patch the call to PayU
+        pse_payu_payment.return_value = {
+            'status': 'DECLINED',
+            'error': 'The payment was declined',
+        }
+
+        response = self.student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Order.objects.count(), order_counter)
+
+    def test_creditcard_non_existent_coupon(self):
+        """
+        Test payment with non-existent coupon
+        """
+
+        # Non-existent coupon
+        self.post_data['coupon_code'] = 'REFERRAL-INVALID'
+
+        # Counter
+        order_counter = Order.objects.count()
+
+        response = self.student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Order.objects.count(), order_counter)
+
+    def test_creditcard_invalid_coupon(self):
+        """
+        Test payment with invalid coupon
+        """
+
+        # Counter
+        order_counter = Order.objects.count()
+
+        # Another_student doesn't have a coupon
+        response = self.another_student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Order.objects.count(), order_counter)
+
+        # Student already used the coupon
+        self.redeem.used = True
+        self.redeem.save(update_fields=['used'])
+
+        response = self.student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Order.objects.count(), order_counter)
+
+
 class PaymentWebhookWithCouponTest(BaseAPITestCase):
     """
     Class to test the payment's webhook with a coupon
@@ -564,6 +693,34 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
         Test PayU send declined
         """
         self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
+
+    def test_pse_approved(self):
+        """
+        Test approved payment with pse
+        """
+        self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
+        self.payment.save(update_fields=['payment_type'])
+        self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
+        self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
+
+    def test_pse_decline(self):
+        """
+        Test PayU send declined
+        """
+        self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
+        self.payment.save(update_fields=['payment_type'])
+        self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
+        self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
+        self.post_data['response_code_pol'] = settings.RESPONSE_CODE_POL_DECLINED
+
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)

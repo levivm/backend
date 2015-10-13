@@ -73,6 +73,7 @@ class ProcessPaymentMixin(object):
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
+            serializer.context['coupon'] = self.coupon
             self.call_create(serializer=serializer)
             return Response({'bank_url': charge['bank_url']}, status=status.HTTP_201_CREATED)
         else:
