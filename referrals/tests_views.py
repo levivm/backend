@@ -256,27 +256,23 @@ class ValidateCouponTest(BaseAPITestCase):
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type=self.referrer_type)
 
         # URLs
-        self.validate_url = reverse('referrals:validate_coupon', args=(self.redeem.coupon.token,))
-
-        # Coupons
+        self.validate_url = reverse('referrals:validate_coupon', kwargs={'coupon_code': self.redeem.coupon.token})
 
     def test_valid(self):
         """
         Test if a coupon is valid
         """
 
-        data = {'coupon_code': self.redeem.coupon.token}
-
         # Anonymous should return unauthorized
-        response = self.client.get(self.validate_url, data)
+        response = self.client.get(self.validate_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Organizer should return forbidden
-        response = self.organizer_client.get(self.validate_url, data)
+        response = self.organizer_client.get(self.validate_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Student should validate
-        response = self.student_client.get(self.validate_url, data)
+        response = self.student_client.get(self.validate_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
 
     def test_invalid(self):
@@ -284,7 +280,17 @@ class ValidateCouponTest(BaseAPITestCase):
         Test if a coupon is invalid
         """
 
-        data = {'coupon_code': 'REFERRAL-00000'}
+        self.redeem.set_used()
 
-        response = self.student_client.get(self.validate_url, data)
+        response = self.student_client.get(self.validate_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_non_exist(self):
+        """
+        Test if a coupon doesn't exist
+        """
+
+        url = reverse('referrals:validate_coupon', kwargs={'coupon_code': 'REFERRAL-NONEXIST'})
+
+        response = self.student_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

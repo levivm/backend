@@ -6,11 +6,10 @@ from model_mommy import mommy
 from rest_framework import status
 from django.core.urlresolvers import reverse
 from django.conf import settings
-
 from django.utils.translation import ugettext_lazy as _
 
 from activities.models import Chronogram
-from orders.models import Order
+from orders.models import Order, Assistant
 from orders.views import OrdersViewSet
 from payments.models import Payment
 from referrals.models import Redeem
@@ -410,7 +409,6 @@ class PaymentWithCouponTest(BaseAPITestCase):
         permission.user_set.add(self.student.user)
         permission.user_set.add(self.another_student.user)
 
-
     def get_post_data(self):
         return {
             'chronogram': self.calendar.id,
@@ -466,6 +464,27 @@ class PaymentWithCouponTest(BaseAPITestCase):
                                              coupon=self.redeem.coupon, status='pending').exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
+    @mock.patch('activities.utils.PaymentUtil.creditcard')
+    def test_creditcard_declined(self, creditcard):
+        """
+        Test payment declined with a coupon
+        """
+
+        creditcard.return_value = {
+            'status': 'DECLINED',
+            'payment': self.payment,
+            'error': 'Tarjeta inválida',
+        }
+
+        # Counter
+        order_counter = Order.objects.count()
+
+        response = self.student_client.post(self.create_read_url, self.post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertEqual(Order.objects.count(), order_counter)
+        self.assertFalse(Order.objects.filter(coupon=self.redeem.coupon).exists())
+        self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
+
     def test_creditcard_non_existent_coupon(self):
         """
         Test payment with non-existent coupon
@@ -501,3 +520,51 @@ class PaymentWithCouponTest(BaseAPITestCase):
         response = self.student_client.post(self.create_read_url, self.post_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Order.objects.count(), order_counter)
+
+
+class PaymentWebhookWithCouponTest(BaseAPITestCase):
+    """
+    Class to test the payment's webhook with a coupon
+    """
+
+    def setUp(self):
+        super(PaymentWebhookWithCouponTest, self).setUp()
+
+        # Objects
+        self.calendar = mommy.make(Chronogram, session_price=100000.0, capacity=20, activity__published=True)
+        self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
+        self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
+        self.order = mommy.make(Order, status=Order.ORDER_PENDING_STATUS, payment=self.payment,
+                                coupon=self.redeem.coupon, chronogram=self.calendar, student=self.student)
+        self.assistants = mommy.make(Assistant, order=self.order, _quantity=3)
+        self.post_data = self.get_post_data()
+
+        # URLs
+        self.payu_callback_url = reverse('payments:notification')
+
+    def get_post_data(self):
+        return {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_APPROVED_CODE,
+            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
+        }
+
+    def test_approved(self):
+        """
+        Test PayU send approved a pending payment
+        """
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
+        self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
+
+    def test_decline(self):
+        """
+        Test PayU send declined
+        """
+        self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)

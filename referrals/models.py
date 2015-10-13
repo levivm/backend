@@ -61,6 +61,10 @@ class Coupon(Tokenizable):
             if not Redeem.objects.filter(used=False, **params).exists():
                 raise serializers.ValidationError(error_message)
 
+    def set_used(self, student):
+        redeem = self.redeem_set.get(student=student)
+        redeem.set_used()
+
 class Redeem(models.Model):
     student = models.ForeignKey(Student)
     coupon = models.ForeignKey(Coupon)

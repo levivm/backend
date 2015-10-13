@@ -48,8 +48,7 @@ class GetCouponView(RetrieveAPIView):
     permission_classes = (IsStudent,)
 
     def dispatch(self, request, *args, **kwargs):
-        # TODO check url
-        self.coupon = self.get_coupon(request.GET.get('coupon_code'))
+        self.coupon = self.get_coupon(kwargs.get('coupon_code'))
         return super(GetCouponView, self).dispatch(request, *args, **kwargs)
 
     @staticmethod
@@ -57,8 +56,5 @@ class GetCouponView(RetrieveAPIView):
         return get_object_or_404(Coupon, token=code)
 
     def retrieve(self, request, *args, **kwargs):
-        if self.coupon:
-            if self.coupon.is_valid(student=request.user.student_profile):
-                    return Response('OK')
-
-        return Response('Coupon invalid', status=status.HTTP_400_BAD_REQUEST)
+        self.coupon.is_valid(student=request.user.student_profile)
+        return Response('OK')
