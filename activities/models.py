@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
-from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models
-from django.conf import settings
-from random import randint
-from django.db.models.aggregates import Sum
-from django.db.models.query_utils import Q
 from random import Random
 
+from django.contrib.contenttypes.fields import GenericRelation
+
+from django.db import models
+
+from django.conf import settings
+from django.db.models.aggregates import Sum
+from django.db.models.query_utils import Q
+from django.utils.functional import cached_property
+
+from django.utils.translation import ugettext_lazy as _
+
 from organizers.models import Organizer, Instructor
+
 from locations.models import Location
 from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.mixins import AssignPermissionsMixin
 from utils.behaviors import Updateable
-from django.utils.translation import ugettext_lazy as _
 
 
 class Category(models.Model):
@@ -138,13 +143,12 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             })
         return levels
 
-    def update_tags(self,data):
+    def update_tags(self, data):
         self.tags.clear()
         if data:
             tags = Tags.update_or_create(data)
             self.tags.clear()
             self.tags.add(*tags)
-
 
     def publish(self):
         if self.steps_completed():
@@ -183,7 +187,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return orders
 
 
-
 class ActivityPhoto(models.Model):
     photo = models.ImageField(upload_to="activities")
     activity = models.ForeignKey(Activity, related_name="pictures")
@@ -208,40 +211,31 @@ class ActivityStockPhoto(models.Model):
 
 
     @classmethod
-    def get_random_pictures(cls,pictures_queryset,needed_pictures):
+    def get_random_pictures(cls, pictures_queryset, needed_pictures):
         count = pictures_queryset.count()
         top_count = needed_pictures
         if count < top_count:
             top_count = count
 
-        random_indexes = Random().sample(range(0,count),top_count)  if count else []
+        random_indexes = Random().sample(range(0, count), top_count) if count else []
 
         images = []
 
         for index in random_indexes:
             images.append(pictures_queryset[index])
 
-
         return images
 
-
-
-
     @classmethod
-    def get_random_category_pictures(cls,sub_category,needed_pictures):
+    def get_random_category_pictures(cls, sub_category, needed_pictures):
         pictures = cls.objects.filter(sub_category__category=sub_category.category)
-        return cls.get_random_pictures(pictures,needed_pictures)
-
-
-
-
-
+        return cls.get_random_pictures(pictures, needed_pictures)
 
     @classmethod
     def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
-        sub_category_pictures = cls.get_random_pictures(queryset,\
-                                    settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+        sub_category_pictures = cls.get_random_pictures(queryset,
+                                                        settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         sub_category_pictures_amount = len(sub_category_pictures)
         enough_pictures = False if sub_category_pictures_amount < \
@@ -249,10 +243,10 @@ class ActivityStockPhoto(models.Model):
 
         if not enough_pictures:
             needed_pictures_amount = abs(sub_category_pictures_amount - \
-                                        settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                                         settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
-            category_pictures = cls.get_random_category_pictures(sub_category,\
-                                        needed_pictures_amount)
+            category_pictures = cls.get_random_category_pictures(sub_category,
+                                                                 needed_pictures_amount)
 
             sub_category_pictures += category_pictures
 
@@ -290,11 +284,14 @@ class Chronogram(Updateable, models.Model):
     is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
+    @cached_property
+    def num_enrolled(self):
+        return sum([order.assistants.enrolled().count() for order in self.orders.avaibles()])
 
     def available_capacity(self):
-        #TODO cambiar filtro por constantes
+        # TODO cambiar filtro por constantes
         assistants = self.orders.filter(Q(status='approved') | \
-                            Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
+                                        Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
 
         assistants = assistants['num_assistants'] or 0
         return self.capacity - assistants
