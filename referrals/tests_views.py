@@ -152,12 +152,11 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(new_student.user.get_full_name(), '%s %s' % (data['first_name'], data['last_name']))
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
-        self.assertEqual(Coupon.objects.count(), redeem_counter + 2)
+        self.assertEqual(Coupon.objects.count(), redeem_counter + 1)
         self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
-        self.assertTrue(Coupon.objects.filter(coupon_type__name='referrer').exists())
         self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
         self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
 
     def test_invitation_blocked_ip(self):
         """
@@ -219,11 +218,9 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
-        self.assertEqual(Coupon.objects.count(), redeem_counter + 2)
+        self.assertEqual(Coupon.objects.count(), redeem_counter + 1)
         self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
-        self.assertTrue(Coupon.objects.filter(coupon_type__name='referrer').exists())
         self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
         self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
 
     def test_facebook_login(self):

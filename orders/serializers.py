@@ -3,6 +3,7 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from orders.models import Order, Assistant
+from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
 
@@ -10,9 +11,9 @@ from students.models import Student
 class AssistantsSerializer(serializers.ModelSerializer):
     # order = serializers.PrimaryKeyRelatedField(read_only=True)
     student = serializers.SerializerMethodField()
-    token   = serializers.SerializerMethodField()
+    token = serializers.SerializerMethodField()
 
-    def get_token(self,obj):
+    def get_token(self, obj):
         if self.context.get('show_token'):
             return obj.token
 
@@ -50,12 +51,10 @@ class OrdersSerializer(serializers.ModelSerializer):
             'status',
         )
 
-
-    def validate_amount(self,obj):
+    def validate_amount(self, obj):
         return obj.chronogram.session_price*obj.quantity
 
     def validate(self, data):
-
 
         chronogram = data.get('chronogram')
         assistants_data = data.get('assistants')
@@ -63,18 +62,15 @@ class OrdersSerializer(serializers.ModelSerializer):
         
         if not activity.published:
             msg = str(_("La actividad no se encuentra activa"))
-            raise serializers.ValidationError({'generalError':msg})
+            raise serializers.ValidationError({'generalError': msg})
 
         if not chronogram.enroll_open:
             msg = str(_("Las inscripciones están cerradas para esta fecha de inicio"))
-            raise serializers.ValidationError({'generalError':msg})
+            raise serializers.ValidationError({'generalError': msg})
 
-
-
-        if not chronogram.available_capacity() or \
-               chronogram.available_capacity()<len(assistants_data):
+        if not chronogram.available_capacity() or chronogram.available_capacity() < len(assistants_data):
             msg = str(_("El cupo de asistentes está lleno"))
-            raise serializers.ValidationError({'generalError':msg})
+            raise serializers.ValidationError({'generalError': msg})
 
         assistant_serializer = AssistantsSerializer(data=assistants_data, many=True)
         assistant_serializer.is_valid(raise_exception=True)
@@ -83,17 +79,19 @@ class OrdersSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
+        student = self.context.get('view').student
         validated_data.update({
-            'student': self.context.get('view').student,
+            'student': student,
             'status': self.context.get('status'),
             'payment': self.context.get('payment'),
             'coupon': self.context.get('coupon'),
         })
         order = Order(**validated_data)
-        chronogram   = order.chronogram
+        chronogram = order.chronogram
         order.amount = chronogram.session_price * order.quantity
         order.save()
-        # order = Order.objects.create(**validated_data)
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)
+        task = ReferrerCouponTask()
+        task.delay(student_id=student.id, order_id=order.id)
         return order

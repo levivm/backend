@@ -12,7 +12,7 @@ from activities.models import Chronogram
 from orders.models import Order, Assistant
 from orders.views import OrdersViewSet
 from payments.models import Payment
-from referrals.models import Redeem
+from referrals.models import Redeem, Referral, Coupon, CouponType
 from utils.tests import BaseViewTest, BaseAPITestCase
 from .tasks import SendPaymentEmailTask
 from utils.models import EmailTaskRecord
@@ -725,3 +725,67 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
+
+
+class PaymentWebHookTest(BaseAPITestCase):
+    """
+    Class to test the payment webhook for PayU
+    """
+
+    def setUp(self):
+        super(PaymentWebHookTest, self).setUp()
+
+        # Arrangement
+        self.calendar = mommy.make(Chronogram, activity__published=True, capacity=10)
+        self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
+        self.order = mommy.make(Order, chronogram=self.calendar, student=self.another_student, payment=self.payment)
+        self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
+        self.coupon_type = mommy.make(CouponType, name='referrer')
+
+        # URLs
+        self.payu_callback_url = reverse('payments:notification')
+
+        # Celery
+        settings.CELERY_ALWAYS_EAGER = True
+
+    def test_cc_create_referrer_coupon(self):
+        """
+        Test should create a referrer coupon
+        """
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        data = {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_APPROVED_CODE,
+            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
+        }
+
+        response = self.client.post(self.payu_callback_url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
+        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_pse_create_referrer_coupon(self):
+        """
+        Test should create a referrer coupon
+        """
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        data = {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_APPROVED_CODE,
+            'payment_method_type': settings.PSE_METHOD_PAYMENT_ID
+        }
+
+        response = self.client.post(self.payu_callback_url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
+        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())

@@ -1,22 +1,18 @@
 import logging
 import json
 
+from celery import group
 from rest_framework.views import APIView
-
 from rest_framework.response import Response
-
 from django.shortcuts import get_object_or_404
-
 from django.conf import settings
-
 from rest_framework import viewsets
-
 from rest_framework import status
-
 from django.utils.translation import ugettext_lazy as _
 
 from .models import Payment
 from activities.models import Activity
+from referrals.tasks import ReferrerCouponTask
 from .tasks import SendPaymentEmailTask
 from orders.models import Order
 from activities.utils import PaymentUtil
@@ -65,11 +61,13 @@ class PayUNotificationPayment(APIView):
         order.change_status(Order.ORDER_APPROVED_STATUS)
         if order.coupon:
             order.coupon.set_used(student=order.student)
-        task = SendPaymentEmailTask()
-        task_data = {
-            'payment_method': data.get('payment_method_type')
-        }
-        task = task.apply_async((order.id,), task_data, countdown=4)
+        send_payment_email_task = SendPaymentEmailTask()
+        task_data = {'payment_method': data.get('payment_method_type')}
+        referral_coupon_task = ReferrerCouponTask()
+        group(
+            send_payment_email_task.subtask((order.id,), task_data, countdown=4),
+            referral_coupon_task.s(order.student.id, order.id)
+        )()
 
     def _run_transaction_declined_task(self, order, data, msg='Error',
                                        status=Order.ORDER_DECLINED_STATUS):
