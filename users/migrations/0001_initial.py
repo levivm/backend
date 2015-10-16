@@ -1,29 +1,42 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
-from django.conf import settings
+from django.db import migrations, models
+import django.utils.timezone
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('locations', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserProfile',
+            name='OrganizerConfirmation',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('user_type', models.CharField(max_length=1, choices=[('O', 'Organizador'), ('S', 'Estudiante')])),
-                ('gender', models.PositiveIntegerField(default=1, choices=[(1, 'Hombre'), (0, 'Mujer')])),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('photo', models.CharField(blank=True, null=True, max_length=100, verbose_name='Foto')),
-                ('birthday', models.DateField(blank=True, null=True)),
-                ('telephone', models.CharField(blank=True, null=True, max_length=100)),
-                ('bio', models.TextField(blank=True, null=True)),
-                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
+                ('created', models.DateTimeField(verbose_name='created', default=django.utils.timezone.now)),
+                ('key', models.CharField(verbose_name='key', max_length=64, unique=True)),
+                ('sent', models.DateTimeField(verbose_name='sent', null=True)),
+                ('used', models.BooleanField(default=False)),
             ],
+        ),
+        migrations.CreateModel(
+            name='RequestSignup',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
+                ('email', models.EmailField(max_length=100)),
+                ('name', models.CharField(max_length=100)),
+                ('telephone', models.CharField(max_length=100)),
+                ('want_to_teach', models.TextField()),
+                ('approved', models.BooleanField(default=False)),
+                ('city', models.ForeignKey(to='locations.City')),
+            ],
+        ),
+        migrations.AddField(
+            model_name='organizerconfirmation',
+            name='requested_signup',
+            field=models.OneToOneField(to='users.RequestSignup'),
         ),
     ]

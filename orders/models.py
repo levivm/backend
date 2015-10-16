@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from activities.models import Chronogram
+from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
 from payments.models import Payment
 from students.models import Student
@@ -21,7 +21,7 @@ class Order(models.Model):
         (ORDER_CANCELLED_STATUS, _('Cancelada')),
         (ORDER_DECLINED_STATUS, _('Declinada')),
     )
-    chronogram = models.ForeignKey(Chronogram, related_name='orders')
+    calendar = models.ForeignKey(Calendar, related_name='orders')
     student = models.ForeignKey(Student, related_name='orders')
     amount = models.FloatField()
     quantity = models.IntegerField()

@@ -129,7 +129,7 @@ class BaseViewTest(APITestCase):
             },
             'last_four_digits':'1111',
             'card_association': 'visa',
-            'chronogram': 1,
+            'calendar': 1,
             'payment_method':Payment.CC_PAYMENT_TYPE,
             'quantity': 1,
             'amount': 324000,
@@ -158,7 +158,7 @@ class BaseViewTest(APITestCase):
 
             },
             'buyer_pse_data':self.get_buyer_pse_data(),
-            'chronogram': 1,
+            'calendar': 1,
             'activity':1,
             'payment_method':Payment.PSE_PAYMENT_TYPE,
             'quantity': 1,

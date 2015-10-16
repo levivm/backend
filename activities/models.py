@@ -163,12 +163,12 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
     def last_sale_date(self):
 
-        chronograms = self.chronograms.values('sessions__date') \
+        calendars = self.calendars.values('sessions__date') \
             .order_by('-sessions__date').all()
-        if not chronograms:
+        if not calendars:
             return None
 
-        return chronograms[0]['sessions__date']
+        return calendars[0]['sessions__date']
 
     def set_location(self, location):
         self.location = location
@@ -181,8 +181,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return False
 
     def get_orders(self):
-        chronograms = self.chronograms.all()
-        orders = [c.orders.all() for c in chronograms]
+        calendars = self.calendars.all()
+        orders = [c.orders.all() for c in calendars]
         orders = [order for sublist in orders for order in sublist]
         return orders
 
@@ -272,8 +272,8 @@ class ActivityStockPhoto(models.Model):
         # return images
 
 
-class Chronogram(Updateable, models.Model):
-    activity = models.ForeignKey(Activity, related_name="chronograms")
+class Calendar(Updateable, models.Model):
+    activity = models.ForeignKey(Activity, related_name="calendars")
     initial_date = models.DateTimeField()
     closing_sale = models.DateTimeField()
     number_of_sessions = models.IntegerField()
@@ -300,8 +300,8 @@ class Chronogram(Updateable, models.Model):
         return [a for o in self.orders.all() for a in o.assistants.all()]
 
 
-class Session(models.Model):
+class CalendarSession(models.Model):
     date = models.DateTimeField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    chronogram = models.ForeignKey(Chronogram, related_name="sessions")
+    calendar = models.ForeignKey(Calendar, related_name="sessions")

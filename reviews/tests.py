@@ -26,7 +26,7 @@ class ReviewAPITest(BaseAPITestCase):
 
         # Objects needed
         self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
-        self.order = mommy.make(Order, student=self.student, chronogram__activity=self.activity)
+        self.order = mommy.make(Order, student=self.student, calendar__activity=self.activity)
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
 
         # URLs

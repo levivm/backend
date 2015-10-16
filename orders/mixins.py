@@ -2,7 +2,7 @@ from rest_framework import viewsets,status
 from payments.models import Payment
 from rest_framework.response import Response
 from payments.tasks import  SendPaymentEmailTask
-from activities.models import Chronogram
+from activities.models import Calendar
 from .models import Order
 from activities.utils import PaymentUtil
 from django.conf import settings
@@ -31,8 +31,8 @@ class ProcessPaymentMixin(object):
 
     @staticmethod
     def get_calendar(request):
-        id = request.data.get('chronogram')
-        calendar = Chronogram.objects.get(id=id)
+        id = request.data.get('calendar')
+        calendar = Calendar.objects.get(id=id)
         return calendar
 
     def call_create(self, serializer):

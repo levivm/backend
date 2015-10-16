@@ -49,7 +49,7 @@ ORGANIZER_PERMISSIONS = (
     },
     {
         'app': 'activities',
-        'model': 'chronogram',
+        'model': 'calendar',
         'codenames': ('add', 'change', 'delete'),
     },
     {
@@ -100,7 +100,7 @@ MAX_ACTIVITY_INSTRUCTORS = 4
 PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS = {
     
     'general':['title','short_description','sub_category','level'],
-    'calendars':['chronograms'],
+    'calendars':['calendars'],
     'gallery':['pictures'],
     'location':['location'],
 
@@ -117,7 +117,7 @@ ACTIVITY_STEPS = {
     
   'general':['title','short_description','sub_category','level'],
   'detail':['content', 'audience', 'goals', 'methodology', 'requirements', 'extra_info'],
-  'calendars':['chronograms'],
+  'calendars':['calendars'],
   'instructors':['instructors'],
   'location':['location'],''
   'gallery':['pictures'],

@@ -25,34 +25,34 @@
                 "activityphoto"
             ],
             [
-                "add_chronogram",
+                "add_calendar",
                 "activities",
-                "chronogram"
+                "calendar"
             ],
             [
-                "change_chronogram",
+                "change_calendar",
                 "activities",
-                "chronogram"
+                "calendar"
             ],
             [
-                "delete_chronogram",
+                "delete_calendar",
                 "activities",
-                "chronogram"
+                "calendar"
             ],
             [
-                "add_session",
+                "add_calendarsession",
                 "activities",
-                "session"
+                "calendarsession"
             ],
             [
-                "change_session",
+                "change_calendarsession",
                 "activities",
-                "session"
+                "calendarsession"
             ],
             [
-                "delete_session",
+                "delete_calendarsession",
                 "activities",
-                "session"
+                "calendarsession"
             ],
             [
                 "add_tags",

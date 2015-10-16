@@ -101,7 +101,7 @@
   },
   {
     "pk": 1,
-    "model": "activities.chronogram",
+    "model": "activities.calendar",
     "fields": {
       "capacity": 14,
       "session_price": 8000.0,
@@ -114,11 +114,11 @@
   },
   {
     "pk": 1,
-    "model": "activities.session",
+    "model": "activities.calendarsession",
     "fields": {
       "date": "2015-08-12T14:43:00.601Z",
       "start_time": "16:00:00.552",
-      "chronogram": 1,
+      "calendar": 1,
       "end_time": "19:00:00.552"
     }
   },

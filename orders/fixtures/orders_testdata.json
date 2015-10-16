@@ -4,7 +4,7 @@
     "fields": {
         "quantity": 2,
         "status": "pending",
-        "chronogram": 1,
+        "calendar": 1,
         "amount": 648468.0,
         "student": 1,
         "payment": 1

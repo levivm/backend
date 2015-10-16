@@ -9,14 +9,14 @@ from django.template.loader import get_template, render_to_string
 from django.utils.timezone import now
 from requests.api import post
 from utils.exceptions import ServiceUnavailable
-from activities.models import Chronogram
+from activities.models import Calendar
 from payments.models import Payment as PaymentModel
 from django.utils.translation import ugettext_lazy as _
 from payments.serializers import PaymentsPSEDataSerializer
 from rest_framework.exceptions import APIException
 
 
-from activities.models import Chronogram
+from activities.models import Calendar
 from payments.models import Payment as PaymentModel
 
 
@@ -126,9 +126,9 @@ class PaymentUtil(object):
         return ip
 
     def get_amount(self):
-        id = self.request.data.get('chronogram')
-        chronogram = Chronogram.objects.get(id=id)
-        return chronogram.session_price * self.request.data['quantity']
+        id = self.request.data.get('calendar')
+        calendar = Calendar.objects.get(id=id)
+        return calendar.session_price * self.request.data['quantity']
 
 
     def get_buyer(self):
@@ -233,8 +233,8 @@ class PaymentUtil(object):
         activity_id  = self.activity.id
         timestamp    = calendar.timegm(now().timetuple())
         user_id      = self.request.user.id
-        chronogram_id = self.request.data.get('chronogram') 
-        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, chronogram_id)
+        calendar_id = self.request.data.get('calendar')
+        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
         return reference
 
     def response(self, result):
