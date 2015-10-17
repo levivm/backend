@@ -49,9 +49,8 @@ class MyAccountAdapter(DefaultAccountAdapter):
 
     
     def get_frontend_formmated_url(self,url):
-        
         server_url = settings.FRONT_SERVER_URL
-        rest_url   = "/".join(url.split("/")[4:])
+        rest_url   = "/".join(url.split("/")[3:])
         final_url = server_url + rest_url
         return final_url
 
