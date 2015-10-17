@@ -159,10 +159,21 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-    def validate_session_price(self, value):
-        if value < 1:
-            raise serializers.ValidationError(_("El precio no puede ser negativo."))
-        return value
+    # def validate_session_price(self, value):
+    #     # if not value:
+    #     #     raise serializers.ValidationError(_("Instroduzca un monto valido."))
+
+
+    #     if value < 0:
+    #         raise serializers.ValidationError(_("El precio no puede ser negativo."))
+
+    #     if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
+    #         msg = _("El precio no puede ser menor de {:d}"\
+    #                     .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
+    #         raise serializers.ValidationError(msg)
+
+
+    #     return value
 
     def validate_capacity(self, value):
         if value < 1:
@@ -174,30 +185,45 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
         return value
 
-    def _valid_sessions(self, data):
+    def _validate_session_price(self,data):
+        value = data.get('session_price')
+        if value < 1:
+            error = {'session_price':_("Introduzca un monto valido")}
+            raise serializers.ValidationError(error)
+
+        if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
+            msg = _("El precio no puede ser menor de {:d}"\
+                        .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
+            error = {'session_price':msg}
+            raise serializers.ValidationError(error)
+
+    def _set_initial_date(self,data):
+        sessions = data.get('sessions')
+        first_session = (sessions[:1] or [None])[0]
+        data['initial_date'] = first_session.get('date')
+        return data
+
+
+    def _proccess_sessions(self, data):
 
         session_data = data['sessions']
-        initial_date = data['initial_date']
         data['is_weekend'] = True
 
         f_range = len(session_data)
+        if not f_range:
+            raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
+
         for i in range(f_range):
 
             session = session_data[i]
             n_session = session_data[i + 1] if i + 1 < f_range else None
 
             date = session['date'].date()
+
             weekday = date.weekday()
             if weekday < 5:
                 data['is_weekend'] = False
                 
-
-            if date < initial_date.date():
-                msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
-                errors    = [{}]*f_range
-                errors[i] = {'date_'+str(0):[msg]} 
-                raise serializers.ValidationError({'sessions':errors})
-
             if not n_session:
                 continue
 
@@ -217,13 +243,21 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
                     errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
                     raise serializers.ValidationError({'sessions':errors})
 
+        return data
+
     def validate(self, data):
+
+        is_free = data.get('is_free')
+        if not is_free:
+            self._validate_session_price(data)
+
+        data = self._set_initial_date(data)
+        data = self._proccess_sessions(data)
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
-        if initial_date > closing_sale:
-            raise serializers.ValidationError(_("La fecha de cierre debe ser mayor a la fecha de inicio."))
-
-        self._valid_sessions(data)
+        if initial_date < closing_sale:
+            raise serializers.ValidationError({'closing_sale':
+                        _("La fecha de cierre de ventas debe ser menor a la fecha de inicio.")})
 
         return data
 
@@ -237,8 +271,6 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         request = self.context['request']
 
         self.assign_permissions(request.user, chronogram)
-
-
         return chronogram
 
     def update(self, instance, validated_data):
