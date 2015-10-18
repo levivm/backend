@@ -111,13 +111,16 @@ class SessionsSerializer(serializers.ModelSerializer):
             'end_time',
         )
 
-    def validate(self, data):
-        start_time = data['start_time']
-        end_time = data['end_time']
+    # def validate(self, data):
+    #     start_time = data['start_time']
+    #     end_time = data['end_time']
+    #     print("start time",start_time)
+    #     print("end time",end_time)
+    #     print("------------------------")
 
-        if start_time >= end_time:
-            raise serializers.ValidationError(_("La hora de inicio debe ser menor a la hora final"))
-        return data
+    #     if start_time >= end_time:
+    #         raise serializers.ValidationError(_("La hora de inicio debe ser menor a la hora final"))
+    #     return data
 
 
 class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
@@ -159,21 +162,6 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-    # def validate_session_price(self, value):
-    #     # if not value:
-    #     #     raise serializers.ValidationError(_("Instroduzca un monto valido."))
-
-
-    #     if value < 0:
-    #         raise serializers.ValidationError(_("El precio no puede ser negativo."))
-
-    #     if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
-    #         msg = _("El precio no puede ser menor de {:d}"\
-    #                     .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
-    #         raise serializers.ValidationError(msg)
-
-
-    #     return value
 
     def validate_capacity(self, value):
         if value < 1:
@@ -204,19 +192,36 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         return data
 
 
+    def _validate_session(self, sessions_amount, index, session):
+
+        start_time = session['start_time']
+        end_time = session['end_time']
+        if start_time >= end_time:
+            print("start_time",start_time)
+            print("end_time",end_time)
+            print("-------")
+
+            msg = _(u"La hora de inicio debe ser menor a la hora final")
+            errors    = [{}]*sessions_amount
+            errors[index] = {'start_time_'+str(index):[msg]} 
+            raise serializers.ValidationError({'sessions':errors})
+
+
     def _proccess_sessions(self, data):
 
         session_data = data['sessions']
         data['is_weekend'] = True
 
-        f_range = len(session_data)
-        if not f_range:
+        sessions_amount = len(session_data)
+        if not sessions_amount:
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
 
-        for i in range(f_range):
+        for i in range(sessions_amount):
 
             session = session_data[i]
-            n_session = session_data[i + 1] if i + 1 < f_range else None
+            n_session = session_data[i + 1] if i + 1 < sessions_amount else None
+
+            self._validate_session(sessions_amount,i,session)
 
             date = session['date'].date()
 
@@ -231,15 +236,14 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
 
             if date > n_date:
                 msg = _(u'La fecha su sesión debe ser mayor a la anterior')
-                errors    = [{}]*f_range
+                errors    = [{}]*sessions_amount
                 errors[i+1] = {'date_'+str(0):[msg]} 
                 raise serializers.ValidationError({'sessions':errors})
 
-                raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
             elif date == n_date:
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
-                    errors    = [{}]*f_range
+                    errors    = [{}]*sessions_amount
                     errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
                     raise serializers.ValidationError({'sessions':errors})
 

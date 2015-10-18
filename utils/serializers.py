@@ -22,7 +22,6 @@ class UnixEpochDateField(serializers.DateTimeField):
             return None
 
     def to_internal_value(self, value):
-
         return datetime.fromtimestamp(value//1000).replace(second=0)
 
 
