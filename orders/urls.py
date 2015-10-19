@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 
-from .views import OrdersViewSet
+from .views import OrdersViewSet, RefundCreateReadView
 
 urlpatterns = patterns('',
     url(r'^activities/(?P<activity_pk>\d+)/orders/?$', 
@@ -18,4 +18,8 @@ urlpatterns = patterns('',
     url(r'^organizers/(?P<organizer_pk>\d+)/orders/?$', 
     	OrdersViewSet.as_view({'get': 'list_by_organizer'}),
     	name='list_by_organizer'),
+
+    url(regex=r'^refunds/$',
+        view=RefundCreateReadView.as_view(),
+        name='refund_api'),
 )

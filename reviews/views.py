@@ -11,7 +11,7 @@ from reviews.permissions import CanReportReview, CanReplyReview
 from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
-from utils.pagination import PaginationBySize
+from utils.paginations import PaginationBySize
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

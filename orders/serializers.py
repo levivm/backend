@@ -3,7 +3,7 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from orders.models import Order, Assistant
+from orders.models import Order, Assistant, Refund
 from students.serializer import StudentsSerializer
 from students.models import Student
 
@@ -92,3 +92,9 @@ class OrdersSerializer(serializers.ModelSerializer):
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)
         return order
+
+
+class RefundSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Refund

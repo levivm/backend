@@ -2,14 +2,17 @@ from django.http import Http404
 from rest_framework import viewsets
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+from orders.serializers import RefundSerializer
 
 from users.mixins import UserTypeMixin
 from .models import Order
 from .mixins import ProcessPaymentMixin
 from activities.models import Activity
 from .serializers import OrdersSerializer
+from utils.paginations import SmallResultsSetPagination
 
 
 class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
@@ -70,3 +73,12 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
         orders = Order.objects.filter(calendar__activity__organizer=organizer)
         serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)
+
+
+class RefundCreateReadView(ListCreateAPIView):
+    serializer_class = RefundSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = SmallResultsSetPagination
+
+    def get_queryset(self):
+        return self.request.user.refunds.all()

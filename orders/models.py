@@ -52,18 +52,9 @@ class Refund(models.Model):
         ('declined', _('Declined')),
     )
 
-    user = models.ForeignKey(User)
-    status = models.CharField(choices=STATUS, max_length=10)
+    user = models.ForeignKey(User, related_name='refunds')
+    order = models.ForeignKey(Order, related_name='refunds')
+    assistant = models.ForeignKey(Assistant, blank=True, null=True, related_name='refunds')
+    status = models.CharField(choices=STATUS, max_length=10, default='pending', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    response_at = models.DateTimeField()
-
-    class Meta:
-        abstract = True
-
-
-class RefundOrder(Refund):
-    order = models.ForeignKey(Order)
-
-
-class RefundAssistant(Refund):
-    assistant = models.ForeignKey(Assistant)
+    response_at = models.DateTimeField(blank=True, null=True)
