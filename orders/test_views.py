@@ -256,39 +256,48 @@ class RefundAPITest(BaseAPITestCase):
         self.create_read_url = reverse('orders:refund_api')
 
         # Arrangement
-        self.refunds = mommy.make(Refund, user=self.student.user, _quantity=50)
+        self.student_refunds = mommy.make(Refund, user=self.student.user, _quantity=50)
+        self.organizer_refunds = mommy.make(Refund, user=self.organizer.user, _quantity=30)
 
     def test_read(self):
         """
         Test case for list an user's refund
         """
-        # Serializer
-        serializer = RefundSerializer(self.refunds[:10], many=True)
 
         # Anonymous should return unauthorized
         response = self.client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Student should return data
+        serializer = RefundSerializer(self.student_refunds[:10], many=True)
         response = self.student_client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
-        # TODO make the test for organizer
+        # Organizer should return data
+        serializer = RefundSerializer(self.organizer_refunds[:10], many=True)
+        response = self.organizer_client.get(self.create_read_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data, response)
 
     def test_pagination(self):
         """
         Test case for pagination when list the refunds
         """
 
-        # Arrangement
-        serializer = RefundSerializer(self.refunds[10:20], many=True)
-
         # Anonymous should return unauthorized
         response = self.client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Student should return paginated data
+        serializer = RefundSerializer(self.student_refunds[10:20], many=True)
         response = self.student_client.get(self.create_read_url, data={'page': 2})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
+
+        # Organizer should return paginated data
+        serializer = RefundSerializer(self.organizer_refunds[10:20], many=True)
+        response = self.organizer_client.get(self.create_read_url, data={'page': 2})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
