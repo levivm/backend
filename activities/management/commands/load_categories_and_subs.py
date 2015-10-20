@@ -34,6 +34,5 @@ class Command(BaseCommand):
             "Música":{'color':'#FF7E60','subcategories':['Acordeón',  'Armónica',  'Audio y Producción',  'Bajo',  'Batería',  'Canto',  'DJ',  'Guitarra',  'Piano',  'Saxofón',  'Teclado',  'Teoría',  'Trompeta',  'Violín',  'Violonchelo',  'Otros']},
             "Niños":{'color':'#0084B4 ','subcategories':['Académico',  'Actuación',  'Arte',  'Bailes',  'Campamentos',  'Cocina',  'Deportes',  'Habilidades',  'Idiomas' ,   'Tecnología',  'Otros' ]},
             "Profesional":{'color':'#FFC971','subcategories':['Académico',   'Arquitectura',   'Comunicación',   'Derecho',   'Docencia',   'Entrenamiento',   'Finanzas',   'Ingeniería',   'Liderazgo',   'Management',   'Marketing',   'Recursos Humanos',   'Medicina',   'Startups',   'Otros']},
-            "Tecnología":{'color':'#EB9F61','subcategories':['Animación',  'Desarrollo Web y Móvil' ,  'Diseño Web y Móvil' ,  'Juegos' ,  'Microsoft' ,  'Modelado' ,  'Programación',  'Otros']}
-
+            "Tecnología":{'color':'#EB9F61','subcategories':['Animación',  'Desarrollo Web y Móvil' ,  'Diseño Web y Móvil' ,  'Juegos' ,  'Microsoft' ,  'Modelado' ,  'Programación',  'Otros']},
         }

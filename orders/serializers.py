@@ -92,7 +92,11 @@ class OrdersSerializer(serializers.ModelSerializer):
         chronogram   = order.chronogram
         order.amount = chronogram.session_price * order.quantity
         order.save()
-        # order = Order.objects.create(**validated_data)
-        assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
-        Assistant.objects.bulk_create(assistant_objects)
+
+        for assistant in assistants_data:
+            instance = Assistant(order=order, **assistant)
+            instance.save()
+
+        # assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
+        # Assistant.objects.bulk_create(assistant_objects)
         return order

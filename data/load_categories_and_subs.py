@@ -11,6 +11,7 @@ categories_and_subcategories = {
 	"Niños":['Académico',  'Actuación',  'Arte',  'Bailes',  'Campamentos',  'Cocina',  'Deportes',  'Habilidades',  'Idiomas' ,   'Tecnología',  'Otros' ],
 	"Profesional":['Académico',   'Arquitectura',   'Comunicación',   'Derecho',   'Docencia',   'Entrenamiento',   'Finanzas',   'Ingeniería',   'Liderazgo',   'Management',   'Marketing',   'Recursos Humanos',   'Medicina',   'Startups',   'Otros'],
 	"Tecnología'":['Animación',  'Desarrollo Web y Móvil' ,  'Diseño Web y Móvil' ,  'Juegos' ,  'Microsoft' ,  'Modelado' ,  'Programación',  'Otros']
+	"Otras":['Otros']
 
 
 

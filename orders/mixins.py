@@ -36,6 +36,10 @@ class ProcessPaymentMixin(object):
         return calendar
 
     def call_create(self, serializer):
+        print("serializer")
+        import pdb
+        pdb.set_trace()
+
         super(ProcessPaymentMixin,self).perform_create(serializer)
         headers = super(ProcessPaymentMixin,self).get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -47,7 +51,6 @@ class ProcessPaymentMixin(object):
 
     def proccess_payment_cc(self,payment,serializer):
         """ Proccess Credi Card Payments """
-
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
@@ -70,7 +73,6 @@ class ProcessPaymentMixin(object):
 
     def proccess_payment_pse(self,payment,serializer):
         """ Proccess PSE Payments """
-
         charge = payment.pse_payu_payment()        
 
         if charge['status'] == 'PENDING':
