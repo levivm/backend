@@ -61,6 +61,3 @@ class Student(Updateable, models.Model):
 
     def get_referral_hash(self):
         return signing.dumps({'referrer_code': self.referrer_code})
-
-
-User.profile = property(lambda u: Student.objects.get_or_create(user=u)[0])

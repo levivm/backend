@@ -11,10 +11,10 @@ from locations.serializers import LocationsSerializer
 from locations.models import Location
 from activities.serializers import ActivitiesSerializer
 from organizers.models import Instructor
-from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Organizer
 from .serializers import OrganizersSerializer, InstructorsSerializer
-from .permissions import IsCurrentUserSameOrganizer, IsOrganizer
+from .permissions import IsCurrentUserSameOrganizer
 
 
 def signup(request):
@@ -43,7 +43,7 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
     """
     queryset = Location.objects.all()
     serializer_class = LocationsSerializer
-    permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer, \
+    permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer,
                           DjangoObjectPermissionsOrAnonReadOnly,)
     lookup_url_kwarg = 'organizer_pk'
 
@@ -53,7 +53,7 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
 
         location_data['organizer'] = organizer.id
 
-        location_serializer = LocationsSerializer(data=location_data, \
+        location_serializer = LocationsSerializer(data=location_data,
                                                   context={'request': request, 'organizer_location': True})
         if location_serializer.is_valid(raise_exception=True):
             organizer.locations.all().delete()

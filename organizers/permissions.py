@@ -18,13 +18,3 @@ class IsCurrentUserSameOrganizer(permissions.BasePermission):
             return False
 
         return True
-
-
-class IsOrganizer(permissions.BasePermission):
-    def has_permission(self, request, view):
-        try:
-            request.user.organizer_profile
-        except Organizer.DoesNotExist:
-            return False
-
-        return True

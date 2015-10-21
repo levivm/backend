@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url
+from orders.views import RefundReadOrganizerView
 
 from .views import OrdersViewSet, RefundCreateReadView
 
@@ -21,5 +22,9 @@ urlpatterns = patterns('',
 
     url(regex=r'^refunds/$',
         view=RefundCreateReadView.as_view(),
+        name='refund_api'),
+
+	url(regex=r'^organizers/(?P<organizer_id>\d+)/refunds/?$',
+        view=RefundReadOrganizerView.as_view(),
         name='refund_api'),
 )

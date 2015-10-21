@@ -132,3 +132,21 @@ class OrganizerConfirmation(models.Model):
                                 ctx)
         self.sent = datetime.now()
         self.save()
+
+
+def get_profile(self):
+    try:
+        student = self.student_profile
+    except Student.DoesNotExist:
+        pass
+    else:
+        return student
+
+    try:
+        organizer = self.organizer_profile
+    except Organizer.DoesNotExist:
+        return None
+    else:
+        return organizer
+
+User.add_to_class('get_profile', get_profile)

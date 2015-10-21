@@ -1,3 +1,5 @@
+from itertools import cycle
+
 from rest_framework import status
 from model_mommy import mommy
 from django.core.urlresolvers import reverse
@@ -254,10 +256,19 @@ class RefundAPITest(BaseAPITestCase):
 
         # URLs
         self.create_read_url = reverse('orders:refund_api')
+        self.read_organizer_url = reverse('orders:refund_api', kwargs={'organizer_id': self.organizer.id})
 
         # Arrangement
-        self.student_refunds = mommy.make(Refund, user=self.student.user, _quantity=50)
-        self.organizer_refunds = mommy.make(Refund, user=self.organizer.user, _quantity=30)
+        calendars = [
+            mommy.make(Calendar, activity__organizer=self.organizer),
+            mommy.make(Calendar, activity__organizer=self.another_organizer)
+        ]
+        amounts = [100, 200, 300]
+        self.student_refunds = mommy.make(Refund, user=self.student.user,
+                                          _quantity=50, order__calendar=cycle(calendars),
+                                          order__amount=cycle(amounts))
+        self.organizer_refunds = mommy.make(Refund, user=self.organizer.user, _quantity=30,
+                                            order__amount=cycle(amounts))
 
     def test_read(self):
         """
@@ -301,3 +312,22 @@ class RefundAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
+    def test_read_refunds_organizer_activities(self):
+        """
+        Test list refunds of an organizer's activities
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.read_organizer_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.get(self.read_organizer_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should return data
+        queryset = Refund.objects.filter(order__calendar__activity__organizer=self.organizer)[:10]
+        serializer = RefundSerializer(queryset, many=True)
+        response = self.organizer_client.get(self.read_organizer_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)

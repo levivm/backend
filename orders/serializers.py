@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+from django.contrib.auth.models import User
 
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.relations import RelatedField
 
 from orders.models import Order, Assistant, Refund
 from students.serializer import StudentsSerializer
@@ -95,6 +97,25 @@ class OrdersSerializer(serializers.ModelSerializer):
 
 
 class RefundSerializer(serializers.ModelSerializer):
+    activity = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
 
     class Meta:
         model = Refund
+        fields = (
+            'id',
+            'order',
+            'activity',
+            'created_at',
+            'amount',
+            'status',
+            'user',
+            'assistant',
+        )
+
+    def get_activity(self, obj):
+        return obj.order.calendar.activity.title
+
+    def get_amount(self, obj):
+        return obj.order.amount

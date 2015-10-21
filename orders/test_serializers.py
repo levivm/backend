@@ -17,6 +17,26 @@ class RefundSerializerTest(APITestCase):
         self.user = mommy.make(User)
         self.assistant = mommy.make(Assistant)
 
+    def test_read(self):
+        """
+        Test the serialization of an instance
+        """
+
+        # Arrangement
+        refund = mommy.make(Refund, user=self.user, order=self.assistant.order, assistant=self.assistant)
+        serializer = RefundSerializer(refund)
+        content = {
+            'id': refund.id,
+            'order':self.assistant.order.id,
+            'activity': self.assistant.order.calendar.activity.title,
+            'created_at': refund.created_at.isoformat()[:-6] + 'Z',
+            'amount': self.assistant.order.amount,
+            'status': 'pending',
+            'assistant': self.assistant.id,
+        }
+
+        self.assertEqual(serializer.data, content)
+
     def test_create(self):
         """
         Test creation of a RefundOrder
@@ -32,7 +52,12 @@ class RefundSerializerTest(APITestCase):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        content = {'id': 1, 'user_id': self.user.id, 'assistant_id': self.assistant.id, 'status': 'pending'}
+        content = {
+            'id': 1,
+            'user_id': self.user.id,
+            'assistant_id': self.assistant.id,
+            'order_id': self.assistant.order.id,
+            'status': 'pending'}
 
         self.assertTrue(set(content).issubset(instance.__dict__))
 
@@ -42,17 +67,17 @@ class RefundSerializerTest(APITestCase):
         """
 
         # Arrangement
-        refund_assistant = mommy.make(Refund, user=self.user)
+        refund = mommy.make(Refund, user=self.user)
 
         data = {'status': 'approved'}
-        serializer = RefundSerializer(refund_assistant, data=data, partial=True)
+        serializer = RefundSerializer(refund, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        content = refund_assistant.__dict__
+        content = refund.__dict__
         content.update({'status': 'approved'})
 
-        self.assertEqual(refund_assistant.id, instance.id)
+        self.assertEqual(refund.id, instance.id)
         self.assertEqual(content, instance.__dict__)
 #
     def test_validation(self):
