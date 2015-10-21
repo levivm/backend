@@ -27,7 +27,7 @@ class ProcessPaymentMixin(object):
 
     @staticmethod
     def get_calendar(request):
-        calendar_id = request.data.get('chronogram')
+        calendar_id = request.data.get('calendar')
         calendar = Calendar.objects.get(id=calendar_id)
         return calendar
 

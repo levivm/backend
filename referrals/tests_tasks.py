@@ -1,7 +1,7 @@
 from django.conf import settings
 from model_mommy import mommy
 
-from activities.models import Chronogram
+from activities.models import Calendar
 from orders.models import Order
 from referrals.models import Referral, Coupon, CouponType, Redeem
 from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask
@@ -117,10 +117,10 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
 
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
-        self.calendar = mommy.make(Chronogram, activity__published=True, capacity=10)
+        self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
         self.coupon_type = mommy.make(CouponType, name='referrer')
         self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
-                                chronogram=self.calendar)
+                                calendar=self.calendar)
 
     def test_create(self):
         """
@@ -167,7 +167,7 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         """
 
         # Arrangement
-        mommy.make(Order, student=self.another_student, chronogram__is_free=True)
+        mommy.make(Order, student=self.another_student, calendar__is_free=True)
 
         # Counter
         coupon_counter = Coupon.objects.count()

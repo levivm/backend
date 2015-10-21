@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('referrals', '0003_redeem_used'),
-        ('orders', '0008_auto_20150929_0045'),
+        ('orders', '0003_auto_20151019_1038'),
     ]
 
     operations = [

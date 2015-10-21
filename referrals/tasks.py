@@ -75,8 +75,8 @@ class ReferrerCouponTask(Task):
 
     @staticmethod
     def has_create(student, order):
-        first_activity = student.orders.exclude(id=order.id).exclude(chronogram__is_free=True).count() == 0
-        is_pay_activity = order.chronogram.is_free is False
+        first_activity = student.orders.exclude(id=order.id).exclude(calendar__is_free=True).count() == 0
+        is_pay_activity = order.calendar.is_free is False
         is_referred = Referral.objects.filter(referred=student).exists()
         is_approved = order.status == Order.ORDER_APPROVED_STATUS
 

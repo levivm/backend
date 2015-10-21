@@ -4,7 +4,7 @@ mensaje de pago con tdc pay u
 Nombre Actividad:{{activity.title}}
 Organizador:{{activity.organizer.name}}
 OrdenId:{{order.id}}
-Calendario:{{chronogram}}
+Calendario:{{calendar}}
 Assistentes:{{assistants}}
 
 
