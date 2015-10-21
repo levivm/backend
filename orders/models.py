@@ -5,6 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
 from payments.models import Payment
+from referrals.models import Coupon
 from students.models import Student
 from utils.behaviors import Tokenizable
 
@@ -27,8 +28,10 @@ class Order(models.Model):
     quantity = models.IntegerField()
     status = models.CharField(choices=STATUS, max_length=15, default='pending')
     payment = models.OneToOneField(Payment, null=True)
+    coupon = models.ForeignKey(Coupon, null=True)
 
     objects = OrderQuerySet.as_manager()
+
 
     def change_status(self, status):
         self.status = status

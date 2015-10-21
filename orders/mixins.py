@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.response import Response
+
 from django.conf import settings
 
 from payments.models import Payment
@@ -10,12 +11,12 @@ from activities.utils import PaymentUtil
 
 
 class ProcessPaymentMixin(object):
+    coupon = None
+
     def proccess_payment(self, request, activity, serializer):
         """ Proccess payments """
-        payment = PaymentUtil(request, activity)
         payment_method = request.data.get('payment_method')
-
-        payment = PaymentUtil(request, activity)
+        payment = PaymentUtil(request, activity, self.coupon)
 
         if payment_method == Payment.CC_PAYMENT_TYPE:
             return self.proccess_payment_cc(payment, serializer)
@@ -26,8 +27,8 @@ class ProcessPaymentMixin(object):
 
     @staticmethod
     def get_calendar(request):
-        id = request.data.get('calendar')
-        calendar = Calendar.objects.get(id=id)
+        calendar_id = request.data.get('chronogram')
+        calendar = Calendar.objects.get(id=calendar_id)
         return calendar
 
     def call_create(self, serializer):
@@ -48,8 +49,10 @@ class ProcessPaymentMixin(object):
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
+            serializer.context['coupon'] = self.coupon
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
+                self.redeem_coupon(self.request.user.student_profile)
                 task = SendPaymentEmailTask()
                 task_data = {
                     'payment_method': settings.CC_METHOD_PAYMENT_ID
@@ -70,8 +73,14 @@ class ProcessPaymentMixin(object):
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
+            serializer.context['coupon'] = self.coupon
             self.call_create(serializer=serializer)
             return Response({'bank_url': charge['bank_url']}, status=status.HTTP_201_CREATED)
         else:
             error = {'generalError': [charge['error']]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def redeem_coupon(self, student):
+        if self.coupon:
+            redeem = self.coupon.redeem_set.get(student=student)
+            redeem.set_used()

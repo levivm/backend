@@ -1,13 +1,14 @@
 from django.http import Http404
 from rest_framework import viewsets
-from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListCreateAPIView, ListAPIView
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+
 from orders.models import Refund
 from orders.serializers import RefundSerializer
-
+from referrals.models import Coupon
 from users.mixins import UserTypeMixin
 from .models import Order
 from .mixins import ProcessPaymentMixin
@@ -22,14 +23,24 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = (IsAuthenticated, DjangoObjectPermissions)
 
-    def get_activity(self, **kwargs):
+    @staticmethod
+    def get_activity(**kwargs):
         return get_object_or_404(Activity, id=kwargs.get('activity_pk'))
+
+    @staticmethod
+    def get_coupon(code):
+        return get_object_or_404(Coupon, token=code)
 
     def create(self, request, *args, **kwargs):
         self.student = self.get_student(user=request.user)
         serializer = self.get_serializer(data=request.data)
         activity = self.get_activity(**kwargs)
         serializer.is_valid(raise_exception=True)
+
+        coupon_code = request.data.get('coupon_code')
+        if coupon_code:
+            self.coupon = self.get_coupon(code=request.data.get('coupon_code'))
+            self.coupon.is_valid(request.user.student_profile)
 
         calendar = self.get_calendar(request)
         if calendar.is_free:

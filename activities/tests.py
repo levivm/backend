@@ -12,12 +12,14 @@ from django.http.request import HttpRequest
 from django.contrib.auth.models import Permission
 from django.utils.timezone import now
 from guardian.shortcuts import assign_perm
+
 from model_mommy import mommy
 
 from rest_framework import status
 
 from utils.models import CeleryTask
-from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory, Category
+from activities.models import Category
+from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory
 from activities.serializers import ActivitiesSerializer, CalendarSerializer
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet, \
@@ -396,7 +398,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         settings.CELERY_ALWAYS_EAGER = True
 
-
         # Objects
         self.another_activity = mommy.make(Activity, organizer=self.organizer,
                                            published=True, score=4.8)
@@ -407,8 +408,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.activity_stock_photo = mommy.make(ActivityStockPhoto,
                                                sub_category=self.sub_category)
         self.activity_photo = mommy.make(ActivityPhoto, activity=self.another_activity)
-
-
 
         # Methods data
         self.set_from_cover_post = {'cover_id': self.activity_stock_photo.id}
@@ -429,7 +428,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
                                                  kwargs={'activity_pk': self.another_activity.id,
                                                          'gallery_pk': self.activity_photo.id})
 
-
         # Counters
         self.activity_photos_count = ActivityPhoto.objects.count()
 
@@ -446,7 +444,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         # Set permissions
         self._set_permissions()
 
-
         # Anonymous should return unauthorized
         with open(self.tmp_file.name, 'rb') as fp:
             response = self.client.post(self.upload_activity_photo_url,
@@ -462,15 +459,12 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
 
-
         # Organizer should not create a photo if he is not activity owner
         with open(self.tmp_file.name, 'rb') as fp:
             response = self.another_organizer_client.post(
                 self.upload_activity_photo_url,
                 {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-
 
         # Organizer should create a photo from existing stock
         # and activity score should be updated
@@ -484,7 +478,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         activity_photo = ActivityPhoto.objects.latest('pk')
         expected_id = bytes('"id":%s' % activity_photo.id, 'utf8')
 
-        expected_filename = bytes('%s' % \
+        expected_filename = bytes('%s' %
                                   activity_photo.photo.name.split('/')[-1], 'utf8')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -520,19 +514,17 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
 
-
         # Organizer should not create a photo if he is not activity owner
         response = self.another_organizer_client.post(
             self.set_cover_from_stock_url,
             self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
         # Organizer should create a photo from existing stock
         response = organizer.post(self.set_cover_from_stock_url,
                                   self.set_from_cover_post)
         stock_photo = ActivityStockPhoto.objects.latest('pk')
-        expected_filename = bytes('%s' % \
+        expected_filename = bytes('%s' %
                                   stock_photo.photo.name.split('/')[-1], 'utf8')
 
         activity_photo = ActivityPhoto.objects.latest('pk')
@@ -571,7 +563,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
-
 
         # Organizer should delete a photo from his activity
         self.assertEqual(self.another_activity.score, 4.8)
@@ -891,7 +882,7 @@ class SubCategoriesViewTest(BaseAPITestCase):
     def setUp(self):
         super(SubCategoriesViewTest, self).setUp()
 
-        ## Objects
+        # Objects
         self.category = mommy.make(Category)
         self.sub_category = mommy.make(SubCategory, name='Yoga', category=self.category)
         self.another_sub_category = mommy.make(SubCategory, category=self.category)
@@ -904,7 +895,6 @@ class SubCategoriesViewTest(BaseAPITestCase):
         mommy.make(ActivityStockPhoto,
                    sub_category=self.another_sub_category,
                    _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS - 1)
-
 
         # URLs
         self.get_covers_url = reverse('activities:get_covers_photos',

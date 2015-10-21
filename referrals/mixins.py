@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from referrals.models import Referral
-from referrals.tasks import CreateReferralCouponTask, CreateReferralTask
+from referrals.tasks import CreateCouponTask, CreateReferralTask
 from students.models import Student
 
 
@@ -18,6 +18,7 @@ class ReferralMixin(APIView):
     is_sign_up = False
     referrer = None
     ip_address = None
+    headers = None
 
     def dispatch(self, request, *args, **kwargs):
         self.referrer = self.get_referrer(request=request)
@@ -25,10 +26,9 @@ class ReferralMixin(APIView):
 
         if self.referrer and Referral.objects.filter(ip_address=self.ip_address).count() > 2:
             response = Response(_('No puede registrar un invitación más de dos veces desde la misma IP.'),
-                            status=status.HTTP_400_BAD_REQUEST)
+                                status=status.HTTP_400_BAD_REQUEST)
             self.headers = self.default_response_headers
             return self.finalize_response(request, response, *args, **kwargs)
-
 
         return super(ReferralMixin, self).dispatch(request, *args, **kwargs)
 
@@ -39,10 +39,10 @@ class ReferralMixin(APIView):
 
         if self.referrer and (self.referrer.id != referred_id):
             create_referral_task = CreateReferralTask()
-            create_coupons_task = CreateReferralCouponTask()
+            create_coupons_task = CreateCouponTask()
             group(
                 create_referral_task.s(self.referrer.id, referred_id, self.ip_address),
-                create_coupons_task.s(self.referrer.id, referred_id)
+                create_coupons_task.s(referred_id, 'referred')
             )()
         return Response(data)
 

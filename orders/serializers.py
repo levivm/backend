@@ -3,9 +3,9 @@ from django.contrib.auth.models import User
 
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
-from rest_framework.relations import RelatedField
 
 from orders.models import Order, Assistant, Refund
+from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
 
@@ -82,10 +82,12 @@ class OrdersSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         assistants_data = validated_data.pop('assistants')
+        student = self.context.get('view').student
         validated_data.update({
-            'student': self.context.get('view').student,
+            'student': student,
             'status': self.context.get('status'),
             'payment': self.context.get('payment'),
+            'coupon': self.context.get('coupon'),
         })
         order = Order(**validated_data)
         calendar = order.calendar
@@ -93,6 +95,8 @@ class OrdersSerializer(serializers.ModelSerializer):
         order.save()
         assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
         Assistant.objects.bulk_create(assistant_objects)
+        task = ReferrerCouponTask()
+        task.delay(student_id=student.id, order_id=order.id)
         return order
 
 
