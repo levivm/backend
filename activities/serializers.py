@@ -77,9 +77,6 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
     def validate_photo(self, file):
         is_stock_image = self.context['request'].data.get('is_stock_image')
         if not is_stock_image:
-
-            # import pdb
-            # pdb.set_trace()
             return file
 
         return self.clean_file(file)
@@ -144,6 +141,7 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
             'sessions',
             'assistants',
             'is_weekend',
+            'duration',
             'is_free'
         )
         depth = 1
