@@ -283,6 +283,8 @@ class Chronogram(Updateable, models.Model):
     def duration(self):
         """Returns calendar duration in ms"""
         sessions = self.sessions.all()
+        if not sessions:
+            return None
         get_datetime = lambda time:datetime.combine(datetime(1,1,1,0,0,0), time)
         timedeltas = map(lambda s:get_datetime(s.end_time)-get_datetime(s.start_time),sessions)
         duration = reduce(operator.add, timedeltas).total_seconds() 

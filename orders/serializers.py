@@ -20,6 +20,7 @@ class AssistantsSerializer(serializers.ModelSerializer):
         model = Assistant
         fields = (
             # 'order',
+            'id',
             'first_name',
             'last_name',
             'email',

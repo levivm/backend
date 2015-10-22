@@ -37,7 +37,9 @@ class Student(Updateable, models.Model):
 
     @classmethod
     def get_by_email(cls, email):
-
+        
+        if not email:
+            return None
         try:
             student = cls.objects.get(user__email=email)
             return student
