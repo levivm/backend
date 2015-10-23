@@ -36,9 +36,6 @@ class ProcessPaymentMixin(object):
         return calendar
 
     def call_create(self, serializer):
-        print("serializer")
-        import pdb
-        pdb.set_trace()
 
         super(ProcessPaymentMixin,self).perform_create(serializer)
         headers = super(ProcessPaymentMixin,self).get_success_headers(serializer.data)
