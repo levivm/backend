@@ -1,9 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import User
-
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
-
 from rest_framework.test import APITestCase
 
 from activities.models import Calendar
@@ -74,6 +72,25 @@ class OrdersSerializerTest(BaseAPITestCase):
         self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
         self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
 
+    def test_validate_quantity(self):
+        """
+        Test to validate quantity with the number of assistants
+        """
+
+        # Success
+        serializer = OrdersSerializer(data=self.data)
+        serializer.context = self.context
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        self.assertEqual(self.data['quantity'], order.quantity)
+        self.assertEqual(order.quantity, order.assistants.count())
+
+        # ValidationError
+        self.data['quantity'] = 4
+        serializer = OrdersSerializer(data=self.data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+
 
 class RefundSerializerTest(APITestCase):
     """
@@ -83,7 +100,8 @@ class RefundSerializerTest(APITestCase):
     def setUp(self):
         # Arrangement
         self.user = mommy.make(User)
-        self.assistant = mommy.make(Assistant)
+        self.order = mommy.make(Order, amount=500, quantity=1)
+        self.assistant = mommy.make(Assistant, order=self.order)
 
     def test_read(self):
         """
@@ -91,14 +109,14 @@ class RefundSerializerTest(APITestCase):
         """
 
         # Arrangement
-        refund = mommy.make(Refund, user=self.user, order=self.assistant.order, assistant=self.assistant)
+        refund = mommy.make(Refund, user=self.user, order=self.order, assistant=self.assistant)
         serializer = RefundSerializer(refund)
         content = {
             'id': refund.id,
-            'order': self.assistant.order.id,
-            'activity': self.assistant.order.calendar.activity.title,
+            'order': self.order.id,
+            'activity': self.order.calendar.activity.title,
             'created_at': refund.created_at.isoformat()[:-6] + 'Z',
-            'amount': self.assistant.order.amount,
+            'amount': self.order.amount / self.order.quantity,
             'status': 'pending',
             'assistant': self.assistant.id,
         }
@@ -121,13 +139,12 @@ class RefundSerializerTest(APITestCase):
         instance = serializer.save()
 
         content = {
-            'id': 1,
             'user_id': self.user.id,
             'assistant_id': self.assistant.id,
             'order_id': self.assistant.order.id,
             'status': 'pending'}
 
-        self.assertTrue(set(content).issubset(instance.__dict__))
+        self.assertTrue(all(item in instance.__dict__.items() for item in content.items()))
 
     def test_update(self):
         """
@@ -148,7 +165,6 @@ class RefundSerializerTest(APITestCase):
         self.assertEqual(refund.id, instance.id)
         self.assertEqual(content, instance.__dict__)
 
-    #
     def test_validation(self):
         """
         Test validation

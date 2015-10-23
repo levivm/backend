@@ -56,6 +56,18 @@ class OrdersSerializer(serializers.ModelSerializer):
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
 
+    def validate_quantity(self, quantity):
+        assistants = self.initial_data['assistants']
+        if isinstance(assistants, list):
+            count_assistants = len(assistants)
+        else:
+            count_assistants = 1
+
+        if quantity != count_assistants:
+            raise serializers.ValidationError(_('La cantidad de cupos no coincide con la cantidad de asistentes'))
+
+        return quantity
+
     def validate(self, data):
 
         calendar = data.get('calendar')
@@ -102,7 +114,6 @@ class OrdersSerializer(serializers.ModelSerializer):
 
 class RefundSerializer(serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
 
     class Meta:
@@ -120,6 +131,3 @@ class RefundSerializer(serializers.ModelSerializer):
 
     def get_activity(self, obj):
         return obj.order.calendar.activity.title
-
-    def get_amount(self, obj):
-        return obj.order.amount

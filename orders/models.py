@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
 from payments.models import Payment
-from referrals.models import Coupon
+from referrals.models import Coupon, Redeem
 from students.models import Student
 from utils.behaviors import Tokenizable
 
@@ -32,10 +33,18 @@ class Order(models.Model):
 
     objects = OrderQuerySet.as_manager()
 
-
     def change_status(self, status):
         self.status = status
         self.save()
+
+    def get_total(self, student):
+        if self.coupon and self.coupon.redeem_set.filter(student=student, used=True).exists():
+            amount = self.amount - self.coupon.coupon_type.amount
+            amount = 0 if amount < 0 else amount
+        else:
+            amount = self.amount
+
+        return amount
 
 
 class Assistant(Tokenizable):
@@ -61,3 +70,16 @@ class Refund(models.Model):
     status = models.CharField(choices=STATUS, max_length=10, default='pending', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     response_at = models.DateTimeField(blank=True, null=True)
+
+    @cached_property
+    def amount(self):
+        profile = self.user.get_profile()
+        if isinstance(profile, Student):
+            amount = self.order.get_total(profile)
+        else:
+            amount = self.order.amount
+
+        if self.assistant:
+            amount = amount / self.order.quantity
+
+        return amount
