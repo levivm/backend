@@ -40,6 +40,8 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
 
 class CategoriesSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
+    icon_default = serializers.SerializerMethodField()
+    icon_active  = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -47,8 +49,21 @@ class CategoriesSerializer(RemovableSerializerFieldMixin,serializers.ModelSerial
             'name',
             'id',
             'subcategories',
-            'color'
+            'color',
+            'icon_default',
+            'icon_active'
         )
+
+    def get_icon_default(self,obj):
+        url = settings.STATIC_IMAGES_URL
+        file_name = ("icon_category_%s_default.png") % obj.name.lower()
+        return ("%s%s") % (url,file_name)
+
+    def get_icon_active(self,obj):
+        url = settings.STATIC_IMAGES_URL
+        file_name = ("icon_category_%s_active.png") % obj.name.lower()
+        return ("%s%s") % (url,file_name)
+
 
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
