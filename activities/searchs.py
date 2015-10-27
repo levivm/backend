@@ -1,6 +1,7 @@
 import datetime
 import re
 import ast
+import json
 
 from django.db.models import Q
 
@@ -76,9 +77,9 @@ class ActivitySearchEngine(object):
             query &= Q(level=level)
 
         if bool(certification):
-            query &= Q(certification=ast.literal_eval(certification))
+            query &= Q(certification=json.loads(certification))
 
-        if  weekends:
+        if  bool(weekends) and json.loads(weekends):
             query &= Q(chronograms__is_weekend=True)
 
 

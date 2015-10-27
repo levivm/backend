@@ -243,6 +243,7 @@ class ActivitiesSearchView(APIView):
 
         query = search.get_query(q, ['title', 'short_description', 'content', \
                                      'tags__name','organizer__name'])
+
         if query:
             activities = Activity.objects.filter(query)
         else:
@@ -251,6 +252,7 @@ class ActivitiesSearchView(APIView):
         activities = activities.filter(filters)\
             .annotate(number_assistants=Count('chronograms__orders__assistants'))\
             .order_by('number_assistants', 'chronograms__initial_date')
+
             # .order_by('score', 'number_assistants', 'chronograms__initial_date')
 
         serializer = ActivitiesSerializer(activities, many=True)

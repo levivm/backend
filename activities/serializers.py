@@ -123,17 +123,6 @@ class SessionsSerializer(serializers.ModelSerializer):
             'end_time',
         )
 
-    # def validate(self, data):
-    #     start_time = data['start_time']
-    #     end_time = data['end_time']
-    #     print("start time",start_time)
-    #     print("end time",end_time)
-    #     print("------------------------")
-
-    #     if start_time >= end_time:
-    #         raise serializers.ValidationError(_("La hora de inicio debe ser menor a la hora final"))
-    #     return data
-
 
 class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     sessions = SessionsSerializer(many=True)
