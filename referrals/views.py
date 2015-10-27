@@ -9,6 +9,7 @@ from students.serializer import StudentsSerializer
 
 
 class InviteView(GenericAPIView):
+    serializer_class = StudentsSerializer
     permission_classes = (IsStudent,)
 
     def get_object(self):

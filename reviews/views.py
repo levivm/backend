@@ -108,6 +108,7 @@ class ReviewListByStudentViewSet(viewsets.ModelViewSet):
 
 
 class ReportReviewView(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
     queryset = Review.objects.all()
     permission_classes = (IsAuthenticated, CanReportReview)
 
