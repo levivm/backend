@@ -29,6 +29,11 @@ STUDENT_PERMISSIONS = (
         'model': 'review',
         'codenames': ('add',),
     },
+    {
+        'app': 'orders',
+        'model': 'refund',
+        'codenames': ('add',),
+    },
 )
 
 ORGANIZER_PERMISSIONS = (
@@ -76,6 +81,11 @@ ORGANIZER_PERMISSIONS = (
         'app': 'reviews',
         'model': 'review',
         'codenames': ('change',),
+    },
+    {
+        'app': 'orders',
+        'model': 'refund',
+        'codenames': ('add',),
     },
 )
 

@@ -71,6 +71,9 @@ class Refund(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     response_at = models.DateTimeField(blank=True, null=True)
 
+    class Meta:
+        unique_together = ('order', 'assistant')
+
     @cached_property
     def amount(self):
         profile = self.user.get_profile()
@@ -80,6 +83,6 @@ class Refund(models.Model):
             amount = self.order.amount
 
         if self.assistant:
-            amount = amount / self.order.quantity
+            amount /= self.order.quantity
 
         return amount

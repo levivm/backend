@@ -3,8 +3,10 @@ from django.contrib.auth.models import User
 
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.fields import CreateOnlyDefault
 
 from orders.models import Order, Assistant, Refund
+from organizers.models import Organizer
 from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
@@ -115,6 +117,8 @@ class OrdersSerializer(serializers.ModelSerializer):
 class RefundSerializer(serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
+    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all(),
+                                                   default=CreateOnlyDefault(None))
 
     class Meta:
         model = Refund
@@ -131,3 +135,41 @@ class RefundSerializer(serializers.ModelSerializer):
 
     def get_activity(self, obj):
         return obj.order.calendar.activity.title
+
+    def validate(self, data):
+        order = data.get('order')
+        assistant = data.get('assistant')
+        user = data.get('user')
+
+        if user:
+            profile = user.get_profile()
+            # Raise error if the order doesn't belong to the student
+            if isinstance(profile, Student):
+                if order.student != profile:
+                    raise serializers.ValidationError(_('La orden no pertenece a este usuario.'))
+
+            elif isinstance(profile, Organizer):
+                if order.calendar.activity.organizer != profile:
+                    raise serializers.ValidationError(_('La orden no pertenece a una actividad de este usuario.'))
+
+        # Doesn't allow to create if the assistant doesn't belong to the order
+        if assistant:
+            if assistant.order != order:
+                raise serializers.ValidationError(_('El asistente no pertenece a esa orden.'))
+
+            if Refund.objects.filter(order=order, assistant__isnull=True).exists():
+                raise serializers.ValidationError(_('No se puede crear un reembolso de orden '
+                                                    'porque ya existe un reembolso de asistente '
+                                                    'para esta misma orden'))
+
+        else:
+            if Refund.objects.filter(order=order, assistant__isnull=False).exists():
+                raise serializers.ValidationError(_('No se puede crear un reembolso de asistente '
+                                                    'porque ya existe un reembolso de orden '
+                                                    'para esta misma orden'))
+
+        return data
+
+    def create(self, validated_data):
+        validated_data['status'] = 'pending'
+        return super(RefundSerializer, self).create(validated_data)

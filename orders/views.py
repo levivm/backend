@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
+from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions, DjangoModelPermissions
 from rest_framework.response import Response
 
 from orders.models import Refund
@@ -90,11 +90,15 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
 class RefundCreateReadView(ListCreateAPIView):
     serializer_class = RefundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
     pagination_class = SmallResultsSetPagination
 
     def get_queryset(self):
         return self.request.user.refunds.all()
+
+    def create(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return super(RefundCreateReadView, self).create(request, *args, **kwargs)
 
 
 class RefundReadOrganizerView(ListAPIView):

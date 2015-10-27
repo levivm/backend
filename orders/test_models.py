@@ -1,3 +1,4 @@
+from django.db.utils import IntegrityError
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
@@ -82,6 +83,20 @@ class RefundModelTest(APITestCase):
                                 coupon=self.coupon, student=self.student)
         self.assistants = mommy.make(Assistant, _quantity=self.ASSISTANT_QUANTITY, order=self.order)
 
+    def test_create_duplicated(self):
+        """
+        Test duplication of a Refund
+        """
+
+        data = {
+            'user': self.student.user,
+            'assistant': self.assistants[0],
+            'order': self.order,
+        }
+
+        Refund.objects.create(**data)
+        with self.assertRaises(IntegrityError):
+            Refund.objects.create(**data)
 
     def test_amount_order(self):
         """
@@ -138,7 +153,7 @@ class RefundModelTest(APITestCase):
         refund = mommy.make(Refund, user=self.student.user, order=self.order)
         self.assertEqual(refund.amount, self.ORDER_AMOUNT_WITHOUT_COUPON)
 
-    def test_amount_assistant(self):
+    def test_amount_assistant_organizer(self):
         """
         Test amount's property for an assistant's refund
         """
@@ -150,6 +165,15 @@ class RefundModelTest(APITestCase):
         # Organizer
         refund = mommy.make(Refund, user=self.organizer.user, order=self.order, assistant=self.assistants[0])
         self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITHOUT_COUPON)
+
+    def test_amount_assistant_student(self):
+        """
+        Test amount's property for an assistant's refund
+        """
+
+        # Order without coupon
+        self.order.coupon = None
+        self.order.save()
 
         # Student
         refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])

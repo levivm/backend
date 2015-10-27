@@ -6,7 +6,9 @@ from rest_framework.test import APITestCase
 
 from activities.models import Calendar
 from orders.serializers import OrdersSerializer
+from organizers.models import Organizer
 from referrals.models import Referral, CouponType, Redeem
+from students.models import Student
 from utils.tests import BaseAPITestCase
 from orders.models import Order, Assistant, Refund
 from orders.serializers import RefundSerializer
@@ -125,13 +127,14 @@ class RefundSerializerTest(APITestCase):
 
     def test_create(self):
         """
-        Test creation of a RefundOrder
+        Test creation of a Refund
         """
 
         data = {
             'user': self.user.id,
             'assistant': self.assistant.id,
-            'order': self.assistant.order.id,
+            'order': self.order.id,
+            'status': 'approved',
         }
 
         serializer = RefundSerializer(data=data)
@@ -141,14 +144,46 @@ class RefundSerializerTest(APITestCase):
         content = {
             'user_id': self.user.id,
             'assistant_id': self.assistant.id,
-            'order_id': self.assistant.order.id,
+            'order_id': self.order.id,
             'status': 'pending'}
 
         self.assertTrue(all(item in instance.__dict__.items() for item in content.items()))
 
+    def test_create_assistant_validation(self):
+        """
+        Test assistant validation when create a Refund
+        Raise validation error if the assistant doesn't belong to the order
+        """
+
+        data = {
+            'user': self.user.id,
+            'assistant': mommy.make(Assistant).id,
+            'order': self.order.id,
+        }
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+    def test_create_duplicated(self):
+        """
+        Test duplication of a Refund
+        """
+
+        mommy.make(Refund, assistant=self.assistant, order=self.order, user=self.user)
+        data = {
+            'user': self.user.id,
+            'assistant': self.assistant.id,
+            'order': self.order.id,
+        }
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
     def test_update(self):
         """
-        Test update of a RefundOrder
+        Test update of a Refund
         """
 
         # Arrangement
@@ -165,14 +200,14 @@ class RefundSerializerTest(APITestCase):
         self.assertEqual(refund.id, instance.id)
         self.assertEqual(content, instance.__dict__)
 
-    def test_validation(self):
+    def test_user_validation(self):
         """
         Test validation
         """
 
         data = {
             'user': 1,
-            'order': self.assistant.order.id,
+            'order': self.order.id,
         }
 
         with self.assertRaises(ValidationError):
@@ -180,3 +215,62 @@ class RefundSerializerTest(APITestCase):
             serializer.is_valid(raise_exception=True)
 
         self.assertEqual(Refund.objects.count(), 0)
+
+    def test_create_type_validation(self):
+        """
+        Test to validate if exists an order refund doesn't allow to create
+        an assistant refund for that order and backwards
+        """
+
+        refund = mommy.make(Refund, user=self.user, order=self.order)
+        data = {
+            'user': self.user.id,
+            'order': self.order.id,
+            'assistant': self.assistant.id,
+        }
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+        # Backwards
+        refund.assistant = self.assistant
+        refund.save()
+
+        del data['assistant']
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+    def test_order_belongs_student_validation(self):
+        """
+        Test to validate if the order belongs to the student
+        """
+
+        mommy.make(Student, user=self.user)
+        order = mommy.make(Order)
+        data = {
+            'user': self.user.id,
+            'order': order.id,
+        }
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+    def test_order_related_organizer_validation(self):
+        """
+        Test to validate if the order is related with an organizer's activity
+        """
+
+        mommy.make(Organizer, user=self.user)
+        order = mommy.make(Order)
+        data = {
+            'user': self.user.id,
+            'order': order.id,
+        }
+
+        with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
