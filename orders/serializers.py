@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework.fields import CreateOnlyDefault
 
 from orders.models import Order, Assistant, Refund
+from orders.tasks import SendEMailPendingRefundTask
 from organizers.models import Organizer
 from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
@@ -176,4 +177,7 @@ class RefundSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['status'] = 'pending'
-        return super(RefundSerializer, self).create(validated_data)
+        instance = super(RefundSerializer, self).create(validated_data)
+        task = SendEMailPendingRefundTask()
+        task.delay(instance.id)
+        return instance

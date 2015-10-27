@@ -80,7 +80,7 @@ class ActivitySearchEngine(object):
             query &= Q(certification=json.loads(certification))
 
         if  bool(weekends) and json.loads(weekends):
-            query &= Q(calendarss__is_weekend=True)
+            query &= Q(calendars__is_weekend=True)
 
 
 

@@ -9,6 +9,7 @@ from orders.serializers import OrdersSerializer
 from organizers.models import Organizer
 from referrals.models import Referral, CouponType, Redeem
 from students.models import Student
+from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 from orders.models import Order, Assistant, Refund
 from orders.serializers import RefundSerializer
@@ -105,6 +106,9 @@ class RefundSerializerTest(APITestCase):
         self.order = mommy.make(Order, amount=500, quantity=1)
         self.assistant = mommy.make(Assistant, order=self.order)
 
+        # Celery
+        settings.CELERY_ALWAYS_EAGER = True
+
     def test_read(self):
         """
         Test the serialization of an instance
@@ -130,6 +134,10 @@ class RefundSerializerTest(APITestCase):
         Test creation of a Refund
         """
 
+        # Counter
+        email_task_record_counter = EmailTaskRecord.objects.count()
+
+        # Arrangement
         data = {
             'user': self.user.id,
             'assistant': self.assistant.id,
@@ -147,7 +155,9 @@ class RefundSerializerTest(APITestCase):
             'order_id': self.order.id,
             'status': 'pending'}
 
+
         self.assertTrue(all(item in instance.__dict__.items() for item in content.items()))
+        self.assertEqual(EmailTaskRecord.objects.count(), email_task_record_counter + 1)
 
     def test_create_assistant_validation(self):
         """
@@ -186,6 +196,9 @@ class RefundSerializerTest(APITestCase):
         Test update of a Refund
         """
 
+        # Counter
+        email_task_record_counter = EmailTaskRecord.objects.count()
+
         # Arrangement
         refund = mommy.make(Refund, user=self.user)
 
@@ -199,6 +212,7 @@ class RefundSerializerTest(APITestCase):
 
         self.assertEqual(refund.id, instance.id)
         self.assertEqual(content, instance.__dict__)
+        self.assertEqual(EmailTaskRecord.objects.count(), email_task_record_counter)
 
     def test_user_validation(self):
         """
