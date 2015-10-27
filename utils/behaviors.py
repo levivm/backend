@@ -20,7 +20,6 @@ class Tokenizable(models.Model):
         while True:
             pretoken = ''.join(sample(chars, size))
             token = '%s-%s' % (prefix, pretoken) if prefix else pretoken
-
             if not self._meta.model.objects.filter(token=token).exists():
                 return token
 

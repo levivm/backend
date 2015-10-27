@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from random import Random
 
+import operator
+from datetime import datetime
+from functools import reduce
 from django.contrib.contenttypes.fields import GenericRelation
 
 from django.db import models
@@ -254,23 +257,6 @@ class ActivityStockPhoto(models.Model):
         # category_images 
         return sub_category_pictures
 
-        # count = queryset.count()
-        # # random_index = randint(0, count - 1) if count else 0
-        # #TO-DO remove top_count if, we need to fill out stock photos
-        # top_count = settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS
-        # if count < top_count:
-        #     top_count = count
-
-        # random_indexes = Random().sample(range(0,count),top_count)  if count else []
-
-        # images = []
-
-        # for index in random_indexes:
-        #     images.append(queryset[index])
-
-
-        # return images
-
 
 class Calendar(Updateable, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
@@ -283,6 +269,18 @@ class Calendar(Updateable, models.Model):
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
+
+
+    @cached_property
+    def duration(self):
+        """Returns calendar duration in ms"""
+        sessions = self.sessions.all()
+        if not sessions:
+            return None
+        get_datetime = lambda time:datetime.combine(datetime(1,1,1,0,0,0), time)
+        timedeltas = map(lambda s:get_datetime(s.end_time)-get_datetime(s.start_time),sessions)
+        duration = reduce(operator.add, timedeltas).total_seconds() 
+        return duration 
 
     @cached_property
     def num_enrolled(self):

@@ -859,20 +859,22 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.data, serializer.data)
 
     def test_search_certification(self):
-        response = self.client.get(self.url, data={'certification': False})
+        response = self.client.get(self.url, data={'certification':'false'})
         activities = self._get_activities_ordered()
         serializer = ActivitiesSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_weekends(self):
-        response = self.client.get(self.url, data={'weekends': True})
+
+        response = self.client.get(self.url, data={'weekends':'true'})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_empty(self):
+
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])

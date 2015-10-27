@@ -7,8 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from activities.mixins import CalculateActivityScoreMixin
+from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
@@ -229,7 +228,7 @@ class ListCategories(APIView):
         return Response(data)
 
 
-class ActivitiesSearchView(APIView):
+class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
     def get(self, request, **kwargs):
         q = request.query_params.get('q')
         search = ActivitySearchEngine()
@@ -248,6 +247,8 @@ class ActivitiesSearchView(APIView):
             .order_by('number_assistants', 'calendars__initial_date')
         # .order_by('score', 'number_assistants', 'calendars__initial_date')
 
-        serializer = ActivitiesSerializer(activities, many=True)
+
+        serializer = ActivitiesSerializer(self.unique_everseen(activities), many=True)
+
         result = serializer.data
         return Response(result)

@@ -25,6 +25,7 @@ class AssistantsSerializer(serializers.ModelSerializer):
         model = Assistant
         fields = (
             # 'order',
+            'id',
             'first_name',
             'last_name',
             'email',
@@ -107,8 +108,11 @@ class OrdersSerializer(serializers.ModelSerializer):
         calendar = order.calendar
         order.amount = calendar.session_price * order.quantity
         order.save()
-        assistant_objects = [Assistant(order=order, **assistant) for assistant in assistants_data]
-        Assistant.objects.bulk_create(assistant_objects)
+
+        for assistant in assistants_data:
+            instance = Assistant(order=order, **assistant)
+            instance.save()
+
         task = ReferrerCouponTask()
         task.delay(student_id=student.id, order_id=order.id)
         return order

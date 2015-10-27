@@ -40,6 +40,8 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
 
 class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
+    icon_default = serializers.SerializerMethodField()
+    icon_active  = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -47,8 +49,21 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'name',
             'id',
             'subcategories',
-            'color'
+            'color',
+            'icon_default',
+            'icon_active'
         )
+
+    def get_icon_default(self,obj):
+        url = settings.STATIC_IMAGES_URL
+        file_name = ("icon_category_%s_default.png") % obj.name.lower()
+        return ("%s%s") % (url,file_name)
+
+    def get_icon_active(self,obj):
+        url = settings.STATIC_IMAGES_URL
+        file_name = ("icon_category_%s_active.png") % obj.name.lower()
+        return ("%s%s") % (url,file_name)
+
 
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
@@ -77,8 +92,6 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
     def validate_photo(self, file):
         is_stock_image = self.context['request'].data.get('is_stock_image')
         if not is_stock_image:
-            # import pdb
-            # pdb.set_trace()
             return file
 
         return self.clean_file(file)
@@ -110,14 +123,6 @@ class CalendarSessionSerializer(serializers.ModelSerializer):
             'end_time',
         )
 
-    def validate(self, data):
-        start_time = data['start_time']
-        end_time = data['end_time']
-
-        if start_time >= end_time:
-            raise serializers.ValidationError(_("La hora de inicio debe ser menor a la hora final"))
-        return data
-
 
 class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     sessions = CalendarSessionSerializer(many=True)
@@ -140,6 +145,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'sessions',
             'assistants',
             'is_weekend',
+            'duration',
             'is_free'
         )
         depth = 1
@@ -158,10 +164,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-    def validate_session_price(self, value):
-        if value < 1:
-            raise serializers.ValidationError(_("El precio no puede ser negativo."))
-        return value
 
     def validate_capacity(self, value):
         if value < 1:
@@ -173,29 +175,62 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
         return value
 
-    def _valid_sessions(self, data):
+    def _validate_session_price(self,data):
+        value = data.get('session_price')
+        if value < 1:
+            error = {'session_price':_("Introduzca un monto valido")}
+            raise serializers.ValidationError(error)
+
+        if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
+            msg = _("El precio no puede ser menor de {:d}"\
+                        .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
+            error = {'session_price':msg}
+            raise serializers.ValidationError(error)
+
+    def _set_initial_date(self,data):
+        sessions = data.get('sessions')
+        first_session = (sessions[:1] or [None])[0]
+        data['initial_date'] = first_session.get('date')
+        return data
+
+
+    def _validate_session(self, sessions_amount, index, session):
+
+        start_time = session['start_time']
+        end_time = session['end_time']
+        if start_time >= end_time:
+            print("start_time",start_time)
+            print("end_time",end_time)
+            print("-------")
+
+            msg = _(u"La hora de inicio debe ser menor a la hora final")
+            errors    = [{}]*sessions_amount
+            errors[index] = {'start_time_'+str(index):[msg]} 
+            raise serializers.ValidationError({'sessions':errors})
+
+
+    def _proccess_sessions(self, data):
 
         session_data = data['sessions']
-        initial_date = data['initial_date']
         data['is_weekend'] = True
 
-        f_range = len(session_data)
-        for i in range(f_range):
+        sessions_amount = len(session_data)
+        if not sessions_amount:
+            raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
+
+        for i in range(sessions_amount):
 
             session = session_data[i]
-            n_session = session_data[i + 1] if i + 1 < f_range else None
+            n_session = session_data[i + 1] if i + 1 < sessions_amount else None
+
+            self._validate_session(sessions_amount,i,session)
 
             date = session['date'].date()
+
             weekday = date.weekday()
             if weekday < 5:
                 data['is_weekend'] = False
-
-            if date < initial_date.date():
-                msg = _(u'La sesión no puede empezar antes de la fecha de inicio')
-                errors = [{}] * f_range
-                errors[i] = {'date_' + str(0): [msg]}
-                raise serializers.ValidationError({'sessions': errors})
-
+                
             if not n_session:
                 continue
 
@@ -203,25 +238,32 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
             if date > n_date:
                 msg = _(u'La fecha su sesión debe ser mayor a la anterior')
-                errors = [{}] * f_range
-                errors[i + 1] = {'date_' + str(0): [msg]}
-                raise serializers.ValidationError({'sessions': errors})
+                errors    = [{}]*sessions_amount
+                errors[i+1] = {'date_'+str(0):[msg]} 
+                raise serializers.ValidationError({'sessions':errors})
 
-                raise serializers.ValidationError({'sessions_' + str(i + 1): _(msg)})
             elif date == n_date:
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
-                    errors = [{}] * f_range
-                    errors[i + 1] = {'start_time_' + str(i + 1): [msg]}
-                    raise serializers.ValidationError({'sessions': errors})
+                    errors    = [{}]*sessions_amount
+                    errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
+                    raise serializers.ValidationError({'sessions':errors})
+
+        return data
 
     def validate(self, data):
+
+        is_free = data.get('is_free')
+        if not is_free:
+            self._validate_session_price(data)
+
+        data = self._set_initial_date(data)
+        data = self._proccess_sessions(data)
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
-        if initial_date > closing_sale:
-            raise serializers.ValidationError(_("La fecha de cierre debe ser mayor a la fecha de inicio."))
-
-        self._valid_sessions(data)
+        if initial_date < closing_sale:
+            raise serializers.ValidationError({'closing_sale':
+                        _("La fecha de cierre de ventas debe ser menor a la fecha de inicio.")})
 
         return data
 

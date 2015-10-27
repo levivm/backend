@@ -213,10 +213,12 @@ class PaymentUtil(object):
         self.card_association = self.get_creditcard_association()
         self.last_four_digits = self.get_last_four_digits()
         payu_data = json.dumps(self.get_payu_data())
-        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
-        result = result.json()
-        if settings.PAYU_TEST:
-            result = self.test_response(result)
+        if not settings.PAYU_TEST:
+            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+            result = result.json()
+        else:
+            result = self.test_response()
+
         return self.response(result)
 
     def get_cookie(self):
@@ -242,6 +244,7 @@ class PaymentUtil(object):
         return reference
 
     def response(self, result):
+
         if result['code'] == 'SUCCESS':
             payment_data = {
                 'payment_type': 'CC',
@@ -301,10 +304,12 @@ class PaymentUtil(object):
                 'error': 'ERROR'
             }
 
-    def test_response(self, result):
-        if result['code'] == 'SUCCESS':
-            result['transactionResponse']['state'] = self.request.data['buyer']['name']
-
+    def test_response(self):
+        result = {}
+        result['code'] = 'SUCCESS';
+        result['transactionResponse'] = {}
+        result['transactionResponse']['state'] = self.request.data['buyer']['name']
+        result['transactionResponse']['transactionId'] = '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c'
         return result
 
     def pse_test_response(self, result):
@@ -329,7 +334,7 @@ class PaymentUtil(object):
     def get_payu_pse_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
-        # 'buyer': self.get_buyer(),
+
         return {
             "language": "es",
             "command": "SUBMIT_TRANSACTION",
@@ -385,8 +390,6 @@ class PaymentUtil(object):
             payu_data = json.dumps(self.get_payu_pse_data())
             result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
             result = result.json()
-        # if settings.PAYU_TEST:
-        #     result = self.pse_test_response(result)
         return self.pse_response(result)
 
     @staticmethod

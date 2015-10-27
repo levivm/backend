@@ -139,7 +139,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 
@@ -183,7 +183,13 @@ STATICFILES_DIRS = (
 )
 
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
-STATIC_URL = '/static/'
+# STATIC_URL = '/static/'
+STATICFILES_LOCATION = 'static'
+STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
+STATIC_IMAGE_LOCATION = 'img'
+STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL,STATIC_IMAGE_LOCATION )
+
+
 MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
 
 if not DEBUG:

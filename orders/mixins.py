@@ -42,7 +42,6 @@ class ProcessPaymentMixin(object):
 
     def proccess_payment_cc(self, payment, serializer):
         """ Proccess Credi Card Payments """
-
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
@@ -67,7 +66,7 @@ class ProcessPaymentMixin(object):
     def proccess_payment_pse(self, payment, serializer):
         """ Proccess PSE Payments """
 
-        charge = payment.pse_payu_payment()
+        charge = payment.pse_payu_payment()        
 
         if charge['status'] == 'PENDING':
 
