@@ -58,21 +58,28 @@ class Assistant(Tokenizable):
 
 
 class Refund(models.Model):
+    APPROVED_STATUS = 'approved'
+    PENDING_STATUS = 'pending'
+    DECLINED_STATUS = 'declined'
+
     STATUS = (
-        ('approved', _('Approved')),
-        ('pending', _('Pending')),
-        ('declined', _('Declined')),
+        (APPROVED_STATUS, _('Aprobado')),
+        (PENDING_STATUS, _('Pendiente')),
+        (DECLINED_STATUS, _('Rechazado')),
     )
 
     user = models.ForeignKey(User, related_name='refunds')
     order = models.ForeignKey(Order, related_name='refunds')
     assistant = models.ForeignKey(Assistant, blank=True, null=True, related_name='refunds')
-    status = models.CharField(choices=STATUS, max_length=10, default='pending', blank=True)
+    status = models.CharField(choices=STATUS, max_length=10, default=PENDING_STATUS, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     response_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         unique_together = ('order', 'assistant')
+
+    def __str__(self):
+        return '%s: %s' % (self.user.username, self.order.id)
 
     @cached_property
     def amount(self):
