@@ -1,0 +1,4 @@
+Hola {{name}}
+
+Se ha aprobado el reembolso con respecto a la actividad {{activity}}.
+Para el estudiante {{student}}.

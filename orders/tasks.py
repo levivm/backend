@@ -22,3 +22,24 @@ class SendEMailStudentRefundTask(SendEmailTaskMixin):
             'order': self.refund.order.id,
             'status': self.refund.status,
         }
+
+
+class SendEmailOrganizerRefundTask(SendEmailTaskMixin):
+    """
+    Task to send an email to the organizer when the refund gets approved
+    """
+
+    def run(self, refund_id, *args, **kwargs):
+        self.refund = Refund.objects.get(id=refund_id)
+        template = 'orders/email/refund_organizer_cc'
+        return super(SendEmailOrganizerRefundTask, self).run(instance=self.refund, template=template, **kwargs)
+
+    def get_emails_to(self, *args, **kwargs):
+        return [self.refund.order.calendar.activity.organizer.user.email]
+
+    def get_context_data(self, data):
+        return {
+            'name': self.refund.order.calendar.activity.organizer.user.first_name,
+            'activity': self.refund.order.calendar.activity.title,
+            'student': self.refund.user.get_full_name(),
+        }

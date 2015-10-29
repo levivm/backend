@@ -35,7 +35,7 @@ class Order(models.Model):
 
     def change_status(self, status):
         self.status = status
-        self.save()
+        self.save(update_fields=['status'])
 
     def get_total(self, student):
         if self.coupon and self.coupon.redeem_set.filter(student=student, used=True).exists():
@@ -55,6 +55,10 @@ class Assistant(Tokenizable):
     enrolled = models.BooleanField(default=True)
 
     objects = AssistantQuerySet.as_manager()
+
+    def dismiss(self):
+        self.enrolled = False
+        self.save(update_fields=['enrolled'])
 
 
 class Refund(models.Model):

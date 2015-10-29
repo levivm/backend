@@ -1,3 +1,4 @@
+from mock import Mock
 from django.conf import settings
 from django.contrib.auth.models import User
 from model_mommy import mommy
@@ -46,11 +47,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         }
 
     def get_context(self):
-        class View(object):
-            pass
-
-        view = View()
-        view.student = self.another_student
+        view = Mock(student=self.another_student)
         return {
             'view': view,
             'status': Order.ORDER_APPROVED_STATUS,
