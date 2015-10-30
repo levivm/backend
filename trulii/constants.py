@@ -61,7 +61,7 @@ ORGANIZER_PERMISSIONS = (
     },
     {
         'app': 'activities',
-        'model': 'session',
+        'model': 'calendarsession',
         'codenames': ('add', 'change', 'delete'),
     },
     {
@@ -89,6 +89,11 @@ ORGANIZER_PERMISSIONS = (
         'model': 'refund',
         'codenames': ('add',),
     },
+    {
+        'app': 'organizers',
+        'model': 'organizerbankinfo',
+        'codenames': ('add', 'change'),
+    }
 )
 
 

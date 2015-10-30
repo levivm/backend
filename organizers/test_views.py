@@ -1,17 +1,20 @@
 import json
-from guardian.shortcuts import assign_perm
 
+from django.core.urlresolvers import reverse
+from guardian.shortcuts import assign_perm
+from model_mommy import mommy
 from rest_framework import status
 from django.http.request import HttpRequest
-from django.contrib.auth.models import User
-from activities.models import Activity
 
-from organizers.models import Instructor, Organizer
+from django.contrib.auth.models import User, Permission
+
+from activities.models import Activity
+from organizers.models import Instructor, Organizer, OrganizerBankInfo
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, InstructorViewSet, \
     ActivityInstructorViewSet
 from locations.serializers import LocationsSerializer
 from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
-from utils.tests import BaseViewTest
+from utils.tests import BaseViewTest, BaseAPITestCase
 
 
 class OrganizerViewTest(BaseViewTest):
@@ -394,3 +397,135 @@ class ActivityInstructorsUpdateAndDeleteViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(activity.instructors.count(), MAX_ACTIVITY_INSTRUCTORS)
         self.assertFalse(activity.instructors.filter(id=instructor.id).exists())
+
+
+class OrganizerBankInfoAPITest(BaseAPITestCase):
+    """
+    Class to test the api cases of Organizer Bank Info
+    """
+
+    def setUp(self):
+        super(OrganizerBankInfoAPITest, self).setUp()
+
+        # URLs
+        self.bank_info_api_url = reverse('organizers:bank_info_api', kwargs={'organizer_pk': self.organizer.id})
+
+        # POST data
+        self.data = {
+            'organizer': self.organizer.id,
+            'beneficiary': 'Beneficiario',
+            'bank': 'bancolombia',
+            'document_type': 'cc',
+            'document': '123456789',
+            'account_type': 'ahorros',
+            'account': '987654321-0',
+        }
+
+        # Permissions
+        add_organizerbankinfo = Permission.objects.get_by_natural_key('add_organizerbankinfo', 'organizers', 'organizerbankinfo')
+        change_organizerbankinfo = Permission.objects.get_by_natural_key('change_organizerbankinfo', 'organizers', 'organizerbankinfo')
+        add_organizerbankinfo.user_set.add(self.organizer.user, self.another_organizer.user)
+        change_organizerbankinfo.user_set.add(self.organizer.user, self.another_organizer.user)
+
+    def test_create(self):
+        """
+        Test create view
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.post(self.bank_info_api_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.post(self.bank_info_api_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should create the bank info
+        response = self.organizer_client.post(self.bank_info_api_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(all(item in response.data.items() for item in self.data.items()))
+        self.assertTrue(
+            OrganizerBankInfo.objects.filter(organizer=self.organizer, beneficiary=self.data['beneficiary']).exists())
+
+    def test_read(self):
+        """
+        Test read method of view
+        """
+
+        # Arrangement
+        data = self.data.copy()
+        data['organizer'] = self.organizer
+        mommy.make(OrganizerBankInfo, **data)
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.get(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should get data
+        response = self.organizer_client.get(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(item in response.data.items() for item in self.data.items()))
+
+        # Another organizer should get forbidden
+        response = self.another_organizer_client.get(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update(self):
+        """
+        Test update method
+        """
+
+        # Arrangement
+        data = self.data.copy()
+        data['organizer'] = self.organizer
+        bank_info = mommy.make(OrganizerBankInfo, **data)
+        post_data = {'beneficiary': 'Harvey', 'account_type': 'corriente'}
+        updated_data = self.data.copy()
+        updated_data['organizer_id'] = updated_data.pop('organizer')
+        updated_data.update(post_data)
+
+        # Anonymous should return unauthorized
+        response = self.client.put(self.bank_info_api_url, post_data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.put(self.bank_info_api_url, post_data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should update
+        response = self.organizer_client.put(self.bank_info_api_url, post_data)
+        bank_info = OrganizerBankInfo.objects.get(id=bank_info.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(bank_info.beneficiary == post_data['beneficiary'])
+        self.assertTrue(bank_info.account_type == post_data['account_type'])
+        self.assertTrue(all(item in bank_info.__dict__.items() for item in updated_data.items()))
+
+        # Another organizer should get forbidden
+        response = self.another_organizer_client.put(self.bank_info_api_url, post_data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete(self):
+        """
+        Test delete
+        """
+
+        # Arrangement
+        data = self.data.copy()
+        data['organizer'] = self.organizer
+        mommy.make(OrganizerBankInfo, **data)
+
+        # Anonymous should return unauthorized
+        response = self.client.delete(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.delete(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should return forbidden
+        response = self.organizer_client.delete(self.bank_info_api_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

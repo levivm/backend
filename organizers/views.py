@@ -1,3 +1,4 @@
+from _ast import Is
 from django.shortcuts import render, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
@@ -10,7 +11,8 @@ from activities.permissions import IsActivityOwner
 from locations.serializers import LocationsSerializer
 from locations.models import Location
 from activities.serializers import ActivitiesSerializer
-from organizers.models import Instructor
+from organizers.models import Instructor, OrganizerBankInfo
+from organizers.serializers import OrganizerBankInfoSerializer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Organizer
 from .serializers import OrganizersSerializer, InstructorsSerializer
@@ -126,3 +128,12 @@ class ActivityInstructorViewSet(viewsets.ModelViewSet):
         activity = self.get_activity()
         activity.instructors.remove(instructor)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrganizerBankInfoViewSet(viewsets.ModelViewSet):
+    queryset = OrganizerBankInfo.objects.all()
+    serializer_class = OrganizerBankInfoSerializer
+    permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer, DjangoObjectPermissions)
+
+    def get_object(self):
+        return get_object_or_404(OrganizerBankInfo, organizer=self.request.user.organizer_profile)
