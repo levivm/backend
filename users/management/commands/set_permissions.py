@@ -8,8 +8,12 @@ class Command(BaseCommand):
     help = "Create the user's groups and set the model permissions"
 
     def handle(self, *args, **options):
+        self.load_socialapp(*args, **options)
+
+    def set_permissions(self, *args, **options):
         self.set_organizer_permissions()
         self.set_student_permissions()
+
 
     def set_organizer_permissions(self):
         organizers, created = Group.objects.get_or_create(name='Organizers')

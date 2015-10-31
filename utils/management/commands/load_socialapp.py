@@ -1,5 +1,6 @@
 from allauth.socialaccount.models import SocialApp
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.sites.models import Site
 
 
 class Command(BaseCommand):
@@ -12,7 +13,11 @@ class Command(BaseCommand):
 
     def load_socialapp(self,*args, **options):
         data = self.get_data()
-        SocialApp.objects.create(**data)
+        site = Site.objects.get(id=1)
+
+        social_app = SocialApp.objects.create(**data)
+        social_app.sites.add(site)
+        social_app.save()
 
     def get_data(self):
         return  {
