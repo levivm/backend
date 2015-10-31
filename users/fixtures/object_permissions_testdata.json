@@ -73,13 +73,13 @@
   "fields": {
       "user": 1,
       "permission": [
-          "delete_chronogram",
+          "delete_calendar",
           "activities",
-          "chronogram"
+          "calendar"
       ],
       "content_type": [
           "activities",
-          "chronogram"
+          "calendar"
       ],
       "object_pk": "1"
   }
@@ -90,13 +90,13 @@
   "fields": {
       "user": 1,
       "permission": [
-          "change_chronogram",
+          "change_calendar",
           "activities",
-          "chronogram"
+          "calendar"
       ],
       "content_type": [
           "activities",
-          "chronogram"
+          "calendar"
       ],
       "object_pk": "1"
   }

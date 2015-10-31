@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from activities.views import ActivitiesSearchView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
-    SubCategoriesViewSet, TagsViewSet, ChronogramsViewSet, \
+    SubCategoriesViewSet, TagsViewSet, CalendarViewSet, \
     ActivityPhotosViewSet
 
 
@@ -9,8 +9,8 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/?$', ActivitiesViewSet.as_view({'get': 'list', 'post': 'create'})),
 
     url(r'^/(?P<activity_pk>\d+)/?$', ActivitiesViewSet.as_view({'get': 'retrieve', 'put': 'partial_update'})),
-    url(r'^/(?P<activity_pk>\d+)/calendars/?$', ChronogramsViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^/(?P<activity_pk>\d+)/calendars/(?P<calendar_pk>\d+)/?$', ChronogramsViewSet.as_view({
+    url(r'^/(?P<activity_pk>\d+)/calendars/?$', CalendarViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^/(?P<activity_pk>\d+)/calendars/(?P<calendar_pk>\d+)/?$', CalendarViewSet.as_view({
        'put': 'update', 'get': 'retrieve', 'delete': 'destroy'})),
     # url(r'^/(?P<pk>\d+)/calendars/?$',ActivitiesViewSet.as_view({'post':'create_calendar',\
     # 	                            'put': 'update_calendar','get':'get_calendars','delete':'delete_calendar'})),

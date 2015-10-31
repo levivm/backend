@@ -11,7 +11,7 @@ from reviews.permissions import CanReportReview, CanReplyReview
 from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
-from utils.pagination import PaginationBySize
+from utils.paginations import PaginationBySize
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -44,7 +44,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         raise PermissionDenied
 
     def allowed_to_create(self, student, activity):
-        return student.orders.filter(chronogram__activity=activity).exists()
+        return student.orders.filter(calendar__activity=activity).exists()
 
     def allowed_to_reply(self, organizer, activity):
         return organizer.activity_set.filter(id=activity.id).exists()

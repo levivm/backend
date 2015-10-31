@@ -1,0 +1,3 @@
+Hola {{name}}
+
+Se ha rechazado el reembolso con respecto a la orden #{{order}}

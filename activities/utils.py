@@ -3,20 +3,13 @@ import hashlib
 import json
 
 from django.conf import settings
-from django.http.response import HttpResponse
-from django.template.context import Context, RequestContext
-from django.template.loader import get_template, render_to_string
 from django.utils.timezone import now
 from requests.api import post
-from utils.exceptions import ServiceUnavailable
-from activities.models import Chronogram
-from payments.models import Payment as PaymentModel
 from django.utils.translation import ugettext_lazy as _
+
+from activities.models import Calendar
+from utils.exceptions import ServiceUnavailable
 from payments.serializers import PaymentsPSEDataSerializer
-from rest_framework.exceptions import APIException
-
-
-from activities.models import Chronogram
 from payments.models import Payment as PaymentModel
 
 
@@ -32,7 +25,8 @@ class PaymentUtil(object):
         'DIGITAL_CERTIFICATE_NOT_FOUND': 'La red financiera reportó un error en la autenticación.',
         'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': 'El código de seguridad o la fecha de expiración estaba inválido.',
         'INSUFFICIENT_FUNDS': 'La cuenta no tenía fondos suficientes.',
-        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': 'La tarjeta de crédito no estaba autorizada para transacciones por Internet.',
+        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': 'La tarjeta de crédito no estaba autorizada para '
+                                                                'transacciones por Internet.',
         'INVALID_TRANSACTION': 'La red financiera reportó que la transacción fue inválida.',
         'INVALID_CARD': 'La tarjeta es inválida.',
         'EXPIRED_CARD': 'La tarjeta ya expiró.',
@@ -45,9 +39,11 @@ class PaymentUtil(object):
         'NOT_ACCEPTED_TRANSACTION': 'La transacción no fue aceptada por el banco por algún motivo.',
         'ERROR_CONVERTING_TRANSACTION_AMOUNTS': 'Ocurrió un error convirtiendo los montos a la moneda de pago.',
         'EXPIRED_TRANSACTION': 'La transacción expiró.',
-        'PENDING_TRANSACTION_REVIEW': 'La transacción fue detenida y debe ser revisada, esto puede ocurrir por filtros de seguridad.',
+        'PENDING_TRANSACTION_REVIEW': 'La transacción fue detenida y debe ser revisada, esto puede ocurrir por filtros '
+                                      'de seguridad.',
         'PENDING_TRANSACTION_CONFIRMATION': 'La transacción está pendiente de ser confirmada.',
-        'PENDING_TRANSACTION_TRANSMISSION': 'La transacción está pendiente para ser trasmitida a la red financiera. Normalmente esto aplica para transacciones con medios de pago en efectivo.',
+        'PENDING_TRANSACTION_TRANSMISSION': 'La transacción está pendiente para ser trasmitida a la red financiera. '
+                                            'Normalmente esto aplica para transacciones con pago en efectivo.',
         'PAYMENT_NETWORK_BAD_RESPONSE': 'El mensaje retornado por la red financiera es inconsistente.',
         'PAYMENT_NETWORK_NO_CONNECTION': 'No se pudo realizar la conexión con la red financiera.',
         'PAYMENT_NETWORK_NO_RESPONSE': 'La red financiera no respondió.',
@@ -58,7 +54,7 @@ class PaymentUtil(object):
         'APPROVED': _('La transacción fue aprobada.'),
         'ANTIFRAUD_REJECTED': _('La transacción fue rechazada por el sistema anti-fraude.'),
         'PAYMENT_NETWORK_REJECTED': _('La red financiera rechazó la transacción.'),
-        'BANK_ACCOUNT_ACTIVATION_ERROR':_('Débito automático no permitido'),
+        'BANK_ACCOUNT_ACTIVATION_ERROR': _('Débito automático no permitido'),
         'BANK_ACCOUNT_NOT_AUTHORIZED_FOR_AUTOMATIC_DEBIT': _('Débito automático no permitido'),
         'INVALID_AGENCY_BANK_ACCOUNT': _('Débito automático no permitido'),
         'INVALID_BANK_ACCOUNT': _('Débito automático no permitido'),
@@ -70,15 +66,16 @@ class PaymentUtil(object):
         'NOT_FIXED_FOR_ERROR_STATE': _('Error'),
         'ERROR_FIXING_AND_REVERSING': _('Error'),
         'ERROR_FIXING_INCOMPLETE_DATA': _('Error'),
-        'PAYMENT_NETWORK_BAD_RESPONSE': _('Error'),
         'ABANDONED_TRANSACTION': _('Transacción abandonada por el pagador'),
         'ENTITY_DECLINED': _('La transacción fue declinada por el banco o por la red financiera debido a un error.'),
         'INTERNAL_PAYMENT_PROVIDER_ERROR': _('Ocurrió un error en el sistema intentando procesar el pago.'),
         'INACTIVE_PAYMENT_PROVIDER': _('El proveedor de pagos no se encontraba activo.'),
         'DIGITAL_CERTIFICATE_NOT_FOUND': _('La red financiera reportó un error en la autenticación.'),
-        'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': _('El código de seguridad o la fecha de expiración estaba inválido.'),
+        'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': _(
+            'El código de seguridad o la fecha de expiración estaba inválido.'),
         'INSUFFICIENT_FUNDS': _('La cuenta no tenía fondos suficientes.'),
-        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': _('La tarjeta de crédito no estaba autorizada para transacciones por Internet.'),
+        'CREDIT_CARD_NOT_AUTHORIZED_FOR_INTERNET_TRANSACTIONS': _(
+            'La tarjeta de crédito no estaba autorizada para transacciones por Internet.'),
         'INVALID_TRANSACTION': _('La red financiera reportó que la transacción fue inválida.'),
         'INVALID_CARD': _('La tarjeta es inválida.'),
         'EXPIRED_CARD': _('La tarjeta ya expiró.'),
@@ -96,15 +93,19 @@ class PaymentUtil(object):
         'PAYMENT_NETWORK_NO_RESPONSE': _('La red financiera no respondió.'),
     }
 
+    card_association = None
+    last_four_digits = None
 
-    def __init__(self, request, activity=None):
+    def __init__(self, request, activity=None, coupon=None):
         super(PaymentUtil, self).__init__()
         self.request = request
         if activity:
             self.activity = activity
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
+        self.coupon = coupon
 
-    def get_signature(self, reference_code, price):
+    @staticmethod
+    def get_signature(reference_code, price):
         signature = hashlib.md5()
         signature_data = {
             'apikey': settings.PAYU_API_KEY,
@@ -117,7 +118,8 @@ class PaymentUtil(object):
         signature.update(bytes(signature_string, 'utf8'))
         return signature.hexdigest()
 
-    def get_client_ip(self,request):
+    @staticmethod
+    def get_client_ip(request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]
@@ -126,10 +128,14 @@ class PaymentUtil(object):
         return ip
 
     def get_amount(self):
-        id = self.request.data.get('chronogram')
-        chronogram = Chronogram.objects.get(id=id)
-        return chronogram.session_price * self.request.data['quantity']
-
+        calendar_id = self.request.data.get('calendar')
+        calendar = Calendar.objects.get(id=calendar_id)
+        quantity = int(self.request.data['quantity'])
+        amount = calendar.session_price * quantity
+        if self.coupon:
+            amount -= self.coupon.coupon_type.amount
+            amount = 0 if amount < 0 else amount
+        return amount
 
     def get_buyer(self):
         data = self.request.data.get('buyer')
@@ -151,11 +157,11 @@ class PaymentUtil(object):
 
         return {
 
-            'FINANCIAL_INSTITUTION_CODE':data['bank'],
-            'USER_TYPE':data['userType'],
-            'PSE_REFERENCE1':self.get_client_ip(self.request),
-            'PSE_REFERENCE2':data['idType'],
-            'PSE_REFERENCE3':data['idNumber'],
+            'FINANCIAL_INSTITUTION_CODE': data['bank'],
+            'USER_TYPE': data['userType'],
+            'PSE_REFERENCE1': self.get_client_ip(self.request),
+            'PSE_REFERENCE2': data['idType'],
+            'PSE_REFERENCE3': data['idNumber'],
 
         }
 
@@ -196,7 +202,7 @@ class PaymentUtil(object):
                 'paymentMethod': self.card_association,
                 'paymentCountry': 'CO',
                 'userAgent': self.get_user_agent(),
-                'deviceSessionId': self.get_deviceSessionId(),
+                'deviceSessionId': self.get_device_session_id(),
                 'cookie': self.get_cookie()
 
             },
@@ -218,10 +224,8 @@ class PaymentUtil(object):
     def get_cookie(self):
         return self.request.auth.key
 
-    def get_deviceSessionId(self):
+    def get_device_session_id(self):
         return self.request.data.get('deviceSessionId')
-
-
 
     def get_user_agent(self):
         return self.request.META.get('HTTP_USER_AGENT')
@@ -232,21 +236,21 @@ class PaymentUtil(object):
         return description
 
     def get_reference_code(self):
-        activity_id  = self.activity.id
-        timestamp    = calendar.timegm(now().timetuple())
-        user_id      = self.request.user.id
-        chronogram_id = self.request.data.get('chronogram') 
-        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, chronogram_id)
+        activity_id = self.activity.id
+        timestamp = calendar.timegm(now().timetuple())
+        user_id = self.request.user.id
+        calendar_id = self.request.data.get('calendar')
+        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
         return reference
 
     def response(self, result):
 
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':'CC',
+                'payment_type': 'CC',
                 'card_type': self.card_association.lower(),
                 'transaction_id': result['transactionResponse']['transactionId'],
-                'last_four_digits':self.last_four_digits
+                'last_four_digits': self.last_four_digits
             }
             if result['transactionResponse']['state'] == 'APPROVED':
                 payment = PaymentModel.objects.create(**payment_data)
@@ -264,7 +268,8 @@ class PaymentUtil(object):
 
                 return {
                     'status': 'ERROR',
-                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Su tarjeta ha sido rechazada'),
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'],
+                                                    'Su tarjeta ha sido rechazada'),
                 }
         else:
             return {
@@ -272,17 +277,17 @@ class PaymentUtil(object):
                 'error': 'ERROR'
             }
 
-    def pse_response(self,result):
+    def pse_response(self, result):
         if result['code'] == 'SUCCESS':
             payment_data = {
-                'payment_type':'PSE',
+                'payment_type': 'PSE',
                 'transaction_id': result['transactionResponse']['transactionId'],
             }
             if result['transactionResponse']['state'] == 'PENDING':
                 payment = PaymentModel.objects.create(**payment_data)
                 return {
                     'status': 'PENDING',
-                    'bank_url':result['transactionResponse']['extraParameters']['BANK_URL'],
+                    'bank_url': result['transactionResponse']['extraParameters']['BANK_URL'],
                     'payment': payment,
 
                 }
@@ -290,7 +295,8 @@ class PaymentUtil(object):
 
                 return {
                     'status': 'ERROR',
-                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'], 'Hubo un error al procesar su transacción'),
+                    'error': self.RESPONSE_CODE.get(result['transactionResponse']['responseCode'],
+                                                    'Hubo un error al procesar su transacción'),
                 }
         else:
             return {
@@ -306,65 +312,63 @@ class PaymentUtil(object):
         result['transactionResponse']['transactionId'] = '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c'
         return result
 
-    def pse_test_response(self,result):
+    def pse_test_response(self, result):
         if result['code'] == 'SUCCESS':
             if self.request.data['buyer']['name'] == 'PENDING':
 
                 result['transactionResponse']['state'] = self.request.data['buyer']['name']
                 result['transactionResponse'].update({
-                        'extraParameters':{
-                            'BANK_URL':"https://pse.todo1.com/PseBancolombia/control/\
+                    'extraParameters': {
+                        'BANK_URL': "https://pse.todo1.com/PseBancolombia/control/\
                                         ElectronicPayment.bancolombia?\
                                         PAYMENT_ID=21429692224921982576571322905"
-                        }
-                    })
+                    }
+                })
             else:
                 result['transactionResponse']['state'] = self.request.data['buyer']['name']
                 result['transactionResponse']['responseCode'] = \
-                            PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL['ERROR']
+                    PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL['ERROR']
 
         return result
-
 
     def get_payu_pse_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
 
         return {
-           "language": "es",
-           "command": "SUBMIT_TRANSACTION",
+            "language": "es",
+            "command": "SUBMIT_TRANSACTION",
             'merchant': {
                 'apiLogin': settings.PAYU_API_LOGIN,
                 'apiKey': settings.PAYU_API_KEY,
             },
-           "transaction": {
-              "order": {
-                 "accountId": settings.PAYU_ACCOUNT_ID,
-                 "referenceCode": reference_code,
-                 "description": self.get_payment_description(),
-                 "language": "es",
-                 "signature": self.get_signature(reference_code=reference_code, price=amount),
-                 "notifyUrl": settings.PAYU_NOTIFY_URL,
-                 "additionalValues": {
-                    "TX_VALUE": {
-                       "value": amount,
-                       "currency": "COP"
-                    }
-                 },
-                 "buyer": self.get_payer()
-              },
-              "payer": self.get_payer(),
-              "extraParameters": self.get_extra_pse_parameters(),
-              "type": "AUTHORIZATION_AND_CAPTURE",
-              "paymentMethod": "PSE",
-              "paymentCountry": "CO",
-              "ipAddress": self.get_client_ip(self.request),
-              "cookie": self.get_cookie(),
-              "userAgent": self.get_user_agent(),
-           },
-           "test": settings.PAYU_TEST
+            "transaction": {
+                "order": {
+                    "accountId": settings.PAYU_ACCOUNT_ID,
+                    "referenceCode": reference_code,
+                    "description": self.get_payment_description(),
+                    "language": "es",
+                    "signature": self.get_signature(reference_code=reference_code, price=amount),
+                    "notifyUrl": settings.PAYU_NOTIFY_URL,
+                    "additionalValues": {
+                        "TX_VALUE": {
+                            "value": amount,
+                            "currency": "COP"
+                        }
+                    },
+                    "buyer": self.get_payer()
+                },
+                "payer": self.get_payer(),
+                "extraParameters": self.get_extra_pse_parameters(),
+                "type": "AUTHORIZATION_AND_CAPTURE",
+                "paymentMethod": "PSE",
+                "paymentCountry": "CO",
+                "ipAddress": self.get_client_ip(self.request),
+                "cookie": self.get_cookie(),
+                "userAgent": self.get_user_agent(),
+            },
+            "test": settings.PAYU_TEST
         }
-
 
     def validate_pse_payment_data(self):
         pse_post_data = self.request.data.get('buyer_pse_data')
@@ -372,17 +376,13 @@ class PaymentUtil(object):
         serializer = PaymentsPSEDataSerializer(data=pse_post_data)
         serializer.is_valid(raise_exception=True)
 
-
-
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
-        result = {}
         if settings.PAYU_TEST:
-            payu_data = json.dumps(self.get_payu_pse_data())
             result = {
-                'code':'SUCCESS',
-                'transactionResponse':{
-                    'transactionId':'21429692224921982576571322905'
+                'code': 'SUCCESS',
+                'transactionResponse': {
+                    'transactionId': '21429692224921982576571322905'
                 }
             }
             result = self.pse_test_response(result)
@@ -392,7 +392,8 @@ class PaymentUtil(object):
             result = result.json()
         return self.pse_response(result)
 
-    def get_bank_list_payu_data(self):
+    @staticmethod
+    def get_bank_list_payu_data():
         return {
             "language": "es",
             "command": "GET_BANKS_LIST",
@@ -400,23 +401,24 @@ class PaymentUtil(object):
                 "apiLogin": settings.PAYU_API_LOGIN,
                 "apiKey": settings.PAYU_API_KEY,
             },
-           "bankListInformation": {
-              "paymentMethod": "PSE",
-              "paymentCountry": "CO"
-           },
-           "test": settings.PAYU_TEST,
+            "bankListInformation": {
+                "paymentMethod": "PSE",
+                "paymentCountry": "CO"
+            },
+            "test": settings.PAYU_TEST,
 
         }
 
-    def bank_list_response(self,result):
+    @staticmethod
+    def bank_list_response(result):
         try:
             result = result.json()
             return result['banks']
-        except Exception as e:
+        except:
             raise ServiceUnavailable
 
     def get_bank_list(self):
         payu_data = json.dumps(self.get_bank_list_payu_data())
-        result = post(url=settings.PAYU_URL, data=payu_data, headers={'content-type': 'application/json', 'accept': 'application/json'})
+        result = post(url=settings.PAYU_URL, data=payu_data,
+                      headers={'content-type': 'application/json', 'accept': 'application/json'})
         return self.bank_list_response(result)
-

@@ -15,9 +15,9 @@ class CeleryTask(models.Model):
 
 
 class EmailTaskRecord(models.Model):
-	data = JSONField()
-	to   = models.EmailField()
-	template = models.CharField(max_length=300)
-	send = models.BooleanField(default=False)
-	date = models.DateTimeField(auto_now_add=True)
-	task_id = models.CharField(max_length=40)
+    data = JSONField()
+    to = models.EmailField()
+    template = models.CharField(max_length=300)
+    send = models.BooleanField(default=False)
+    date = models.DateTimeField(auto_now_add=True)
+    task_id = models.CharField(max_length=40)

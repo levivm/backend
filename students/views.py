@@ -21,7 +21,7 @@ class StudentActivitiesViewSet(ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
-        activities = [order.chronogram.activity for order in student.orders.all()]
+        activities = [order.calendar.activity for order in student.orders.all()]
         activities = list(set(activities))
         serializer = ActivitiesSerializer(activities, many=True)
         return Response(serializer.data)

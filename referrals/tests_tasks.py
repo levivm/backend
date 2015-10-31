@@ -1,7 +1,10 @@
 from django.conf import settings
 from model_mommy import mommy
-from referrals.models import Referral, Redeem, Coupon
-from referrals.tasks import CreateReferralTask, CreateReferralCouponTask
+
+from activities.models import Calendar
+from orders.models import Order
+from referrals.models import Referral, Coupon, CouponType, Redeem
+from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask
 from utils.tests import BaseAPITestCase
 
 
@@ -51,49 +54,214 @@ class CreateReferralTaskTest(BaseAPITestCase):
         self.assertEqual(Referral.objects.count(), referral_counter)
 
 
-class CreateReferralCouponTaskTest(BaseAPITestCase):
+class CreateCouponTaskTest(BaseAPITestCase):
     """
     Class to test CreateReferralCouponTask
     """
 
     def setUp(self):
-        super(CreateReferralCouponTaskTest, self).setUp()
+        super(CreateCouponTaskTest, self).setUp()
 
         # Celery
         settings.CELERY_ALWAYS_EAGER = True
 
         # Coupons
-        self.referrer_coupon = mommy.make(Coupon, name='referrer')
-        self.referred_coupon = mommy.make(Coupon, name='referred')
+        self.referrer_type = mommy.make(CouponType, name='referrer')
+        self.referred_type = mommy.make(CouponType, name='referred')
 
     def test_create(self):
         """
         Test to create the coupons
         """
 
-        redeem_counter = Redeem.objects.count()
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Coupon.objects.count()
 
         # Call the task
-        task = CreateReferralCouponTask()
-        task.delay(self.student.id, self.another_student.id)
+        task = CreateCouponTask()
+        task.delay(student_id=self.student.id, coupon_type_name='referrer')
 
-        self.assertEqual(Redeem.objects.count(), redeem_counter + 2)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=self.referrer_coupon).exists())
-        self.assertTrue(Redeem.objects.filter(student=self.another_student, coupon=self.referred_coupon).exists())
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
+        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.referrer_type).exists())
 
     def test_duplicate(self):
         """
         Test should not duplicate the coupons
         """
 
-        mommy.make(Redeem, student=self.student, coupon=self.referrer_coupon)
-        mommy.make(Redeem, student=self.another_student, coupon=self.referred_coupon)
+        mommy.make(Redeem, student=self.student, coupon__coupon_type=self.referred_type)
 
         # Counter
+        coupon_counter = Coupon.objects.count()
         redeem_counter = Redeem.objects.count()
 
         # Call the task
-        task = CreateReferralCouponTask()
-        task.delay(self.student.id, self.another_student.id)
+        task = CreateCouponTask()
+        task.delay(sstudent_id=self.student.id, coupon_type_name=self.referred_type.name)
 
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)
+
+
+class ReferrerCouponTaskTest(BaseAPITestCase):
+    """
+    Class to test ReferrerCouponTask
+    """
+
+    def setUp(self):
+        super(ReferrerCouponTaskTest, self).setUp()
+
+        # Celery
+        settings.CELERY_ALWAYS_EAGER = True
+
+        # Arrangement
+        self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
+        self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
+        self.coupon_type = mommy.make(CouponType, name='referrer')
+        self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
+                                calendar=self.calendar)
+
+    def test_create(self):
+        """
+        Test create a referrer coupon
+        """
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
+        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_with_an_payed_activity(self):
+        """
+        Test case when shouldn't create a referrer coupon
+        because the student already has a payed activity
+        """
+
+        # Arrangement
+        mommy.make(Order, student=self.another_student)
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
+        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_having_an_free_activity(self):
+        """
+        Test case should create the coupon
+        because the student has a free activity
+        """
+
+        # Arrangement
+        mommy.make(Order, student=self.another_student, calendar__is_free=True)
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
+        self.assertTrue(Coupon.objects.filter(coupon_type=self.coupon_type).exists())
+        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_enrolling_to_a_free_activity(self):
+        """
+        Test case shouldn't create a coupon
+        because is a free activity
+        """
+
+        # Arrangement
+        self.calendar.is_free = True
+        self.calendar.save(update_fields=['is_free'])
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
+        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_without_referral(self):
+        """
+        Test shouldn't create the coupon because it doesn't have a referral
+        """
+
+        # Arrangement
+        self.referral.delete()
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
+        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_with_declined_order(self):
+        """
+        Test shouldn't create the coupon because the order was declined
+        """
+
+        # Arrangement
+        self.order.status = Order.ORDER_DECLINED_STATUS
+        self.order.save(update_fields=['status'])
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
+        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+    def test_with_pending_order(self):
+        """
+        Test should't create the coupon because the order isn't approved yet
+        """
+
+        # Arrangement
+        self.calendar.is_free = True
+        self.calendar.save(update_fields=['is_free'])
+
+        # Counter
+        coupon_counter = Coupon.objects.count()
+        redeem_counter = Redeem.objects.count()
+
+        # Call the task
+        task = ReferrerCouponTask()
+        task.delay(student_id=self.another_student.id, order_id=self.order.id)
+
+        self.assertEqual(Coupon.objects.count(), coupon_counter)
+        self.assertEqual(Redeem.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())

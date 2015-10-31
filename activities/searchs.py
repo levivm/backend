@@ -65,13 +65,13 @@ class ActivitySearchEngine(object):
 
         if date is not None:
             date = datetime.datetime.fromtimestamp(int(date)//1000).replace(second=0)
-            query = query & Q(chronograms__initial_date__gte=date)
+            query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:
             query &= Q(location__city=city)
 
         if cost_start is not None and cost_end is not None:
-            query &= Q(chronograms__session_price__range=(cost_start,cost_end))
+            query &= Q(calendars__session_price__range=(cost_start,cost_end))
 
         if level is not None:
             query &= Q(level=level)
@@ -80,7 +80,7 @@ class ActivitySearchEngine(object):
             query &= Q(certification=json.loads(certification))
 
         if  bool(weekends) and json.loads(weekends):
-            query &= Q(chronograms__is_weekend=True)
+            query &= Q(calendars__is_weekend=True)
 
 
 

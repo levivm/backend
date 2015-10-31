@@ -5,13 +5,13 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from activities.models import Activity, Category, SubCategory, Tags, Chronogram, Session, ActivityPhoto
+from activities.models import Activity, Category, SubCategory, Tags, Calendar, CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from utils.mixins import AssignPermissionsMixin, FileUploadMixin
-from utils.serializers import UnixEpochDateField,RemovableSerializerFieldMixin
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
         depth = 1
 
 
-class CategoriesSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
+class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
     icon_default = serializers.SerializerMethodField()
     icon_active  = serializers.SerializerMethodField()
@@ -67,7 +67,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin,serializers.ModelSerial
 
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
-    permissions = ('activities.delete_activityphoto', )
+    permissions = ('activities.delete_activityphoto',)
 
     class Meta:
         model = ActivityPhoto
@@ -109,13 +109,13 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
         return photo
 
 
-class SessionsSerializer(serializers.ModelSerializer):
+class CalendarSessionSerializer(serializers.ModelSerializer):
     date = UnixEpochDateField()
     start_time = UnixEpochDateField()
     end_time = UnixEpochDateField()
 
     class Meta:
-        model = Session
+        model = CalendarSession
         fields = (
             'id',
             'date',
@@ -124,16 +124,16 @@ class SessionsSerializer(serializers.ModelSerializer):
         )
 
 
-class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
-    sessions = SessionsSerializer(many=True)
+class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+    sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
-    permissions = ('activities.change_chronogram', 'activities.delete_chronogram')
+    permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
     class Meta:
-        model = Chronogram
+        model = Calendar
         fields = (
             'id',
             'activity',
@@ -270,14 +270,15 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
     def create(self, validated_data):
         sessions_data = validated_data.get('sessions')
         del (validated_data['sessions'])
-        chronogram = Chronogram.objects.create(**validated_data)
-        _sessions = [Session(chronogram=chronogram, **data) for data in sessions_data]
-        Session.objects.bulk_create(_sessions)
+        calendar = Calendar.objects.create(**validated_data)
+        _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
+        CalendarSession.objects.bulk_create(_sessions)
 
         request = self.context['request']
 
-        self.assign_permissions(request.user, chronogram)
-        return chronogram
+        self.assign_permissions(request.user, calendar)
+
+        return calendar
 
     def update(self, instance, validated_data):
         sessions_data = validated_data.get('sessions')
@@ -286,8 +287,8 @@ class ChronogramsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
         sessions = instance.sessions.all()
         sessions.delete()
 
-        _sessions = [Session(chronogram=instance, **data) for data in sessions_data]
-        sessions = Session.objects.bulk_create(_sessions)
+        _sessions = [CalendarSession(calendar=instance, **data) for data in sessions_data]
+        sessions = CalendarSession.objects.bulk_create(_sessions)
 
         return instance
 
@@ -309,7 +310,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     location = LocationsSerializer(read_only=True)
     pictures = ActivityPhotosSerializer(read_only=True, many=True)
-    chronograms = ChronogramsSerializer(read_only=True, many=True)
+    calendars = CalendarSerializer(read_only=True, many=True)
     last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
     sub_category_display = serializers.SerializerMethodField()
@@ -317,7 +318,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     instructors = InstructorsSerializer(many=True, required=False)
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
-    permissions = ('activities.change_activity', )
+    permissions = ('activities.change_activity',)
 
     class Meta:
         model = Activity
@@ -344,7 +345,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'published',
             'certification',
             'last_date',
-            'chronograms',
+            'calendars',
             'required_steps',
             'steps',
             'organizer',
@@ -353,35 +354,30 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         )
         depth = 1
 
-
-    def get_required_steps(self,obj):
+    def get_required_steps(self, obj):
         if not obj.pictures.count():
             return settings.PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS
 
         return settings.REQUIRED_STEPS
 
-    def get_steps(self,obj):
+    def get_steps(self, obj):
         return settings.ACTIVITY_STEPS
-
 
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())
-
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
 
     def get_category(self, obj):
-        return CategoriesSerializer(instance=obj.sub_category.category,\
-                    remove_fields = ['subcategories']).data
+        return CategoriesSerializer(instance=obj.sub_category.category,
+                                    remove_fields=['subcategories']).data
 
     def get_category_display(self, obj):
         return obj.sub_category.category.name
 
-
     def get_level_display(self, obj):
         return obj.get_level_display()
-
 
     def validate(self, data):
 

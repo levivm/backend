@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from allauth.account.adapter import get_adapter
 from celery import Task
 
-from activities.models import  Chronogram, Activity
+from activities.models import  Calendar, Activity
 from utils.models import CeleryTask
 
 class SendEmailActivityEditTaskMixin(Task):
@@ -46,16 +46,16 @@ class SendEmailActivityEditTaskMixin(Task):
             task.delete()
 
 
-class SendEmailChronogramTask(SendEmailActivityEditTaskMixin):
+class SendEmailCalendarTask(SendEmailActivityEditTaskMixin):
 
-    def run(self, chronogram_id, success_handler=True, **kwargs):
+    def run(self, calendar_id, success_handler=True, **kwargs):
         self.success_handler = success_handler
-        chronogram = Chronogram.objects.get(id=chronogram_id)
-        template = 'activities/email/change_chronogram_data'
-        return super(SendEmailChronogramTask, self).run(instance=chronogram, template=template)
+        calendar = Calendar.objects.get(id=calendar_id)
+        template = 'activities/email/change_calendar_data'
+        return super(SendEmailCalendarTask, self).run(instance=calendar, template=template)
 
-    def get_emails_to(self, chronogram):
-        assistants = [order.assistants.all() for order in chronogram.orders.all()]
+    def get_emails_to(self, calendar):
+        assistants = [order.assistants.all() for order in calendar.orders.all()]
         assistants = [item for sublist in assistants for item in sublist]
         emails = [assistant.email for assistant in assistants]
         return emails
@@ -69,7 +69,7 @@ class SendEmailLocationTask(SendEmailActivityEditTaskMixin):
         return super(SendEmailLocationTask, self).run(instance=activity, template=template)
 
     def get_emails_to(self, activity):
-        assistants = [order.assistants.all() for chronogram in activity.chronograms.all() for order in chronogram.orders.all()]
+        assistants = [order.assistants.all() for calendar in activity.calendars.all() for order in calendar.orders.all()]
         assistants = [item for sublist in assistants for item in sublist]
         emails = [assistant.email for assistant in assistants]
         return emails

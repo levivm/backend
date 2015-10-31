@@ -1,6 +1,7 @@
-from rest_framework.generics import GenericAPIView, get_object_or_404
+from rest_framework import status
+from rest_framework.generics import GenericAPIView, get_object_or_404, RetrieveAPIView
 from rest_framework.response import Response
-
+from referrals.models import Coupon
 
 from referrals.permissions import IsStudent
 from referrals.tasks import SendReferralEmailTask
@@ -42,3 +43,19 @@ class AcceptInvitation(GenericAPIView):
         data = serializer.data
         data.update({'refhash': student.get_referral_hash()})
         return Response(data)
+
+
+class GetCouponView(RetrieveAPIView):
+    permission_classes = (IsStudent,)
+
+    def dispatch(self, request, *args, **kwargs):
+        self.coupon = self.get_coupon(kwargs.get('coupon_code'))
+        return super(GetCouponView, self).dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def get_coupon(code):
+        return get_object_or_404(Coupon, token=code)
+
+    def retrieve(self, request, *args, **kwargs):
+        self.coupon.is_valid(student=request.user.student_profile)
+        return Response('OK')

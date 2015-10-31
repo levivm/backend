@@ -1,0 +1,3 @@
+Hola {{name}}
+
+Se ha creado un reembolso para la orden #{{order}}

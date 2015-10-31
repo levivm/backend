@@ -12,13 +12,13 @@ class Organizer(models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     telephone = models.CharField(max_length=100, blank=True)
     youtube_video_url = models.CharField(max_length=100, blank=True)
-    website  = models.CharField(max_length=100, blank=True)
+    website = models.CharField(max_length=100, blank=True)
     headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
     tasks = GenericRelation(CeleryTask)
 
     def __str__(self):
-        return '%s' % (self.user.username)
+        return '%s' % self.user.username
 
 
 # Create your models here.
@@ -29,18 +29,62 @@ class Instructor(models.Model):
     organizer = models.ForeignKey(Organizer, related_name="instructors", null=True)
     website = models.CharField(max_length=200, null=True, blank=True)
 
-
     @classmethod 
-    def update_or_create(cls,instructors_data,organizer):
+    def update_or_create(cls, instructors_data, organizer):
 
         instructors = []
         for ins in instructors_data:
             # Esto se usara en el futuro para asignar el instructor
             # al organizer
             # ins.update({'organizer':organizer})
-            instructor = cls.objects.update_or_create(\
-                    id=ins.get('id',None),\
-                    defaults=ins)[0]        
+            instructor = cls.objects.update_or_create(
+                id=ins.get('id', None),
+                defaults=ins)[0]
             instructors.append(instructor)
 
         return instructors
+
+
+class OrganizerBankInfo(models.Model):
+    BANKS = (
+        ('agrario', 'BANCO AGRARIO'),
+        ('av_villas', 'BANCO AV VILLAS'),
+        ('bbva_colombia', 'BANCO BBVA S.A.'),
+        ('caja_social', 'BANCO CAJA SOCIAL'),
+        ('colpatria', 'BANCO COLPATRIA'),
+        ('cooperativo_coopcentral', 'BANCO COOPERATIVO COOPCENTRAL'),
+        ('corpbanca', 'BANCO CORPBANCA S.A.'),
+        ('davivienda', 'BANCO DAVIVIENDA'),
+        ('bogota', 'BANCO DE BOGOTÁ'),
+        ('occidente', 'BANCO DE OCCIDENTE'),
+        ('falabella', 'BANCO FALABELLA'),
+        ('gnb_sudameris', 'BANCO GNB SUDAMERIS'),
+        ('pichincha', 'BANCO PICHINCHA S.A.'),
+        ('popular', 'BANCO POPULAR'),
+        ('procredit', 'BANCO PROCREDIT'),
+        ('bancolombia', 'BANCOLOMBIA'),
+        ('bancoomeva', 'BANCOOMEVA S.A.'),
+        ('citibank', 'CITIBANK'),
+        ('helmbank', 'HELM BANK S.A.')
+    )
+
+    DOCUMENT_TYPES = (
+        ('cc', 'Cédula de ciudadanía'),
+        ('ce', 'Cédula de extranjería'),
+        ('nit', 'NIT'),
+        ('pp', 'Pasaporte'),
+        ('de', 'Documento de identificación extranjero'),
+    )
+
+    ACCOUNT_TYPES = (
+        ('ahorros', 'Cuenta de ahorros'),
+        ('corriente', 'Cuenta corriente'),
+    )
+
+    organizer = models.OneToOneField(Organizer, related_name='bank_info')
+    beneficiary = models.CharField(max_length=255)
+    bank = models.CharField(choices=BANKS, max_length=30)
+    document_type = models.CharField(choices=DOCUMENT_TYPES, max_length=5)
+    document = models.CharField(max_length=100)
+    account_type = models.CharField(choices=ACCOUNT_TYPES, max_length=10)
+    account = models.CharField(max_length=255)

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from organizers.models import OrganizerBankInfo
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
 from utils.serializers import UnixEpochDateField
@@ -67,3 +68,8 @@ class OrganizersSerializer(FileUploadMixin, serializers.ModelSerializer):
 
     def get_created_at(self, obj):
         return UnixEpochDateField().to_representation(obj.created_at)
+
+
+class OrganizerBankInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganizerBankInfo
