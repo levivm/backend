@@ -8,6 +8,7 @@ from rest_framework.test import APITestCase
 from activities.models import Calendar
 from orders.serializers import OrdersSerializer
 from organizers.models import Organizer
+from payments.models import Fee
 from referrals.models import Referral, CouponType, Redeem
 from students.models import Student
 from utils.models import EmailTaskRecord
@@ -90,6 +91,36 @@ class OrdersSerializerTest(BaseAPITestCase):
         serializer = OrdersSerializer(data=self.data)
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
+
+    def test_free_activity_fee(self):
+        """
+        Test no fee in the order because is a free activity
+        """
+
+        # Arrangement
+        calendar = mommy.make(Calendar, activity__published=True, is_free=True, capacity=10)
+        self.data['calendar'] = calendar.id
+
+        serializer = OrdersSerializer(data=self.data)
+        serializer.context = self.context
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        self.assertIsNone(order.fee)
+
+    def test_fee(self):
+        """
+        Test fee on the order
+        """
+        # Arrangement
+        fee = mommy.make(Fee, amount=0.08)
+
+        serializer = OrdersSerializer(data=self.data)
+        serializer.context = self.context
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        self.assertEqual(order.fee, fee)
 
 
 class RefundSerializerTest(APITestCase):

@@ -8,6 +8,7 @@ from rest_framework.fields import CreateOnlyDefault
 from orders.models import Order, Assistant, Refund
 from orders.tasks import SendEMailStudentRefundTask
 from organizers.models import Organizer
+from payments.models import Fee
 from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
@@ -44,6 +45,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
     amount = serializers.FloatField(read_only=True)
+    fee = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
@@ -55,7 +57,11 @@ class OrdersSerializer(serializers.ModelSerializer):
             'assistants',
             'amount',
             'status',
+            'fee',
         )
+
+    def get_fee(self, obj):
+        return obj.fee.amount
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
@@ -108,6 +114,10 @@ class OrdersSerializer(serializers.ModelSerializer):
         order = Order(**validated_data)
         calendar = order.calendar
         order.amount = calendar.session_price * order.quantity
+
+        if not calendar.is_free:
+            order.fee = Fee.objects.last()
+
         order.save()
 
         for assistant in assistants_data:
