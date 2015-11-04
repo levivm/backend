@@ -61,7 +61,9 @@ class OrdersSerializer(serializers.ModelSerializer):
         )
 
     def get_fee(self, obj):
-        return obj.fee.amount
+        if obj.fee:
+            return obj.fee.amount
+        return None
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
@@ -132,8 +134,7 @@ class OrdersSerializer(serializers.ModelSerializer):
 class RefundSerializer(serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
-    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all(),
-                                                   default=CreateOnlyDefault(None))
+    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all())
 
     class Meta:
         model = Refund

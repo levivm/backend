@@ -6,6 +6,7 @@ from django.contrib.auth.models import Permission
 
 from orders.models import Order, Refund, Assistant
 from orders.serializers import RefundSerializer
+from payments.models import Fee
 from utils.tests import BaseAPITestCase
 from activities.models import Activity, Calendar
 
@@ -21,36 +22,25 @@ class OrdersAPITest(BaseAPITestCase):
                                    published=True)
         self.other_activity = mommy.make(Activity, organizer=self.organizer,
                                          published=True)
-
         self.active_activity = mommy.make(Activity, published=True)
-
         self.inactive_activity = mommy.make(Activity)
 
         # Create Calendards objects
         self.calendar = mommy.make(Calendar, activity=self.activity)
-
         self.other_calendar = mommy.make(Calendar, activity=self.other_activity)
-
         self.free_calendar = mommy.make(Calendar, is_free=True,
                                         activity=self.active_activity, capacity=10)
-
         self.inactive_calendar = mommy.make(Calendar, activity=self.inactive_activity)
-
         self.full_calendar = mommy.make(Calendar, activity=self.active_activity,
                                         capacity=0)
-
         self.closed_enroll_calendar = mommy.make(Calendar, activity=self.active_activity,
                                                  enroll_open=False)
 
         # Create Orders objects
         mommy.make(Order, student=self.student, _quantity=2)
-
         mommy.make(Order, calendar=self.calendar, _quantity=2)
-
         mommy.make(Order, calendar=self.other_calendar, _quantity=2)
-
         self.order = mommy.make(Order, student=self.student)
-
         self.another_other = mommy.make(Order)
 
         # URLs

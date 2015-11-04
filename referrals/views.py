@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from referrals.models import Coupon
 
 from referrals.permissions import IsStudent
+from referrals.serializers import CouponSerialzer
 from referrals.tasks import SendReferralEmailTask
 from students.models import Student
 from students.serializer import StudentsSerializer
@@ -47,6 +48,7 @@ class AcceptInvitation(GenericAPIView):
 
 class GetCouponView(RetrieveAPIView):
     permission_classes = (IsStudent,)
+    serializer_class = CouponSerialzer
 
     def dispatch(self, request, *args, **kwargs):
         self.coupon = self.get_coupon(kwargs.get('coupon_code'))
