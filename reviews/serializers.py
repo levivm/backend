@@ -19,6 +19,7 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'reply',
             'activity',
             'student',
+            'created_at',
         )
 
     def create(self, validated_data):
