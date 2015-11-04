@@ -11,6 +11,7 @@ class Review(models.Model):
     activity = models.ForeignKey(Activity, related_name='reviews')
     author = models.ForeignKey(Student, related_name='reviews')
     created_at = models.DateTimeField(auto_now_add=True)
+    reported = models.BooleanField(default=False)
 
     class Meta:
         permissions = (
