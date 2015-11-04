@@ -8,6 +8,7 @@ from rest_framework.fields import CreateOnlyDefault
 from orders.models import Order, Assistant, Refund
 from orders.tasks import SendEMailStudentRefundTask
 from organizers.models import Organizer
+from payments.models import Fee
 from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
@@ -52,6 +53,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentsSerializer(read_only=True)
+    fee = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
@@ -67,7 +69,8 @@ class OrdersSerializer(serializers.ModelSerializer):
             'created_at',
             'payment',
             'calendar_initial_date',
-            'activity_id'
+            'activity_id',
+            'fee',
         )
 
     def get_activity_id(self,obj):
@@ -79,6 +82,11 @@ class OrdersSerializer(serializers.ModelSerializer):
     def get_calendar_initial_date(self,obj):
         initial_date = obj.calendar.initial_date
         return UnixEpochDateField().to_representation(initial_date)
+
+    def get_fee(self, obj):
+        if obj.fee:
+            return obj.fee.amount
+        return None
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
@@ -131,6 +139,10 @@ class OrdersSerializer(serializers.ModelSerializer):
         order = Order(**validated_data)
         calendar = order.calendar
         order.amount = calendar.session_price * order.quantity
+
+        if not calendar.is_free:
+            order.fee = Fee.objects.last()
+
         order.save()
 
         for assistant in assistants_data:
@@ -145,8 +157,7 @@ class OrdersSerializer(serializers.ModelSerializer):
 class RefundSerializer(serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
-    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all(),
-                                                   default=CreateOnlyDefault(None))
+    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all())
 
     class Meta:
         model = Refund

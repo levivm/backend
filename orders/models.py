@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
-from payments.models import Payment
+from payments.models import Payment, Fee
 from referrals.models import Coupon, Redeem
 from students.models import Student
 from utils.behaviors import Tokenizable
@@ -31,6 +31,7 @@ class Order(models.Model):
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    fee = models.ForeignKey(Fee, blank=True, null=True)
 
     objects = OrderQuerySet.as_manager()
 
