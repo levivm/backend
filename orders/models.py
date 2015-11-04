@@ -30,6 +30,7 @@ class Order(models.Model):
     status = models.CharField(choices=STATUS, max_length=15, default='pending')
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     objects = OrderQuerySet.as_manager()
 
@@ -45,6 +46,9 @@ class Order(models.Model):
             amount = self.amount
 
         return amount
+
+    def get_organizer(self):
+        return self.calendar.activity.organizer
 
 
 class Assistant(Tokenizable):

@@ -199,10 +199,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         start_time = session['start_time']
         end_time = session['end_time']
         if start_time >= end_time:
-            print("start_time",start_time)
-            print("end_time",end_time)
-            print("-------")
-
             msg = _(u"La hora de inicio debe ser menor a la hora final")
             errors    = [{}]*sessions_amount
             errors[index] = {'start_time_'+str(index):[msg]} 

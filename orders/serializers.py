@@ -11,6 +11,8 @@ from organizers.models import Organizer
 from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
+from payments.serializers import PaymentsSerializer
+from utils.serializers import UnixEpochDateField
 
 
 class AssistantsSerializer(serializers.ModelSerializer):
@@ -44,6 +46,12 @@ class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
     amount = serializers.FloatField(read_only=True)
+    activity_name = serializers.StringRelatedField(source='calendar.activity.title',read_only=True)
+    activity_id = serializers.SerializerMethodField()
+    calendar_initial_date = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    created_at = UnixEpochDateField(read_only=True)
+    payment = PaymentsSerializer(read_only=True)
 
     class Meta:
         model = Order
@@ -55,7 +63,22 @@ class OrdersSerializer(serializers.ModelSerializer):
             'assistants',
             'amount',
             'status',
+            'activity_name',
+            'created_at',
+            'payment',
+            'calendar_initial_date',
+            'activity_id'
         )
+
+    def get_activity_id(self,obj):
+        return obj.calendar.activity.id
+
+    def get_status(self,obj):
+        return obj.get_status_display()
+
+    def get_calendar_initial_date(self,obj):
+        initial_date = obj.calendar.initial_date
+        return UnixEpochDateField().to_representation(initial_date)
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity

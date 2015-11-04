@@ -65,12 +65,16 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         order_pk = kwargs.get('order_pk')
-        student = self.get_student(user=request.user, exception=PermissionDenied)
-
         order = get_object_or_404(Order, pk=order_pk)
 
-        if order.student != student:
-            raise Http404
+        try:
+            student = self.get_student(user=request.user, exception=PermissionDenied)
+            if order.student != student:
+                raise Http404
+        except PermissionDenied:
+            organizer = self.get_organizer(user=request.user, exception=PermissionDenied) 
+            if order.get_organizer() != organizer:
+                raise Http404
 
         serializer = self.get_serializer(order)
         return Response(serializer.data)

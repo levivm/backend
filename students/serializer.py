@@ -34,7 +34,8 @@ class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
         return UserCreateForm.USER_TYPES[1][0]
 
     def update(self, instance, validated_data):
-        instance.update_base_info(validated_data['user'])
-        del(validated_data['user'])        
+        if validated_data.get('user'):
+            instance.update_base_info(validated_data.get('user'))
+            del(validated_data['user'])        
         instance.update(validated_data)
         return instance
