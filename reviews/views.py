@@ -59,6 +59,12 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         review.save(update_fields=['reply'])
         return Response('OK')
 
+    def read(self, request, *args, **kwargs):
+        review = self.get_object()
+        review.reply = request.data.get('read')
+        review.save(update_fields=['read'])
+        return Response('OK')
+
 
 class ReviewListByOrganizerViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
@@ -114,8 +120,6 @@ class ReportReviewView(viewsets.ModelViewSet):
 
     def report(self, request, *args, **kwargs):
         review = self.get_object()
-        review.reported = True
-        review.save(update_fields=['reported'])
         task = SendReportReviewEmailTask()
         task.delay(review.id)
         return Response()
