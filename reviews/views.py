@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
-from reviews.permissions import CanReportReview, CanReplyReview
+from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
 from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
