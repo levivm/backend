@@ -43,6 +43,10 @@ class ReviewSerializerTest(APITestCase):
 
         self.assertTrue(Review.objects.filter(**self.data).exists())
 
+        # Check the permissions
+        perms = ('reviews.report_review', 'reviews.reply_review','reviews.read_review')
+        self.activity.organizer.user.has_perms(perms)
+
     def test_read(self):
         """
         Test the serialization of an instance
@@ -54,6 +58,22 @@ class ReviewSerializerTest(APITestCase):
         content = {**self.data, **{'created_at': review.created_at.isoformat()[:-6] + 'Z'}}
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
+    def test_reply(self):
+        """
+        Test the reply
+        """
+
+        # Arrangement
+        review = Review.objects.create(rating=5, activity=self.activity, author=self.author)
+        data = { 'reply': 'Replied' }
+
+        serializer = ReviewSerializer(review, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        review = Review.objects.get(id=review.id)
+        self.assertEqual(review.reply, 'Replied')
+
     def test_validate_rating(self):
         """
         Test to validate that rating should be in range of 0-5
@@ -64,3 +84,24 @@ class ReviewSerializerTest(APITestCase):
         with self.assertRaises(ValidationError):
             serializer = ReviewSerializer(data=self.data)
             serializer.is_valid(raise_exception=True)
+
+    def test_validate_reply(self):
+        """
+        Test can't change reply
+        """
+
+        # Arrangement
+        review = Review.objects.create(rating=5, activity=self.activity, author=self.author, reply='Replied')
+        data = { 'reply': 'Replied updated' }
+
+        with self.assertRaises(ValidationError):
+            serializer = ReviewSerializer(review, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+
+    def test_validate_date(self):
+        """
+        Test can't create a review if the date is
+        grater than the calendar.initial_date
+        """
+
+        self.activity.c

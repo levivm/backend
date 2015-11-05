@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from students.serializer import StudentsSerializer
-from .models import Review
 from utils.mixins import AssignPermissionsMixin
+from .models import Review
 
 
 class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
@@ -24,6 +25,12 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'reported',
             'read',
         )
+
+    def validate_reply(self, reply):
+        if self.instance and self.instance.reply:
+            raise serializers.ValidationError(_('No se puede cambiar la respuesta'))
+
+        return reply
 
     def create(self, validated_data):
         validated_data.update({'author': self.context['request'].data['author']})

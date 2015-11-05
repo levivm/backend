@@ -61,7 +61,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
     def read(self, request, *args, **kwargs):
         review = self.get_object()
-        review.reply = request.data.get('read')
+        review.read = request.data.get('read', False)
         review.save(update_fields=['read'])
         return Response('OK')
 
@@ -120,6 +120,8 @@ class ReportReviewView(viewsets.ModelViewSet):
 
     def report(self, request, *args, **kwargs):
         review = self.get_object()
+        review.reported = True
+        review.save(update_fields=['reported'])
         task = SendReportReviewEmailTask()
         task.delay(review.id)
         return Response()
