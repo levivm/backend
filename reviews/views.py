@@ -17,7 +17,7 @@ from utils.paginations import PaginationBySize
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.all()
-    permission_classes = (DjangoModelPermissions, CanReplyReview,)
+    permission_classes = (DjangoModelPermissions, CanReplyReview, CanReadReview)
 
     def get_student(self, request):
         try:
@@ -60,8 +60,6 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         return Response('OK')
 
     def read(self, request, *args, **kwargs):
-        import pdb
-        pdb.set_trace()
         review = self.get_object()
         review.reply = request.data.get('read')
         review.save(update_fields=['read'])

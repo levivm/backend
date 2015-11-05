@@ -9,7 +9,7 @@ from utils.mixins import AssignPermissionsMixin
 class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     author = StudentsSerializer(read_only=True)
     reported = serializers.BooleanField(read_only=True)
-    permissions = ('reviews.report_review', 'reviews.reply_review')
+    permissions = ('reviews.report_review', 'reviews.reply_review','reviews.read_review')
 
     class Meta:
         model = Review
