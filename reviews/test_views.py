@@ -205,4 +205,6 @@ class ReviewAPITest(BaseAPITestCase):
 
         # Organizer owner should report a review
         response = self.organizer_client.post(self.report_url)
+        review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(review.reported)

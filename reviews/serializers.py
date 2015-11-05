@@ -7,8 +7,9 @@ from utils.mixins import AssignPermissionsMixin
 
 
 class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
-    student = StudentsSerializer(read_only=True)
-    permissions = ('reviews.report_review', 'reviews.reply_review')
+    author = StudentsSerializer(read_only=True)
+    reported = serializers.BooleanField(read_only=True)
+    permissions = ('reviews.report_review', 'reviews.reply_review','reviews.read_review')
 
     class Meta:
         model = Review
@@ -18,8 +19,10 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'comment',
             'reply',
             'activity',
-            'student',
+            'author',
             'created_at',
+            'reported',
+            'read',
         )
 
     def create(self, validated_data):

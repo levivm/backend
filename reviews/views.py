@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
-from reviews.permissions import CanReportReview, CanReplyReview
+from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
 from reviews.tasks import SendReportReviewEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
@@ -17,7 +17,7 @@ from utils.paginations import PaginationBySize
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.all()
-    permission_classes = (DjangoModelPermissions, CanReplyReview,)
+    permission_classes = (DjangoModelPermissions, CanReplyReview, CanReadReview)
 
     def get_student(self, request):
         try:
@@ -57,6 +57,12 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         review = self.get_object()
         review.reply = request.data.get('reply')
         review.save(update_fields=['reply'])
+        return Response('OK')
+
+    def read(self, request, *args, **kwargs):
+        review = self.get_object()
+        review.reply = request.data.get('read')
+        review.save(update_fields=['read'])
         return Response('OK')
 
 
