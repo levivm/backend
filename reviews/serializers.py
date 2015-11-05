@@ -22,6 +22,7 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'author',
             'created_at',
             'reported',
+            'read',
         )
 
     def create(self, validated_data):

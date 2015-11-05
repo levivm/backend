@@ -12,6 +12,7 @@ class Review(models.Model):
     author = models.ForeignKey(Student, related_name='reviews')
     created_at = models.DateTimeField(auto_now_add=True)
     reported = models.BooleanField(default=False)
+    read = models.BooleanField(default=False)
 
     class Meta:
         permissions = (
