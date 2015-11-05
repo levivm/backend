@@ -60,6 +60,8 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         return Response('OK')
 
     def read(self, request, *args, **kwargs):
+        import pdb
+        pdb.set_trace()
         review = self.get_object()
         review.reply = request.data.get('read')
         review.save(update_fields=['read'])
