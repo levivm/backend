@@ -18,4 +18,5 @@ class Review(models.Model):
         permissions = (
             ('report_review', 'Report review'),
             ('reply_review', 'Reply review'),
+            ('read_review', 'Read review'),
         )
