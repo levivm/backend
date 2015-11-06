@@ -4,7 +4,6 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
-
 from activities.models import Activity, Category, SubCategory, Tags, Calendar, CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
@@ -41,7 +40,7 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
 class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
     icon_default = serializers.SerializerMethodField()
-    icon_active  = serializers.SerializerMethodField()
+    icon_active = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -54,16 +53,15 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'icon_active'
         )
 
-    def get_icon_default(self,obj):
+    def get_icon_default(self, obj):
         url = settings.STATIC_IMAGES_URL
         file_name = ("icon_category_%s_default.png") % obj.name.lower()
-        return ("%s%s") % (url,file_name)
+        return ("%s%s") % (url, file_name)
 
-    def get_icon_active(self,obj):
+    def get_icon_active(self, obj):
         url = settings.STATIC_IMAGES_URL
         file_name = ("icon_category_%s_active.png") % obj.name.lower()
-        return ("%s%s") % (url,file_name)
-
+        return ("%s%s") % (url, file_name)
 
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
@@ -131,6 +129,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
+    available_capacity = serializers.SerializerMethodField()
 
     class Meta:
         model = Calendar
@@ -146,7 +145,8 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'assistants',
             'is_weekend',
             'duration',
-            'is_free'
+            'is_free',
+            'available_capacity',
         )
         depth = 1
 
@@ -164,7 +164,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-
     def validate_capacity(self, value):
         if value < 1:
             raise serializers.ValidationError(_("La capacidad no puede ser negativa."))
@@ -175,24 +174,23 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
         return value
 
-    def _validate_session_price(self,data):
+    def _validate_session_price(self, data):
         value = data.get('session_price')
         if value < 1:
-            error = {'session_price':_("Introduzca un monto valido")}
+            error = {'session_price': _("Introduzca un monto valido")}
             raise serializers.ValidationError(error)
 
         if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
-            msg = _("El precio no puede ser menor de {:d}"\
-                        .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
-            error = {'session_price':msg}
+            msg = _("El precio no puede ser menor de {:d}" \
+                    .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
+            error = {'session_price': msg}
             raise serializers.ValidationError(error)
 
-    def _set_initial_date(self,data):
+    def _set_initial_date(self, data):
         sessions = data.get('sessions')
         first_session = (sessions[:1] or [None])[0]
         data['initial_date'] = first_session.get('date')
         return data
-
 
     def _validate_session(self, sessions_amount, index, session):
 
@@ -200,10 +198,9 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         end_time = session['end_time']
         if start_time >= end_time:
             msg = _(u"La hora de inicio debe ser menor a la hora final")
-            errors    = [{}]*sessions_amount
-            errors[index] = {'start_time_'+str(index):[msg]} 
-            raise serializers.ValidationError({'sessions':errors})
-
+            errors = [{}] * sessions_amount
+            errors[index] = {'start_time_' + str(index): [msg]}
+            raise serializers.ValidationError({'sessions': errors})
 
     def _proccess_sessions(self, data):
 
@@ -219,14 +216,14 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             session = session_data[i]
             n_session = session_data[i + 1] if i + 1 < sessions_amount else None
 
-            self._validate_session(sessions_amount,i,session)
+            self._validate_session(sessions_amount, i, session)
 
             date = session['date'].date()
 
             weekday = date.weekday()
             if weekday < 5:
                 data['is_weekend'] = False
-                
+
             if not n_session:
                 continue
 
@@ -234,16 +231,16 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
             if date > n_date:
                 msg = _(u'La fecha su sesión debe ser mayor a la anterior')
-                errors    = [{}]*sessions_amount
-                errors[i+1] = {'date_'+str(0):[msg]} 
-                raise serializers.ValidationError({'sessions':errors})
+                errors = [{}] * sessions_amount
+                errors[i + 1] = {'date_' + str(0): [msg]}
+                raise serializers.ValidationError({'sessions': errors})
 
             elif date == n_date:
                 if session['end_time'].time() > n_session['start_time'].time():
                     msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
-                    errors    = [{}]*sessions_amount
-                    errors[i+1] = {'start_time_'+str(i + 1):[msg]} 
-                    raise serializers.ValidationError({'sessions':errors})
+                    errors = [{}] * sessions_amount
+                    errors[i + 1] = {'start_time_' + str(i + 1): [msg]}
+                    raise serializers.ValidationError({'sessions': errors})
 
         return data
 
@@ -258,8 +255,8 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
         if initial_date < closing_sale:
-            raise serializers.ValidationError({'closing_sale':
-                        _("La fecha de cierre de ventas debe ser menor a la fecha de inicio.")})
+            raise serializers.ValidationError(
+                {'closing_sale': _("La fecha de cierre de ventas debe ser menor a la fecha de inicio.")})
 
         return data
 
@@ -289,15 +286,12 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         return instance
 
     def get_assistants(self, obj):
-        assistants = []
-        orders = obj.orders.all()
-
-        for order in orders:
-            assistants.append(order.assistants.all())
-
-        assistants = [item for sublist in assistants for item in sublist]
+        assistants = obj.get_assistants()
         assistants_serialzer = AssistantsSerializer(assistants, many=True)
         return assistants_serialzer.data
+
+    def get_available_capacity(self, obj):
+        return obj.available_capacity()
 
 
 class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
