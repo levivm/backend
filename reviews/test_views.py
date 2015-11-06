@@ -2,12 +2,13 @@ import json
 
 from django.conf import settings
 from django.contrib.auth.models import Permission
+from django.utils.timezone import now, timedelta
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 from rest_framework.reverse import reverse
 
-from activities.models import Activity
+from activities.models import Activity, Calendar
 from orders.models import Order
 from reviews.models import Review
 from utils.tests import BaseAPITestCase
@@ -23,14 +24,14 @@ class ReviewAPITest(BaseAPITestCase):
         # Calling the super (initialization)
         super(ReviewAPITest, self).setUp()
 
-        # Methods data
-        self.post = {'rating': 4, 'comment': 'First comment!'}
-        self.put = {'rating': 2, 'reply': 'Thank you!'}
-
         # Objects needed
         self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
+        self.calendar = mommy.make(Calendar, activity=self.activity, initial_date=now() - timedelta(days=2))
         self.order = mommy.make(Order, student=self.student, calendar__activity=self.activity)
+        self.post = {'rating': 4, 'comment': 'First comment!'}
+        self.put = {'rating': 2, 'reply': 'Thank you!'}
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
+        self.post['calendar'] = self.calendar.id
 
         # URLs
         self.list_by_organizer_url = reverse('reviews:list_by_organizer', kwargs={'organizer_pk': self.organizer.id})

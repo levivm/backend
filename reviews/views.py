@@ -4,7 +4,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
 from rest_framework.response import Response
 
-from activities.models import Activity
+from activities.models import Activity, Calendar
 from .models import Review
 from organizers.models import Organizer
 from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
@@ -31,6 +31,19 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         except:
             raise PermissionDenied
 
+    def get_activity(self, **kwargs):
+        activity = get_object_or_404(Activity, pk=kwargs.get('activity_pk'))
+        return activity
+
+    def get_calendar(self):
+        return get_object_or_404(Calendar, pk=self.request.data.get('calendar'))
+
+    def allowed_to_create(self, student, activity):
+        return student.orders.filter(calendar__activity=activity).exists()
+
+    def allowed_to_reply(self, organizer, activity):
+        return organizer.activity_set.filter(id=activity.id).exists()
+
     def create(self, request, *args, **kwargs):
         student = self.get_student(request)
         activity = self.get_activity(**kwargs)
@@ -43,15 +56,11 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
         raise PermissionDenied
 
-    def allowed_to_create(self, student, activity):
-        return student.orders.filter(calendar__activity=activity).exists()
-
-    def allowed_to_reply(self, organizer, activity):
-        return organizer.activity_set.filter(id=activity.id).exists()
-
-    def get_activity(self, **kwargs):
-        activity = get_object_or_404(Activity, pk=kwargs.get('activity_pk'))
-        return activity
+    def get_serializer_context(self):
+        calendar = self.get_calendar()
+        context = super(ReviewsViewSet, self).get_serializer_context()
+        context['calendar'] = calendar
+        return context
 
     def reply(self, request, *args, **kwargs):
         review = self.get_object()

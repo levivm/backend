@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
-from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
+from django.utils.translation import ugettext as _
 from rest_framework import serializers
 from students.serializer import StudentsSerializer
 from utils.mixins import AssignPermissionsMixin
@@ -31,6 +31,21 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(_('No se puede cambiar la respuesta'))
 
         return reply
+
+    def validate(self, data):
+        if not self.instance:
+            calendar = self.context.get('calendar')
+            activity = data.get('activity')
+            if not calendar:
+                raise serializers.ValidationError(_('Se necesita el calendario'))
+
+            if activity and calendar.activity != activity:
+                raise serializers.ValidationError(_('El calendario no es de esa actividad'))
+
+            if now().date() <= calendar.initial_date.date():
+                raise serializers.ValidationError(_('No se puede crear antes de que empiece la actividad'))
+
+        return data
 
     def create(self, validated_data):
         validated_data.update({'author': self.context['request'].data['author']})
