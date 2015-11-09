@@ -24,6 +24,7 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'created_at',
             'reported',
             'read',
+            'replied_at',
         )
 
     def validate_reply(self, reply):

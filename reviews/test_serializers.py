@@ -80,6 +80,7 @@ class ReviewSerializerTest(APITestCase):
         review = Review.objects.get(id=review.id)
         self.assertEqual(review.reply, 'Replied')
         self.assertEqual(review.replied_at, replied_at)
+        self.assertEqual(serializer.data['replied_at'], replied_at.isoformat()[:-6] + 'Z')
 
     def test_validate_rating(self):
         """
