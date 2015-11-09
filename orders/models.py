@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import cached_property
+
 
 from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
@@ -38,6 +40,25 @@ class Order(models.Model):
     def change_status(self, status):
         self.status = status
         self.save(update_fields=['status'])
+
+    @cached_property
+    def total(self):
+        amount = self.get_total(self.student) - self.total_refunds_amount
+        return amount
+
+    @cached_property
+    def total_refunds_amount(self):
+        #Substract approved refunds amounts
+        amount = 0
+        if self.refunds.exists():
+            approved_refunds = self.refunds.filter(status = Refund.APPROVED_STATUS)
+
+            refunds_total = sum(map(lambda x:x.amount,approved_refunds))
+            amount += refunds_total
+
+        return amount
+
+
 
     def get_total(self, student):
         if self.coupon and self.coupon.redeem_set.filter(student=student, used=True).exists():
