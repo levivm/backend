@@ -1,8 +1,11 @@
 import json
+from datetime import datetime
+
+import mock
 
 from django.conf import settings
 from django.contrib.auth.models import Permission
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now, timedelta, utc
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
@@ -160,11 +163,16 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(review.reply, '')
 
         # Organizer should reply a review
-        response = self.organizer_client.put(self.retrieve_update_delete_url, self.put)
+        replied_at = datetime(2015, 11, 8, 3, 30, tzinfo=utc)
+        with mock.patch('reviews.serializers.now') as mock_now:
+            mock_now.return_value = replied_at
+            response = self.organizer_client.put(self.retrieve_update_delete_url, self.put)
+
         review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(review.reply, 'Thank you!')
         self.assertEqual(review.rating, 4)
+        self.assertEqual(review.replied_at, replied_at)
 
     def test_delete(self):
         """

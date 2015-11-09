@@ -44,6 +44,9 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
             if now().date() <= calendar.initial_date.date():
                 raise serializers.ValidationError(_('No se puede crear antes de que empiece la actividad'))
+        else:
+            if not self.instance.reply and data.get('reply'):
+                data['replied_at'] = now()
 
         return data
 

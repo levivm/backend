@@ -57,15 +57,19 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         raise PermissionDenied
 
     def get_serializer_context(self):
-        calendar = self.get_calendar()
         context = super(ReviewsViewSet, self).get_serializer_context()
-        context['calendar'] = calendar
+        if self.request.method == 'POST':
+            calendar = self.get_calendar()
+            context['calendar'] = calendar
+
         return context
 
     def reply(self, request, *args, **kwargs):
         review = self.get_object()
-        review.reply = request.data.get('reply')
-        review.save(update_fields=['reply'])
+        data = {'reply': request.data.get('reply')}
+        serializer = self.get_serializer(review, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         return Response('OK')
 
     def read(self, request, *args, **kwargs):

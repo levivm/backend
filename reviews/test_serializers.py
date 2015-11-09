@@ -1,5 +1,7 @@
-from mock import Mock
-from django.utils.timezone import timedelta, now
+import datetime
+
+from mock import Mock, patch
+from django.utils.timezone import timedelta, now, utc
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
@@ -67,13 +69,17 @@ class ReviewSerializerTest(APITestCase):
         # Arrangement
         review = Review.objects.create(rating=5, activity=self.activity, author=self.author)
         data = {'reply': 'Replied'}
+        replied_at = datetime.datetime(2015, 11, 8, 3, 30, 0, tzinfo=utc)
 
-        serializer = ReviewSerializer(review, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        with patch('reviews.serializers.now') as mock_now:
+            mock_now.return_value = replied_at
+            serializer = ReviewSerializer(review, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
         review = Review.objects.get(id=review.id)
         self.assertEqual(review.reply, 'Replied')
+        self.assertEqual(review.replied_at, replied_at)
 
     def test_validate_rating(self):
         """
@@ -138,3 +144,18 @@ class ReviewSerializerTest(APITestCase):
             serializer = ReviewSerializer(data=self.data)
             serializer.context = self.context
             serializer.is_valid(raise_exception=True)
+
+    def test_change_replied_at(self):
+        """
+        Shouldn't be able to change the replied_at date if is set
+        """
+
+        replied_at = datetime.datetime(2015, 11, 8, 3, 30, 0, tzinfo=utc)
+        review = mommy.make(Review, reply='Replied', replied_at=replied_at)
+
+        serializer = ReviewSerializer(review, data={'rating': 2}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        review = Review.objects.get(id=review.id)
+        self.assertEqual(review.replied_at, replied_at)
