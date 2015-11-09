@@ -13,17 +13,29 @@ from referrals.tasks import ReferrerCouponTask
 from students.serializer import StudentsSerializer
 from students.models import Student
 from payments.serializers import PaymentsSerializer
-from utils.serializers import UnixEpochDateField
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
 class AssistantsSerializer(serializers.ModelSerializer):
     # order = serializers.PrimaryKeyRelatedField(read_only=True)
     student = serializers.SerializerMethodField()
     token = serializers.SerializerMethodField()
+    lastest_refund = serializers.SerializerMethodField()
 
     def get_token(self, obj):
         if self.context.get('show_token'):
             return obj.token
+
+    def get_lastest_refund(self,obj):
+        try:
+            refund = obj.refunds.latest('id')
+            return {
+                'status':refund.get_status_display()
+            }
+        except Refund.DoesNotExist:
+            return None
+
+        return None
 
     class Meta:
         model = Assistant
@@ -34,6 +46,7 @@ class AssistantsSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'student',
+            'lastest_refund',
             'token'
         )
 
@@ -54,6 +67,8 @@ class OrdersSerializer(serializers.ModelSerializer):
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentsSerializer(read_only=True)
     fee = serializers.SerializerMethodField(read_only=True)
+    lastest_refund = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Order
@@ -71,7 +86,19 @@ class OrdersSerializer(serializers.ModelSerializer):
             'calendar_initial_date',
             'activity_id',
             'fee',
+            'total',
+            'lastest_refund',
+            'total_refunds_amount'
         )
+
+    def get_lastest_refund(self,obj):
+        try:
+            refund = obj.refunds.filter(assistant__isnull=True).latest('id')
+            return RefundSerializer(refund, 
+                remove_fields=['order','activity','assistant','user','amount']).data
+        except Refund.DoesNotExist:
+            return None
+
 
     def get_activity_id(self,obj):
         return obj.calendar.activity.id
@@ -154,10 +181,14 @@ class OrdersSerializer(serializers.ModelSerializer):
         return order
 
 
-class RefundSerializer(serializers.ModelSerializer):
+class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
-    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), \
+                    write_only=True)
+    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, \
+                    queryset=Assistant.objects.all())
+
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Refund
@@ -172,6 +203,9 @@ class RefundSerializer(serializers.ModelSerializer):
             'assistant',
         )
 
+    def get_status(self,obj):
+        return obj.get_status_display()
+
     def get_activity(self, obj):
         return obj.order.calendar.activity.title
 
@@ -179,6 +213,7 @@ class RefundSerializer(serializers.ModelSerializer):
         order = data.get('order')
         assistant = data.get('assistant')
         user = data.get('user')
+
 
         if user:
             profile = user.get_profile()
@@ -198,13 +233,12 @@ class RefundSerializer(serializers.ModelSerializer):
 
             if Refund.objects.filter(order=order, assistant__isnull=True).exists():
                 raise serializers.ValidationError(_('No se puede crear un reembolso de orden '
-                                                    'porque ya existe un reembolso de asistente '
+                                                    'porque ya existe un reembolso de orden '
                                                     'para esta misma orden'))
-
         else:
             if Refund.objects.filter(order=order, assistant__isnull=False).exists():
                 raise serializers.ValidationError(_('No se puede crear un reembolso de asistente '
-                                                    'porque ya existe un reembolso de orden '
+                                                    'porque ya existe un reembolso de asistente '
                                                     'para esta misma orden'))
 
         return data

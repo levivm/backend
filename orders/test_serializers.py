@@ -151,7 +151,7 @@ class RefundSerializerTest(APITestCase):
             'activity': self.order.calendar.activity.title,
             'created_at': refund.created_at.isoformat()[:-6] + 'Z',
             'amount': self.order.amount / self.order.quantity,
-            'status': 'pending',
+            'status': 'Pendiente',
             'assistant': self.assistant.id,
         }
 
