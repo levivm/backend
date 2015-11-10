@@ -35,9 +35,6 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         activity = get_object_or_404(Activity, pk=kwargs.get('activity_pk'))
         return activity
 
-    def get_calendar(self):
-        return get_object_or_404(Calendar, pk=self.request.data.get('calendar'))
-
     def allowed_to_create(self, student, activity):
         return student.orders.filter(calendar__activity=activity).exists()
 
@@ -55,14 +52,6 @@ class ReviewsViewSet(viewsets.ModelViewSet):
             return super(ReviewsViewSet, self).create(request, *args, **kwargs)
 
         raise PermissionDenied
-
-    def get_serializer_context(self):
-        context = super(ReviewsViewSet, self).get_serializer_context()
-        if self.request.method == 'POST':
-            calendar = self.get_calendar()
-            context['calendar'] = calendar
-
-        return context
 
     def reply(self, request, *args, **kwargs):
         review = self.get_object()

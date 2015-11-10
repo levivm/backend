@@ -30,11 +30,10 @@ class ReviewAPITest(BaseAPITestCase):
         # Objects needed
         self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
         self.calendar = mommy.make(Calendar, activity=self.activity, initial_date=now() - timedelta(days=2))
-        self.order = mommy.make(Order, student=self.student, calendar__activity=self.activity)
+        self.order = mommy.make(Order, student=self.student, calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
         self.post = {'rating': 4, 'comment': 'First comment!'}
         self.put = {'rating': 2, 'reply': 'Thank you!'}
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
-        self.post['calendar'] = self.calendar.id
 
         # URLs
         self.list_by_organizer_url = reverse('reviews:list_by_organizer', kwargs={'organizer_pk': self.organizer.id})
