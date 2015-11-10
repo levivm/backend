@@ -140,6 +140,7 @@ class OrganizerBankInfoViewSet(viewsets.ModelViewSet):
 
 
 class OrganizerBankInfoChoicesViewSet(viewsets.GenericViewSet):
+    serializer_class = OrganizerBankInfoSerializer
     permission_classes = (IsAuthenticated, IsOrganizer)
 
     def choices(self, request, *args, **kwargs):
