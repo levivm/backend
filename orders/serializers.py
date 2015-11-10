@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from rest_framework import serializers
 from rest_framework.fields import CreateOnlyDefault
 
@@ -17,7 +17,6 @@ from utils.serializers import UnixEpochDateField
 
 
 class AssistantsSerializer(serializers.ModelSerializer):
-    # order = serializers.PrimaryKeyRelatedField(read_only=True)
     student = serializers.SerializerMethodField()
     token = serializers.SerializerMethodField()
 
@@ -28,7 +27,6 @@ class AssistantsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assistant
         fields = (
-            # 'order',
             'id',
             'first_name',
             'last_name',
@@ -157,7 +155,7 @@ class OrdersSerializer(serializers.ModelSerializer):
 class RefundSerializer(serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
-    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all())
+    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Assistant.objects.all(), default=None)
 
     class Meta:
         model = Refund
@@ -174,6 +172,12 @@ class RefundSerializer(serializers.ModelSerializer):
 
     def get_activity(self, obj):
         return obj.order.calendar.activity.title
+
+    def validate_order(self, order):
+        if order.status != Order.ORDER_APPROVED_STATUS:
+            raise serializers.ValidationError(_('La orden debe estar aprobada'))
+
+        return order
 
     def validate(self, data):
         order = data.get('order')
