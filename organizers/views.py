@@ -137,3 +137,10 @@ class OrganizerBankInfoViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         return get_object_or_404(OrganizerBankInfo, organizer=self.request.user.organizer_profile)
+
+
+class OrganizerBankInfoChoicesViewSet(viewsets.GenericViewSet):
+    permission_classes = (IsAuthenticated, IsOrganizer)
+
+    def choices(self, request, *args, **kwargs):
+        return Response(OrganizerBankInfo.get_choices())
