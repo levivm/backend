@@ -271,6 +271,7 @@ class ValidateCouponTest(BaseAPITestCase):
         # Student should validate
         response = self.student_client.get(self.validate_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response.data, {'amount': self.referrer_type.amount})
 
     def test_invalid(self):
         """
