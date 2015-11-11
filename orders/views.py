@@ -31,13 +31,6 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def get_coupon(code):
         return get_object_or_404(Coupon, token=code)
 
-    # def get_serializer_context(self):
-    #     print('self',self.show_refunds)
-    #     if self.show_refunds:
-    #         return {'show_refunds':True}
-    #     return {}
-
-
     def create(self, request, *args, **kwargs):
         self.student = self.get_student(user=request.user)
         serializer = self.get_serializer(data=request.data)

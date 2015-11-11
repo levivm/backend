@@ -16,14 +16,18 @@ from payments.serializers import PaymentsSerializer
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
-class AssistantsSerializer(serializers.ModelSerializer):
+class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     token = serializers.SerializerMethodField()
     lastest_refund = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
 
     def get_token(self, obj):
         if self.context.get('show_token'):
             return obj.token
+
+    def get_full_name(self,obj):
+        return "{} {}".format(obj.first_name, obj.last_name)
 
     def get_lastest_refund(self,obj):
         try:
@@ -42,6 +46,7 @@ class AssistantsSerializer(serializers.ModelSerializer):
             'id',
             'first_name',
             'last_name',
+            'full_name',
             'email',
             'student',
             'lastest_refund',
@@ -179,11 +184,20 @@ class OrdersSerializer(serializers.ModelSerializer):
         return order
 
 
+
+class RefundAssistantField(serializers.PrimaryKeyRelatedField):
+    def to_representation(self, value):
+        if not value.pk:
+            return None
+        assistant = self.queryset.get(id=value.pk)
+        return AssistantsSerializer(assistant,
+                    remove_fields=['email','student','token','lastest_refund']).data
+
 class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), \
                     write_only=True)
-    assistant = serializers.PrimaryKeyRelatedField(allow_null=True, \
+    assistant = RefundAssistantField(allow_null=True, \
                     queryset=Assistant.objects.all())
     status = serializers.SerializerMethodField()
 
@@ -204,7 +218,11 @@ class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer
         return obj.get_status_display()
 
     def get_activity(self, obj):
-        return obj.order.calendar.activity.title
+
+        return {
+            'title':obj.order.calendar.activity.title,
+            'id':obj.order.calendar.activity.id
+        }
 
     def validate_order(self, order):
         if order.status != Order.ORDER_APPROVED_STATUS:
