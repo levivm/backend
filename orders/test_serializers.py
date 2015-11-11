@@ -131,7 +131,7 @@ class RefundSerializerTest(APITestCase):
     def setUp(self):
         # Arrangement
         self.user = mommy.make(User)
-        self.order = mommy.make(Order, amount=500, quantity=1)
+        self.order = mommy.make(Order, amount=500, quantity=1, status=Order.ORDER_APPROVED_STATUS)
         self.assistant = mommy.make(Assistant, order=self.order)
 
         # Celery
@@ -314,5 +314,20 @@ class RefundSerializerTest(APITestCase):
         }
 
         with self.assertRaises(ValidationError):
+            serializer = RefundSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+    def test_order_status_validation(self):
+        """
+        The order must be approved
+        """
+
+        order = mommy.make(Order)
+        data = {
+            'user': self.user.id,
+            'order': order.id,
+        }
+
+        with self.assertRaisesMessage(ValidationError, "{'order': ['La orden debe estar aprobada']"):
             serializer = RefundSerializer(data=data)
             serializer.is_valid(raise_exception=True)

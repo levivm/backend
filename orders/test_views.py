@@ -288,7 +288,7 @@ class RefundAPITest(BaseAPITestCase):
         Test create a refund for a Student
         """
 
-        order = mommy.make(Order, student=self.student)
+        order = mommy.make(Order, student=self.student, status=Order.ORDER_APPROVED_STATUS)
         assistant = mommy.make(Assistant, order=order)
         data = {
             'order': order.id,
@@ -310,7 +310,7 @@ class RefundAPITest(BaseAPITestCase):
         Test create a refund for an Organizer
         """
 
-        order = mommy.make(Order, calendar__activity__organizer=self.organizer)
+        order = mommy.make(Order, calendar__activity__organizer=self.organizer, status=Order.ORDER_APPROVED_STATUS)
         assistant = mommy.make(Assistant, order=order)
         data = {
             'order': order.id,

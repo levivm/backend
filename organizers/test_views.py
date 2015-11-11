@@ -409,6 +409,7 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
 
         # URLs
         self.bank_info_api_url = reverse('organizers:bank_info_api', kwargs={'organizer_pk': self.organizer.id})
+        self.bank_choices = reverse('organizers:bank_choices')
 
         # POST data
         self.data = {
@@ -529,3 +530,21 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         # Organizer should return forbidden
         response = self.organizer_client.delete(self.bank_info_api_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_choices(self):
+        """
+        Test getting data choices
+        """
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.bank_choices)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should get forbidden
+        response = self.student_client.get(self.bank_choices)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should get the choices
+        response = self.organizer_client.get(self.bank_choices)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, OrganizerBankInfo.get_choices())

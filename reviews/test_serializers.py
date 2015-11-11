@@ -1,11 +1,11 @@
 import datetime
-
 from mock import Mock, patch
 from django.utils.timezone import timedelta, now, utc
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 from activities.models import Activity, Calendar
+from orders.models import Order
 from reviews.models import Review
 from reviews.serializers import ReviewSerializer
 from students.models import Student
@@ -18,8 +18,9 @@ class ReviewSerializerTest(APITestCase):
 
     def setUp(self):
         self.activity = mommy.make(Activity)
-        self.calendar = mommy.make(Calendar, activity=self.activity, initial_date=now() - timedelta(days=3))
         self.author = mommy.make(Student)
+        self.order = mommy.make(Order, status=Order.ORDER_APPROVED_STATUS, calendar__activity=self.activity,
+                                calendar__initial_date=now() - timedelta(days=3), student=self.author)
         self.data = {
             'rating': 5,
             'activity': self.activity.id,
@@ -31,7 +32,6 @@ class ReviewSerializerTest(APITestCase):
         request.data = {'author': self.author}
         return {
             'request': request,
-            'calendar': self.calendar,
         }
 
     def test_create(self):
@@ -80,6 +80,7 @@ class ReviewSerializerTest(APITestCase):
         review = Review.objects.get(id=review.id)
         self.assertEqual(review.reply, 'Replied')
         self.assertEqual(review.replied_at, replied_at)
+        self.assertEqual(serializer.data['replied_at'], replied_at.isoformat()[:-6] + 'Z')
 
     def test_validate_rating(self):
         """
@@ -105,42 +106,18 @@ class ReviewSerializerTest(APITestCase):
             serializer = ReviewSerializer(review, data=data, partial=True)
             serializer.is_valid(raise_exception=True)
 
-    def test_validate_calendar_passed(self):
-        """
-        Test can't create if there is not calendar
-        """
-
-        del self.context['calendar']
-
-        with self.assertRaisesMessage(ValidationError, "{'non_field_errors': ['Se necesita el calendario']}"):
-            serializer = ReviewSerializer(data=self.data)
-            serializer.context = self.context
-            serializer.is_valid(raise_exception=True)
-
-    def test_validate_calendar_activity(self):
-        """
-        The calendar's activity should be the same as the GET's activity
-        """
-
-        self.context['calendar'] = mommy.make(Calendar)
-
-        with self.assertRaisesMessage(ValidationError,
-                                      "{'non_field_errors': ['El calendario no es de esa actividad']}"):
-            serializer = ReviewSerializer(data=self.data)
-            serializer.context = self.context
-            serializer.is_valid(raise_exception=True)
-
     def test_validate_calendar_initial_date(self):
         """
         Now() should be grater than calendar.initial_date
         """
 
         # Set the initial_date 10 days ahead
-        self.calendar.initial_date = now() + timedelta(days=10)
-        self.calendar.save()
+        self.order.calendar.initial_date = now() + timedelta(days=10)
+        self.order.calendar.save()
 
         with self.assertRaisesMessage(ValidationError,
-                                      "{'non_field_errors': ['No se puede crear antes de que empiece la actividad']}"):
+                                      "{'non_field_errors': ['La orden no cumple con los "
+                                      "requerimientos para crear un review']}"):
             serializer = ReviewSerializer(data=self.data)
             serializer.context = self.context
             serializer.is_valid(raise_exception=True)
