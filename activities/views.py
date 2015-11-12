@@ -32,6 +32,7 @@ class CalendarViewSet(viewsets.ModelViewSet):
         return activity.calendars.all()
 
     def list(self, request, *args, **kwargs):
+        print('calendars')
         calendars = self.get_queryset().order_by('initial_date')
         if request.GET.get('actives'):
             calendars = calendars.filter(initial_date__gt=now())
@@ -66,6 +67,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
+
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()

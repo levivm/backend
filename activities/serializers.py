@@ -150,6 +150,14 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         )
         depth = 1
 
+    def get_assistants(self, obj):
+        assistants = obj.get_assistants()
+        assistants_serialzer = AssistantsSerializer(assistants, many=True,context=self.context)
+        return assistants_serialzer.data
+
+    def get_available_capacity(self, obj):
+        return obj.available_capacity()
+
     def validate_activity(self, value):
         return value
 
@@ -285,13 +293,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
         return instance
 
-    def get_assistants(self, obj):
-        assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True)
-        return assistants_serialzer.data
-
-    def get_available_capacity(self, obj):
-        return obj.available_capacity()
 
 
 class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):

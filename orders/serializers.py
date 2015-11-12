@@ -16,15 +16,30 @@ from payments.serializers import PaymentsSerializer
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
+
+class AssistantTokenField(serializers.SerializerMethodField):
+    """
+    Show assistant token if the current user is the order owner
+    """
+    def to_representation(self, obj):
+        request = self.context.get('request')
+        show_token = self.context.get('show_token')
+        if show_token:
+            return obj.token
+
+        if request:
+            current_user = request.user
+            owner = obj.order.calendar.activity.organizer.user
+            return obj.token if current_user == owner else None
+        return None
+
+
 class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
-    token = serializers.SerializerMethodField()
+    token = AssistantTokenField(read_only=True)
     lastest_refund = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
-
-    def get_token(self, obj):
-        if self.context.get('show_token'):
-            return obj.token
+    order = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def get_full_name(self,obj):
         return "{} {}".format(obj.first_name, obj.last_name)
@@ -49,6 +64,7 @@ class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'full_name',
             'email',
             'student',
+            'order',
             'lastest_refund',
             'token'
         )
