@@ -32,7 +32,6 @@ class CalendarViewSet(viewsets.ModelViewSet):
         return activity.calendars.all()
 
     def list(self, request, *args, **kwargs):
-        print('calendars')
         calendars = self.get_queryset().order_by('initial_date')
         if request.GET.get('actives'):
             calendars = calendars.filter(initial_date__gt=now())

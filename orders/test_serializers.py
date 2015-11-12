@@ -1,20 +1,23 @@
-from mock import Mock
 from django.conf import settings
 from django.contrib.auth.models import User
+from mock import Mock
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from activities.models import Calendar
-from orders.serializers import OrdersSerializer
+from orders.models import Order, Assistant, Refund
+from orders.serializers import OrdersSerializer, RefundAssistantField, AssistantsSerializer
+from orders.serializers import RefundSerializer
 from organizers.models import Organizer
-from payments.models import Fee
+from payments.models import Fee, Payment
+from payments.serializers import PaymentsSerializer
 from referrals.models import Referral, CouponType, Redeem
 from students.models import Student
+from students.serializer import StudentsSerializer
 from utils.models import EmailTaskRecord
+from utils.serializers import UnixEpochDateField
 from utils.tests import BaseAPITestCase
-from orders.models import Order, Assistant, Refund
-from orders.serializers import RefundSerializer
 
 
 class OrdersSerializerTest(BaseAPITestCase):
@@ -53,6 +56,40 @@ class OrdersSerializerTest(BaseAPITestCase):
             'view': view,
             'status': Order.ORDER_APPROVED_STATUS,
         }
+
+    def test_read(self):
+        """
+        Test data serialized
+        """
+
+        payment = mommy.make(Payment)
+        fee = mommy.make(Fee)
+        order = mommy.make(Order, coupon__coupon_type=self.coupon_type, calendar=self.calendar, quantity=1, amount=500,
+                           payment=payment, fee=fee)
+        assistants = mommy.make(Assistant, order=order, _quantity=1)
+        serializer = OrdersSerializer(order)
+
+        content = {
+            'id': order.id,
+            'calendar': self.calendar.id,
+            'student': StudentsSerializer(order.student).data,
+            'quantity': order.quantity,
+            'assistants': AssistantsSerializer(assistants, many=True).data,
+            'amount': order.amount,
+            'status': order.get_status_display(),
+            'activity_name': order.calendar.activity.title,
+            'created_at': UnixEpochDateField().to_representation(order.created_at),
+            'payment': PaymentsSerializer(payment).data,
+            'calendar_initial_date': UnixEpochDateField().to_representation(order.calendar.initial_date),
+            'activity_id': order.calendar.activity.id,
+            'fee': fee.amount,
+            'total': order.total,
+            'lastest_refund': None,
+            'total_refunds_amount': order.total_refunds_amount,
+            'coupon': self.coupon_type.amount,
+        }
+
+        self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
     def test_create_referrer_coupon(self):
         """
@@ -148,14 +185,18 @@ class RefundSerializerTest(APITestCase):
         content = {
             'id': refund.id,
             'order': self.order.id,
-            'activity': self.order.calendar.activity.title,
+            'activity': {
+                'title': self.order.calendar.activity.title,
+                'id': self.order.calendar.activity.id
+            },
             'created_at': refund.created_at.isoformat()[:-6] + 'Z',
             'amount': self.order.amount / self.order.quantity,
             'status': 'Pendiente',
-            'assistant': self.assistant.id,
+            'assistant': RefundAssistantField(allow_null=True,
+                                              queryset=Assistant.objects.all()).to_representation(self.assistant),
         }
 
-        self.assertEqual(serializer.data, content)
+        self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
     def test_create(self):
         """
@@ -182,7 +223,6 @@ class RefundSerializerTest(APITestCase):
             'assistant_id': self.assistant.id,
             'order_id': self.order.id,
             'status': 'pending'}
-
 
         self.assertTrue(all(item in instance.__dict__.items() for item in content.items()))
         self.assertEqual(EmailTaskRecord.objects.count(), email_task_record_counter + 1)

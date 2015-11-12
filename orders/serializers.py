@@ -1,26 +1,24 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
-
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
-from rest_framework.fields import CreateOnlyDefault
 
 from orders.models import Order, Assistant, Refund
 from orders.tasks import SendEMailStudentRefundTask
 from organizers.models import Organizer
 from payments.models import Fee
-from referrals.tasks import ReferrerCouponTask
-from students.serializer import StudentsSerializer
-from students.models import Student
 from payments.serializers import PaymentsSerializer
+from referrals.tasks import ReferrerCouponTask
+from students.models import Student
+from students.serializer import StudentsSerializer
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
-
 
 
 class AssistantTokenField(serializers.SerializerMethodField):
     """
     Show assistant token if the current user is the order owner
     """
+
     def to_representation(self, obj):
         request = self.context.get('request')
         show_token = self.context.get('show_token')
@@ -41,14 +39,14 @@ class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
     full_name = serializers.SerializerMethodField()
     order = serializers.PrimaryKeyRelatedField(read_only=True)
 
-    def get_full_name(self,obj):
+    def get_full_name(self, obj):
         return "{} {}".format(obj.first_name, obj.last_name)
 
-    def get_lastest_refund(self,obj):
+    def get_lastest_refund(self, obj):
         try:
             refund = obj.refunds.latest('id')
             return {
-                'status':refund.get_status_display()
+                'status': refund.get_status_display()
             }
         except Refund.DoesNotExist:
             return None
@@ -79,7 +77,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
     amount = serializers.FloatField(read_only=True)
-    activity_name = serializers.StringRelatedField(source='calendar.activity.title',read_only=True)
+    activity_name = serializers.StringRelatedField(source='calendar.activity.title', read_only=True)
     activity_id = serializers.SerializerMethodField()
     calendar_initial_date = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -87,7 +85,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     payment = PaymentsSerializer(read_only=True)
     fee = serializers.SerializerMethodField(read_only=True)
     lastest_refund = serializers.SerializerMethodField()
-
+    coupon = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -107,31 +105,36 @@ class OrdersSerializer(serializers.ModelSerializer):
             'fee',
             'total',
             'lastest_refund',
-            'total_refunds_amount'
+            'total_refunds_amount',
+            'coupon',
         )
 
-    def get_lastest_refund(self,obj):
+    def get_lastest_refund(self, obj):
         try:
             refund = obj.refunds.filter(assistant__isnull=True).latest('id')
-            return RefundSerializer(refund, 
-                remove_fields=['order','activity','assistant','user','amount']).data
+            return RefundSerializer(refund,
+                                    remove_fields=['order', 'activity', 'assistant', 'user', 'amount']).data
         except Refund.DoesNotExist:
             return None
 
-
-    def get_activity_id(self,obj):
+    def get_activity_id(self, obj):
         return obj.calendar.activity.id
 
-    def get_status(self,obj):
+    def get_status(self, obj):
         return obj.get_status_display()
 
-    def get_calendar_initial_date(self,obj):
+    def get_calendar_initial_date(self, obj):
         initial_date = obj.calendar.initial_date
         return UnixEpochDateField().to_representation(initial_date)
 
     def get_fee(self, obj):
         if obj.fee:
             return obj.fee.amount
+        return None
+
+    def get_coupon(self, obj):
+        if obj.coupon:
+            return obj.coupon.coupon_type.amount
         return None
 
     def validate_amount(self, obj):
@@ -200,21 +203,21 @@ class OrdersSerializer(serializers.ModelSerializer):
         return order
 
 
-
 class RefundAssistantField(serializers.PrimaryKeyRelatedField):
     def to_representation(self, value):
         if not value.pk:
             return None
         assistant = self.queryset.get(id=value.pk)
         return AssistantsSerializer(assistant,
-                    remove_fields=['email','student','token','lastest_refund']).data
+                                    remove_fields=['email', 'student', 'token', 'lastest_refund']).data
 
-class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
+
+class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     activity = serializers.SerializerMethodField()
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), \
-                    write_only=True)
-    assistant = RefundAssistantField(allow_null=True, \
-                    queryset=Assistant.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),
+                                              write_only=True)
+    assistant = RefundAssistantField(allow_null=True,
+                                     queryset=Assistant.objects.all(), default=None)
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -230,14 +233,13 @@ class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer
             'assistant',
         )
 
-    def get_status(self,obj):
+    def get_status(self, obj):
         return obj.get_status_display()
 
     def get_activity(self, obj):
-
         return {
-            'title':obj.order.calendar.activity.title,
-            'id':obj.order.calendar.activity.id
+            'title': obj.order.calendar.activity.title,
+            'id': obj.order.calendar.activity.id
         }
 
     def validate_order(self, order):
@@ -250,7 +252,6 @@ class RefundSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer
         order = data.get('order')
         assistant = data.get('assistant')
         user = data.get('user')
-
 
         if user:
             profile = user.get_profile()
