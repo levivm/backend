@@ -32,11 +32,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
         return get_object_or_404(Coupon, token=code)
 
     # def get_serializer_context(self):
-    #     print('self',self.show_refunds)
-    #     if self.show_refunds:
-    #         return {'show_refunds':True}
-    #     return {}
-
+    #     return {'show_token':True}
 
     def create(self, request, *args, **kwargs):
         self.student = self.get_student(user=request.user)
@@ -67,6 +63,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
         orders = activity.get_orders()
         serializer = self.get_serializer(orders, many=True)
+        # serializer.context.update({'show_token':True})
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
