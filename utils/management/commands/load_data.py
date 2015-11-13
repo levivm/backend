@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
-
-from activities.management.commands import load_categories_and_subs
+from activities.management.commands import load_categories_and_subs, load_stock_covers
 from locations.management.commands import load_cities
 from payments.management.commands import load_fee
 from users.management.commands import set_permissions
@@ -16,3 +15,4 @@ class Command(BaseCommand):
         load_socialapp.Command().load_socialapp()
         set_permissions.Command().set_permissions()
         load_fee.Command().handle()
+        load_stock_covers.Command().handle()
