@@ -200,6 +200,12 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         data['initial_date'] = first_session.get('date')
         return data
 
+    def _get_last_session_date(self,data):
+        sessions = data.get('sessions')
+        last_session = sessions[len(sessions)-1]
+        return last_session.get('date')
+
+
     def _validate_session(self, sessions_amount, index, session):
 
         start_time = session['start_time']
@@ -258,13 +264,15 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         if not is_free:
             self._validate_session_price(data)
 
+        last_session_date = self._get_last_session_date(data)
         data = self._set_initial_date(data)
         data = self._proccess_sessions(data)
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
-        if initial_date < closing_sale:
+        if last_session_date < closing_sale:
             raise serializers.ValidationError(
-                {'closing_sale': _("La fecha de cierre de ventas debe ser menor a la fecha de inicio.")})
+                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
+                                        a la fecha de la última sesión.")})
 
         return data
 
