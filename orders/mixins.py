@@ -8,6 +8,7 @@ from payments.tasks import SendPaymentEmailTask
 from activities.models import Calendar
 from .models import Order
 from activities.utils import PaymentUtil
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class ProcessPaymentMixin(object):
@@ -81,5 +82,10 @@ class ProcessPaymentMixin(object):
 
     def redeem_coupon(self, student):
         if self.coupon:
-            redeem = self.coupon.redeem_set.get(student=student)
-            redeem.set_used()
+            try:
+                redeem = self.coupon.redeem_set.get(student=student)
+                redeem.set_used()
+            except ObjectDoesNotExist:
+                #TODO
+                #Crear instancia de redeem y marcarla como usado
+                pass

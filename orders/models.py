@@ -44,6 +44,8 @@ class Order(models.Model):
     @cached_property
     def total(self):
         amount = self.get_total(self.student) - self.total_refunds_amount
+        # print ("REFUND",self.total_refunds_amount)
+        # print ("Total",self.get_total(self.student))
         return amount
 
     @cached_property

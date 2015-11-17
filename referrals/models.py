@@ -53,7 +53,6 @@ class Coupon(Tokenizable):
         }
 
         error_message = _('The coupon is not valid.')
-
         if self.coupon_type.type == 'global':
             if Redeem.objects.filter(used=True, **params).exists():
                 raise serializers.ValidationError(error_message)

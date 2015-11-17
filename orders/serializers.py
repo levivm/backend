@@ -134,7 +134,10 @@ class OrdersSerializer(serializers.ModelSerializer):
 
     def get_coupon(self, obj):
         if obj.coupon:
-            return obj.coupon.coupon_type.amount
+            return {
+                'amount': obj.coupon.coupon_type.amount,
+                'code':obj.coupon.token
+            }
         return None
 
     def validate_amount(self, obj):

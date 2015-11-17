@@ -140,7 +140,9 @@ class Command(BaseCommand):
             try:
                 self.MAPPING[category.name][subcategory.name]
             except KeyError:
+
                 pass
+            print (category.name,subcategory.name)
             for index in range(0, self.MAPPING[category.name][subcategory.name]):
                 data = {
                     'category': category.name,
