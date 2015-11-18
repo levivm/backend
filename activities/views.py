@@ -67,6 +67,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
 
+
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
         location_data = request.data.copy()

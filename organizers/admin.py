@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from organizers.models import Organizer
+
+
+@admin.register(Organizer)
+class OrganizerAdmin(admin.ModelAdmin):
+    pass

@@ -485,6 +485,72 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         self.assertFalse(Order.objects.filter(coupon=self.redeem.coupon).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
+    @mock.patch('activities.utils.PaymentUtil.creditcard')
+    def test_creditcard_approved_global_coupon(self, creditcard):
+        """
+        Test to create a payed order with a global coupon
+        """
+
+        # Patch the response of PayU
+        creditcard.return_value = {
+            'status': 'APPROVED',
+            'payment': self.payment
+        }
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        data = {**self.post_data, 'coupon_code': coupon.token}
+
+        response = self.student_client.post(self.create_read_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
+                                             coupon=coupon, status='approved').exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
+    @mock.patch('activities.utils.PaymentUtil.creditcard')
+    def test_creditcard_pending_global_coupon(self, creditcard):
+        """
+        Test pay with coupon and payment pending
+        """
+
+        creditcard.return_value = {
+            'status': 'PENDING',
+            'payment': self.payment,
+        }
+
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        data = {**self.post_data, 'coupon_code': coupon.token}
+
+        response = self.student_client.post(self.create_read_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
+                                             coupon=coupon, status='pending').exists())
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
+    @mock.patch('activities.utils.PaymentUtil.creditcard')
+    def test_creditcard_declined_global_coupon(self, creditcard):
+        """
+        Test payment declined with a coupon
+        """
+
+        creditcard.return_value = {
+            'status': 'DECLINED',
+            'payment': self.payment,
+            'error': 'Tarjeta inválida',
+        }
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        data = {**self.post_data, 'coupon_code': coupon.token}
+
+        # Counter
+        order_counter = Order.objects.count()
+
+        response = self.student_client.post(self.create_read_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertEqual(Order.objects.count(), order_counter)
+        self.assertFalse(Order.objects.filter(coupon=coupon).exists())
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
     def test_creditcard_non_existent_coupon(self):
         """
         Test payment with non-existent coupon
@@ -726,6 +792,70 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
+    def test_approved_global_coupon(self):
+        """
+        Test PayU send approved a pending payment with a global coupon
+        """
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        self.order.coupon = coupon
+        self.order.save()
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
+    def test_decline_global_coupon(self):
+        """
+        Test PayU send declined with global coupon
+        """
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        self.order.coupon = coupon
+        self.order.save()
+        self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
+    def test_pse_approved_global_coupon(self):
+        """
+        Test approved payment with pse
+        """
+        self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
+        self.payment.save(update_fields=['payment_type'])
+        self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        self.order.coupon = coupon
+        self.order.save()
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
+        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
+    def test_pse_decline_global_coupon(self):
+        """
+        Test PayU send declined with global coupon
+        """
+        self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
+        self.payment.save(update_fields=['payment_type'])
+        self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
+        self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
+        self.post_data['response_code_pol'] = settings.RESPONSE_CODE_POL_DECLINED
+
+        coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
+        self.order.coupon = coupon
+        self.order.save()
+
+        response = self.client.post(self.payu_callback_url, self.post_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
 class PaymentWebHookTest(BaseAPITestCase):
     """

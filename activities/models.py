@@ -9,8 +9,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 from django.conf import settings
-from django.db.models.aggregates import Sum
-from django.db.models.query_utils import Q
 from django.utils.functional import cached_property
 
 from django.utils.translation import ugettext_lazy as _
@@ -284,18 +282,13 @@ class Calendar(Updateable, models.Model):
 
     @cached_property
     def num_enrolled(self):
-        return sum([order.assistants.enrolled().count() for order in self.orders.avaibles()])
+        return sum([order.assistants.enrolled().count() for order in self.orders.availables()])
 
     def available_capacity(self):
-        # TODO cambiar filtro por constantes
-        assistants = self.orders.filter(Q(status='approved') | \
-                                        Q(status='pending')).aggregate(num_assistants=Sum('quantity'))
-
-        assistants = assistants['num_assistants'] or 0
-        return self.capacity - assistants
+        return self.capacity - self.num_enrolled
 
     def get_assistants(self):
-        return [a for o in self.orders.all() for a in o.assistants.all()]
+        return [a for o in self.orders.availables() for a in o.assistants.enrolled()]
 
 
 class CalendarSession(models.Model):

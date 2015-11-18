@@ -4,7 +4,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
 from rest_framework.response import Response
 
-from activities.models import Activity
+from activities.models import Activity, Calendar
 from .models import Review
 from organizers.models import Organizer
 from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
@@ -31,6 +31,16 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         except:
             raise PermissionDenied
 
+    def get_activity(self, **kwargs):
+        activity = get_object_or_404(Activity, pk=kwargs.get('activity_pk'))
+        return activity
+
+    def allowed_to_create(self, student, activity):
+        return student.orders.filter(calendar__activity=activity).exists()
+
+    def allowed_to_reply(self, organizer, activity):
+        return organizer.activity_set.filter(id=activity.id).exists()
+
     def create(self, request, *args, **kwargs):
         student = self.get_student(request)
         activity = self.get_activity(**kwargs)
@@ -43,25 +53,17 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
         raise PermissionDenied
 
-    def allowed_to_create(self, student, activity):
-        return student.orders.filter(calendar__activity=activity).exists()
-
-    def allowed_to_reply(self, organizer, activity):
-        return organizer.activity_set.filter(id=activity.id).exists()
-
-    def get_activity(self, **kwargs):
-        activity = get_object_or_404(Activity, pk=kwargs.get('activity_pk'))
-        return activity
-
     def reply(self, request, *args, **kwargs):
         review = self.get_object()
-        review.reply = request.data.get('reply')
-        review.save(update_fields=['reply'])
+        data = {'reply': request.data.get('reply')}
+        serializer = self.get_serializer(review, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         return Response('OK')
 
     def read(self, request, *args, **kwargs):
         review = self.get_object()
-        review.reply = request.data.get('read')
+        review.read = request.data.get('read', False)
         review.save(update_fields=['read'])
         return Response('OK')
 
@@ -120,6 +122,8 @@ class ReportReviewView(viewsets.ModelViewSet):
 
     def report(self, request, *args, **kwargs):
         review = self.get_object()
+        review.reported = True
+        review.save(update_fields=['reported'])
         task = SendReportReviewEmailTask()
         task.delay(review.id)
         return Response()

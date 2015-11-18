@@ -13,6 +13,7 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     reported = models.BooleanField(default=False)
     read = models.BooleanField(default=False)
+    replied_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         permissions = (

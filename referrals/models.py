@@ -53,7 +53,6 @@ class Coupon(Tokenizable):
         }
 
         error_message = _('The coupon is not valid.')
-
         if self.coupon_type.type == 'global':
             if Redeem.objects.filter(used=True, **params).exists():
                 raise serializers.ValidationError(error_message)
@@ -62,8 +61,16 @@ class Coupon(Tokenizable):
                 raise serializers.ValidationError(error_message)
 
     def set_used(self, student):
-        redeem = self.redeem_set.get(student=student)
-        redeem.set_used()
+        if self.coupon_type.type == 'referral':
+            redeem = self.redeem_set.get(student=student)
+            redeem.set_used()
+        else:
+            Redeem.objects.create(
+                student=student,
+                coupon=self,
+                used=True,
+                redeem_at=now()
+            )
 
 class Redeem(models.Model):
     student = models.ForeignKey(Student)

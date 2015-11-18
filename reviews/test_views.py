@@ -1,11 +1,17 @@
+import json
+from datetime import datetime
+
+import mock
+
 from django.conf import settings
 from django.contrib.auth.models import Permission
+from django.utils.timezone import now, timedelta, utc
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 from rest_framework.reverse import reverse
 
-from activities.models import Activity
+from activities.models import Activity, Calendar
 from orders.models import Order
 from reviews.models import Review
 from utils.tests import BaseAPITestCase
@@ -15,18 +21,18 @@ class ReviewAPITest(BaseAPITestCase):
     """
     Class to test the Review API functionality
     """
+    headers = {'content_type': 'application/json'}
 
     def setUp(self):
         # Calling the super (initialization)
         super(ReviewAPITest, self).setUp()
 
-        # Methods data
-        self.post = {'rating': 4, 'comment': 'First comment!'}
-        self.put = {'rating': 2, 'reply': 'Thank you!'}
-
         # Objects needed
         self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
-        self.order = mommy.make(Order, student=self.student, calendar__activity=self.activity)
+        self.calendar = mommy.make(Calendar, activity=self.activity, initial_date=now() - timedelta(days=2))
+        self.order = mommy.make(Order, student=self.student, calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
+        self.post = {'rating': 4, 'comment': 'First comment!'}
+        self.put = {'rating': 2, 'reply': 'Thank you!'}
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
 
         # URLs
@@ -35,10 +41,20 @@ class ReviewAPITest(BaseAPITestCase):
         self.create_url = reverse('reviews:create', kwargs={'activity_pk': self.activity.id})
         self.retrieve_update_delete_url = reverse('reviews:reply', kwargs={'pk': self.review.id})
         self.report_url = reverse('reviews:report', kwargs={'pk': self.review.id})
+        self.read_url = reverse('reviews:read', kwargs={'pk': self.review.id})
 
         # Counters
         self.review_count = Review.objects.count()
         self.activity_reviews = self.activity.reviews.count()
+
+        # Set permissions
+        add_review = Permission.objects.get_by_natural_key('add_review', 'reviews', 'review')
+        add_review.user_set.add(self.student.user, self.another_student.user)
+        change_review = Permission.objects.get_by_natural_key('change_review', 'reviews', 'review')
+        change_review.user_set.add(self.organizer.user, self.another_organizer.user)
+        assign_perm('reviews.reply_review', user_or_group=self.organizer.user, obj=self.review)
+        assign_perm('reviews.report_review', user_or_group=self.organizer.user, obj=self.review)
+        assign_perm('reviews.read_review', user_or_group=self.organizer.user, obj=self.review)
 
     def test_list_by_organizer(self):
         """
@@ -82,10 +98,6 @@ class ReviewAPITest(BaseAPITestCase):
         """
         Test to create a review [POST]
         """
-
-        # Set permissions
-        permission = Permission.objects.get_by_natural_key('add_review', 'reviews', 'review')
-        permission.user_set.add(self.student.user, self.another_student.user)
 
         # Anonymous should return unauthorized
         response = self.client.post(self.create_url, self.post)
@@ -133,11 +145,6 @@ class ReviewAPITest(BaseAPITestCase):
         Test to reply a review [PUT]
         """
 
-        # Set permissions
-        permission = Permission.objects.get_by_natural_key('change_review', 'reviews', 'review')
-        permission.user_set.add(self.organizer.user, self.another_organizer.user)
-        assign_perm('reviews.reply_review', user_or_group=self.organizer.user, obj=self.review)
-
         # Anonymous should return unauthorized
         response = self.client.put(self.retrieve_update_delete_url, self.put)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -155,11 +162,16 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(review.reply, '')
 
         # Organizer should reply a review
-        response = self.organizer_client.put(self.retrieve_update_delete_url, self.put)
+        replied_at = datetime(2015, 11, 8, 3, 30, tzinfo=utc)
+        with mock.patch('reviews.serializers.now') as mock_now:
+            mock_now.return_value = replied_at
+            response = self.organizer_client.put(self.retrieve_update_delete_url, self.put)
+
         review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(review.reply, 'Thank you!')
         self.assertEqual(review.rating, 4)
+        self.assertEqual(review.replied_at, replied_at)
 
     def test_delete(self):
         """
@@ -188,9 +200,6 @@ class ReviewAPITest(BaseAPITestCase):
         # Set Celery
         settings.CELERY_ALWAYS_EAGER = True
 
-        # Set permissions
-        assign_perm('reviews.report_review', user_or_group=self.organizer.user, obj=self.review)
-
         # Anonymous should return unauthorized
         response = self.client.post(self.report_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -208,3 +217,55 @@ class ReviewAPITest(BaseAPITestCase):
         review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(review.reported)
+
+    def test_mark_as_read(self):
+        """
+        Test a review marked as read
+        """
+
+        data = json.dumps({'read': True})
+
+        # Anonymous should return unauthorized
+        response = self.client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should mark the review as read
+        response = self.organizer_client.put(self.read_url, data=data, **self.headers)
+        review = Review.objects.get(id=self.review.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(review.read)
+
+        # Organizer who is not the owner should not read a review
+        response = self.another_organizer_client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_mark_as_unread(self):
+        """
+        Test a review marked as unread
+        """
+
+        self.review.read = True
+        self.review.save()
+        data = json.dumps({'read': False})
+
+        # Anonymous should return unauthorized
+        response = self.client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should mark the review as read
+        response = self.organizer_client.put(self.read_url, data=data, **self.headers)
+        review = Review.objects.get(id=self.review.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(review.read)
+
+        # Organizer who is not the owner should not read a review
+        response = self.another_organizer_client.put(self.read_url, data=data, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

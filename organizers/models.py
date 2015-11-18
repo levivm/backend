@@ -88,3 +88,11 @@ class OrganizerBankInfo(models.Model):
     document = models.CharField(max_length=100)
     account_type = models.CharField(choices=ACCOUNT_TYPES, max_length=10)
     account = models.CharField(max_length=255)
+
+    @staticmethod
+    def get_choices():
+        return {
+            'banks': [{'bank_id': k, 'bank_name': v} for k, v in OrganizerBankInfo.BANKS],
+            'documents': [{'document_id': k, 'document_name': v} for k, v in OrganizerBankInfo.DOCUMENT_TYPES],
+            'accounts': [{'account_id': k, 'account_name': v} for k, v in OrganizerBankInfo.ACCOUNT_TYPES],
+        }

@@ -60,4 +60,4 @@ class GetCouponView(RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         self.coupon.is_valid(student=request.user.student_profile)
-        return Response('OK')
+        return Response({'amount': self.coupon.coupon_type.amount})

@@ -1,8 +1,8 @@
 from django.conf.urls import url
 
 from organizers.views import InstructorViewSet, ActivityInstructorViewSet, OrganizerBankInfoViewSet
-from .views import signup, OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet
-
+from .views import signup, OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, \
+    OrganizerBankInfoChoicesViewSet
 
 urlpatterns = [
     url(r'^organizers/signup/$', signup),
@@ -24,5 +24,12 @@ urlpatterns = [
         regex=r'^organizer/(?P<organizer_pk>\d+)/bankinfo/?$',
         view=OrganizerBankInfoViewSet.as_view({'post': 'create', 'get': 'retrieve', 'put': 'partial_update'}),
         name='bank_info_api',
+    ),
+
+    # {% url organizers:bank_choices %}
+    url(
+        regex=r'^bankinfo/choices/?$',
+        view=OrganizerBankInfoChoicesViewSet.as_view({'get': 'choices'}),
+        name='bank_choices',
     ),
 ]

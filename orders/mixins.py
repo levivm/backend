@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -6,8 +7,10 @@ from django.conf import settings
 from payments.models import Payment
 from payments.tasks import SendPaymentEmailTask
 from activities.models import Calendar
+from referrals.models import Redeem
 from .models import Order
 from activities.utils import PaymentUtil
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class ProcessPaymentMixin(object):
@@ -81,5 +84,13 @@ class ProcessPaymentMixin(object):
 
     def redeem_coupon(self, student):
         if self.coupon:
-            redeem = self.coupon.redeem_set.get(student=student)
-            redeem.set_used()
+            try:
+                redeem = self.coupon.redeem_set.get(student=student)
+                redeem.set_used()
+            except ObjectDoesNotExist:
+                Redeem.objects.create(
+                    student=student,
+                    coupon=self.coupon,
+                    used=True,
+                    redeem_at=now()
+                )
