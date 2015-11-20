@@ -64,6 +64,6 @@ class RefundAdminTest(APITestCase):
 
         self.assertEqual(refund_1.status, Refund.APPROVED_STATUS)
         self.assertEqual(refund_1.order.status, Order.ORDER_CANCELLED_STATUS)
-        self.assertEqual(refund_2.order.status, Order.ORDER_APPROVED_STATUS)
+        self.assertEqual(refund_2.order.status, Order.ORDER_CANCELLED_STATUS)
         self.assertFalse(refund_2.assistant.enrolled)
         self.assertEqual(EmailTaskRecord.objects.count(), email_counter + 4)

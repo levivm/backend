@@ -59,6 +59,40 @@ class OrderModelTest(APITestCase):
             self.order.get_total()
 
 
+class AssistantModelTest(APITestCase):
+    """
+    Class test for Assistant
+    """
+
+    def setUp(self):
+        self.order = mommy.make(Order, amount=500, status=Order.ORDER_APPROVED_STATUS)
+        self.assistants = mommy.make(Assistant, order=self.order, _quantity=2)
+
+    def test_dismiss(self):
+        """
+        Test dismiss method
+        """
+
+        assistant = self.assistants[0]
+        assistant.dismiss()
+
+        self.assertFalse(assistant.enrolled)
+        self.assertEqual(self.order.status, Order.ORDER_APPROVED_STATUS)
+
+    def test_cancel_order(self):
+        """
+        Cancel the order if there is not any enrolled assistant
+        """
+
+        self.assistants[0].enrolled = False
+        self.assistants[0].save()
+
+        assistant = self.assistants[1]
+        assistant.dismiss()
+
+        self.assertFalse(assistant.enrolled)
+        self.assertEqual(self.order.status, Order.ORDER_CANCELLED_STATUS)
+
 class RefundModelTest(APITestCase):
     """
     Class for testing the model Refund
