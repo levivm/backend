@@ -10,6 +10,8 @@ from model_mommy import mommy
 
 from rest_framework import status
 
+from locations.models import City
+from locations.serializers import CitiesSerializer
 from utils.tests import BaseViewTest, BaseAPITestCase
 from utils.models import EmailTaskRecord
 from users.allauth_adapter import MyAccountAdapter
@@ -40,10 +42,9 @@ class RestFacebookLoginTest(BaseAPITestCase):
         # TODO
         # Este token dura dos meses, expira 14 noviembre
         # Automatizar para pedir uno nuevo
-        auth_token = "CAAWOByANCTUBAEU6rtjWRCdiv04HW7RqQnx9JVV8PWdUAlDjGn9fQh" \
-                     "ZCjHM0LEaTTv1U4vjH5A23zlZCUZAdDpUMyAgsf2veZCQQf4Y5FMcFUj" \
-                     "ZCLT2uNFlvCEBiTCaTcN5etZCF7xUSJlB4mqa7AZC87ZCb4amIh5QNf7" \
-                     "AIbIa13y5JAdbek0Ev"
+        auth_token = "CAAWOByANCTUBACmgLKEKHGsZBliCHrnAGF0ZC36rSqklnIFtZCDh2CkdM4mKRhhqy" \
+                     "MZBw2PRNbYVKZC68FDYXEgl9NcIipcoDIXMy8j2I4GvFccJLBfUGeeS7yI85ZC5jdr" \
+                     "OgiJrFAonlLjRWJrOdCPysMZAp79bjZAOp2TXIKOBt6ZC9X7jRHI5e"
         return {'auth_token': auth_token}
 
     def test_signup(self):
@@ -132,6 +133,40 @@ class ObtainAuthTokenTestView(BaseAPITestCase):
         response = self.client.post(self.signup_login_url, json.dumps(data), **self.jsonencoded)
         self.assertContains(response, data['login'])
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
+
+
+class RequestSignupTestView(BaseAPITestCase):
+    """
+    Testing cases for RequestSignup
+    """
+
+    def setUp(self):
+        # URL
+        self.create_url = reverse('users:request_signup')
+
+        self.city = mommy.make(City, point='(1, 2)')
+        self.data = {
+            'name': 'Organizador',
+            'email': 'organizer@testing.com',
+            'telephone': '987654321',
+            'city': self.city.id,
+            'document_type': 'cc',
+            'document': '123456789',
+            'approved': True,
+        }
+
+    def test_create(self):
+        """
+        Create an instance request_signup
+        """
+
+        request_counter = RequestSignup.objects.count()
+
+        # Anonymous should create the request
+        response = self.client.post(self.create_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(RequestSignup.objects.count(), request_counter + 1)
+        self.assertTrue(RequestSignup.objects.filter(**{**self.data, 'city': self.city, 'approved': False}).exists())
 
 
 class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):

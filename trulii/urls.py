@@ -25,7 +25,7 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     # url(r'^users/login/', LoginViewTest.as_view()),
-    url(r'^api/contact-us/', ContactFormView.as_view()),
+    url(r'^api/contact-us/', ContactFormView.as_view(), name='contact_form'),
     url(r'^users/email/', ChangeEmailView.as_view()),
     url(r'^users/confirm-email/(?P<key>\w+)/', ConfirmEmail.as_view()),
     url(r'^users/facebook/signup/', RestFacebookLogin.as_view(), name='facebook_signup_login'),

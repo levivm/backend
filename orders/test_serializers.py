@@ -86,7 +86,10 @@ class OrdersSerializerTest(BaseAPITestCase):
             'total': order.total,
             'lastest_refund': None,
             'total_refunds_amount': order.total_refunds_amount,
-            'coupon': self.coupon_type.amount,
+            'coupon': {
+                'amount': self.coupon_type.amount,
+                'code': order.coupon.token,
+            },
         }
 
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
