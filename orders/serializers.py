@@ -44,9 +44,15 @@ class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
 
     def get_lastest_refund(self, obj):
         try:
+            request = self.context.get('request')
             refund = obj.refunds.latest('id')
+            requested_by_me = False
+            if request and request.user:
+                requested_by_me = refund.user == request.user
+
             return {
-                'status': refund.get_status_display()
+                'status': refund.get_status_display(),
+                'requested_by_me': requested_by_me
             }
         except Refund.DoesNotExist:
             return None
@@ -223,6 +229,7 @@ class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     assistant = RefundAssistantField(allow_null=True,
                                      queryset=Assistant.objects.all(), default=None)
     status = serializers.SerializerMethodField()
+    requested_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Refund
@@ -234,6 +241,7 @@ class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'amount',
             'status',
             'user',
+            'requested_by_me',
             'assistant',
         )
 
@@ -245,6 +253,13 @@ class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'title': obj.order.calendar.activity.title,
             'id': obj.order.calendar.activity.id
         }
+
+    def get_requested_by_me(self,obj):
+        request = self.context.get('request')
+
+        if request and request.user:
+            return obj.user == request.user
+        return False
 
     def validate_order(self, order):
         if order.status != Order.ORDER_APPROVED_STATUS:
