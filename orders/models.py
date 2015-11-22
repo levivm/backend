@@ -43,10 +43,8 @@ class Order(models.Model):
 
     @cached_property
     def total(self):
-        amount = self.get_total(self.student) - self.total_refunds_amount
-        # print ("REFUND",self.total_refunds_amount)
-        # print ("Total",self.get_total(self.student))
-        return amount
+        _amount = self.get_total(self.student) - self.total_refunds_amount 
+        return _amount if _amount > 0 else 0
 
     @cached_property
     def total_refunds_amount(self):
@@ -59,6 +57,10 @@ class Order(models.Model):
             amount += refunds_total
 
         return amount
+
+    @cached_property
+    def total_without_coupon(self):
+        return self.amount - self.total_refunds_amount
 
 
 
@@ -116,10 +118,11 @@ class Refund(models.Model):
     @cached_property
     def amount(self):
         profile = self.user.get_profile()
-        if isinstance(profile, Student):
-            amount = self.order.get_total(profile)
-        else:
-            amount = self.order.amount
+        amount = self.order.amount
+        #if isinstance(profile, Student):
+        #    amount = self.order.get_total(profile)
+        #else:
+        #    amount = self.order.amount
 
         if self.assistant:
             amount /= self.order.quantity

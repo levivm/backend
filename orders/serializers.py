@@ -106,6 +106,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'total',
             'lastest_refund',
             'total_refunds_amount',
+            'total_without_coupon',
             'coupon',
         )
 
