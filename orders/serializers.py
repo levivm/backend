@@ -92,6 +92,8 @@ class OrdersSerializer(serializers.ModelSerializer):
     fee = serializers.SerializerMethodField(read_only=True)
     lastest_refund = serializers.SerializerMethodField()
     coupon = serializers.SerializerMethodField()
+    total_refunds_amount = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Order
@@ -116,11 +118,21 @@ class OrdersSerializer(serializers.ModelSerializer):
             'coupon',
         )
 
+    def get_total_refunds_amount(self,obj):
+        request = self.context.get('request')
+        amount = obj.total_refunds_amount
+        if request and request.user:
+            profile = request.user.get_profile()
+            if isinstance(profile, Organizer):
+                amount = obj.total_refunds_amount_without_coupon
+
+        return amount
+
     def get_lastest_refund(self, obj):
         try:
             refund = obj.refunds.filter(assistant__isnull=True).latest('id')
             return RefundSerializer(refund,
-                                    remove_fields=['order', 'activity', 'assistant', 'user', 'amount']).data
+                    remove_fields=['order', 'activity', 'assistant', 'user', 'amount']).data
         except Refund.DoesNotExist:
             return None
 
@@ -230,6 +242,7 @@ class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
                                      queryset=Assistant.objects.all(), default=None)
     status = serializers.SerializerMethodField()
     requested_by_me = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Refund
@@ -253,6 +266,16 @@ class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'title': obj.order.calendar.activity.title,
             'id': obj.order.calendar.activity.id
         }
+
+    def get_amount(self,obj):
+        
+        request = self.context.get('request')
+        amount = obj.amount
+        if request and request.user:
+            profile = request.user.get_profile()
+            if isinstance(profile, Organizer):
+                amount = obj.amount_without_coupon
+        return amount
 
     def get_requested_by_me(self,obj):
         request = self.context.get('request')

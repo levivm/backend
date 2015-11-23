@@ -1,6 +1,7 @@
 from itertools import cycle
 from rest_framework import status
 from model_mommy import mommy
+from mock import Mock
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 
@@ -246,6 +247,15 @@ class RefundAPITest(BaseAPITestCase):
         self.create_read_url = reverse('orders:refund_api')
         self.read_organizer_url = reverse('orders:refund_api', kwargs={'organizer_id': self.organizer.id})
 
+
+        #Serializers context
+        request = Mock()
+        request.user = self.organizer.user
+        self.organizer_context = { 'request': request}
+        request = Mock()
+        request.user = self.student.user
+        self.student_context = { 'request': request}
+
         # Arrangement
         calendars = [
             mommy.make(Calendar, activity__organizer=self.organizer),
@@ -272,13 +282,15 @@ class RefundAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Student should return data
-        serializer = RefundSerializer(self.student_refunds[:10], many=True)
+        serializer = RefundSerializer(self.student_refunds[:10], many=True,
+                                      context=self.student_context)
         response = self.student_client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Organizer should return data
-        serializer = RefundSerializer(self.organizer_refunds[:10], many=True)
+        serializer = RefundSerializer(self.organizer_refunds[:10], many=True,
+                                        context=self.organizer_context)
         response = self.organizer_client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data, response)
@@ -333,13 +345,15 @@ class RefundAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Student should return paginated data
-        serializer = RefundSerializer(self.student_refunds[10:20], many=True)
+        serializer = RefundSerializer(self.student_refunds[10:20], many=True,
+                                    context=self.student_context)
         response = self.student_client.get(self.create_read_url, data={'page': 2})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Organizer should return paginated data
-        serializer = RefundSerializer(self.organizer_refunds[10:20], many=True)
+        serializer = RefundSerializer(self.organizer_refunds[10:20], many=True,
+                                      context=self.organizer_context)
         response = self.organizer_client.get(self.create_read_url, data={'page': 2})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -359,7 +373,7 @@ class RefundAPITest(BaseAPITestCase):
 
         # Organizer should return data
         queryset = Refund.objects.filter(order__calendar__activity__organizer=self.organizer)[:10]
-        serializer = RefundSerializer(queryset, many=True)
+        serializer = RefundSerializer(queryset, many=True,context=self.organizer_context)
         response = self.organizer_client.get(self.read_organizer_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)

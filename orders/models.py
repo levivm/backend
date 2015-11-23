@@ -59,8 +59,20 @@ class Order(models.Model):
         return amount
 
     @cached_property
+    def total_refunds_amount_without_coupon(self):
+        #Substract approved refunds amounts
+        amount = 0
+        if self.refunds.exists():
+            approved_refunds = self.refunds.filter(status = Refund.APPROVED_STATUS)
+
+            refunds_total = sum(map(lambda x:x.amount_without_coupon,approved_refunds))
+            amount += refunds_total
+
+        return amount
+
+    @cached_property
     def total_without_coupon(self):
-        return self.amount - self.total_refunds_amount
+        return self.amount - self.total_refunds_amount_without_coupon
 
 
 
@@ -116,13 +128,19 @@ class Refund(models.Model):
         return '%s: %s' % (self.user.username, self.order.id)
 
     @cached_property
+    def amount_without_coupon(self):
+        amount = self.order.amount
+        if self.assistant:
+            amount /= self.order.quantity
+        return amount
+
+    @cached_property
     def amount(self):
         profile = self.user.get_profile()
-        amount = self.order.amount
-        #if isinstance(profile, Student):
-        #    amount = self.order.get_total(profile)
-        #else:
-        #    amount = self.order.amount
+        if isinstance(profile, Student):
+           amount = self.order.get_total(profile)
+        else:
+           amount = self.order.amount
 
         if self.assistant:
             amount /= self.order.quantity

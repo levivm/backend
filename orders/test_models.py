@@ -115,15 +115,15 @@ class RefundModelTest(APITestCase):
         refund = mommy.make(Refund, user=self.student.user, order=self.order)
         self.assertEqual(refund.amount, self.ORDER_AMOUNT_WITHOUT_COUPON)
 
-    # def test_amount_order_with_used_coupon(self):
-    #     """
-    #     Test the amount property with coupon associated to the order
-    #     Order with student's used coupon
-    #     """
+    def test_amount_order_with_used_coupon(self):
+        """
+        Test the amount property with coupon associated to the order
+        Order with student's used coupon
+        """
 
-    #     # Student
-    #     refund = mommy.make(Refund, user=self.student.user, order=self.order)
-    #     self.assertEqual(refund.amount, self.ORDER_AMOUNT_WITH_COUPON)
+        # Student
+        refund = mommy.make(Refund, user=self.student.user, order=self.order)
+        self.assertEqual(refund.amount, self.ORDER_AMOUNT_WITH_COUPON)
 
     def test_amount_order_with_unused_coupon(self):
         """
@@ -179,15 +179,15 @@ class RefundModelTest(APITestCase):
         refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
         self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITHOUT_COUPON)
 
-    # def test_amount_assistant_with_used_coupon(self):
-    #     """
-    #     Test the amount property with coupon associated to the order
-    #     Assistant with student's used coupon
-    #     """
+    def test_amount_assistant_with_used_coupon(self):
+        """
+        Test the amount property with coupon associated to the order
+        Assistant with student's used coupon
+        """
 
-    #     # Student
-    #     refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
-    #     self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITH_COUPON)
+        # Student
+        refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
+        self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITH_COUPON)
 
     def test_amount_assistant_with_unused_coupon(self):
         """
@@ -220,14 +220,14 @@ class RefundModelTest(APITestCase):
         refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
         self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITHOUT_COUPON)
 
-    # def test_amount_assistant_with_another_assistant_refund(self):
-    #     """
-    #     Test the amount property with coupon associated to the order
-    #     Assistant with another assistant's refund
-    #     """
+    def test_amount_assistant_with_another_assistant_refund(self):
+        """
+        Test the amount property with coupon associated to the order
+        Assistant with another assistant's refund
+        """
 
-    #     # The student has another assistant's refund from the same order
-    #     mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
-    #     refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[1])
+        # The student has another assistant's refund from the same order
+        mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[0])
+        refund = mommy.make(Refund, user=self.student.user, order=self.order, assistant=self.assistants[1])
 
-    #     self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITH_COUPON)
+        self.assertEqual(refund.amount, self.ASSISTANT_AMOUNT_WITH_COUPON)
