@@ -102,6 +102,8 @@ class Assistant(Tokenizable):
         self.enrolled = False
         self.save(update_fields=['enrolled'])
 
+        if self.order.assistants.enrolled().count() == 0:
+            self.order.change_status(Order.ORDER_CANCELLED_STATUS)
 
 class Refund(models.Model):
     APPROVED_STATUS = 'approved'
