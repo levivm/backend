@@ -4,6 +4,7 @@ import json
 import tempfile
 
 from PIL import Image
+from boto.beanstalk.exception import ValidationError
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -17,7 +18,7 @@ from model_mommy import mommy
 
 from rest_framework import status
 
-from utils.models import CeleryTask
+from utils.models import CeleryTask, EmailTaskRecord
 from activities.models import Category
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory
 from activities.serializers import ActivitiesSerializer, CalendarSerializer
@@ -932,3 +933,48 @@ class SubCategoriesViewTest(BaseAPITestCase):
         self.assertIn(b'pictures', response.content)
         self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
                          len(response.data.get('pictures')))
+
+
+class ShareActivityEmailViewTest(BaseAPITestCase):
+    """
+    Test to share an activity by email
+    """
+
+    def setUp(self):
+        self.activity = mommy.make(Activity)
+
+        # URLs
+        self.share_url = reverse('activities:share_email_activity', kwargs={'activity_pk': self.activity.id})
+
+        # Celery
+        settings.CELERY_ALWAYS_EAGER = True
+
+    def test_post(self):
+        """
+        Test the sending email
+        """
+
+        data = {
+            'emails': 'email1@example.com, email2@example.com'
+        }
+
+        response = self.client.post(self.share_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        for email in data['emails'].split(','):
+            self.assertTrue(EmailTaskRecord.objects.filter(to=email.strip(), send=True).exists())
+
+    def test_validation_emails(self):
+        """
+        Test validation emails
+        """
+
+        # Should be emails
+        response = self.client.post(self.share_url, data={})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Should be well formed
+        response = self.client.post(self.share_url, data={'emails': 'asdfa'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, 'Introduzca una dirección de correo electrónico válida')

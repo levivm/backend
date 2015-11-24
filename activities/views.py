@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.aggregates import Count
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
+from rest_framework.compat import EmailValidator
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
-from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
+from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
@@ -253,3 +257,32 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
 
         result = serializer.data
         return Response(result)
+
+
+class ShareActivityEmailView(APIView):
+    """
+    View to share an activity by email
+    """
+    email_validator = EmailValidator()
+
+    def get_activity(self):
+        return get_object_or_404(Activity, id=self.kwargs.get('activity_pk'))
+
+    def post(self, request, *args, **kwargs):
+        activity = self.get_activity()
+        emails = request.data.get('emails')
+
+        if not emails:
+            raise ValidationError(_('Se necesita al menos un correo para enviar'))
+
+        emails = [email.strip() for email in emails.split(',')]
+        for email in emails:
+            try:
+                self.email_validator(email)
+            except DjangoValidationError:
+                return Response(_('Introduzca una dirección de correo electrónico válida'), status=status.HTTP_400_BAD_REQUEST)
+
+        task = SendEmailShareActivityTask()
+        task.delay(request.user.id, activity.id, emails=emails, message=request.data.get('message'))
+
+        return Response('OK')

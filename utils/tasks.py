@@ -50,6 +50,9 @@ class SendEmailTaskMixin(Task):
 
     def on_success(self, retval, task_id, args, kwargs):
         if self.success_handler:
-            email_task_record = EmailTaskRecord.objects.get(task_id=task_id)
-            email_task_record.send = True
-            email_task_record.save()
+            try:
+                email_task_record = EmailTaskRecord.objects.get(task_id=task_id)
+                email_task_record.send = True
+                email_task_record.save()
+            except EmailTaskRecord.MultipleObjectsReturned:
+                EmailTaskRecord.objects.filter(task_id=task_id).update(send=True)

@@ -2,9 +2,12 @@ from __future__ import absolute_import
 
 from allauth.account.adapter import get_adapter
 from celery import Task
+from django.contrib.auth.models import User
 
 from activities.models import  Calendar, Activity
 from utils.models import CeleryTask
+from utils.tasks import SendEmailTaskMixin
+
 
 class SendEmailActivityEditTaskMixin(Task):
     abstract = True
@@ -105,3 +108,29 @@ class ActivityScoreTask(Task):
 
     def get_return_policy_value(self, activity):
         return 10 * bool(activity.return_policy)
+
+
+class SendEmailShareActivityTask(SendEmailTaskMixin):
+
+    def run(self, user_id, activity_id, *args, **kwargs):
+        self.user = User.objects.get(id=user_id) if user_id else None
+        self.activity = Activity.objects.get(id=activity_id)
+        self.kwargs = kwargs
+        template = 'activities/email/share_activity_cc'
+        return super(SendEmailShareActivityTask, self).run(instance=self.activity, template=template, **kwargs)
+
+    def get_emails_to(self, *args, **kwargs):
+        return self.kwargs.get('emails')
+
+    def get_context_data(self, instance):
+        if not self.user:
+            name = 'Alguien'
+        else:
+            name = self.user.first_name
+
+        return {
+            'name': name,
+            'title': self.activity.title,
+            'url': 'https://www.trulli.com/activities/%s/' % self.activity.id,
+            'message': self.kwargs.get('message'),
+        }

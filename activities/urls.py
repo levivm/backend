@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from activities.views import ActivitiesSearchView
+from activities.views import ActivitiesSearchView, ShareActivityEmailView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
     SubCategoriesViewSet, TagsViewSet, CalendarViewSet, \
     ActivityPhotosViewSet
@@ -32,5 +32,12 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
     url(r'^/subcategories/(?P<subcategory_id>\d+)/covers/?$', SubCategoriesViewSet.as_view({'get': 'get_pool_from_stock'}),name='get_covers_photos'),
 
     url(r'^/search/?$', ActivitiesSearchView.as_view()),
+
+    # {% url activities:share_email_activity %}
+    url(
+        regex=r'^(?P<activity_pk>\d+)/share/?$',
+        view=ShareActivityEmailView.as_view(),
+        name='share_email_activity',
+    )
 
 )
