@@ -31,23 +31,22 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def get_coupon(code):
         return get_object_or_404(Coupon, token=code)
 
-    # def get_serializer_context(self):
-    #     return {'show_token':True}
-
     def create(self, request, *args, **kwargs):
+        calendar = self.get_calendar(request)
+        if calendar.is_free:
+            request.data.update({'is_free':True})
         self.student = self.get_student(user=request.user)
         serializer = self.get_serializer(data=request.data)
         activity = self.get_activity(**kwargs)
         serializer.is_valid(raise_exception=True)
 
+        if calendar.is_free:
+            return self.free_enrollment(serializer)
+
         coupon_code = request.data.get('coupon_code')
         if coupon_code:
             self.coupon = self.get_coupon(code=request.data.get('coupon_code'))
             self.coupon.is_valid(request.user.student_profile)
-
-        calendar = self.get_calendar(request)
-        if calendar.is_free:
-            return self.free_enrollment(serializer)
 
         return self.proccess_payment(request, activity, serializer)
 

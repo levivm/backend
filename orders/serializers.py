@@ -111,6 +111,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'calendar_initial_date',
             'activity_id',
             'fee',
+            'is_free',
             'total',
             'lastest_refund',
             'total_refunds_amount',

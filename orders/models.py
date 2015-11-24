@@ -34,6 +34,7 @@ class Order(models.Model):
     coupon = models.ForeignKey(Coupon, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     fee = models.ForeignKey(Fee, blank=True, null=True)
+    is_free = models.BooleanField(default=False)
 
     objects = OrderQuerySet.as_manager()
 
