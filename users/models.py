@@ -66,11 +66,18 @@ def after_email_added(sender, **kwargs):
         old_email.delete()
 
 class RequestSignup(models.Model):
+    DOCUMENT_TYPES = (
+        ('cc', 'C.C.'),
+        ('nit', 'N.I.T.'),
+        ('ce', 'C.E.'),
+    )
+
     email = models.EmailField(max_length=100)
     name = models.CharField(max_length=100)
     telephone = models.CharField(max_length=100)
-    want_to_teach = models.TextField()
     city = models.ForeignKey(City)
+    document_type = models.CharField(choices=DOCUMENT_TYPES, max_length=5)
+    document = models.CharField(max_length=100)
     approved = models.BooleanField(default=False)
 
     def __unicode__(self):

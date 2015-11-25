@@ -121,7 +121,8 @@
         "email": "organizador@trulii.com",
         "name": "Trulii",
         "telephone": "4828356",
-        "want_to_teach": "I want to teach some good stuff",
+        "document_type": "cc",
+        "document": "123456",
         "city": 1,
         "approved": false
     },

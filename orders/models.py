@@ -34,6 +34,7 @@ class Order(models.Model):
     coupon = models.ForeignKey(Coupon, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     fee = models.ForeignKey(Fee, blank=True, null=True)
+    is_free = models.BooleanField(default=False)
 
     objects = OrderQuerySet.as_manager()
 
@@ -43,10 +44,8 @@ class Order(models.Model):
 
     @cached_property
     def total(self):
-        amount = self.get_total(self.student) - self.total_refunds_amount
-        # print ("REFUND",self.total_refunds_amount)
-        # print ("Total",self.get_total(self.student))
-        return amount
+        _amount = self.get_total(self.student) - self.total_refunds_amount 
+        return _amount if _amount > 0 else 0
 
     @cached_property
     def total_refunds_amount(self):
@@ -59,6 +58,22 @@ class Order(models.Model):
             amount += refunds_total
 
         return amount
+
+    @cached_property
+    def total_refunds_amount_without_coupon(self):
+        #Substract approved refunds amounts
+        amount = 0
+        if self.refunds.exists():
+            approved_refunds = self.refunds.filter(status = Refund.APPROVED_STATUS)
+
+            refunds_total = sum(map(lambda x:x.amount_without_coupon,approved_refunds))
+            amount += refunds_total
+
+        return amount
+
+    @cached_property
+    def total_without_coupon(self):
+        return self.amount - self.total_refunds_amount_without_coupon
 
 
 
@@ -88,6 +103,8 @@ class Assistant(Tokenizable):
         self.enrolled = False
         self.save(update_fields=['enrolled'])
 
+        if self.order.assistants.enrolled().count() == 0:
+            self.order.change_status(Order.ORDER_CANCELLED_STATUS)
 
 class Refund(models.Model):
     APPROVED_STATUS = 'approved'
@@ -114,12 +131,19 @@ class Refund(models.Model):
         return '%s: %s' % (self.user.username, self.order.id)
 
     @cached_property
+    def amount_without_coupon(self):
+        amount = self.order.amount
+        if self.assistant:
+            amount /= self.order.quantity
+        return amount
+
+    @cached_property
     def amount(self):
         profile = self.user.get_profile()
         if isinstance(profile, Student):
-            amount = self.order.get_total(profile)
+           amount = self.order.get_total(profile)
         else:
-            amount = self.order.amount
+           amount = self.order.amount
 
         if self.assistant:
             amount /= self.order.quantity

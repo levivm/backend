@@ -160,7 +160,6 @@ class PaymentUtil(object):
             'FINANCIAL_INSTITUTION_CODE': data['bank'],
             'USER_TYPE': data['userType'],
             'PSE_REFERENCE1': self.get_client_ip(self.request),
-            'PSE_REFERENCE2': data['idType'],
             'PSE_REFERENCE3': data['idNumber'],
 
         }

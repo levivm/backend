@@ -67,10 +67,9 @@ class InviteAPITest(BaseAPITestCase):
 
     def get_facebook_data(self):
         return {
-            'auth_token': "CAAWOByANCTUBAEU6rtjWRCdiv04HW7RqQnx9JVV8PWdUAlDjGn9fQh"
-                          "ZCjHM0LEaTTv1U4vjH5A23zlZCUZAdDpUMyAgsf2veZCQQf4Y5FMcFUj"
-                          "ZCLT2uNFlvCEBiTCaTcN5etZCF7xUSJlB4mqa7AZC87ZCb4amIh5QNf7"
-                          "AIbIa13y5JAdbek0Ev"
+            'auth_token': "CAAWOByANCTUBACmgLKEKHGsZBliCHrnAGF0ZC36rSqklnIFtZCDh2CkdM4mKRhhqy"
+                          "MZBw2PRNbYVKZC68FDYXEgl9NcIipcoDIXMy8j2I4GvFccJLBfUGeeS7yI85ZC5jdr"
+                          "OgiJrFAonlLjRWJrOdCPysMZAp79bjZAOp2TXIKOBt6ZC9X7jRHI5e"
         }
 
     def test_invite_page(self):
