@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from random import Random
-
+from . import constants
 import operator
-from datetime import datetime
+from datetime import datetime,date
 from functools import reduce
 from django.contrib.contenttypes.fields import GenericRelation
 
@@ -62,11 +62,13 @@ class Tags(models.Model):
 
 
 class Activity(Updateable, AssignPermissionsMixin, models.Model):
+
+
     LEVEL_CHOICES = (
-        ('P', _('Principiante')),
-        ('I', _('Intermedio')),
-        ('A', _('Avanzado')),
-        ('N', _('No Aplica'))
+        (constants.LEVEL_P, _('Principiante')),
+        (constants.LEVEL_I, _('Intermedio')),
+        (constants.LEVEL_A, _('Avanzado')),
+        (constants.LEVEL_N, _('No Aplica'))
     )
 
     DAY_CHOICES = (
@@ -171,6 +173,20 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         return calendars[0]['sessions__date']
 
+    @cached_property
+    def closest_calendar(self):
+        today = date.today()
+        closest_greater_qs = self.calendars.filter(initial_date__gte=today)\
+                                 .order_by('initial_date')
+        try:
+            return closest_greater_qs[0]
+        except IndexError:
+            closest_less_qs = self.calendars.filter(initial_date__lt=today)\
+                                  .order_by('-initial_date')
+            return closest_less_qs[0]
+        except IndexError:
+            return None
+
     def set_location(self, location):
         self.location = location
         self.save()
@@ -202,14 +218,6 @@ class ActivityPhoto(models.Model):
 class ActivityStockPhoto(models.Model):
     photo = models.ImageField(upload_to="activities_stock")
     sub_category = models.ForeignKey(SubCategory)
-
-
-    # @classmethod
-    # def get_cover(cls,cover_id):
-    #     try:
-    #         cover = cls.objects.get(id=cover_id)
-    #     except ActivityStockPhoto.DoesNotExist:
-
 
     @classmethod
     def get_random_pictures(cls, pictures_queryset, needed_pictures):

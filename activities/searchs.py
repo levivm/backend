@@ -4,6 +4,8 @@ import ast
 import json
 
 from django.db.models import Q
+from django.conf import settings
+from activities import constants 
 
 
 class ActivitySearchEngine(object):
@@ -71,9 +73,13 @@ class ActivitySearchEngine(object):
             query &= Q(location__city=city)
 
         if cost_start is not None and cost_end is not None:
-            query &= Q(calendars__session_price__range=(cost_start,cost_end))
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                query &= Q(calendars__session_price__gte=(cost_start))
+            else:
+                query &= Q(calendars__session_price__range=(cost_start,cost_end))
 
-        if level is not None:
+        if level is not None and not level == constants.LEVEL_N:
             query &= Q(level=level)
 
         if bool(certification):
@@ -82,6 +88,6 @@ class ActivitySearchEngine(object):
         if  bool(weekends) and json.loads(weekends):
             query &= Q(calendars__is_weekend=True)
 
-
+        print(query)
 
         return query

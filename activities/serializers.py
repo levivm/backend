@@ -185,7 +185,8 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     def validate_session_price(self, value):
         if self.instance and value and self.instance.session_price != value:
             if self.instance.orders.availables().count() > 0:
-                raise serializers.ValidationError(_("No se puede cambiar el precio cuando hay estudiantes inscritos"))
+                raise serializers.ValidationError(
+                    _("No se puede cambiar el precio cuando hay estudiantes inscritos"))
 
         return value
 
@@ -206,12 +207,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         first_session = (sessions[:1] or [None])[0]
         data['initial_date'] = first_session.get('date')
         return data
-
-    def _get_last_session_date(self,data):
-        sessions = data.get('sessions')
-        last_session = sessions[len(sessions)-1]
-        return last_session.get('date')
-
 
     def _validate_session(self, sessions_amount, index, session):
 
@@ -271,15 +266,14 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         if not is_free:
             self._validate_session_price(data)
 
-        last_session_date = self._get_last_session_date(data)
         data = self._set_initial_date(data)
         data = self._proccess_sessions(data)
         initial_date = data['initial_date']
         closing_sale = data['closing_sale']
-        if last_session_date < closing_sale:
+        if initial_date < closing_sale:
             raise serializers.ValidationError(
                 {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
-                                        a la fecha de la última sesión.")})
+                                        a la fecha de inicio.")})
 
         return data
 
@@ -325,6 +319,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
     permissions = ('activities.change_activity',)
+    closest_calendar = CalendarSerializer(read_only=True)
 
     class Meta:
         model = Activity
@@ -352,6 +347,7 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             'certification',
             'last_date',
             'calendars',
+            'closest_calendar',
             'required_steps',
             'steps',
             'organizer',

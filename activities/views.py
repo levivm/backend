@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.aggregates import Count
 from django.shortcuts import get_object_or_404
@@ -96,7 +97,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
-
+            'price_range':settings.PRICE_RANGE
         }
 
         return Response(data)
@@ -247,14 +248,15 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
         else:
             activities = Activity.objects.all()
 
+        print(filters)
         activities = activities.filter(filters) \
             .annotate(number_assistants=Count('calendars__orders__assistants')) \
             .order_by('number_assistants', 'calendars__initial_date')
+        print(activities)
         # .order_by('score', 'number_assistants', 'calendars__initial_date')
 
-
-        serializer = ActivitiesSerializer(self.unique_everseen(activities), many=True)
-
+        serializer = ActivitiesSerializer(self.unique_everseen(activities,
+                                            lambda activity:activity.id), many=True)
         result = serializer.data
         return Response(result)
 
