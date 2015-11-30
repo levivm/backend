@@ -248,11 +248,9 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
         else:
             activities = Activity.objects.all()
 
-        print(filters)
         activities = activities.filter(filters) \
             .annotate(number_assistants=Count('calendars__orders__assistants')) \
             .order_by('number_assistants', 'calendars__initial_date')
-        print(activities)
         # .order_by('score', 'number_assistants', 'calendars__initial_date')
 
         serializer = ActivitiesSerializer(self.unique_everseen(activities,

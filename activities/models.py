@@ -176,6 +176,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     @cached_property
     def closest_calendar(self):
         today = date.today()
+        if not self.calendar.count():
+            return
         closest_greater_qs = self.calendars.filter(initial_date__gte=today)\
                                  .order_by('initial_date')
         try:

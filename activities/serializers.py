@@ -4,7 +4,8 @@
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
-from activities.models import Activity, Category, SubCategory, Tags, Calendar, CalendarSession, ActivityPhoto
+from activities.models import Activity, Category, SubCategory, Tags, Calendar,\
+                              CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer

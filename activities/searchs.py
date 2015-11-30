@@ -88,6 +88,4 @@ class ActivitySearchEngine(object):
         if  bool(weekends) and json.loads(weekends):
             query &= Q(calendars__is_weekend=True)
 
-        print(query)
-
         return query
