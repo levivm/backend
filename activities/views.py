@@ -16,6 +16,7 @@ from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElem
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
+from organizers.models import Organizer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
@@ -286,3 +287,23 @@ class ShareActivityEmailView(APIView):
         task.delay(request.user.id, activity.id, emails=emails, message=request.data.get('message'))
 
         return Response('OK')
+
+
+class AutoCompleteView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q')
+        result = []
+
+        if query:
+            activities = self.get_list(Activity.objects.filter(title__istartswith=query), 'title')
+            tags = self.get_list(Tags.objects.filter(name__istartswith=query), 'name')
+            categories = self.get_list(Category.objects.filter(name__istartswith=query), 'name')
+            subcategories = self.get_list(SubCategory.objects.filter(name__istartswith=query), 'name')
+            organizers = self.get_list(Organizer.objects.filter(name__istartswith=query), 'name')
+            result = [*activities, *tags, *categories, *subcategories, *organizers]
+
+        return Response(result)
+
+    def get_list(self, queryset, attr):
+        return queryset.only(attr).values_list(attr, flat=True)
