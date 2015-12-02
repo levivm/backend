@@ -148,5 +148,5 @@ class Command(BaseCommand):
                     'subcategory': subcategory.name,
                     'filename': '%s%i.jpg' % (subcategory.name, index)
                 }
-                filepath = '%(category)s/%(subcategory)s/%(filename)s' % data
+                filepath = 'activities_stock/%(category)s/%(subcategory)s/%(filename)s' % data
                 ActivityStockPhoto.objects.create(sub_category=subcategory, photo=filepath)

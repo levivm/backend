@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from activities.views import ActivitiesSearchView, ShareActivityEmailView
+from activities.views import ActivitiesSearchView, ShareActivityEmailView, AutoCompleteView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
     SubCategoriesViewSet, TagsViewSet, CalendarViewSet, \
     ActivityPhotosViewSet
@@ -38,6 +38,13 @@ urlpatterns = patterns('',  # url(r'^/categories/?$',ListCategories.as_view()),
         regex=r'^(?P<activity_pk>\d+)/share/?$',
         view=ShareActivityEmailView.as_view(),
         name='share_email_activity',
-    )
+    ),
+
+   # {% url activities:auto_complete %}
+   url(
+       regex=r'^autocomplete/?$',
+       view=AutoCompleteView.as_view(),
+       name='auto_complete',
+   ),
 
 )
