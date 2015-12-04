@@ -1,7 +1,7 @@
 from datetime import datetime
 from itertools import chain
 from operator import attrgetter
-
+from django.utils.translation import ugettext_lazy as _
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -20,7 +20,6 @@ from students.models import Student
 from locations.models import City
 # from users.tasks import SendEmailOrganizerConfirmationTaskTest
 
-_ = lambda x: x
 
 # handler for signal after user singed up
 @receiver(user_signed_up)
