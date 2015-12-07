@@ -183,14 +183,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
         return value
 
-    def validate_session_price(self, value):
-        if self.instance and value and self.instance.session_price != value:
-            if self.instance.orders.availables().count() > 0:
-                raise serializers.ValidationError(
-                    _("No se puede cambiar el precio cuando hay estudiantes inscritos"))
-
-        return value
-
     def _validate_session_price(self, data):
         value = data.get('session_price')
         if value < 1:
