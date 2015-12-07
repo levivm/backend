@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import statistics
 from random import Random
+
+from django.dispatch import receiver, Signal
+
 from . import constants
 import operator
 from datetime import datetime,date
@@ -101,6 +105,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
+    rating = models.FloatField(default=0)
 
     def __str__(self):
         return self.title

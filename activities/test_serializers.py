@@ -1,14 +1,16 @@
-from datetime import datetime
-
+from django.conf import settings
 from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from activities.models import Calendar, CalendarSession
-from activities.serializers import CalendarSerializer
+from activities.models import Calendar, Activity
+from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivityPhotosSerializer, \
+    ActivitiesSerializer
+from locations.serializers import LocationsSerializer
 from orders.models import Assistant, Order
 from orders.serializers import AssistantsSerializer
+from organizers.serializers import OrganizersSerializer
 from utils.serializers import UnixEpochDateField
 
 
@@ -59,7 +61,7 @@ class CalendarSerializerTest(APITestCase):
 
         data = {
             'session_price': 54321,
-            'sessions':[{
+            'sessions': [{
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
                 'end_time': now_unix_timestamp + 100000,
@@ -75,3 +77,59 @@ class CalendarSerializerTest(APITestCase):
             serializer.save()
 
         self.assertEqual(Calendar.objects.get(id=self.calendar.id).session_price, current_session_price)
+
+
+class ActivitySerializerTest(APITestCase):
+    """
+    Test for ActivitySerializer
+    """
+
+    def setUp(self):
+        self.activity = mommy.make(Activity)
+
+    def test_read(self):
+        """
+        Test the serializer data
+        """
+
+        category_data = CategoriesSerializer(instance=self.activity.sub_category.category,
+                                             remove_fields=['subcategories']).data
+        # location_data = LocationsSerializer(self.activity.location).data
+        last_date = UnixEpochDateField().to_representation(self.activity.last_sale_date())
+        organizer_data = OrganizersSerializer(self.activity.organizer).data
+
+        content = {
+            'id': self.activity.id,
+            'title': self.activity.title,
+            'short_description': self.activity.short_description,
+            'sub_category': self.activity.sub_category.id,
+            'sub_category_display': self.activity.sub_category.name,
+            'level': self.activity.level,
+            'level_display': self.activity.get_level_display(),
+            # 'tags',
+            'category': category_data,
+            'content': self.activity.content,
+            'requirements': self.activity.requirements,
+            'return_policy': self.activity.return_policy,
+            'extra_info': self.activity.extra_info,
+            'audience': self.activity.audience,
+            'goals': self.activity.goals,
+            'methodology': self.activity.methodology,
+            # 'location': location_data,
+            # 'pictures': ,
+            'youtube_video_url': self.activity.youtube_video_url,
+            'published': self.activity.published,
+            'certification': self.activity.certification,
+            'last_date': last_date,
+            'calendars': [],
+            # 'closest_calendar',
+            # 'required_steps': ,
+            'steps': settings.ACTIVITY_STEPS,
+            'organizer': organizer_data,
+            'instructors': [],
+            'score': self.activity.score,
+            'rating': self.activity.rating,
+        }
+
+        serializer = ActivitiesSerializer(self.activity)
+        self.assertTrue(all(item in serializer.data.items() for item in content.items()))

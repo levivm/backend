@@ -1,5 +1,9 @@
+import statistics
+
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.dispatch import receiver
+
 from activities.models import Activity
 from students.models import Student
 
@@ -21,3 +25,29 @@ class Review(models.Model):
             ('reply_review', 'Reply review'),
             ('read_review', 'Read review'),
         )
+
+
+# Signals
+
+def update_organizer_rating(organizer):
+    ratings = [a.rating for a in organizer.activity_set.all()]
+    average = statistics.mean(ratings) if ratings else 0
+    organizer.rating = average
+    organizer.save(update_fields=['rating'])
+
+def update_activity_rating(activity):
+    ratings = [r.rating for r in activity.reviews.all()]
+    average = statistics.mean(ratings) if ratings else 0
+    activity.rating = average
+    activity.save(update_fields=['rating'])
+
+@receiver(models.signals.post_save, sender=Review, dispatch_uid='post_save_rating_update')
+def post_save_rating_update(sender, instance, created, **kwargs):
+    if created:
+        update_activity_rating(instance.activity)
+        update_organizer_rating(instance.activity.organizer)
+
+@receiver(models.signals.post_delete, sender=Review, dispatch_uid='post_delete_rating_update')
+def post_delete_rating_update(sender, instance, **kwargs):
+    update_activity_rating(instance.activity)
+    update_organizer_rating(instance.activity.organizer)

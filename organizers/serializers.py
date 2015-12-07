@@ -56,6 +56,7 @@ class OrganizersSerializer(FileUploadMixin, serializers.ModelSerializer):
             'created_at',
             'instructors',
             'locations',
+            'rating',
         )
         read_only_fields = ('id',)
         depth = 1

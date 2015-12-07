@@ -3,7 +3,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from organizers.models import Organizer, OrganizerBankInfo
-from organizers.serializers import OrganizerBankInfoSerializer
+from organizers.serializers import OrganizerBankInfoSerializer, OrganizersSerializer
+from users.forms import UserCreateForm
+from users.serializers import UsersSerializer
+from utils.serializers import UnixEpochDateField
 
 
 class OrganizerBankInfoSerializerTest(APITestCase):
@@ -83,3 +86,40 @@ class OrganizerBankInfoSerializerTest(APITestCase):
         with self.assertRaises(ValidationError):
             serializer = OrganizerBankInfoSerializer(data=self.data)
             serializer.is_valid(raise_exception=True)
+
+
+class OrganizerSerialiezerTest(APITestCase):
+    """
+    Test the OrganizerSerializer
+    """
+
+    def setUp(self):
+        self.organizer = mommy.make(Organizer)
+
+    def test_read(self):
+        """
+        Test the serializer's data
+        """
+
+        user_data = UsersSerializer(self.organizer.user).data
+        created_at = UnixEpochDateField().to_representation(self.organizer.created_at)
+
+        content = {
+            'id': self.organizer.id,
+            'user': user_data,
+            'name': self.organizer.name,
+            'bio': self.organizer.bio,
+            'headline': self.organizer.headline,
+            'website': self.organizer.website,
+            'youtube_video_url': self.organizer.youtube_video_url,
+            'telephone': self.organizer.telephone,
+            'photo': self.organizer.photo,
+            'user_type': UserCreateForm.USER_TYPES[0][0],
+            'created_at': created_at,
+            'instructors': [],
+            'locations': [],
+            'rating': self.organizer.rating,
+        }
+
+        serializer = OrganizersSerializer(self.organizer)
+        self.assertTrue(all(item in serializer.data.items() for item in content.items()))
