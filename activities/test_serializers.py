@@ -52,32 +52,6 @@ class CalendarSerializerTest(APITestCase):
 
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
-    def test_validate_change_price(self):
-        """
-        It shouldn't change the price if there is assistants enrolled
-        """
-
-        now_unix_timestamp = int(now().timestamp()) * 1000
-
-        data = {
-            'session_price': 54321,
-            'sessions': [{
-                'date': now_unix_timestamp,
-                'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100000,
-            }],
-            'closing_sale': now_unix_timestamp,
-        }
-        current_session_price = self.calendar.session_price
-
-        with self.assertRaisesMessage(ValidationError, "{'session_price': ['No se puede cambiar el precio "
-                                                       "cuando hay estudiantes inscritos']}"):
-            serializer = CalendarSerializer(self.calendar, data=data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-
-        self.assertEqual(Calendar.objects.get(id=self.calendar.id).session_price, current_session_price)
-
 
 class ActivitySerializerTest(APITestCase):
     """
