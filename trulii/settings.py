@@ -159,9 +159,6 @@ LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'), )
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
-
-
-
 AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
 AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'
 AWS_SECRET_ACCESS_KEY = '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'

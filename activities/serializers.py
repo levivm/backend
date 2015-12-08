@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 
+import urllib
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
@@ -42,6 +43,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
     icon_default = serializers.SerializerMethodField()
     icon_active = serializers.SerializerMethodField()
+    cover = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -51,7 +53,8 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'subcategories',
             'color',
             'icon_default',
-            'icon_active'
+            'icon_active',
+            'cover'
         )
 
     def get_icon_default(self, obj):
@@ -64,6 +67,11 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         file_name = ("icon_category_%s_active.png") % obj.name.lower()
         return ("%s%s") % (url, file_name)
 
+    def get_cover(self, obj):
+        url = '/css/img/categories/'
+        file_name = ("%s.jpg") % obj.name.lower()
+        file_name = urllib.parse.quote(file_name)
+        return ("%s%s") % (url, file_name)
 
 class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
     permissions = ('activities.delete_activityphoto',)
