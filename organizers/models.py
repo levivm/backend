@@ -16,6 +16,7 @@ class Organizer(models.Model):
     headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
     tasks = GenericRelation(CeleryTask)
+    rating = models.FloatField(default=0)
 
     def __str__(self):
         return '%s' % self.user.username
