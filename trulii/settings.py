@@ -126,7 +126,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 #CORS_URLS_REGEX = r'^/api/.*$'
 
 CORS_ORIGIN_ALLOW_ALL = True
-
+CORS_ALLOW_CREDENTIALS = True
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -158,9 +158,6 @@ LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'), )
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
-
-
-
 
 AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
 AWS_ACCESS_KEY_ID = 'AKIAJRUNNQDO2LM6OSEA'

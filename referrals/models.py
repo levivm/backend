@@ -44,7 +44,8 @@ class Coupon(Tokenizable):
     # objects = RedeemQuerySet.as_manager()
 
     def generate_token(self, *args, **kwargs):
-        return super(Coupon, self).generate_token(prefix=self.coupon_type.type.upper())
+        return super(Coupon, self).\
+            generate_token(prefix=self.coupon_type.type.upper())
 
     def is_valid(self, student):
         params = {
@@ -71,6 +72,7 @@ class Coupon(Tokenizable):
                 used=True,
                 redeem_at=now()
             )
+
 
 class Redeem(models.Model):
     student = models.ForeignKey(Student)
