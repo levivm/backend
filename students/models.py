@@ -6,11 +6,13 @@ from django.utils.translation import ugettext_lazy as _
 from locations.models import City
 from utils.behaviors import Updateable
 from django.contrib.contenttypes.fields import GenericRelation
+
+from utils.mixins import ImageOptimizable
 from utils.models import CeleryTask
 
 
 
-class Student(Updateable, models.Model):
+class Student(ImageOptimizable, Updateable, models.Model):
     FEMALE, MALE = range(1, 3)
 
     GENDER_CHOICES = (
@@ -34,6 +36,11 @@ class Student(Updateable, models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             self.referrer_code = self.generate_referrer_code()
+
+        if self.photo:
+            self.photo.file.file = self.optimize(bytesio=self.photo.file.file,
+                                                 width=self.photo.width, height=self.photo.height)
+
         super(Student, self).save(*args, **kwargs)
 
     @classmethod

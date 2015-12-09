@@ -1,11 +1,13 @@
-from django.db import models
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
+from utils.mixins import ImageOptimizable
 from utils.models import CeleryTask
 
 
-class Organizer(models.Model):
+class Organizer(ImageOptimizable, models.Model):
     user = models.OneToOneField(User, related_name='organizer_profile')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,6 +23,13 @@ class Organizer(models.Model):
     def __str__(self):
         return '%s' % self.user.username
 
+    def save(self, *args, **kwargs):
+        if self.photo:
+            self.photo.file.file = self.optimize(bytesio=self.photo.file.file, width=self.photo.width,
+                                                 height=self.photo.height)
+
+        super(Organizer, self).save(*args, **kwargs)
+
 
 # Create your models here.
 class Instructor(models.Model):
@@ -30,17 +39,16 @@ class Instructor(models.Model):
     organizer = models.ForeignKey(Organizer, related_name="instructors", null=True)
     website = models.CharField(max_length=200, null=True, blank=True)
 
-    @classmethod 
+    @classmethod
     def update_or_create(cls, instructors_data, organizer):
-
         instructors = []
         for ins in instructors_data:
             # Esto se usara en el futuro para asignar el instructor
             # al organizer
             # ins.update({'organizer':organizer})
             instructor = cls.objects.update_or_create(
-                id=ins.get('id', None),
-                defaults=ins)[0]
+                    id=ins.get('id', None),
+                    defaults=ins)[0]
             instructors.append(instructor)
 
         return instructors
