@@ -83,7 +83,6 @@ class OrdersSerializer(serializers.ModelSerializer):
     assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
     amount = serializers.FloatField(read_only=True)
-    activity_name = serializers.StringRelatedField(source='calendar.activity.title', read_only=True)
     activity_id = serializers.SerializerMethodField()
     calendar_initial_date = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -93,7 +92,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     lastest_refund = serializers.SerializerMethodField()
     coupon = serializers.SerializerMethodField()
     total_refunds_amount = serializers.SerializerMethodField()
-
+    activity = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -105,7 +104,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'assistants',
             'amount',
             'status',
-            'activity_name',
+            'activity',
             'created_at',
             'payment',
             'calendar_initial_date',
@@ -119,7 +118,13 @@ class OrdersSerializer(serializers.ModelSerializer):
             'coupon',
         )
 
-    def get_total_refunds_amount(self,obj):
+    def get_activity(self, obj):
+        return {
+            'id': obj.calendar.activity.id,
+            'name': obj.calendar.activity.title
+        }
+
+    def get_total_refunds_amount(self, obj):
         request = self.context.get('request')
         amount = obj.total_refunds_amount
         if request and request.user:

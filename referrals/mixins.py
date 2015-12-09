@@ -1,3 +1,4 @@
+from requests import utils as requests_utils
 from celery import group
 from django.core import signing
 from django.utils.translation import ugettext_lazy as _
@@ -36,7 +37,6 @@ class ReferralMixin(APIView):
         """ Handler to call the referral creation and return the response """
 
         referred_id = data['user']['id']
-
         if self.referrer and (self.referrer.id != referred_id):
             create_referral_task = CreateReferralTask()
             create_coupons_task = CreateCouponTask()
@@ -49,10 +49,9 @@ class ReferralMixin(APIView):
     @staticmethod
     def get_referrer(request):
         """Get a valid referrer code"""
-
         refhash = request.COOKIES.get('refhash')
         if refhash:
-            result = signing.loads(refhash)
+            result = signing.loads(requests_utils.unquote(refhash))
             try:
                 student = Student.objects.get(referrer_code=result['referrer_code'])
                 return student
