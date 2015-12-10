@@ -172,6 +172,7 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(review.reply, 'Thank you!')
         self.assertEqual(review.rating, 4)
         self.assertEqual(review.replied_at, replied_at)
+        self.assertTrue(review.read)
 
     def test_delete(self):
         """
