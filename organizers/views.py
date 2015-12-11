@@ -35,7 +35,7 @@ class OrganizerViewSet(viewsets.ModelViewSet):
     def activities(self, request, **kwargs):
         organizer = self.get_object()
         activities = organizer.activity_set.all()
-        data = ActivitiesSerializer(activities, many=True).data
+        data = ActivitiesSerializer(activities, many=True,context=self.get_serializer_context()).data
         return Response(data)
 
 

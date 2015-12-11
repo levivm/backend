@@ -172,7 +172,6 @@ class InviteAPITest(BaseAPITestCase):
 
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
-        print("MIRAME",self.client.cookies['refhash'])
 
         data = self.get_new_user_data()
         response = self.client.post(self.signup_login_url, data, REMOTE_ADDR=ip_address)
