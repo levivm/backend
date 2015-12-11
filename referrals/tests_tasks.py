@@ -1,10 +1,13 @@
+import mock
 from django.conf import settings
 from model_mommy import mommy
+from rest_framework.test import APITestCase
 
 from activities.models import Calendar
 from orders.models import Order
 from referrals.models import Referral, Coupon, CouponType, Redeem
-from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask
+from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask
+from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
 
@@ -265,3 +268,39 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         self.assertEqual(Coupon.objects.count(), coupon_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)
         self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+
+
+class SendCouponEmailTaskTest(APITestCase):
+    """
+    Class for testing the SendCouponEmailTask task
+    """
+
+    def setUp(self):
+        # Celery
+        settings.CELERY_ALWAYS_EAGER = True
+
+        # Arrangement
+        self.redeem = mommy.make(Redeem)
+        self.email = self.redeem.student.user.email
+
+    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
+    def test_run(self, send_mail):
+        """
+        Test that the task sends the email
+        """
+
+        task = SendCouponEmailTask()
+        task_id = task.delay(redeem_id=self.redeem.id)
+
+        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.email, send=True).exists())
+
+        context = {
+            'name': self.email,
+            'coupon_code': self.redeem.coupon.token,
+        }
+
+        send_mail.assert_called_with(
+            'referrals/email/coupon_cc',
+            self.email,
+            context,
+        )

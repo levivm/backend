@@ -27,14 +27,6 @@ class CouponType(models.Model):
         return self.name
 
 
-# class RedeemQuerySet(models.QuerySet):
-#     def globals(self, *args, **kwargs):
-#         return self.filter(coupon_type='global', *args, **kwargs)
-#
-#     def referrals(self, *args, **kwargs):
-#         return self.filter(coupon_type='referral', *args, **kwargs)
-
-
 class Coupon(Tokenizable):
     redeems = models.ManyToManyField(Student, through='Redeem')
     coupon_type = models.ForeignKey(CouponType)
