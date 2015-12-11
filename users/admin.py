@@ -6,8 +6,6 @@ from .tasks import SendEmailOrganizerConfirmationTask
 
 def send_verification_email(modeladmin, request, queryset):
     for signup in queryset:
-        # print("RequestSignup",signup.id)
-        # print("RequestSignup",signup.organizerconfirmation.id)
         signup.approved = True
         signup.save()
         organizer_confirmation = signup.organizerconfirmation

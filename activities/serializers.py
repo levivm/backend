@@ -161,6 +161,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
+        print("MIRAME AQUI CONTEXT",self.context)
         assistants_serialzer = AssistantsSerializer(assistants, many=True,context=self.context)
         return assistants_serialzer.data
 
