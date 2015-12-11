@@ -1001,7 +1001,8 @@ class AutoCompleteViewTest(BaseAPITestCase):
 
         # Should response the contains data
         response = self.client.get(self.auto_complete_url, {'q': 'd'})
-        self.assertListEqual(response.data, contains)
+        self.assertEqual(len(response.data), len(contains))
+        self.assertTrue(all(item in response.data for item in contains))
 
         # Should response empty data
         response = self.client.get(self.auto_complete_url)
@@ -1020,6 +1021,7 @@ class AutoCompleteViewTest(BaseAPITestCase):
 
     def create_tags(self):
         tags = mommy.make(Tags, name='Deportes', _quantity=1)
+        tags += mommy.make(Tags, name='Derecho', _quantity=1)
         tags += mommy.make(Tags, name='Documentales', _quantity=1)
         tags += mommy.make(Tags, name='Baile', _quantity=1)
         return tags

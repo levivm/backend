@@ -303,7 +303,7 @@ class AutoCompleteView(APIView):
             organizers = self.get_list(Organizer.objects.filter(name__istartswith=query), 'name')
             result = [*activities, *tags, *categories, *subcategories, *organizers]
 
-        return Response(result)
+        return Response(list(set(result)))
 
     def get_list(self, queryset, attr):
         return queryset.only(attr).values_list(attr, flat=True)
