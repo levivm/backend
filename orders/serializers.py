@@ -27,8 +27,9 @@ class AssistantTokenField(serializers.SerializerMethodField):
 
         if request:
             current_user = request.user
-            owner = obj.order.calendar.activity.organizer.user
-            return obj.token if current_user == owner else None
+            is_activity_owner = obj.order.calendar.activity.organizer.user == current_user
+            is_order_owner = obj.order.student.user == current_user
+            return obj.token if is_activity_owner or is_order_owner else None
         return None
 
 
