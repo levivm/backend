@@ -7,6 +7,7 @@ defusedxml==0.4.1
 dj-database-url==0.3.0
 dj-static==0.0.6
 Django==1.8.5
+django-admin-honeypot==0.4.0
 -e git+https://github.com/pennersr/django-allauth.git@fe8c28e1c37ab17cef52ede1a46bdb1a2a717c48#egg=django_allauth-dev
 django-cors-headers==1.1.0
 django-extensions==1.5.2
