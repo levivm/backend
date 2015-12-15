@@ -840,7 +840,7 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_search_price_rage(self):
+    def test_search_price_range(self):
         data = {
             'cost_start': 10000.0,
             'cost_end': 20000,
