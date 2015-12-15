@@ -1,0 +1,6 @@
+
+#LEVEL CONTANTS
+LEVEL_P = 'P'
+LEVEL_I = 'I'
+LEVEL_A = 'A'
+LEVEL_N = 'N'

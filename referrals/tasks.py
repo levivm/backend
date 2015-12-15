@@ -53,8 +53,11 @@ class CreateCouponTask(Task):
         student = Student.objects.get(id=student_id)
         coupon_type = CouponType.objects.get(name=coupon_type_name)
 
-        coupon, created = Coupon.objects.get_or_create(coupon_type=coupon_type)
+        coupon, _ = Coupon.objects.get_or_create(coupon_type=coupon_type)
         redeem, created = Redeem.objects.get_or_create(student=student, coupon=coupon)
+        if created:
+            task = SendCouponEmailTask()
+            task.delay(redeem_id=redeem.id)
 
         return redeem
 
@@ -81,3 +84,23 @@ class ReferrerCouponTask(Task):
         is_approved = order.status == Order.ORDER_APPROVED_STATUS
 
         return first_activity and is_pay_activity and is_referred and is_approved
+
+
+class SendCouponEmailTask(SendEmailTaskMixin):
+    """
+    Task to send the email with the coupon code to a student
+    """
+
+    def run(self, redeem_id, *args, **kwargs):
+        self.redeem = Redeem.objects.get(id=redeem_id)
+        template = 'referrals/email/coupon_cc'
+        return super(SendCouponEmailTask, self).run(instance=self.redeem, template=template, **kwargs)
+
+    def get_emails_to(self, *args, **kwargs):
+        return [self.redeem.student.user.email]
+
+    def get_context_data(self, data):
+        return {
+            'name': self.redeem.student.user.first_name,
+            'coupon_code': self.redeem.coupon.token,
+        }

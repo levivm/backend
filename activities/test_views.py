@@ -4,27 +4,25 @@ import json
 import tempfile
 
 from PIL import Image
-from boto.beanstalk.exception import ValidationError
 from django.conf import settings
+from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.http.request import HttpRequest
-from django.contrib.auth.models import Permission
 from django.utils.timezone import now
 from guardian.shortcuts import assign_perm
-
 from model_mommy import mommy
-
 from rest_framework import status
 
-from utils.models import CeleryTask, EmailTaskRecord
-from activities.models import Category
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory
+from activities.models import Category
 from activities.serializers import ActivitiesSerializer, CalendarSerializer
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet, \
     ActivitiesSearchView
+from organizers.models import Organizer
+from utils.models import CeleryTask, EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -464,8 +462,8 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         # Organizer should not create a photo if he is not activity owner
         with open(self.tmp_file.name, 'rb') as fp:
             response = self.another_organizer_client.post(
-                self.upload_activity_photo_url,
-                {'photo': fp, 'main_photo': False})
+                    self.upload_activity_photo_url,
+                    {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should create a photo from existing stock
@@ -490,7 +488,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
                          self.activity_photos_count + 1)
         self.assertEqual(Activity.objects.latest('pk').score, 4.8)
         self.assertTrue(self.organizer.user.has_perm(
-            perm='activities.delete_activityphoto', obj=activity_photo))
+                perm='activities.delete_activityphoto', obj=activity_photo))
 
     def test_create_from_stock(self):
         """
@@ -518,8 +516,8 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Organizer should not create a photo if he is not activity owner
         response = self.another_organizer_client.post(
-            self.set_cover_from_stock_url,
-            self.set_from_cover_post)
+                self.set_cover_from_stock_url,
+                self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should create a photo from existing stock
@@ -561,7 +559,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Organizer should not delete a photo if he is not activity owner
         response = self.another_organizer_client.post(
-            self.delete_activity_photo_url)
+                self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
@@ -573,7 +571,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count - 1)
         self.assertEqual(Activity.objects.get(
-            id=self.another_activity.id).score, 0.0)
+                id=self.another_activity.id).score, 0.0)
 
 
 class ActivityInfoViewTest(BaseViewTest):
@@ -842,7 +840,7 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_search_price_rage(self):
+    def test_search_price_range(self):
         data = {
             'cost_start': 10000.0,
             'cost_end': 20000,
@@ -861,22 +859,20 @@ class SearchActivitiesViewTest(BaseViewTest):
         self.assertEqual(response.data, serializer.data)
 
     def test_search_certification(self):
-        response = self.client.get(self.url, data={'certification':'false'})
+        response = self.client.get(self.url, data={'certification': 'false'})
         activities = self._get_activities_ordered()
         serializer = ActivitiesSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_weekends(self):
-
-        response = self.client.get(self.url, data={'weekends':'true'})
+        response = self.client.get(self.url, data={'weekends': 'true'})
         activity = Activity.objects.filter(id=self.ACTIVITY_ID)
         serializer = ActivitiesSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
     def test_search_empty(self):
-
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
@@ -978,3 +974,66 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         response = self.client.post(self.share_url, data={'emails': 'asdfa'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, 'Introduzca una dirección de correo electrónico válida')
+
+
+class AutoCompleteViewTest(BaseAPITestCase):
+    """
+    Class to test the auto complete view
+    """
+
+    def setUp(self):
+        # Arrangement
+        self.categories = self.create_categories()
+        self.subcategories = self.create_subcategories()
+        self.tags = self.create_tags()
+        self.organizers = self.create_organizers()
+        self.activities = self.create_activities()
+
+        # URL
+        self.auto_complete_url = reverse('activities:auto_complete')
+
+    def test_read(self):
+        """
+        Test the result of the autocomplete
+        """
+
+        contains = ['Danza', 'Deportes', 'Documentales', 'Derecho', 'Docencia', 'Deportes de Colombia']
+
+        # Should response the contains data
+        response = self.client.get(self.auto_complete_url, {'q': 'd'})
+        self.assertEqual(len(response.data), len(contains))
+        self.assertTrue(all(item in response.data for item in contains))
+
+        # Should response empty data
+        response = self.client.get(self.auto_complete_url)
+        self.assertListEqual(response.data, list())
+
+    def create_categories(self):
+        categories = mommy.make(Category, name='Derecho', _quantity=1)
+        categories += mommy.make(Category, name='Arte', _quantity=1)
+        return categories
+
+    def create_subcategories(self):
+        subcategories = mommy.make(SubCategory, name='Docencia', category=self.categories[0], _quantity=1)
+        subcategories += mommy.make(SubCategory, name='Idiomas', category=self.categories[1], _quantity=1)
+        subcategories += mommy.make(SubCategory, name='Otros', category=self.categories[0], _quantity=1)
+        return subcategories
+
+    def create_tags(self):
+        tags = mommy.make(Tags, name='Deportes', _quantity=1)
+        tags += mommy.make(Tags, name='Derecho', _quantity=1)
+        tags += mommy.make(Tags, name='Documentales', _quantity=1)
+        tags += mommy.make(Tags, name='Baile', _quantity=1)
+        return tags
+
+    def create_organizers(self):
+        organizer = mommy.make(Organizer, name='Deportes de Colombia', _quantity=1)
+        organizer += mommy.make(Organizer, name='Universidad de Bogotá', _quantity=1)
+        return organizer
+
+    def create_activities(self):
+        activities = mommy.make(Activity, title='Yoga', sub_category=self.subcategories[0],
+                                organizer=self.organizers[0], tags=[self.tags[0]], _quantity=1)
+        activities += mommy.make(Activity, title='Danza', sub_category=self.subcategories[1],
+                                 organizer=self.organizers[1], tags=[self.tags[1]], _quantity=1)
+        return activities

@@ -1,7 +1,12 @@
+import statistics
+from itertools import cycle
+
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from organizers.models import OrganizerBankInfo
+from activities.models import Activity
+from organizers.models import OrganizerBankInfo, Organizer
+from reviews.models import Review
 
 
 class OrganizerBankInfoModelTest(APITestCase):
@@ -24,3 +29,29 @@ class OrganizerBankInfoModelTest(APITestCase):
         }
 
         self.assertTrue(all(item in self.bank_info.get_choices().items() for item in data.items()))
+
+
+class OrganizerModelTest(APITestCase):
+    """
+    Class for testing the model Organizer
+    """
+
+    def setUp(self):
+        self.organizer = mommy.make(Organizer)
+        self.activities = mommy.make(Activity, organizer=self.organizer, _quantity=2)
+
+    def test_update_rating(self):
+        """
+        Test to calculate the rating of the organizer
+        """
+
+        self.assertEqual(self.organizer.rating, 0)
+
+        reviews = mommy.make(Review, activity=cycle(self.activities), rating=cycle([2,3,4,4]), _quantity=4)
+        average = statistics.mean([r.rating for r in reviews])
+        self.assertEqual(self.organizer.rating, average)
+
+        # Delete a review
+        reviews.pop().delete()
+        average = statistics.mean([r.rating for r in reviews])
+        self.assertEqual(self.organizer.rating, average)

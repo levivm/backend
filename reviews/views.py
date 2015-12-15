@@ -55,7 +55,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
     def reply(self, request, *args, **kwargs):
         review = self.get_object()
-        data = {'reply': request.data.get('reply')}
+        data = {'reply': request.data.get('reply'), 'read': True}
         serializer = self.get_serializer(review, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)

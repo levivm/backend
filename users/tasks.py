@@ -29,10 +29,6 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
             confirmation.save()
 
         _activate_url = confirmation.get_confirmation_url()
-        print("activate_url",_activate_url)
-        print("activate_url",_activate_url)
-        print("activate_url",_activate_url)
-
         activate_url = MyAccountAdapter().get_frontend_formmated_url(_activate_url)
 
         data = {

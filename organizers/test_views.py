@@ -408,7 +408,7 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         super(OrganizerBankInfoAPITest, self).setUp()
 
         # URLs
-        self.bank_info_api_url = reverse('organizers:bank_info_api', kwargs={'organizer_pk': self.organizer.id})
+        self.bank_info_api_url = reverse('organizers:bank_info_api')
         self.bank_choices = reverse('organizers:bank_choices')
 
         # POST data
@@ -454,9 +454,7 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         """
 
         # Arrangement
-        data = self.data.copy()
-        data['organizer'] = self.organizer
-        mommy.make(OrganizerBankInfo, **data)
+        mommy.make(OrganizerBankInfo, **{**self.data, 'organizer': self.organizer})
 
         # Anonymous should return unauthorized
         response = self.client.get(self.bank_info_api_url)
@@ -471,9 +469,10 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item in response.data.items() for item in self.data.items()))
 
-        # Another organizer should get forbidden
+        # Organizer without bankinfo should return an empty dict
         response = self.another_organizer_client.get(self.bank_info_api_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
 
     def test_update(self):
         """
@@ -505,10 +504,6 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         self.assertTrue(bank_info.account_type == post_data['account_type'])
         self.assertTrue(all(item in bank_info.__dict__.items() for item in updated_data.items()))
 
-        # Another organizer should get forbidden
-        response = self.another_organizer_client.put(self.bank_info_api_url, post_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     def test_delete(self):
         """
         Test delete
@@ -529,7 +524,7 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
 
         # Organizer should return forbidden
         response = self.organizer_client.delete(self.bank_info_api_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_get_choices(self):
         """

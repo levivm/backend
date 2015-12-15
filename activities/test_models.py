@@ -1,10 +1,12 @@
+import statistics
 from itertools import cycle
 
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.models import Calendar
+from activities.models import Calendar, Activity
 from orders.models import Order, Assistant
+from reviews.models import Review
 
 
 class CalendarTestCase(APITestCase):
@@ -44,3 +46,27 @@ class CalendarTestCase(APITestCase):
         # Available capacity = 10 - 4 = 6
 
         self.assertEqual(self.calendar.available_capacity(), 6)
+
+
+class ActivityTestCase(APITestCase):
+    """
+    Class to test the model Activity
+    """
+
+    def setUp(self):
+        self.activity = mommy.make(Activity)
+
+    def test_calculate_rating(self):
+        """
+        Test if recalculate the rating when a review it's created
+        """
+
+        self.assertEqual(self.activity.rating, 0)
+
+        reviews = mommy.make(Review, activity=self.activity, rating=cycle([2, 5]), _quantity=2)
+        average = statistics.mean([r.rating for r in reviews])
+        self.assertEqual(self.activity.rating, average)
+
+        reviews.pop().delete()
+        average = statistics.mean([r.rating for r in reviews])
+        self.assertEqual(self.activity.rating, average)

@@ -170,7 +170,7 @@ class RequestSignupTestView(BaseAPITestCase):
 
 
 class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
-    url = '/admin/users/requestsignup/'
+    url = '/olympus/users/requestsignup/'
     REQUEST_SIGNUP_ID = 1
 
     def setUp(self):
@@ -180,7 +180,7 @@ class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
         settings.CELERY_ALWAYS_EAGER = False
 
     def _get_send_verification_email_action_data(self):
-        return {'action': 'send_verification_email', \
+        return {'action': 'send_verification_email',
                 '_selected_action': self.REQUEST_SIGNUP_ID}
 
     def test_admin_send_verification_email_action(self):

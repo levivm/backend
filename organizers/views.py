@@ -35,7 +35,7 @@ class OrganizerViewSet(viewsets.ModelViewSet):
     def activities(self, request, **kwargs):
         organizer = self.get_object()
         activities = organizer.activity_set.all()
-        data = ActivitiesSerializer(activities, many=True).data
+        data = ActivitiesSerializer(activities, many=True,context=self.get_serializer_context()).data
         return Response(data)
 
 
@@ -133,10 +133,21 @@ class ActivityInstructorViewSet(viewsets.ModelViewSet):
 class OrganizerBankInfoViewSet(viewsets.ModelViewSet):
     queryset = OrganizerBankInfo.objects.all()
     serializer_class = OrganizerBankInfoSerializer
-    permission_classes = (IsAuthenticated, IsCurrentUserSameOrganizer, DjangoObjectPermissions)
+    permission_classes = (IsAuthenticated, IsOrganizer)
 
     def get_object(self):
-        return get_object_or_404(OrganizerBankInfo, organizer=self.request.user.organizer_profile)
+        try:
+            return self.request.user.organizer_profile.bank_info
+        except OrganizerBankInfo.DoesNotExist:
+            return None
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not instance:
+            return Response({})
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class OrganizerBankInfoChoicesViewSet(viewsets.GenericViewSet):

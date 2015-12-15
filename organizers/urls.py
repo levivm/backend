@@ -21,7 +21,7 @@ urlpatterns = [
 
     # {% url organizers:bank_info_api %}
     url(
-        regex=r'^organizer/(?P<organizer_pk>\d+)/bankinfo/?$',
+        regex=r'^organizers/bankinfo/?$',
         view=OrganizerBankInfoViewSet.as_view({'post': 'create', 'get': 'retrieve', 'put': 'partial_update'}),
         name='bank_info_api',
     ),

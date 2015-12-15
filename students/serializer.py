@@ -23,6 +23,7 @@ class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
             'user',
             'user_type',
             'birth_date',
+            'telephone',
             'city',
             'referrer_code',
         )
@@ -36,6 +37,6 @@ class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get('user'):
             instance.update_base_info(validated_data.get('user'))
-            del(validated_data['user'])        
+            del(validated_data['user'])  
         instance.update(validated_data)
         return instance

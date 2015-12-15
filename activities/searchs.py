@@ -1,9 +1,11 @@
 import datetime
-import re
-import ast
 import json
+import re
 
+from django.conf import settings
 from django.db.models import Q
+
+from activities import constants
 
 
 class ActivitySearchEngine(object):
@@ -43,15 +45,14 @@ class ActivitySearchEngine(object):
 
         return query
 
-
     def filter_query(self, query_params):
         subcategory = query_params.get('subcategory')
         category = query_params.get('category')
         date = query_params.get('date')
         city = query_params.get('city')
         cost_start = query_params.get('cost_start')
-        cost_end   = query_params.get('cost_end')
-        level      = query_params.get('level')
+        cost_end = query_params.get('cost_end')
+        level = query_params.get('level')
         certification = query_params.get('certification')
         weekends = query_params.get('weekends')
 
@@ -64,24 +65,26 @@ class ActivitySearchEngine(object):
             query = Q(published=True)
 
         if date is not None:
-            date = datetime.datetime.fromtimestamp(int(date)//1000).replace(second=0)
+            date = datetime.datetime.fromtimestamp(int(date) // 1000).replace(second=0)
             query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:
             query &= Q(location__city=city)
 
         if cost_start is not None and cost_end is not None:
-            query &= Q(calendars__session_price__range=(cost_start,cost_end))
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                query &= Q(calendars__session_price__gte=(cost_start))
+            else:
+                query &= Q(calendars__session_price__range=(cost_start, cost_end))
 
-        if level is not None:
+        if level is not None and not level == constants.LEVEL_N:
             query &= Q(level=level)
 
         if bool(certification):
             query &= Q(certification=json.loads(certification))
 
-        if  bool(weekends) and json.loads(weekends):
+        if bool(weekends) and json.loads(weekends):
             query &= Q(calendars__is_weekend=True)
-
-
 
         return query

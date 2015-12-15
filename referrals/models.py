@@ -27,14 +27,6 @@ class CouponType(models.Model):
         return self.name
 
 
-# class RedeemQuerySet(models.QuerySet):
-#     def globals(self, *args, **kwargs):
-#         return self.filter(coupon_type='global', *args, **kwargs)
-#
-#     def referrals(self, *args, **kwargs):
-#         return self.filter(coupon_type='referral', *args, **kwargs)
-
-
 class Coupon(Tokenizable):
     redeems = models.ManyToManyField(Student, through='Redeem')
     coupon_type = models.ForeignKey(CouponType)
@@ -44,7 +36,8 @@ class Coupon(Tokenizable):
     # objects = RedeemQuerySet.as_manager()
 
     def generate_token(self, *args, **kwargs):
-        return super(Coupon, self).generate_token(prefix=self.coupon_type.type.upper())
+        return super(Coupon, self).\
+            generate_token(prefix=self.coupon_type.type.upper())
 
     def is_valid(self, student):
         params = {
@@ -71,6 +64,7 @@ class Coupon(Tokenizable):
                 used=True,
                 redeem_at=now()
             )
+
 
 class Redeem(models.Model):
     student = models.ForeignKey(Student)
