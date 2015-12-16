@@ -21,7 +21,7 @@ gnureadline==6.3.3
 gunicorn==19.3.0
 invoke==0.10.1
 ipython==4.0.0
-kombu==3.0.26
+kombu==3.0.30
 model-mommy==1.2.5
 oauthlib==0.7.2
 paramiko==1.15.2
