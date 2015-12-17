@@ -18,6 +18,6 @@ payment = Recipe(
 
 fee = Recipe(
     Fee,
-    amount=random.random(), #models.FloatField()
-    name=seq('fee'), #models.CharField(blank=True, max_length=100)
+    amount=random.random(),
+    name=seq('fee'),
 )

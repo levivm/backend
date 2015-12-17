@@ -25,15 +25,15 @@ assistant = Recipe(
     Assistant,
     order=foreign_key(order),
     first_name=fake.first_name,
-    last_name=fake.las_name,
+    last_name=fake.last_name,
     email=fake.email,
     enrolled=fake.boolean,
 )
 
 refund = Recipe(
     Refund,
-    user=foreign_key(user), #models.ForeignKey(User, related_name='refunds')
-    order=foreign_key(order), #models.ForeignKey(Order, related_name='refunds')
-    assistant=foreign_key(assistant), #models.ForeignKey(Assistant, blank=True, null=True, related_name='refunds')
-    status=mommy.generators.gen_from_choices(Refund.STATUS), #models.CharField(choices=STATUS, max_length=10, default=PENDING_STATUS, blank=True)
+    user=foreign_key(user),
+    order=foreign_key(order),
+    assistant=foreign_key(assistant),
+    status=mommy.generators.gen_from_choices(Refund.STATUS),
 )

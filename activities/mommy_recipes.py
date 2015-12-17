@@ -1,6 +1,7 @@
 import random
 
-from django.utils.timezone import utc
+import time
+from django.utils.timezone import utc, now, timedelta
 from faker import Faker
 from model_mommy import mommy
 from model_mommy.recipe import Recipe, foreign_key, related, seq
@@ -32,6 +33,8 @@ SUBCATEGORIES = ['Académico', 'Acordeón', 'Actuación', 'Alemán', 'Amor y Sex
 def date_with_utc(date):
     return date.replace(tzinfo=utc)
 
+def gen_tag():
+    return 'Tag %s' % time.time()
 
 category = Recipe(
     Category,
@@ -47,30 +50,30 @@ subcategory = Recipe(
 
 tag = Recipe(
     Tags,
-    name=seq('Tag'),
+    name=gen_tag,
 )
 
 activity = Recipe(
     Activity,
-    sub_category=foreign_key(subcategory),  # models.ForeignKey(SubCategory)
-    organizer=foreign_key(organizer),  # models.ForeignKey(Organizer)
-    tags=related(tag, tag),  # models.ManyToManyField(Tags)
-    title=fake.text(max_nb_chars=50),  # models.CharField(max_length=100)
-    short_description=fake.sentence,  # models.CharField(max_length=300)
-    level=mommy.generators.gen_from_choices(Activity.LEVEL_CHOICES),  # models.CharField(choices=LEVEL_CHOICES, max_length=1)
-    goals=fake.paragraph,  # models.TextField(blank=True)
-    methodology=fake.paragraph,  # models.TextField(blank=True)
-    content=fake.paragraph,  # models.TextField(blank=True)
-    audience=fake.paragraph,  # models.TextField(blank=True)
-    requirements=fake.paragraph,  # models.TextField(blank=True)
-    return_policy=fake.paragraph,  # models.TextField(blank=True)
-    extra_info=fake.paragraph,  # models.TextField(blank=True)
-    youtube_video_url=fake.url,  # models.CharField(max_length=200, blank=True, null=True)
-    instructors=related(instructor, instructor),  # models.ManyToManyField(Instructor, related_name="activities")
-    published=mommy.generators.gen_boolean,  # models.NullBooleanField(default=False)
-    certification=mommy.generators.gen_boolean,  # models.NullBooleanField(default=False)
-    location=foreign_key(location),  # models.ForeignKey(Location, null=True)
-    score=mommy.generators.gen_integer(min_int=0, max_int=100),  # models.FloatField(default=0)
+    sub_category=foreign_key(subcategory),
+    organizer=foreign_key(organizer),
+    tags=related(tag, tag),
+    title=fake.text(max_nb_chars=50),
+    short_description=fake.sentence,
+    level=mommy.generators.gen_from_choices(Activity.LEVEL_CHOICES),
+    goals=fake.paragraph,
+    methodology=fake.paragraph,
+    content=fake.paragraph,
+    audience=fake.paragraph,
+    requirements=fake.paragraph,
+    return_policy=fake.paragraph,
+    extra_info=fake.paragraph,
+    youtube_video_url=fake.url,
+    instructors=related(instructor, instructor),
+    published=mommy.generators.gen_boolean,
+    certification=mommy.generators.gen_boolean,
+    location=foreign_key(location),
+    score=mommy.generators.gen_integer(min_int=0, max_int=100),
 )
 
 activity_photo = Recipe(
@@ -89,8 +92,10 @@ activity_stock_photo = Recipe(
 calendar = Recipe(
     Calendar,
     activity=foreign_key(activity),
-    initial_date=date_with_utc(fake.date_time_this_month(after_now=True)),
-    closing_sale=date_with_utc(fake.date_time_this_month(after_now=True)),
+    # initial_date=date_with_utc(fake.date_time_this_month(after_now=True)),
+    # closing_sale=date_with_utc(fake.date_time_this_month(after_now=True)),
+    initial_date=now() + timedelta(days=30),
+    closing_sale=now() + timedelta(days=45),
     number_of_sessions=mommy.generators.gen_integer(min_int=0, max_int=10),
     session_price=mommy.generators.gen_integer(min_int=100000, max_int=1000000),
     capacity=mommy.generators.gen_integer(min_int=0, max_int=25),
@@ -101,8 +106,11 @@ calendar = Recipe(
 
 calendar_session = Recipe(
     CalendarSession,
-    date=date_with_utc(fake.date_time_this_month(after_now=True)),
-    start_time=date_with_utc(fake.date_time_this_month(after_now=True)),
-    end_time=date_with_utc(fake.date_time_this_month(after_now=True)),
+    # date=date_with_utc(fake.date_time_this_month(after_now=True)),
+    # start_time=date_with_utc(fake.date_time_this_month(after_now=True)),
+    # end_time=date_with_utc(fake.date_time_this_month(after_now=True)),
+    date=now() + timedelta(days=30),
+    start_time=now() + timedelta(days=30),
+    end_time=now() + timedelta(days=90),
     calendar=foreign_key(calendar),
 )

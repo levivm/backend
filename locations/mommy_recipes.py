@@ -1,7 +1,12 @@
 from model_mommy.recipe import Recipe, seq, foreign_key
 from faker import Faker
 from locations.models import City, Location
-from organizers.mommy_recipes import organizer
+
+try:
+    from organizers.mommy_recipes import organizer
+except ImportError:
+    pass
+
 
 fake = Faker()
 
@@ -20,5 +25,6 @@ location = Recipe(
     address=fake.address, #models.TextField()
     city=foreign_key(city), #models.ForeignKey(City)
     point=get_point, #models.CharField(max_length="200")
+    # organizer=foreign_key('organizers.organizer'), #models.ForeignKey(Organizer,null=True,related_name="locations")
     organizer=foreign_key(organizer), #models.ForeignKey(Organizer,null=True,related_name="locations")
 )
