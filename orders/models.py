@@ -95,6 +95,9 @@ class Assistant(Tokenizable):
 
     objects = AssistantQuerySet.as_manager()
 
+    def __str__(self):
+        return '%s %s' % (self.first_name, self.last_name)
+
     def dismiss(self):
         self.enrolled = False
         self.save(update_fields=['enrolled'])

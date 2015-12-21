@@ -181,8 +181,10 @@ class BaseAPITestCase(APITestCase):
         mommy.make(Group, name='Organizers')
 
         # Users
-        self.student, self.another_student = mommy.make_recipe('students.student', _quantity=2)
-        self.organizer, self.another_organizer = mommy.make_recipe('organizers.organizer', _quantity=2)
+        self.student = mommy.make_recipe('students.student')
+        self.another_student = mommy.make_recipe('students.student')
+        self.organizer = mommy.make_recipe('organizers.organizer')
+        self.another_organizer = mommy.make_recipe('organizers.organizer')
 
         # API Clients
         self.student_client = self.get_client(user=self.student.user)

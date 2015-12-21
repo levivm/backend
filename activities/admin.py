@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from activities.models import Activity, Tags, Category, SubCategory
+from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession
 
 
 @admin.register(Category)
@@ -20,4 +20,19 @@ class ActivityAdmin(admin.ModelAdmin):
 
 @admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(ActivityPhoto)
+class ActivityPhotoAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Calendar)
+class CalendarAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(CalendarSession)
+class CalendarSessionAdmin(admin.ModelAdmin):
     pass

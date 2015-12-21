@@ -24,7 +24,7 @@ class Organizer(ImageOptimizable, models.Model):
         return '%s' % self.user.username
 
     def save(self, *args, **kwargs):
-        if self.photo:
+        if self.photo and not kwargs.get('update_fields'):
             self.photo.file.file = self.optimize(bytesio=self.photo.file.file, width=self.photo.width,
                                                  height=self.photo.height)
 

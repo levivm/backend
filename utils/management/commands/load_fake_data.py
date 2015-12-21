@@ -1,12 +1,19 @@
 import random
-from itertools import cycle
 
+import factory
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from model_mommy import mommy
-from model_mommy.recipe import related
 
+from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
+    CalendarSessionFactory
 from activities.models import SubCategory
+from orders.factories import OrderFactory, AssistantFactory, RefundFactory
+from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
+from payments.factories import FeeFactory
+from referrals.factories import ReferralFactory, RedeemFactory, CouponTypeFactory
+from reviews.factories import ReviewFactory
+from students.factories import StudentFactory
+from utils.management.commands import load_data
 
 
 class Command(BaseCommand):
@@ -14,13 +21,16 @@ class Command(BaseCommand):
     SAMPLES = [x for x in range(3, 6)]
 
     def handle(self, *args, **options):
+        # Load data
+        self.ask_for_load_data()
+
         # Users
         self.students = self.create_students()
 
         # Organizers
         self.organizers = self.create_organizers()
         self.instructors = self.create_instructors()
-        self.banks_info = self.create_banks_info()
+        self.bank_info = self.create_bank_info()
 
         # Activities
         self.subcategories = list(SubCategory.objects.all())
@@ -34,9 +44,6 @@ class Command(BaseCommand):
         self.assistants = self.create_assistants()
         self.refunds = self.create_refunds()
 
-        # Payments
-        self.fee = self.create_fee()
-
         # Referrals
         self.referral = self.create_referrals()
         self.redeem = self.create_redeems()
@@ -44,38 +51,34 @@ class Command(BaseCommand):
         # Reviews
         self.reviews = self.create_reviews()
 
+    def ask_for_load_data(self):
+        load = input('Este comando necesita primero correr load_data. ¿Desea correrlo ahora? (y/[n]): ')
+        if load == 'y':
+            load_data.Command().handle()
+
     def get_quantity(self):
         return random.choice(self.SAMPLES)
 
-    def get_sample(self, array, quantity):
+    @staticmethod
+    def get_sample(array, quantity):
         return random.sample(array, quantity)
 
-    def flat_list(self, array):
+    @staticmethod
+    def flat_list(array):
         return [item for sublist in array for item in sublist]
 
     def create_organizers(self):
-        organizers = list()
-        quantity = self.get_quantity()
-        for i in range(quantity):
-            organizers.append(mommy.make_recipe('organizers.organizer'))
-
-        return organizers
+        return OrganizerFactory.create_batch(self.get_quantity())
 
     def create_instructors(self):
         instructors = list()
         for organizer in self.organizers:
             quantity = self.get_quantity()
-            instructors.append(mommy.make_recipe('organizers.instructor', _quantity=quantity, organizer=organizer))
-
+            instructors.append(InstructorFactory.create_batch(quantity, organizer=organizer))
         return self.flat_list(instructors)
 
     def create_students(self):
-        students = list()
-        quantity = self.get_quantity()
-        for i in range(quantity):
-            students.append(mommy.make_recipe('students.student'))
-
-        return students
+        return StudentFactory.create_batch(self.get_quantity())
 
     def create_activities(self):
         activities = list()
@@ -84,24 +87,18 @@ class Command(BaseCommand):
             subcategories = self.get_sample(self.subcategories, quantity)
             instructors = list(organizer.instructors.all())
             instructors_sample = self.get_sample(instructors, len(instructors) - 1)
-            tags = self.create_tags()
-            activities.append(mommy.make_recipe('activities.activity', _quantity=quantity, organizer=organizer,
-                                                sub_category=cycle(subcategories), instructors=instructors_sample,
-                                                tags=tags))
+            activities.append(
+                    ActivityFactory.create_batch(quantity, organizer=organizer,
+                                                 sub_category=factory.Iterator(subcategories),
+                                                 instructors=instructors_sample, location__organizer=organizer))
+
         return self.flat_list(activities)
-
-    def create_tags(self):
-        tags = list()
-        for i in range(2):
-            tags.append(mommy.make_recipe('activities.tag'))
-
-        return tags
 
     def create_activity_photos(self):
         photos = list()
         for activity in self.activities:
             quantity = self.get_quantity()
-            photos.append(mommy.make_recipe('activities.activity_photo', _quantity=quantity, activity=activity))
+            photos.append(ActivityPhotoFactory.create_batch(quantity, activity=activity))
 
         return self.flat_list(photos)
 
@@ -109,7 +106,7 @@ class Command(BaseCommand):
         calendars = list()
         for activity in self.activities:
             quantity = self.get_quantity()
-            calendars.append(mommy.make_recipe('activities.calendar', _quantity=quantity, activity=activity))
+            calendars.append(CalendarFactory.create_batch(quantity, activity=activity))
 
         return self.flat_list(calendars)
 
@@ -117,7 +114,7 @@ class Command(BaseCommand):
         sessions = list()
         for calendar in self.calendars:
             quantity = self.get_quantity()
-            sessions.append(mommy.make_recipe('activities.calendar_session', _quantity=quantity, calendar=calendar))
+            sessions.append(CalendarSessionFactory.create_batch(quantity, calendar=calendar))
 
         return self.flat_list(sessions)
 
@@ -126,18 +123,19 @@ class Command(BaseCommand):
         for student in self.students:
             quantity = self.get_quantity()
             calendars = self.get_sample(self.calendars, quantity)
-            for calendar in calendars:
-                orders.append(
-                        mommy.make_recipe('orders.order', student=student, calendar=calendar)
-                )
+            fee = self.create_fee()
+            orders.append(
+                    OrderFactory.create_batch(quantity, student=student, calendar=factory.Iterator(calendars),
+                                              fee=fee)
+            )
 
-        return orders
+        return self.flat_list(orders)
 
     def create_assistants(self):
         assistants = list()
         for order in self.orders:
             quantity = self.get_quantity()
-            assistants.append(mommy.make_recipe('orders.assistant', _quantity=quantity, order=order))
+            assistants.append(AssistantFactory.create_batch(quantity, order=order))
 
         return self.flat_list(assistants)
 
@@ -147,33 +145,30 @@ class Command(BaseCommand):
         orders = self.get_sample(self.orders, quantity)
         assistants = [*self.get_sample(self.assistants, quantity - 1), None]
 
-        return mommy.make_recipe('orders.refund', _quantity=quantity, user=cycle(users), order=cycle(orders),
-                                 assistant=cycle(assistants))
+        return RefundFactory.create_batch(quantity, user=factory.Iterator(users), order=factory.Iterator(orders),
+                                          assistant=factory.Iterator(assistants))
 
-    def create_banks_info(self):
-        bank_info = list()
-        for organizer in self.organizers:
-            bank_info.append(
-                mommy.make_recipe('organizers.organizer_bank_info', organizer=organizer))
+    def create_bank_info(self):
+        return [OrganizerBankInfoFactory.create(organizer=o) for o in self.organizers]
 
-        return bank_info
-
-    def create_fee(self):
-        return mommy.make_recipe('payments.fee')
+    @staticmethod
+    def create_fee():
+        return FeeFactory()
 
     def create_referrals(self):
         quantity = 1
-        students = self.get_sample(self.students, quantity + 1)
-        return mommy.make_recipe('referrals.referral', referred=students[0], referrer=students[1])
+        referrer, referred = self.get_sample(self.students, quantity + 1)
+        return ReferralFactory(referrer=referrer, referred=referred)
 
     def create_redeems(self):
-        return mommy.make_recipe('referrals.redeem', student=self.referral.referred)
+        coupon_type = CouponTypeFactory()
+        return RedeemFactory(student=self.referral.referred, coupon__coupon_type=coupon_type)
 
     def create_reviews(self):
         reviews = list()
         quantity = self.get_quantity()
         orders = self.get_sample(self.orders, quantity)
         for order in orders:
-            reviews.append(mommy.make_recipe('reviews.review', activity=order.calendar.activity, author=order.student))
+            reviews.append(ReviewFactory(activity=order.calendar.activity, author=order.student))
 
         return reviews
