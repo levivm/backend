@@ -33,7 +33,8 @@ class Coupon(Tokenizable):
     created_at = models.DateTimeField(auto_now_add=True)
     valid_until = models.DateTimeField(blank=True, null=True)
 
-    # objects = RedeemQuerySet.as_manager()
+    def __str__(self):
+        return self.token
 
     def generate_token(self, *args, **kwargs):
         return super(Coupon, self).\

@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-from orders.models import Refund, Order
+from orders.models import Refund, Order, Assistant
 from orders.tasks import SendEMailStudentRefundTask, SendEmailOrganizerRefundTask
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Assistant)
+class AssistantAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Refund)
