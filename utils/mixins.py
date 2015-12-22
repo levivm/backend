@@ -4,6 +4,7 @@ import io
 
 from PIL import Image
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import assign_perm
@@ -40,8 +41,21 @@ class ImageOptimizable(object):
     QUALITY = 90
     FORMAT = 'JPEG'
 
+    def open(self, bytesio):
+        return Image.open(bytesio)
+
+    def create_thumbnail(self, bytesio, filename, width, height):
+        image = self.open(bytesio)
+        size = (width, height)
+        image.thumbnail(size, Image.ANTIALIAS)
+
+        buffer = self.save_buffer(image)
+        buffer.seek(0)
+
+        return SimpleUploadedFile(filename, buffer.read(), content_type='image/jpeg')
+
     def optimize(self, bytesio, width, height):
-        image = Image.open(bytesio)
+        image = self.open(bytesio)
         image = self.crop_square(image, width, height)
 
         if width > self.MAX_SIZE and height > self.MAX_SIZE:

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import statistics
+import io
 from random import Random
 
-from django.dispatch import receiver, Signal
+import os
 
 from . import constants
 import operator
@@ -21,7 +21,7 @@ from organizers.models import Organizer, Instructor
 
 from locations.models import Location
 from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
-from utils.mixins import AssignPermissionsMixin
+from utils.mixins import AssignPermissionsMixin, ImageOptimizable
 from utils.behaviors import Updateable
 
 
@@ -211,10 +211,22 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return orders
 
 
-class ActivityPhoto(models.Model):
+class ActivityPhoto(ImageOptimizable, models.Model):
     photo = models.ImageField(upload_to="activities")
+    thumbnail = models.ImageField(upload_to='activities', blank=True, null=True)
     activity = models.ForeignKey(Activity, related_name="pictures")
     main_photo = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        filename = os.path.split(self.photo.name)[-1]
+        simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
+                                            width=400, height=350)
+        self.thumbnail.save(
+                'thumbnail_%s' % filename,
+                simple_file,
+                save=False)
+
+        super(ActivityPhoto, self).save(*args, **kwargs)
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):
