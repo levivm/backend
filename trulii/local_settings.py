@@ -5,7 +5,15 @@ import os
 
 ################ DATABASE CONFIG ##############
 
-DATABASE_URL  = "postgres://trulii:trulii@localhost:5432/trulii"
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT_5432_TCP_PORT','5432')
+POSTGRES_HOST = os.environ.get('POSTGRES_PORT_5432_TCP_ADDR','localhost')
+
+PG_USER =  os.environ.get('POSTGRES_1_ENV_POSTGRES_USER','trulii')
+PG_DB   =  os.environ.get('POSTGRES_1_ENV_POSTGRES_DB','trulii')
+PG_PW   =  os.environ.get('POSTGRES_1_ENV_POSTGRES_PASSWORD','trulii')
+
+DATABASE_URL  = "postgres://{user}:{password}@{host}:{port}/{db}".format(host=POSTGRES_HOST,
+	port=POSTGRES_PORT,db=PG_DB,user=PG_USER,password=PG_PW)
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 ################ / DATABASE CONFIG #############
 
