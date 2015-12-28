@@ -91,7 +91,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
             "id": 2,
             "city": 1,
             "point": [4.610676392396654, -74.07760244445802],
-            "address": "Address Here"
+            "address": "Address Here",
         }
 
     def __init__(self, methodName='runTest'):
@@ -135,7 +135,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
         request = HttpRequest()
         request.user = User.objects.get(id=self.ORGANIZER_ID)
         request.data = request.data = self._get_location_data()
-        serializer = LocationsSerializer(data=request.data, \
+        serializer = LocationsSerializer(data={**request.data, 'organizer': self.ORGANIZER_ID},
                                          context={'request': request, 'organizer_location': True})
         serializer.is_valid(raise_exception=True)
         location = serializer.save()

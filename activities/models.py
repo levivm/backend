@@ -83,7 +83,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         ('5', _('Viernes')),
     )
 
-    permissions = ('organizers.delete_instructor',)
+    # permissions = ('organizers.delete_instructor',)
+    permissions = ('activities.change_activity',)
 
     sub_category = models.ForeignKey(SubCategory)
     organizer = models.ForeignKey(Organizer)
@@ -109,6 +110,9 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        super(Activity, self).save(user=self.organizer.user, obj=self, *args, **kwargs)
 
     def steps_completed(self):
         steps_requirements = settings.REQUIRED_STEPS
@@ -211,11 +215,13 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return orders
 
 
-class ActivityPhoto(ImageOptimizable, models.Model):
+class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     photo = models.ImageField(upload_to="activities")
     thumbnail = models.ImageField(upload_to='activities', blank=True, null=True)
     activity = models.ForeignKey(Activity, related_name="pictures")
     main_photo = models.BooleanField(default=False)
+
+    permissions = ('activities.delete_activityphoto',)
 
     def save(self, *args, **kwargs):
         filename = os.path.split(self.photo.name)[-1]
@@ -226,7 +232,7 @@ class ActivityPhoto(ImageOptimizable, models.Model):
                 simple_file,
                 save=False)
 
-        super(ActivityPhoto, self).save(*args, **kwargs)
+        super(ActivityPhoto, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):
@@ -283,7 +289,7 @@ class ActivityStockPhoto(models.Model):
         return sub_category_pictures
 
 
-class Calendar(Updateable, models.Model):
+class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
     initial_date = models.DateTimeField()
     closing_sale = models.DateTimeField()
@@ -295,6 +301,10 @@ class Calendar(Updateable, models.Model):
     is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
+    permissions = ('activities.change_calendar', 'activities.delete_calendar')
+
+    def save(self, *args, **kwargs):
+        super(Calendar, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @cached_property
     def duration(self):

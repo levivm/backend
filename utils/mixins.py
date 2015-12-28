@@ -13,10 +13,32 @@ from rest_framework import serializers
 
 class AssignPermissionsMixin(object):
     permissions = tuple()
+    user = None
+    obj = None
+    kwargs = dict()
 
-    def assign_permissions(self, user, instance):
+    def assign_permissions(self):
         for permission in self.permissions:
-            assign_perm(permission, user, instance)
+            assign_perm(permission, self.user, self.obj)
+
+    def save(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.get_objs()
+
+        create = False
+        if not self.pk:
+            create = True
+
+        super(AssignPermissionsMixin, self).save(*args, **kwargs)
+
+        if create:
+            self.assign_permissions()
+
+    def get_objs(self):
+        self.user = self.kwargs.pop('user', None)
+        self.obj = self.kwargs.pop('obj', None)
+        assert self.user, 'Se necesita el parámetro user para poder asignar los permisos'
+        assert self.obj, 'Se necesita el parámetro obj para poder asignar los permisos'
 
 
 class FileUploadMixin(object):

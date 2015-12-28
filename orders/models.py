@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch.dispatcher import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
@@ -35,6 +37,9 @@ class Order(models.Model):
     is_free = models.BooleanField(default=False)
 
     objects = OrderQuerySet.as_manager()
+
+    def __str__(self):
+        return self.student.user.username
 
     def change_status(self, status):
         self.status = status
@@ -129,6 +134,15 @@ class Refund(models.Model):
 
     def __str__(self):
         return '%s: %s' % (self.user.username, self.order.id)
+
+    def save(self, *args, **kwargs):
+        if self.status == Refund.APPROVED_STATUS:
+            if self.assistant is None:
+                self.order.change_status(Order.ORDER_CANCELLED_STATUS)
+            else:
+                self.assistant.dismiss()
+
+        super(Refund, self).save(*args, **kwargs)
 
     @cached_property
     def amount_without_coupon(self):

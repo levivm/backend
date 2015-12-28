@@ -1,12 +1,16 @@
 import json
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
 from model_mommy import mommy
 from requests import post
+
+from organizers.factories import OrganizerFactory
 from payments.models import Payment
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
+
+from students.factories import StudentFactory
 
 
 class BaseViewTest(APITestCase):
@@ -176,15 +180,9 @@ class BaseAPITestCase(APITestCase):
     """
 
     def setUp(self):
-        # Groups
-        mommy.make(Group, name='Students')
-        mommy.make(Group, name='Organizers')
-
         # Users
-        self.student = mommy.make_recipe('students.student')
-        self.another_student = mommy.make_recipe('students.student')
-        self.organizer = mommy.make_recipe('organizers.organizer')
-        self.another_organizer = mommy.make_recipe('organizers.organizer')
+        self.student, self.another_student = StudentFactory.create_batch(2)
+        self.organizer, self.another_organizer = OrganizerFactory.create_batch(2)
 
         # API Clients
         self.student_client = self.get_client(user=self.student.user)

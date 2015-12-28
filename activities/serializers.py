@@ -2,16 +2,18 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
+
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
+
 from activities.models import Activity, Category, SubCategory, Tags, Calendar,\
                               CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
-from utils.mixins import AssignPermissionsMixin, FileUploadMixin
+from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
@@ -73,9 +75,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         file_name = urllib.parse.quote(file_name)
         return ("%s%s") % (url, file_name)
 
-class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
-    permissions = ('activities.delete_activityphoto',)
-
+class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     class Meta:
         model = ActivityPhoto
         fields = (
@@ -111,8 +111,6 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
 
         photo = super(ActivityPhotosSerializer, self).create(validated_data)
 
-        request = self.context['request']
-        self.assign_permissions(request.user, photo)
         return photo
 
 
@@ -131,13 +129,12 @@ class CalendarSessionSerializer(serializers.ModelSerializer):
         )
 
 
-class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+class CalendarSerializer(serializers.ModelSerializer):
     sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
-    permissions = ('activities.change_calendar', 'activities.delete_calendar')
     available_capacity = serializers.SerializerMethodField()
 
     class Meta:
@@ -285,10 +282,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
         CalendarSession.objects.bulk_create(_sessions)
 
-        request = self.context['request']
-
-        self.assign_permissions(request.user, calendar)
-
         return calendar
 
     def update(self, instance, validated_data):
@@ -305,7 +298,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
 
 
-class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+class ActivitiesSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
     sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
     category = serializers.SerializerMethodField()
@@ -319,7 +312,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     instructors = InstructorsSerializer(many=True, required=False)
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
-    permissions = ('activities.change_activity',)
     closest_calendar = CalendarSerializer(read_only=True)
 
     class Meta:
@@ -406,7 +398,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         activity = Activity.objects.create(**validated_data)
         activity.update_tags(tags)
 
-        self.assign_permissions(request.user, activity)
         return activity
 
     def update(self, instance, validated_data):

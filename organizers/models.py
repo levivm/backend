@@ -3,7 +3,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from utils.mixins import ImageOptimizable
+from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from utils.models import CeleryTask
 
 
@@ -32,12 +32,17 @@ class Organizer(ImageOptimizable, models.Model):
 
 
 # Create your models here.
-class Instructor(models.Model):
+class Instructor(AssignPermissionsMixin, models.Model):
     full_name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, null=True)
     photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
     organizer = models.ForeignKey(Organizer, related_name="instructors", null=True)
     website = models.CharField(max_length=200, null=True, blank=True)
+
+    permissions = ('organizers.change_instructor', 'organizers.delete_instructor')
+
+    def save(self, *args, **kwargs):
+        super(Instructor, self).save(user=self.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
     def update_or_create(cls, instructors_data, organizer):

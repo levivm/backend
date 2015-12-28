@@ -1,9 +1,10 @@
 import random
+from datetime import timedelta
 
 import factory
 import factory.fuzzy
-from datetime import timedelta
 from django.utils.timezone import now
+from guardian.shortcuts import assign_perm
 
 from activities.models import Activity, SubCategory, Category, Tags, ActivityPhoto, Calendar, CalendarSession
 from locations.factories import LocationFactory
@@ -70,7 +71,7 @@ class ActivityFactory(factory.django.DjangoModelFactory):
     return_policy = factory.Faker('paragraph')
     extra_info = factory.Faker('paragraph')
     youtube_video_url = factory.Faker('url')
-    published = factory.Faker('boolean')
+    published = factory.Faker('boolean', chance_of_getting_true=80)
     certification = factory.Faker('boolean')
     location = factory.SubFactory(LocationFactory)
     score = factory.LazyAttribute(lambda a: random.choice(range(100)))
@@ -99,7 +100,7 @@ class ActivityPhotoFactory(factory.django.DjangoModelFactory):
 
     photo = factory.django.ImageField()
     activity = factory.SubFactory(ActivityFactory)
-    main_photo = factory.Faker('boolean')
+    main_photo = False
 
 
 class CalendarFactory(factory.django.DjangoModelFactory):
@@ -114,7 +115,7 @@ class CalendarFactory(factory.django.DjangoModelFactory):
     capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))
     enroll_open = factory.Faker('boolean')
     is_weekend = factory.Faker('boolean')
-    is_free = factory.Faker('boolean')
+    is_free = factory.Faker('boolean', chance_of_getting_true=20)
 
 
 class CalendarSessionFactory(factory.django.DjangoModelFactory):

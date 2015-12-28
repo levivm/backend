@@ -3,7 +3,9 @@ from model_mommy import mommy
 from rest_framework.test import APITestCase
 
 from orders.models import Order, Refund, Assistant
+from organizers.factories import OrganizerFactory
 from referrals.models import Redeem, CouponType, Coupon
+from students.factories import StudentFactory
 
 
 class OrderModelTest(APITestCase):
@@ -13,7 +15,7 @@ class OrderModelTest(APITestCase):
 
     def setUp(self):
         # Arrangement
-        self.student = mommy.make_recipe('students.student')
+        self.student = StudentFactory()
         self.order = mommy.make(Order, amount=500, student=self.student)
 
     def test_get_total(self):
@@ -109,8 +111,8 @@ class RefundModelTest(APITestCase):
 
     def setUp(self):
         # Arrangement
-        self.organizer = mommy.make_recipe('organizers.organizer')
-        self.student = mommy.make_recipe('students.student')
+        self.organizer = OrganizerFactory()
+        self.student = StudentFactory()
         self.coupon = mommy.make(Coupon, coupon_type__amount=self.COUPON_AMOUNT)
         self.redeem = mommy.make(Redeem, student=self.student, used=True, coupon=self.coupon)
         self.order = mommy.make(Order, quantity=self.ASSISTANT_QUANTITY, amount=self.ORDER_AMOUNT,
@@ -178,7 +180,7 @@ class RefundModelTest(APITestCase):
         """
 
         # Another student has a redeem with the same coupon
-        another_student = mommy.make_recipe('students.student')
+        another_student = StudentFactory()
         mommy.make(Redeem, student=another_student, used=True, coupon=self.coupon)
 
         # The student doesn't have a redeem
@@ -244,7 +246,7 @@ class RefundModelTest(APITestCase):
         """
 
         # Another student has a redeem with the same coupon
-        another_student = mommy.make_recipe('students.student')
+        another_student = StudentFactory()
         mommy.make(Redeem, student=another_student, used=True, coupon=self.coupon)
 
         # The student hasn't redeemed his coupon

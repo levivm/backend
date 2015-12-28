@@ -5,14 +5,12 @@ from rest_framework import serializers
 
 from orders.models import Order
 from students.serializer import StudentsSerializer
-from utils.mixins import AssignPermissionsMixin
 from .models import Review
 
 
-class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     author = StudentsSerializer(read_only=True)
     reported = serializers.BooleanField(read_only=True)
-    permissions = ('reviews.report_review', 'reviews.reply_review', 'reviews.read_review')
 
     class Meta:
         model = Review
@@ -50,6 +48,4 @@ class ReviewSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.update({'author': self.context['request'].data['author']})
-        instance = super(ReviewSerializer, self).create(validated_data)
-        self.assign_permissions(user=instance.activity.organizer.user, instance=instance)
-        return instance
+        return super(ReviewSerializer, self).create(validated_data)

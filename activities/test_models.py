@@ -4,9 +4,11 @@ from itertools import cycle
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from activities.factories import ActivityFactory, ActivityPhotoFactory
 from activities.models import Calendar, Activity
 from orders.models import Order, Assistant
 from reviews.models import Review
+from users.factories import UserFactory
 
 
 class CalendarTestCase(APITestCase):
@@ -47,6 +49,15 @@ class CalendarTestCase(APITestCase):
 
         self.assertEqual(self.calendar.available_capacity(), 6)
 
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        user = self.calendar.activity.organizer.user
+
+        self.assertTrue(user.has_perm('activities.change_calendar', self.calendar))
+        self.assertTrue(user.has_perm('activities.delete_calendar', self.calendar))
 
 class ActivityTestCase(APITestCase):
     """
@@ -70,3 +81,28 @@ class ActivityTestCase(APITestCase):
         reviews.pop().delete()
         average = statistics.mean([r.rating for r in reviews])
         self.assertEqual(self.activity.rating, average)
+
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        user = self.activity.organizer.user
+        self.assertTrue(user.has_perm('activities.change_activity', self.activity))
+
+class ActivityPhotoTestCase(APITestCase):
+    """
+    Class to test the model ActivityPhoto
+    """
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.activity = ActivityFactory(organizer__user=self.user)
+
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        activity_photo = ActivityPhotoFactory(activity=self.activity)
+        self.assertTrue(self.user.has_perm('activities.delete_activityphoto', activity_photo))

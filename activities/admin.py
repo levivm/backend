@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession
+from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession, \
+    ActivityStockPhoto
 
 
 @admin.register(Category)
@@ -36,3 +37,8 @@ class CalendarAdmin(admin.ModelAdmin):
 @admin.register(CalendarSession)
 class CalendarSessionAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(ActivityStockPhoto)
+class ActivityStockPhotoAdmin(admin.ModelAdmin):
+    search_fields = ['sub_category__name']

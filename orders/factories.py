@@ -1,6 +1,5 @@
-import random
-
 import factory
+import factory.fuzzy
 
 from activities.factories import CalendarFactory
 from orders.models import Order, Assistant, Refund
@@ -15,11 +14,11 @@ class OrderFactory(factory.django.DjangoModelFactory):
 
     calendar = factory.SubFactory(CalendarFactory)
     student = factory.SubFactory(StudentFactory)
-    amount = factory.LazyAttribute(lambda o: random.choice(range(50000, 1000000)))
-    quantity = factory.LazyAttribute(lambda o: random.choice(range(1, 10)))
-    status = factory.LazyAttribute(lambda o: random.choice([k for k, v in Order.STATUS]))
+    amount = factory.fuzzy.FuzzyInteger(50000, 1000000)
+    quantity = factory.fuzzy.FuzzyInteger(1, 5)
+    status = factory.fuzzy.FuzzyChoice([k for k, v in Order.STATUS])
     payment = factory.SubFactory(PaymentFactory)
-    is_free = factory.Faker('boolean')
+    is_free = factory.Faker('boolean', chance_of_getting_true=20)
 
 
 class AssistantFactory(factory.django.DjangoModelFactory):
@@ -30,7 +29,7 @@ class AssistantFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
-    enrolled = factory.Faker('boolean')
+    enrolled = True
 
 
 class RefundFactory(factory.django.DjangoModelFactory):
@@ -40,4 +39,4 @@ class RefundFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     order = factory.SubFactory(OrderFactory)
     assistant = factory.SubFactory(AssistantFactory)
-    status = factory.LazyAttribute(lambda r: random.choice([k for k, v in Refund.STATUS]))
+    status = factory.fuzzy.FuzzyChoice([k for k, v in Refund.STATUS])
