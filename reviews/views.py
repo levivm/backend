@@ -123,7 +123,8 @@ class ReportReviewView(viewsets.ModelViewSet):
     def report(self, request, *args, **kwargs):
         review = self.get_object()
         review.reported = True
-        review.save(update_fields=['reported'])
+        review.read = True
+        review.save(update_fields=['reported', 'read'])
         task = SendReportReviewEmailTask()
         task.delay(review.id)
         return Response()

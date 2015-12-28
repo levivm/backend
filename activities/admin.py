@@ -16,7 +16,7 @@ class SubCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ('title',)
 
 
 @admin.register(Tags)

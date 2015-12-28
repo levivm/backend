@@ -5,7 +5,7 @@ from organizers.models import Organizer, Instructor, OrganizerBankInfo
 
 @admin.register(Organizer)
 class OrganizerAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'user')
 
 
 @admin.register(Instructor)

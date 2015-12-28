@@ -60,7 +60,7 @@ class ActivityFactory(factory.django.DjangoModelFactory):
     sub_category = factory.SubFactory(SubCategoryFactory)
     organizer = factory.SubFactory(OrganizerFactory)
     title = factory.LazyAttribute(
-        lambda a: '%s de %s' % (random.choice(['Curso', 'Clase', 'Taller', 'Sessiones']), a.sub_category.name))
+        lambda a: '%s de %s' % (random.choice(['Curso', 'Clase', 'Taller', 'Sesiones']), a.sub_category.name))
     short_description = factory.Faker('sentence')
     level = factory.LazyAttribute(lambda a: random.choice([k for k, v in Activity.LEVEL_CHOICES]))
     goals = factory.Faker('paragraph')

@@ -21,7 +21,7 @@ class Organizer(ImageOptimizable, models.Model):
     rating = models.FloatField(default=0)
 
     def __str__(self):
-        return '%s' % self.user.username
+        return '%s' % self.name
 
     def save(self, *args, **kwargs):
         if self.photo and not kwargs.get('update_fields'):
