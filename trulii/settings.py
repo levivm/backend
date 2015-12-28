@@ -63,7 +63,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_swagger',
-    'admin_honeypot',
+    # 'admin_honeypot',
     'landing',
     'activities',
     'locations',    
@@ -97,23 +97,24 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS =  DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
+TEMPLATE_CONTEXT_PROCESSORS =  DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + [
     "django.core.context_processors.request",    
-)
+]
 
 
-TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + (
+TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + [
     PROJECT_PATH + '/templates/', 
-)
-#TEMPLATES_PATH = os.path.join(SETTINGS_PATH, "templates")
+]
+
+#TEMPLATES_PATH = os.path.join[SETTINGS_PATH, "templates"]
 
 
-AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + ( 
+AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + [
 
     # `allauth` specific authentication methods, such as login by e-mail
     "allauth.account.auth_backends.AuthenticationBackend",
     'guardian.backends.ObjectPermissionBackend',
-)
+]
 
 ROOT_URLCONF = 'trulii.urls'
 

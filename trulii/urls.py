@@ -1,29 +1,26 @@
+from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.urlpatterns import format_suffix_patterns
-from organizers.api import OrganizerDetail,InstructorDetail
-from django.conf import settings
-#from users.views import SignUpAjax
+
 from users.views import ChangeEmailView,PasswordChange,ConfirmEmail,RestFacebookLogin
-from landing.views import ContactFormView
+from landing.views import ContactFormView, landing, form_modal
 
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-#if settings.DEBUG :
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Examples:
     
-    url(r'^home$', 'landing.views.landing', name='home'),
-    url(r'^form_modal$', 'landing.views.form_modal', name='form_modal'),
+    url(r'^home$', landing, name='home'),
+    url(r'^form_modal$', form_modal, name='form_modal'),
 
     # url(r'^blog/', include('blog.urls')),
 
 	# (r'^users/logout/$', 'django.contrib.auth.views.logout',
  #     	{'next_page': '/'}),
 
-    url('^admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
+    # url('^admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
     url(r'^olympus/', include(admin.site.urls)),
     # url(r'^users/login/', LoginViewTest.as_view()),
     url(r'^api/contact-us/', ContactFormView.as_view(), name='contact_form'),
@@ -34,7 +31,7 @@ urlpatterns = patterns('',
     url(r'^users/', include('allauth.urls')),
     url(r'^api/users/', include('users.urls', namespace='users')),
     url(r'^api/', include('organizers.urls', namespace='organizers')),
-    url(r'^api/activities', include('activities.urls',namespace='activities')),
+    url(r'^api/activities/', include('activities.urls',namespace='activities')),
  	url(r'^api/locations/', include('locations.urls')),
     url(r'^api/students/', include('students.urls')),
  	url(r'^api/payments/', include('payments.urls', namespace='payments')),
@@ -62,16 +59,16 @@ urlpatterns = patterns('',
     
     # url(r'^.*$', 'landing.views.landing', name='home'),
 
-)
+]
 
 
 #
 if  not settings.DEBUG:
     #urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += patterns('',
+    urlpatterns += [
         (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
         (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
-    )
+    ]
 
 #
 

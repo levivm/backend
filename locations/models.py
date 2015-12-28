@@ -9,7 +9,7 @@ class City(models.Model):
     #country = models.ForeignKey(Country)
     name  = models.CharField(max_length=100)
     order = models.IntegerField(default=0)
-    point = models.CharField(max_length="200")
+    point = models.CharField(max_length=200)
     #point = models_gis.PointField(help_text="Represented as (longitude, latitude)")
     #objects = models_gis.GeoManager()
 
@@ -24,7 +24,7 @@ class Location(AssignPermissionsMixin, models.Model):
 
     address = models.TextField()
     city    = models.ForeignKey(City)
-    point   = models.CharField(max_length="200")
+    point   = models.CharField(max_length=200)
     organizer = models.ForeignKey(Organizer, null=True,related_name="locations")
 
     permissions = ('locations.change_location','locations.add_location','locations.delete_location')
