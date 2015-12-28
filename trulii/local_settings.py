@@ -1,20 +1,30 @@
 import dj_database_url
+import os
 
 
 
 ################ DATABASE CONFIG ##############
 
-DATABASE_URL  = "postgres://trulii:trulii@localhost:5432/trulii"
-DATABASES = {
-    'default': dj_database_url.config(default=DATABASE_URL)
-}
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT_5432_TCP_PORT','5432')
+POSTGRES_HOST = os.environ.get('POSTGRES_PORT_5432_TCP_ADDR','localhost')
+
+PG_USER =  os.environ.get('POSTGRES_1_ENV_POSTGRES_USER','trulii')
+PG_DB   =  os.environ.get('POSTGRES_1_ENV_POSTGRES_DB','trulii')
+PG_PW   =  os.environ.get('POSTGRES_1_ENV_POSTGRES_PASSWORD','trulii')
+
+DATABASE_URL  = "postgres://{user}:{password}@{host}:{port}/{db}".format(host=POSTGRES_HOST,
+	port=POSTGRES_PORT,db=PG_DB,user=PG_USER,password=PG_PW)
+DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 ################ / DATABASE CONFIG #############
 
 
 ################ REDIS CONFIG ##################
+REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR','localhost')
+REDIS_PORT = os.environ.get('REDIS_1_PORT_6379_TCP_PORT','6379')
 
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost/0'
+# BROKER_URL = 'redis://localhost:6379/0'
+BROKER_URL = 'redis://{host}:{port}/0'.format(host=REDIS_HOST_ADDR, port=REDIS_PORT)
+CELERY_RESULT_BACKEND = 'redis://{host}/0'.format(host=REDIS_HOST_ADDR)
 CELERY_ALWAYS_EAGER = False
 
 ################ / REDIS CONFIG #################

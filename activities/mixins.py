@@ -27,5 +27,3 @@ class ListUniqueOrderedElementsMixin(object):
                 if k not in seen:
                     seen_add(k)
                     yield element
-
-
