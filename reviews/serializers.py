@@ -11,6 +11,7 @@ from .models import Review
 class ReviewSerializer(serializers.ModelSerializer):
     author = StudentsSerializer(read_only=True)
     reported = serializers.BooleanField(read_only=True)
+    activity_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
@@ -20,12 +21,19 @@ class ReviewSerializer(serializers.ModelSerializer):
             'comment',
             'reply',
             'activity',
+            'activity_data',
             'author',
             'created_at',
             'reported',
             'read',
             'replied_at',
         )
+
+    def get_activity_data(self, obj):
+        return {
+            'id': obj.activity.id,
+            'title': obj.activity.title,
+        }
 
     def validate_reply(self, reply):
         if self.instance and self.instance.reply:
