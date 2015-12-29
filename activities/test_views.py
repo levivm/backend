@@ -27,7 +27,7 @@ from utils.tests import BaseViewTest, BaseAPITestCase
 
 
 class ActivitiesListViewTest(BaseViewTest):
-    url = '/api/activities'
+    url = '/api/activities/'
     view = ActivitiesViewSet
 
     def _get_data_to_create_an_activity(self):
@@ -414,7 +414,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         image = Image.new('RGB', (100, 100), color='red')
         tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
-        image.save(tmp_file)
+        image.save(tmp_file, format='JPEG')
         self.tmp_file = tmp_file
 
         # URLs

@@ -1,3 +1,5 @@
+import urllib
+
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -146,7 +148,8 @@ class InviteAPITest(BaseAPITestCase):
 
         # Anonymous should register and get the coupon
         data = self.get_new_user_data()
-        response = self.client.post(self.signup_login_url, data)
+        params = urllib.parse.urlencode(data, doseq=True)
+        response = self.client.post(self.signup_login_url, data=params, content_type='application/x-www-form-urlencoded')
         new_student = Student.objects.latest('pk')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(new_student.user.get_full_name(), '%s %s' % (data['first_name'], data['last_name']))
@@ -193,7 +196,7 @@ class InviteAPITest(BaseAPITestCase):
         referral_counter = Referral.objects.count()
         redeem_counter = Coupon.objects.count()
 
-        response = self.client.post(self.signup_login_url, data)
+        response = self.client.post(self.signup_login_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)

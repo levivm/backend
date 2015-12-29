@@ -2,20 +2,21 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import EmailValidator
 from django.db.models.aggregates import Count
-from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
-from rest_framework.compat import EmailValidator
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
+from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
@@ -23,7 +24,6 @@ from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPho
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer
-from locations.serializers import LocationsSerializer
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
