@@ -13,9 +13,9 @@ from organizers.models import Organizer
 from payments.models import Fee, Payment
 from payments.serializers import PaymentsSerializer
 from referrals.models import Referral, CouponType, Redeem
+from students.factories import StudentFactory
 from students.models import Student
 from students.serializer import StudentsSerializer
-from users.factories import UserFactory
 from utils.models import EmailTaskRecord
 from utils.serializers import UnixEpochDateField
 from utils.tests import BaseAPITestCase
@@ -291,9 +291,9 @@ class RefundSerializerTest(APITestCase):
         Test validation
         """
 
-        user = UserFactory()
+        student = StudentFactory()
         data = {
-            'user': user.id,
+            'user': student.user.id,
             'order': self.order.id,
         }
 
