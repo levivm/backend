@@ -5,6 +5,7 @@ from mock import Mock
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 
+from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Order, Refund, Assistant
 from orders.serializers import RefundSerializer
 from payments.models import Fee
@@ -315,7 +316,8 @@ class RefundAPITest(BaseAPITestCase):
         # Student should create a refund
         response = self.student_client.post(self.create_read_url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
-        self.assertTrue(Refund.objects.filter(user=self.student.user, order=order, status='pending').exists())
+        self.assertTrue(Refund.objects.filter(user=self.student.user, order=order, status='pending',
+                                              assistant=assistant).exists())
 
     def test_create_organizer(self):
         """
@@ -334,6 +336,22 @@ class RefundAPITest(BaseAPITestCase):
         response = self.organizer_client.post(self.create_read_url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
         self.assertTrue(Refund.objects.filter(user=self.organizer.user, order=order, status='pending').exists())
+
+    def test_order_refund(self):
+        """
+        Test full order refund
+        """
+
+        order = OrderFactory(student=self.student, status=Order.ORDER_APPROVED_STATUS)
+        AssistantFactory.create_batch(4, order=order, enrolled=True)
+
+        data = {
+            'order': order.id,
+        }
+
+        response = self.student_client.post(self.create_read_url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Refund.objects.filter(user=self.student.user, order=order, status='pending').exists())
 
     def test_pagination(self):
         """
