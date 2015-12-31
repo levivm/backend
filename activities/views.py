@@ -23,7 +23,7 @@ from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPho
     ActivityStockPhoto
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
-    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer
+    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer,ActivitiesCardSerializer
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -254,7 +254,7 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
             .order_by('number_assistants', 'calendars__initial_date')
         # .order_by('score', 'number_assistants', 'calendars__initial_date')
 
-        serializer = ActivitiesSerializer(self.unique_everseen(activities,
+        serializer = ActivitiesCardSerializer(self.unique_everseen(activities,
                                             lambda activity:activity.id), many=True)
         result = serializer.data
         return Response(result)

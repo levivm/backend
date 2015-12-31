@@ -129,7 +129,7 @@ class CalendarSessionSerializer(serializers.ModelSerializer):
         )
 
 
-class CalendarSerializer(serializers.ModelSerializer):
+class CalendarSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
     sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
@@ -295,6 +295,43 @@ class CalendarSerializer(serializers.ModelSerializer):
         sessions = CalendarSession.objects.bulk_create(_sessions)
 
         return instance
+
+
+
+class ActivitiesCardSerializer(serializers.ModelSerializer):
+    last_date = serializers.SerializerMethodField()
+    closest_calendar = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    pictures = ActivityPhotosSerializer(read_only=True, many=True)
+    organizer = OrganizersSerializer(read_only=True)
+
+
+    class Meta:
+        model = Activity
+        fields = (
+            'id',
+            'title',
+            'category',
+            'short_description',
+            'sub_category',
+            'pictures',
+            'organizer',
+            'published',
+            'closest_calendar',
+            'last_date',
+            'organizer',
+            'score',
+            'rating',
+        )
+
+    def get_category(self, obj):
+        return CategoriesSerializer(instance=obj.sub_category.category,
+                                    remove_fields=['subcategories']).data
+    def get_closest_calendar(self,obj):
+        return CalendarSerializer(obj.closest_calendar,remove_fields=['sessions']).data
+
+    def get_last_date(self, obj):
+        return UnixEpochDateField().to_representation(obj.last_sale_date())
 
 
 
