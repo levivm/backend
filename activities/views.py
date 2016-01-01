@@ -245,14 +245,19 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
         query = search.get_query(q, ['title', 'short_description', 'content',
                                      'tags__name', 'organizer__name'])
         if query:
-            activities = Activity.objects.filter(query)
+            activities = Activity.objects.select_related('location')\
+               .select_related('organizer').filter(query)
         else:
-            activities = Activity.objects.all()
+            activities = Activity.objects.select_related('location')\
+                .select_related('organizer')
 
         activities = activities.filter(filters) \
             .annotate(number_assistants=Count('calendars__orders__assistants')) \
             .order_by('number_assistants', 'calendars__initial_date')
         # .order_by('score', 'number_assistants', 'calendars__initial_date')
+
+        # serializer = ActivitiesCardSerializer(activities, many=True)
+
 
         serializer = ActivitiesCardSerializer(self.unique_everseen(activities,
                                             lambda activity:activity.id), many=True)
