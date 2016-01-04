@@ -1,389 +1,401 @@
-import json
-
+# -*- coding: utf-8 -*-
 import mock
+
 from django.contrib.auth.models import Permission
+from django.db.models import Q
 from model_mommy import mommy
+from requests.models import Response
 from rest_framework import status
 from django.core.urlresolvers import reverse
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from rest_framework.test import APITestCase
 
+from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Calendar
+from orders.factories import OrderFactory
 from orders.models import Order, Assistant
-from orders.views import OrdersViewSet
+from payments.factories import PaymentFactory
 from payments.models import Payment
 from referrals.models import Redeem, Referral, Coupon, CouponType
-from utils.tests import BaseViewTest, BaseAPITestCase
-from .tasks import SendPaymentEmailTask
-from utils.models import EmailTaskRecord
-from activities.utils import PaymentUtil
+from utils.tests import BaseAPITestCase
 
 
-class PaymentLogicTest(BaseViewTest):
-    url = '/api/activities/1/orders'
-    payu_callback_url = '/api/payments/notification/'
-    view = OrdersViewSet
-    ORDER_ID = 1
+class PaymentCreditCardTest(BaseAPITestCase):
+    """
+    Test cases for the Payment logic
+    """
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
+        super(PaymentCreditCardTest, self).setUp()
 
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
+        self.activity = ActivityFactory(published=True)
+        self.calendar = CalendarFactory(activity=self.activity)
+        self.url = reverse('orders:create_or_list_by_activity', kwargs={'activity_pk': self.activity.id})
 
-    def get_payments_count(self):
-        return Payment.objects.count()
+        # Permissions
+        permissions = Permission.objects.filter(Q(codename='add_order') | Q(codename='add_assistant'))
+        self.student.user.user_permissions.add(*permissions)
 
-    def get_orders_count(self):
-        return Order.objects.count()
-
-    def test_payu_confirmation_url_transaction_does_not_exist(self):
-        client = self.get_student_client()
-        data = {
-            'transaction_id': 'invalid_id',
-            'state_pol': settings.TRANSACTION_DECLINED_CODE
+    def get_payment_data(self):
+        return {
+            'token': '32ae9fc3-831b-48bf-876b-e7d8c514c5d2',
+            'buyer': {
+                'name': 'Ivan Kiehn',
+                'email': 'arlington.buckridge@yahoo.com',
+            },
+            'last_four_digits':'1111',
+            'card_association': 'visa',
+            'calendar': self.calendar.id,
+            'payment_method': Payment.CC_PAYMENT_TYPE,
+            'quantity': 1,
+            'amount': 324000,
+            'assistants': [{
+                'first_name': 'Kia',
+                'last_name': 'Jakubowski',
+                'email': 'camron.schowalter@gmail.com',
+            }]
         }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        self.assertEqual(payu_callback_response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_payu_confirmation_url_transaction_expired(self):
-        client = self.get_student_client()
+    @mock.patch('activities.utils.post')
+    def test_approved(self, payu_post):
+        """
+        Test when a credit card is approved
+        """
+        # counters
+        payments_counter = Payment.objects.count()
+        orders_counter = Order.objects.count()
+
+        # mock the payu response
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'SUCCESS',
+            'transactionResponse': {
+                'state': 'APPROVED',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+            }
+        })
+        payu_post.return_value = r
+
         data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
-        data = {
-            'transaction_id': payment.transaction_id,
-            'state_pol': settings.TRANSACTION_EXPIRED_CODE,
-            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
-        }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        orders = Order.objects.filter(id=order_id)
-        self.assertEqual(orders.count(), 0)
-        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_transaction_declined(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
-        data = {
-            'transaction_id': payment.transaction_id,
-            'state_pol': settings.TRANSACTION_DECLINED_CODE,
-            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
-
-        }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        orders = Order.objects.filter(id=order_id)
-        self.assertEqual(orders.count(), 0)
-        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
-
-    def test_payu_confirmation_url_transaction_approved(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
-        data = {
-            'transaction_id': payment.transaction_id,
-            'state_pol': settings.TRANSACTION_APPROVED_CODE,
-            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
-
-        }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        order = Order.objects.get(id=order_id)
-        self.assertEqual(order.status, Order.ORDER_APPROVED_STATUS)
-        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
-
-    def test_creditcard_declined(self):
-        payments_count = self.get_payments_count()
-        orders_count = self.get_orders_count()
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'DECLINED'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        self.assertEqual(self.get_payments_count(), payments_count)
-        self.assertEqual(self.get_orders_count(), orders_count)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn(b'Su tarjeta ha sido rechazada', response.content)
-
-    def test_creditcard_approved(self):
-        payments_count = self.get_payments_count()
-        orders_count = self.get_orders_count()
-        client = self.get_student_client()
-        response = client.post(self.url, json.dumps(self.get_payment_data()), content_type='application/json')
+        # Student should pay
+        response = self.student_client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.get_payments_count(), payments_count + 1)
-        self.assertEqual(self.get_orders_count(), orders_count + 1)
+        self.assertEqual(Payment.objects.count(), payments_counter + 1)
+        self.assertEqual(Order.objects.count(), orders_counter + 1)
         last_order = Order.objects.latest('pk')
         self.assertEqual(last_order.status, 'approved')
         self.assertEqual(last_order.assistants.count(), 1)
 
-    def test_creditcard_pending(self):
-        payments_count = self.get_payments_count()
-        orders_count = self.get_orders_count()
-        client = self.get_student_client()
+    @mock.patch('activities.utils.post')
+    def test_declined(self, payu_post):
+        """
+        Test when a credit card payment is declined
+        """
+
+        # Counters
+        payments_counter = Payment.objects.count()
+        orders_counter = Order.objects.count()
+
+        # mock the payu response
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'SUCCESS',
+            'transactionResponse': {
+                'state': 'DECLINED',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+                'responseCode': 'INVALID_CARD',
+            }
+        })
+        payu_post.return_value = r
+
         data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
+
+        response = self.student_client.post(self.url, data, format='json')
+        self.assertEqual(Payment.objects.count(), payments_counter)
+        self.assertEqual(Order.objects.count(), orders_counter)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(b'La tarjeta es inv\xc3\xa1lida', response.content)
+
+    @mock.patch('activities.utils.post')
+    def test_pending(self, payu_post):
+        """
+        Test when a credit card payment is pending
+        """
+
+        # Counters
+        payments_counter = Payment.objects.count()
+        orders_counter = Order.objects.count()
+
+        # mock the payu response
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'SUCCESS',
+            'transactionResponse': {
+                'state': 'PENDING',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+            }
+        })
+        payu_post.return_value = r
+
+        data = self.get_payment_data()
+
+        response = self.student_client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.get_payments_count(), payments_count + 1)
-        self.assertEqual(self.get_orders_count(), orders_count + 1)
+        self.assertEqual(Payment.objects.count(), payments_counter + 1)
+        self.assertEqual(Order.objects.count(), orders_counter + 1)
         last_order = Order.objects.latest('pk')
         self.assertEqual(last_order.status, 'pending')
         self.assertEqual(last_order.assistants.count(), 1)
 
-    def test_creditcard_error(self):
-        payments_count = self.get_payments_count()
-        orders_count = self.get_orders_count()
-        client = self.get_student_client()
+    @mock.patch('activities.utils.post')
+    def test_error(self, payu_post):
+        """
+        Test when a credit card payment return error
+        """
+
+        # Counters
+        payments_counter = Payment.objects.count()
+        orders_counter = Order.objects.count()
+
+        # mock the payu response
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'ERROR',
+            'transactionResponse': {
+                'state': 'PENDING',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+                'responseCode': 'ERROR'
+            }
+        })
+        payu_post.return_value = r
+
         data = self.get_payment_data()
-        data['token'] = '1234567890'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
+
+        response = self.student_client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(self.get_payments_count(), payments_count)
-        self.assertEqual(self.get_orders_count(), orders_count)
+        self.assertEqual(Payment.objects.count(), payments_counter)
+        self.assertEqual(Order.objects.count(), orders_counter)
         self.assertIn(b'ERROR', response.content)
 
-    def test_payment_approved_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_APPROVED_STATUS)
-        task = SendPaymentEmailTask()
-        task_data = {
-            'payment_method': settings.CC_METHOD_PAYMENT_ID
-        }
-        result = task.apply_async((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 1)
 
-    def test_payu_declined_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_DECLINED_STATUS)
-        error_msg = PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL \
-            .get('ENTITY_DECLINED', 'Error')
-        task_data = {
-            'transaction_error': error_msg,
-            'payment_method': settings.CC_METHOD_PAYMENT_ID
-
-        }
-        task = SendPaymentEmailTask()
-        result = task.apply((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
-        expected_error = str(error_msg)
-        self.assertEqual(expected_error, email_task.data['error'])
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 0)
-
-
-class PayUPSETest(BaseViewTest):
-    # url = '/api/payments/pse'
-    url = '/api/activities/1/orders'
-    payu_callback_url = '/api/payments/notification/'
-    ORDER_ID = 1
+class PayUCreditCardConfirmationTransactionTest(APITestCase):
+    """
+    Class for testing the responses of PayU web hooks
+    """
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
+        self.payu_callback_url = reverse('payments:notification')
+        self.payment = PaymentFactory()
+        self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
 
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
+    def test_payu_confirmation_url_transaction_approved(self):
+        """
+        Test the payu response by web hook when is approved
+        """
+        data = {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_APPROVED_CODE,
+            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
 
-    def get_payments_count(self):
-        return Payment.objects.count()
+        }
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        order = Order.objects.get(id=self.order.id)
+        self.assertEqual(order.status, Order.ORDER_APPROVED_STATUS)
+        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def get_orders_count(self):
-        return Order.objects.count()
+    def test_payu_confirmation_url_transaction_declined(self):
+        """
+        Test the payu response by web hook when is declined
+        """
 
-    def test_pse_payment(self):
-        client = self.get_student_client()
-        data = json.dumps(self.get_payment_pse_data())
-        response = client.post(self.url, data, content_type='application/json')
+        data = {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_DECLINED_CODE,
+            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
+
+        }
+
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        orders = Order.objects.filter(id=self.order.id)
+        self.assertEqual(orders.count(), 0)
+        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
+
+    def test_payu_confirmation_url_transaction_expired(self):
+        """
+        Test the payu response by web hook when is expired
+        """
+
+        data = {
+            'transaction_id': self.payment.transaction_id,
+            'state_pol': settings.TRANSACTION_EXPIRED_CODE,
+            'payment_method_type': settings.CC_METHOD_PAYMENT_ID
+        }
+
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        orders = Order.objects.filter(id=self.order.id)
+        self.assertEqual(orders.count(), 0)
+        self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
+
+    def test_payu_confirmation_url_transaction_does_not_exist(self):
+        data = {
+            'transaction_id': 'invalid_id',
+            'state_pol': settings.TRANSACTION_DECLINED_CODE
+        }
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        self.assertEqual(payu_callback_response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class PayUPSETest(BaseAPITestCase):
+
+    def setUp(self):
+        super(PayUPSETest, self).setUp()
+        self.activity = ActivityFactory(published=True)
+        self.calendar = CalendarFactory(activity=self.activity)
+        self.url = reverse('orders:create_or_list_by_activity', kwargs={'activity_pk': self.activity.id})
+
+        # Permissions
+        permissions = Permission.objects.filter(Q(codename='add_order') | Q(codename='add_assistant'))
+        self.student.user.user_permissions.add(*permissions)
+
+    def get_payment_data(self):
+        return {
+            'buyer': {
+                'name': 'Deane Shanahan',
+                'payerEmail': 'psatterfield@gmail.com',
+                 'contactPhone':"037-424-5383"
+
+            },
+            'buyer_pse_data':{
+                 "response_url": settings.PAYU_RESPONSE_URL,
+                 "bank": "1007",
+                 "userType": "J",
+                 "idType": "NIT",
+                 "idNumber": "900823805",
+            },
+            'calendar': self.calendar.id,
+            'activity': self.activity.id,
+            'payment_method': Payment.PSE_PAYMENT_TYPE,
+            'quantity': 1,
+            'amount': 80000,
+            'assistants': [{
+                'first_name': 'Murphy',
+                'last_name': 'Fahey',
+                'email': 'bmayert@gmail.com',
+            }]
+        }
+
+    @mock.patch('activities.utils.post')
+    def test_pse_payment(self, payu_post):
+        """
+        Test the PSE payment when is pending (success)
+        """
+
+        # Mock the call to PayU
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'SUCCESS',
+            'transactionResponse': {
+                'state': 'PENDING',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+                'extraParameters': {
+                    'BANK_URL': "https://pse.todo1.com/PseBancolombia/control/\
+                                    ElectronicPayment.bancolombia?\
+                                    PAYMENT_ID=21429692224921982576571322905"
+                }
+            }
+        })
+        payu_post.return_value = r
+
+        data = self.get_payment_data()
+        response = self.student_client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
 
-    def test_pse_payment_declined(self):
-        client = self.get_student_client()
-        data = self.get_payment_pse_data()
-        data['buyer']['name'] = 'DECLINED'
-        data = json.dumps(data)
-        response = client.post(self.url, data, content_type='application/json')
+    @mock.patch('activities.utils.post')
+    def test_pse_payment_declined(self, payu_post):
+        """
+        Test the PSE payment when is declined (fail)
+        """
+
+        # Mock the call to PayU
+        r = Response()
+        r.status_code = 200
+        r.json = mock.MagicMock(return_value={
+            'code': 'SUCCESS',
+            'transactionResponse': {
+                'state': 'DECLINED',
+                'transactionId': '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c',
+                'responseCode': 'ERROR',
+            }
+        })
+        payu_post.return_value = r
+
+        data = self.get_payment_data()
+        response = self.student_client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+
+class PayUPSEConfirmationTransactionTest(APITestCase):
+
+    def setUp(self):
+        self.payu_callback_url = reverse('payments:notification')
+        self.payment = PaymentFactory()
+        self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
+
     def test_payu_confirmation_url_pse_transaction_declined(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data),
-                               content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
         data = {
-            'transaction_id': payment.transaction_id,
+            'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_DECLINED_CODE,
             'response_code_pol': settings.RESPONSE_CODE_POL_DECLINED,
             'payment_method_type': settings.PSE_METHOD_PAYMENT_ID
 
         }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        orders = Order.objects.filter(id=order_id)
-        self.assertEqual(orders.count(), 0)
+
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
     def test_payu_confirmation_url_pse_transaction_pending(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
         data = {
-            'transaction_id': payment.transaction_id,
+            'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_PENDING_PSE_CODE,
             'payment_method_type': settings.PSE_METHOD_PAYMENT_ID
 
         }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        orders = Order.objects.filter(id=order_id)
-        self.assertEqual(orders.count(), 1)
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        self.assertTrue(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
     def test_payu_confirmation_url_pse_transaction_failed(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = response.data['id']
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
         data = {
-            'transaction_id': payment.transaction_id,
+            'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_DECLINED_CODE,
             'response_code_pol': settings.RESPONSE_CODE_POL_FAILED,
             'payment_method_type': settings.PSE_METHOD_PAYMENT_ID
 
         }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        orders = Order.objects.filter(id=order_id)
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        orders = Order.objects.filter(id=self.order.id)
         self.assertEqual(orders.count(), 0)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
     def test_payu_confirmation_url_pse_transaction_approved(self):
-        client = self.get_student_client()
-        data = self.get_payment_data()
-        data['buyer']['name'] = 'PENDING'
-        response = client.post(self.url, json.dumps(data), content_type='application/json')
-        order_id = int(response.data['id'])
-        order = Order.objects.get(id=order_id)
-        payment = Payment.objects.get(order=order)
         data = {
-            'transaction_id': payment.transaction_id,
+            'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_APPROVED_CODE,
             'payment_method_type': settings.PSE_METHOD_PAYMENT_ID
 
         }
-        payu_callback_response = client.post(self.payu_callback_url, data=data)
-        order = Order.objects.get(id=order_id)
+        payu_callback_response = self.client.post(self.payu_callback_url, data=data)
+        order = Order.objects.get(id=self.order.id)
         self.assertEqual(order.status, Order.ORDER_APPROVED_STATUS)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
-
-    def test_payment_pse_approved_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_APPROVED_STATUS)
-        task = SendPaymentEmailTask()
-        task_data = {
-            'payment_method': settings.PSE_METHOD_PAYMENT_ID
-        }
-        result = task.apply_async((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 1)
-
-    def test_payment_pse_declined_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_DECLINED_STATUS)
-        error_msg = _('Transacción Rechazada')
-        task_data = {
-            'transaction_error': error_msg,
-            'payment_method': settings.PSE_METHOD_PAYMENT_ID
-
-        }
-        task = SendPaymentEmailTask()
-        result = task.apply((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        expected_error = str(error_msg)
-        self.assertTrue(email_task.send)
-        self.assertEqual(expected_error, email_task.data['error'])
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 0)
-
-    def test_payment_pse_failed_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_DECLINED_STATUS)
-        error_msg = _('Transacción Fallida')
-        task_data = {
-            'transaction_error': error_msg,
-            'payment_method': settings.PSE_METHOD_PAYMENT_ID
-
-        }
-        task = SendPaymentEmailTask()
-        result = task.apply((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        expected_error = str(error_msg)
-        self.assertEqual(expected_error, email_task.data['error'])
-        self.assertTrue(email_task.send)
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 0)
-
-    def test_payment_pse_pending_notification_email_task(self):
-        order = Order.objects.get(id=self.ORDER_ID)
-        order.change_status(Order.ORDER_PENDING_STATUS)
-        error_msg = 'Transacción pendiente, por favor revisar'
-        error_msg += 'si el débito fue realizado en el banco.'
-        error_msg = _(error_msg)
-        task_data = {
-            'transaction_error': error_msg,
-            'payment_method': settings.PSE_METHOD_PAYMENT_ID
-
-        }
-        task = SendPaymentEmailTask()
-        result = task.apply((order.id,), task_data, countdown=4)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
-        expected_error = str(error_msg)
-        self.assertEqual(expected_error, email_task.data['error'])
-        self.assertEqual(self.ORDER_ID, email_task.data['order']['id'])
-        orders = Order.objects.filter(id=self.ORDER_ID)
-        self.assertEqual(orders.count(), 1)
-
-        # class PaymentBankListTest(BaseViewTest):
-
-
-# url = '/api/payments/pse/banks'
-
-#     def test_get_pse_bank_list(self):
-#         client = self.get_student_client()
-#         response = client.get(self.url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertIn(b'"description":"BANCOLOMBIA QA"', response.content)
 
 
 class PaymentCreditCardWithCouponTest(BaseAPITestCase):
@@ -717,13 +729,13 @@ class PaymentPSEWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.count(), order_counter)
 
 
-class PaymentWebhookWithCouponTest(BaseAPITestCase):
+class PaymentWebHookWithCouponTest(BaseAPITestCase):
     """
-    Class to test the payment's webhook with a coupon
+    Class to test the payment's web hook with a coupon
     """
 
     def setUp(self):
-        super(PaymentWebhookWithCouponTest, self).setUp()
+        super(PaymentWebHookWithCouponTest, self).setUp()
 
         # Objects
         self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20, activity__published=True)
@@ -761,7 +773,7 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
         self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
     def test_pse_approved(self):
@@ -789,7 +801,7 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
 
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
     def test_approved_global_coupon(self):
@@ -818,7 +830,7 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
 
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     def test_pse_approved_global_coupon(self):
@@ -854,8 +866,9 @@ class PaymentWebhookWithCouponTest(BaseAPITestCase):
 
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_DECLINED_STATUS)
+        self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+
 
 class PaymentWebHookTest(BaseAPITestCase):
     """

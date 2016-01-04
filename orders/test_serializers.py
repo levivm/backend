@@ -11,7 +11,7 @@ from orders.serializers import OrdersSerializer, RefundAssistantField, Assistant
 from orders.serializers import RefundSerializer
 from organizers.models import Organizer
 from payments.models import Fee, Payment
-from payments.serializers import PaymentsSerializer
+from payments.serializers import PaymentSerializer
 from referrals.models import Referral, CouponType, Redeem
 from students.factories import StudentFactory
 from students.models import Student
@@ -79,7 +79,7 @@ class OrdersSerializerTest(BaseAPITestCase):
             'amount': order.amount,
             'status': order.get_status_display(),
             'created_at': UnixEpochDateField().to_representation(order.created_at),
-            'payment': PaymentsSerializer(payment).data,
+            'payment': PaymentSerializer(payment).data,
             'calendar_initial_date': UnixEpochDateField().to_representation(order.calendar.initial_date),
             'activity_id': order.calendar.activity.id,
             'fee': fee.amount,

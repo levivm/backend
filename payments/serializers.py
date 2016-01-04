@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import Payment
 
 
-class PaymentsSerializer(serializers.ModelSerializer):
+class PaymentSerializer(serializers.ModelSerializer):
     payment_type = serializers.SerializerMethodField()
     card_type = serializers.SerializerMethodField()
 
