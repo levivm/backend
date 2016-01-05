@@ -95,7 +95,8 @@ class Command(BaseCommand):
             activities.append(
                     ActivityFactory.create_batch(quantity, organizer=organizer,
                                                  sub_category=factory.Iterator(subcategories),
-                                                 instructors=instructors_sample, location__organizer=organizer))
+                                                 instructors=instructors_sample, location__organizer=organizer,
+                                                 certification=factory.Faker('boolean')))
 
         activities = self.flat_list(activities)
 

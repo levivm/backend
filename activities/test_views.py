@@ -2,7 +2,10 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 import json
 import tempfile
+import time
+from datetime import timedelta
 
+import factory
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import Permission
@@ -15,12 +18,15 @@ from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 
+from activities import constants
+from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory
 from activities.models import Category
-from activities.serializers import ActivitiesSerializer, CalendarSerializer
+from activities.serializers import ActivitiesSerializer, CalendarSerializer, ActivitiesCardSerializer
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
-from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet, \
-    ActivitiesSearchView
+from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
+from locations.factories import CityFactory
+from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from utils.models import CeleryTask, EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
@@ -777,105 +783,136 @@ class SendEmailLocationTaskTest(BaseViewTest):
         self.assertEqual(CeleryTask.objects.count(), 0)
 
 
-class SearchActivitiesViewTest(BaseViewTest):
-    url = '/api/activities/search'
-    view = ActivitiesSearchView
-    ACTIVITY_ID = 1
-
+class SearchActivitiesViewTest(BaseAPITestCase):
     def _get_activities_ordered(self, queryset=Activity.objects.all()):
         return queryset.annotate(number_assistants=Count('calendars__orders__assistants')) \
             .order_by('number_assistants', 'calendars__initial_date')
 
-    def test_url_should_resolve_correctly(self):
-        self.url_resolve_to_view_correctly()
+    def setUp(self):
+        super(SearchActivitiesViewTest, self).setUp()
+
+        self.query_keyword = 'yoga'
+        self.organizer_name = 'buckridge'
+        self.now = now()
+        self.tag_name = 'fitness'
+        self.city = CityFactory()
+        self.price = 100000
+
+        self.organizer = OrganizerFactory(name='%s Group' % self.organizer_name.capitalize())
+        self.subcategory = SubCategoryFactory()
+        self.create_activities()
+        self.url = reverse('activities:search')
+
+    def create_activities(self):
+        tag = TagsFactory(name=self.tag_name)
+        titles = ['%s de %s' % (t, self.query_keyword.capitalize()) for t in ['Clases', 'Curso']]
+        ActivityFactory.create_batch(2, title=factory.Iterator(titles), location__city=self.city,
+                                     level=constants.LEVEL_P, published=True)
+        ActivityFactory(title='Curso de Cocina', organizer=self.organizer, level=constants.LEVEL_I,
+                        published=True)
+        activity = ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
+                                   certification=True, published=True)
+        CalendarFactory(activity=activity, initial_date=now() - timedelta(days=10), session_price=self.price,
+                        is_weekend=True)
 
     def test_search_query(self):
-        response = self.client.get(self.url, data={'q': 'curso de yoga', 'city': 1})
-        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity, many=True)
+        response = self.client.get(self.url, data={'q': 'curso de %s' % self.query_keyword})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_query_organizer_name(self):
-        response = self.client.get(self.url, data={'q': 'XFDG', 'city': 1})
-        activities = self._get_activities_ordered()
-        serializer = ActivitiesSerializer(activities, many=True)
+        response = self.client.get(self.url, data={'q': self.organizer_name})
+        activities = self._get_activities_ordered(Activity.objects.filter(organizer=self.organizer))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_category(self):
-        response = self.client.get(self.url, data={'category': 1, 'city': 1})
-        activities = self._get_activities_ordered()
-        serializer = ActivitiesSerializer(activities, many=True)
+        response = self.client.get(self.url, data={'category': self.subcategory.category.id})
+        activities = self._get_activities_ordered(
+                queryset=Activity.objects.filter(sub_category__category=self.subcategory.category))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(response.data, serializer.data)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_subcategory(self):
-        response = self.client.get(self.url, data={'subcategory': 1, 'city': 1})
-        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity, many=True)
+        response = self.client.get(self.url, data={'subcategory': self.subcategory.id})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(sub_category=self.subcategory))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(response.data, serializer.data)
-        self.assertEqual(response.data, serializer.data)
+        self.assertCountEqual(response.data['results'], serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_date(self):
-        response = self.client.get(self.url, data={'date': 1420123380601, 'city': 1})
-        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity, many=True)
+        date = int(time.mktime(self.now.timetuple()) * 1000)
+        response = self.client.get(self.url, data={'date': date})
+        activity = self._get_activities_ordered(queryset=Activity.objects.filter(calendars__initial_date__gte=self.now))
+        serializer = ActivitiesCardSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_tags(self):
-        response = self.client.get(self.url, data={'q': 'fitness', 'city': 1})
-        activity = Activity.objects.filter(id=2)
-        serializer = ActivitiesSerializer(activity, many=True)
+        response = self.client.get(self.url, data={'q': self.tag_name})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(tags__name__icontains=self.tag_name))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_city(self):
-        response = self.client.get(self.url, data={'city': 1})
-        activities = self._get_activities_ordered()
-        serializer = ActivitiesSerializer(activities, many=True)
+        response = self.client.get(self.url, data={'city': self.city.id})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(location__city=self.city))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_price_range(self):
         data = {
-            'cost_start': 10000.0,
-            'cost_end': 20000,
+            'cost_start': self.price,
+            'cost_end': self.price + 100000,
         }
         response = self.client.get(self.url, data=data)
-        activity = Activity.objects.filter(id=3)
-        serializer = ActivitiesSerializer(activity, many=True)
+        activities = self._get_activities_ordered(
+                queryset=Activity.objects.filter(calendars__session_price__range=(self.price, self.price + 100000)))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_level(self):
         response = self.client.get(self.url, data={'level': 'I'})
-        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity, many=True)
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(level=constants.LEVEL_I))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_certification(self):
         response = self.client.get(self.url, data={'certification': 'false'})
-        activities = self._get_activities_ordered()
-        serializer = ActivitiesSerializer(activities, many=True)
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(certification=False))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_weekends(self):
         response = self.client.get(self.url, data={'weekends': 'true'})
-        activity = Activity.objects.filter(id=self.ACTIVITY_ID)
-        serializer = ActivitiesSerializer(activity, many=True)
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(calendars__is_weekend=True))
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_empty(self):
         response = self.client.get(self.url, data={'q': 'empty', 'city': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
+        self.assertEqual(response.data['results'], [])
+
+    def test_pagination(self):
+        mommy.make(Activity, _quantity=50, location__city=self.city, published=True)
+        response = self.client.get(self.url, data={'city': self.city.id})
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(location__city=self.city, published=True))
+        serializer = ActivitiesCardSerializer(activities[:25], many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
 
 
 class SubCategoriesViewTest(BaseAPITestCase):
