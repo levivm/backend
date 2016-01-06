@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
-from django.db.models.aggregates import Count
+from django.db.models import Count
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
@@ -238,28 +238,31 @@ class ListCategories(APIView):
 class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = MediumResultsSetPagination
+    queryset = Activity.objects.all()
 
     def list(self, request, **kwargs):
         q = request.query_params.get('q')
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
-        # excludes = search.exclude_query(request.query_params)
+        select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
+        prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
+                            'calendars__orders__assistants', 'calendars__orders__student__user']
+        order = ['number_assistants', 'calendars__initial_date']
 
         query = search.get_query(q, ['title', 'short_description', 'content',
                                      'tags__name', 'organizer__name'])
         if query:
-            activities = Activity.objects.select_related('location') \
-                .select_related('organizer').filter(query)
+            activities = Activity.objects.select_related(*select_related) \
+                .prefetch_related(*prefetch_related) \
+                .filter(query, filters) \
+                .annotate(number_assistants=Count('calendars__orders__assistants')) \
+                .order_by(*order)
         else:
-            activities = Activity.objects.select_related('location') \
-                .select_related('organizer')
-
-        activities = activities.filter(filters) \
-            .annotate(number_assistants=Count('calendars__orders__assistants')) \
-            .order_by('number_assistants', 'calendars__initial_date')
-        # .order_by('score', 'number_assistants', 'calendars__initial_date')
-
-        # serializer = ActivitiesCardSerializer(activities, many=True)
+            activities = Activity.objects.select_related(*select_related) \
+                .prefetch_related(*prefetch_related) \
+                .filter(filters) \
+                .annotate(number_assistants=Count('calendars__orders__assistants')) \
+                .order_by(*order)
 
         page = self.paginate_queryset(activities)
         if page is not None:
@@ -267,7 +270,7 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(self.unique_everseen(activities,
-                                                                   lambda activity: activity.id), many=True)
+                                                              lambda activity: activity.id), many=True)
         result = serializer.data
         return Response(result)
 

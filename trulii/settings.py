@@ -66,7 +66,7 @@ INSTALLED_APPS = (
     # 'admin_honeypot',
     'landing',
     'activities',
-    'locations',    
+    'locations',
     'users',
     'organizers',
     'students',
@@ -80,12 +80,13 @@ INSTALLED_APPS = (
     'payments',
     'reviews',
     'referrals',
+    # 'debug_toolbar',
 )
 
 
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -95,7 +96,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.locale.LocaleMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+]
 
 TEMPLATE_CONTEXT_PROCESSORS =  DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + [
     "django.core.context_processors.request",    

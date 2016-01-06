@@ -2,7 +2,7 @@ from rest_framework import serializers
 from organizers.models import OrganizerBankInfo
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
-from utils.serializers import UnixEpochDateField
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
@@ -30,7 +30,7 @@ class InstructorsSerializer(serializers.ModelSerializer):
         return super(InstructorsSerializer, self).create(validated_data)
 
 
-class OrganizersSerializer(FileUploadMixin, serializers.ModelSerializer):
+class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()

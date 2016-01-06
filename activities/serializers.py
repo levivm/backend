@@ -7,8 +7,8 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
-from activities.models import Activity, Category, SubCategory, Tags, Calendar,\
-                              CalendarSession, ActivityPhoto
+from activities.models import Activity, Category, SubCategory, Tags, Calendar, \
+    CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
@@ -27,8 +27,8 @@ class TagsSerializer(serializers.ModelSerializer):
 
 class SubCategoriesSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
-        slug_field='id',
+            queryset=Category.objects.all(),
+            slug_field='id',
     )
 
     class Meta:
@@ -74,6 +74,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         file_name = ("%s.jpg") % obj.name.lower()
         file_name = urllib.parse.quote(file_name)
         return ("%s%s") % (url, file_name)
+
 
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     class Meta:
@@ -129,7 +130,7 @@ class CalendarSessionSerializer(serializers.ModelSerializer):
         )
 
 
-class CalendarSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializer):
+class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
@@ -158,7 +159,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializ
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True,context=self.context)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context)
         return assistants_serialzer.data
 
     def get_available_capacity(self, obj):
@@ -270,7 +271,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializ
         closing_sale = data['closing_sale']
         if initial_date < closing_sale:
             raise serializers.ValidationError(
-                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
+                    {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
                                         a la fecha de inicio.")})
 
         return data
@@ -297,14 +298,12 @@ class CalendarSerializer(RemovableSerializerFieldMixin,serializers.ModelSerializ
         return instance
 
 
-
 class ActivitiesCardSerializer(serializers.ModelSerializer):
     last_date = serializers.SerializerMethodField()
     closest_calendar = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
-    pictures = ActivityPhotosSerializer(read_only=True, many=True)
-    organizer = OrganizersSerializer(read_only=True)
-
+    pictures = serializers.SerializerMethodField()
+    organizer = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -322,17 +321,26 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'organizer',
             'score',
             'rating',
+            'location',
         )
 
     def get_category(self, obj):
         return CategoriesSerializer(instance=obj.sub_category.category,
                                     remove_fields=['subcategories']).data
-    def get_closest_calendar(self,obj):
-        return CalendarSerializer(obj.closest_calendar,remove_fields=['sessions']).data
+
+    def get_closest_calendar(self, obj):
+        return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants']).data
 
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())
 
+    def get_pictures(self, obj):
+        pictures = [p for p in obj.pictures.all() if p.main_photo]
+        return ActivityPhotosSerializer(pictures, many=True).data
+
+    def get_organizer(self, obj):
+        return OrganizersSerializer(obj.organizer, remove_fields=['bio', 'headline', 'website', 'youtube_video_url', 'telephone',
+                                                        'instructors', 'locations']).data
 
 
 class ActivitiesSerializer(serializers.ModelSerializer):

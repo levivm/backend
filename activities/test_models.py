@@ -1,11 +1,12 @@
 import statistics
 from itertools import cycle
 
+from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
 from activities.factories import ActivityFactory, ActivityPhotoFactory
-from activities.models import Calendar, Activity
+from activities.models import Calendar, Activity, CalendarSession
 from orders.models import Order, Assistant
 from reviews.models import Review
 from users.factories import UserFactory
@@ -59,6 +60,17 @@ class CalendarTestCase(APITestCase):
         self.assertTrue(user.has_perm('activities.change_calendar', self.calendar))
         self.assertTrue(user.has_perm('activities.delete_calendar', self.calendar))
 
+    def test_get_assistants(self):
+        """
+        Test the method get_assistants
+        """
+
+        assistants = Assistant.objects.filter(
+                order__calendar=self.calendar,
+                order__status__in=[Order.ORDER_APPROVED_STATUS, Order.ORDER_PENDING_STATUS],
+                enrolled=True)
+        self.assertEqual(self.calendar.get_assistants(), list(assistants))
+
 class ActivityTestCase(APITestCase):
     """
     Class to test the model Activity
@@ -89,6 +101,17 @@ class ActivityTestCase(APITestCase):
 
         user = self.activity.organizer.user
         self.assertTrue(user.has_perm('activities.change_activity', self.activity))
+
+    def test_last_sale_date(self):
+        """
+        Test the last sale date of the calendar's sessions associated
+        """
+
+        calendars = mommy.make(Calendar, _quantity=3, activity=self.activity)
+        sessions = mommy.make(CalendarSession, _quantity=6, calendar=cycle(calendars), date=now())
+
+        self.assertEqual(self.activity.last_sale_date(), sessions[-1].date)
+
 
 class ActivityPhotoTestCase(APITestCase):
     """
