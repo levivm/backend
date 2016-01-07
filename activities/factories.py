@@ -112,9 +112,6 @@ class CalendarFactory(factory.django.DjangoModelFactory):
     number_of_sessions = factory.LazyAttribute(lambda c: random.choice(range(0, 10)))
     session_price = factory.LazyAttribute(lambda c: random.choice(range(100000, 1000000)))
     capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))
-    enroll_open = factory.Faker('boolean')
-    is_weekend = factory.Faker('boolean')
-    is_free = factory.Faker('boolean', chance_of_getting_true=20)
 
 
 class CalendarSessionFactory(factory.django.DjangoModelFactory):

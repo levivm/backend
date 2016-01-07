@@ -123,7 +123,10 @@ class Command(BaseCommand):
         calendars = list()
         for activity in self.activities:
             quantity = self.get_quantity()
-            calendars.append(CalendarFactory.create_batch(quantity, activity=activity))
+            calendars.append(CalendarFactory.create_batch(quantity, activity=activity,
+                                                          enroll_open=factory.Faker('boolean'),
+                                                          is_weekend=factory.Faker('boolean'),
+                                                          is_free=factory.Faker('boolean', chance_of_getting_true=20)))
 
         return self.flat_list(calendars)
 
@@ -143,7 +146,7 @@ class Command(BaseCommand):
         for calendar in self.calendars:
             size = self.get_quantity()
             quantity = calendar.capacity // size
-            if quantity < 1 :
+            if quantity < 1:
                 continue
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
                                                     student=factory.Iterator(Student.objects.all()),

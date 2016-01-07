@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+import datetime
+
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.db.models import Count
-from django.utils.timezone import now
+from django.utils.timezone import now, utc
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
@@ -239,38 +241,50 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = MediumResultsSetPagination
     queryset = Activity.objects.all()
+    select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
+    prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
+                        'calendars__orders__assistants', 'calendars__orders__student__user']
+    query = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
 
     def list(self, request, **kwargs):
         q = request.query_params.get('q')
+        o = request.query_params.get('o')
+
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
-        select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
-        prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
-                            'calendars__orders__assistants', 'calendars__orders__student__user']
-        order = ['number_assistants', 'calendars__initial_date']
+        order = search.get_order(o)
 
-        query = search.get_query(q, ['title', 'short_description', 'content',
-                                     'tags__name', 'organizer__name'])
+        query = search.get_query(q, self.query)
         if query:
-            activities = Activity.objects.select_related(*select_related) \
-                .prefetch_related(*prefetch_related) \
+            activities = Activity.objects.select_related(*self.select_related) \
+                .prefetch_related(*self.prefetch_related) \
                 .filter(query, filters) \
                 .annotate(number_assistants=Count('calendars__orders__assistants')) \
                 .order_by(*order)
         else:
-            activities = Activity.objects.select_related(*select_related) \
-                .prefetch_related(*prefetch_related) \
+            activities = Activity.objects.select_related(*self.select_related) \
+                .prefetch_related(*self.prefetch_related) \
                 .filter(filters) \
                 .annotate(number_assistants=Count('calendars__orders__assistants')) \
                 .order_by(*order)
 
+        if not order:
+            unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
+            if o == 'closest':
+                activities = sorted(activities,
+                                    key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
+            else:
+                activities = sorted(activities, key=lambda a: (
+                a.number_assistants, a.closest_calendar.initial_date if a.closest_calendar else unix_epoch))
+
+        activities = list(self.unique_everseen(activities))
+
         page = self.paginate_queryset(activities)
         if page is not None:
-            serializer = self.get_serializer(self.unique_everseen(page, lambda p: p), many=True)
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(self.unique_everseen(activities,
-                                                              lambda activity: activity.id), many=True)
+        serializer = self.get_serializer(activities, many=True)
         result = serializer.data
         return Response(result)
 

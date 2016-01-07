@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+import datetime
 import json
 import tempfile
 import time
 from datetime import timedelta
+from itertools import cycle
 
 import factory
 from PIL import Image
@@ -13,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.http.request import HttpRequest
-from django.utils.timezone import now
+from django.utils.timezone import now, utc
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
@@ -26,6 +28,7 @@ from activities.serializers import ActivitiesSerializer, CalendarSerializer, Act
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory
+from orders.models import Assistant
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from utils.models import CeleryTask, EmailTaskRecord
@@ -784,9 +787,17 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
 
 class SearchActivitiesViewTest(BaseAPITestCase):
-    def _get_activities_ordered(self, queryset=Activity.objects.all()):
+    def _get_activities_ordered(self, queryset=Activity.objects.all(), order_by=None):
+        order = order_by or ('number_assistants', 'calendars__initial_date')
         return queryset.annotate(number_assistants=Count('calendars__orders__assistants')) \
-            .order_by('number_assistants', 'calendars__initial_date')
+            .order_by(*order)
+
+    def unique(self, array):
+        seen = list()
+        for item in array:
+            if item not in seen:
+                seen.append(item)
+                yield item
 
     def setUp(self):
         super(SearchActivitiesViewTest, self).setUp()
@@ -800,20 +811,36 @@ class SearchActivitiesViewTest(BaseAPITestCase):
 
         self.organizer = OrganizerFactory(name='%s Group' % self.organizer_name.capitalize())
         self.subcategory = SubCategoryFactory()
-        self.create_activities()
+        self.activities = self.create_activities()
         self.url = reverse('activities:search')
 
     def create_activities(self):
         tag = TagsFactory(name=self.tag_name)
         titles = ['%s de %s' % (t, self.query_keyword.capitalize()) for t in ['Clases', 'Curso']]
-        ActivityFactory.create_batch(2, title=factory.Iterator(titles), location__city=self.city,
-                                     level=constants.LEVEL_P, published=True)
-        ActivityFactory(title='Curso de Cocina', organizer=self.organizer, level=constants.LEVEL_I,
-                        published=True)
-        activity = ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
-                                   certification=True, published=True)
-        CalendarFactory(activity=activity, initial_date=now() - timedelta(days=10), session_price=self.price,
+        activities = ActivityFactory.create_batch(2, title=factory.Iterator(titles), location__city=self.city,
+                                                  level=constants.LEVEL_P, published=True)
+        activities.append(ActivityFactory(title='Curso de Cocina', organizer=self.organizer, level=constants.LEVEL_I,
+                                          published=True))
+        activities.append(ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
+                                          certification=True, published=True))
+        CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10), session_price=self.price,
                         is_weekend=True)
+        return activities
+
+    def create_calendars(self):
+        calendars = list()
+        for i, activity in enumerate(self.activities):
+            dates = [now() - timedelta(days=1), now(), now() + timedelta(days=2), now() - timedelta(days=4)]
+            price = (i + 1) * 100000
+            calendars.append(mommy.make(Calendar, _quantity=4, activity=activity,
+                                        session_price=price, initial_date=cycle(dates)))
+
+        return [item for sublist in calendars for item in sublist]
+
+    def create_assistants(self):
+        for i, calendar in enumerate(self.calendars):
+            quantity = i + 1
+            mommy.make(Assistant, _quantity=quantity, order__calendar=calendar)
 
     def test_search_query(self):
         response = self.client.get(self.url, data={'q': 'curso de %s' % self.query_keyword})
@@ -909,8 +936,57 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         mommy.make(Activity, _quantity=50, location__city=self.city, published=True)
         response = self.client.get(self.url, data={'city': self.city.id})
         activities = self._get_activities_ordered(
-            queryset=Activity.objects.filter(location__city=self.city, published=True))
+                queryset=Activity.objects.filter(location__city=self.city, published=True))
         serializer = ActivitiesCardSerializer(activities[:25], many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_min_price_order(self):
+        self.create_calendars()
+        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'min_price'})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+                                                  order_by=['calendars__session_price'])
+        serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_max_price_order(self):
+        self.create_calendars()
+        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'max_price'})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+                                                  order_by=['-calendars__session_price'])
+        serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_score_order(self):
+        self.create_calendars()
+        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'score'})
+        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+                                                  order_by=['-score'])
+        serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_number_assistants_order(self):
+        self.calendars = self.create_calendars()
+        self.create_assistants()
+        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'num_assistants'})
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(title__icontains=self.query_keyword).annotate(
+                number_assistants=Count('calendars__orders__assistants')), order_by=['-number_assistants'])
+        serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_closest_order(self):
+        self.create_calendars()
+        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'closest'})
+        activities = Activity.objects.filter(title__icontains=self.query_keyword)
+        unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
+        activities = sorted(activities,
+                            key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
+        serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
