@@ -25,6 +25,8 @@ DATABASE_URL = "postgres://{user}:{password}@{host}:{port}/{db}".format(host=POS
                                                                         password=PG_PW)
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
+LOGGING_CONFIG = {}
+
 
 # REDIS CONFIG
 REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR', 'localhost')

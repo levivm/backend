@@ -163,3 +163,6 @@ STATIC_IMAGE_LOCATION = 'img'
 STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL, STATIC_IMAGE_LOCATION)
 
 MEDIA_ROOT = os.path.join(PROJECT_PATH, 'media')
+
+from .allauth_settings import *
+from .constants import *
