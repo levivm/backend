@@ -6,9 +6,10 @@ from django.dispatch import receiver
 
 from activities.models import Activity
 from students.models import Student
+from utils.mixins import AssignPermissionsMixin
 
 
-class Review(models.Model):
+class Review(AssignPermissionsMixin, models.Model):
     rating = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])
     comment = models.CharField(blank=True, max_length=480)
     reply = models.CharField(blank=True, max_length=480)
@@ -19,12 +20,17 @@ class Review(models.Model):
     read = models.BooleanField(default=False)
     replied_at = models.DateTimeField(blank=True, null=True)
 
+    permissions = ('reviews.report_review', 'reviews.reply_review', 'reviews.read_review')
+
     class Meta:
         permissions = (
             ('report_review', 'Report review'),
             ('reply_review', 'Reply review'),
             ('read_review', 'Read review'),
         )
+
+    def save(self, *args, **kwargs):
+        super(Review, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
 
 # Signals

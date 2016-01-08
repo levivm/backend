@@ -1,7 +1,10 @@
-from .models import Location,City
 from ast import literal_eval
+
 from rest_framework import serializers
-from utils.mixins import AssignPermissionsMixin
+
+from .models import Location,City
+
+
 #from django.contrib.gis.geos import Point, fromstr
 
 
@@ -45,11 +48,9 @@ class CitiesSerializer(serializers.ModelSerializer):
 
 
 
-class LocationsSerializer(AssignPermissionsMixin,serializers.ModelSerializer):
+class LocationsSerializer(serializers.ModelSerializer):
     city  = serializers.SlugRelatedField(slug_field='id',queryset=City.objects.all(),required=True)
     point = PointStrField()
-    permissions = ('locations.change_location','locations.add_location','locations.delete_location', )
-
 
     class Meta:
         model = Location
@@ -68,9 +69,4 @@ class LocationsSerializer(AssignPermissionsMixin,serializers.ModelSerializer):
         if not is_organizer_location:
             return instance
 
-        request = self.context.get('request')
-
-        self.assign_permissions(request.user, instance)
         return instance
-
-

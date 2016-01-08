@@ -13,6 +13,7 @@ from organizers.models import Organizer
 from payments.models import Fee, Payment
 from payments.serializers import PaymentsSerializer
 from referrals.models import Referral, CouponType, Redeem
+from students.factories import StudentFactory
 from students.models import Student
 from students.serializer import StudentsSerializer
 from utils.models import EmailTaskRecord
@@ -290,8 +291,9 @@ class RefundSerializerTest(APITestCase):
         Test validation
         """
 
+        student = StudentFactory()
         data = {
-            'user': 1,
+            'user': student.user.id,
             'order': self.order.id,
         }
 

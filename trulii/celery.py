@@ -5,7 +5,7 @@ import os
 from celery import Celery
 from kombu.entity import Exchange, Queue
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trulii.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', os.environ.get('DJANGO_SETTINGS_FILE', 'trulii.settings.local'))
 
 from django.conf import settings
 

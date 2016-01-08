@@ -218,6 +218,7 @@ class ReviewAPITest(BaseAPITestCase):
         review = Review.objects.get(id=self.review.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(review.reported)
+        self.assertTrue(review.read)
 
     def test_mark_as_read(self):
         """

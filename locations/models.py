@@ -2,13 +2,14 @@ from django.db import models
 from organizers.models import Organizer
 
 # Create your models here.
+from utils.mixins import AssignPermissionsMixin
 
 
 class City(models.Model):
     #country = models.ForeignKey(Country)
     name  = models.CharField(max_length=100)
     order = models.IntegerField(default=0)
-    point = models.CharField(max_length="200")
+    point = models.CharField(max_length=200)
     #point = models_gis.PointField(help_text="Represented as (longitude, latitude)")
     #objects = models_gis.GeoManager()
 
@@ -19,12 +20,14 @@ class City(models.Model):
         return self.name
 
 
-class Location(models.Model):
+class Location(AssignPermissionsMixin, models.Model):
 
     address = models.TextField()
     city    = models.ForeignKey(City)
-    point   = models.CharField(max_length="200")
-    organizer = models.ForeignKey(Organizer,null=True,related_name="locations")
+    point   = models.CharField(max_length=200)
+    organizer = models.ForeignKey(Organizer, null=True,related_name="locations")
+
+    permissions = ('locations.change_location','locations.add_location','locations.delete_location')
     # Automatically create slug based on the name field
     #slug = AutoSlugField(populate_from='name', max_length=255)
       
@@ -34,6 +37,11 @@ class Location(models.Model):
     # You MUST use GeoManager to make Geo Queries
     #objects = models_gis.GeoManager()
 
+    def save(self, *args, **kwargs):
+        if self.organizer:
+            super(Location, self).save(user=self.organizer.user, obj=self, *args, **kwargs)
+        else:
+            models.Model.save(self, *args, **kwargs)
 
 
 # class Country(models.Model):

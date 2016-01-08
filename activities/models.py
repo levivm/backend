@@ -1,28 +1,23 @@
 # -*- coding: utf-8 -*-
-import statistics
-from random import Random
-
-from django.dispatch import receiver, Signal
-
-from . import constants
+import io
 import operator
+import os
 from datetime import datetime,date
 from functools import reduce
-from django.contrib.contenttypes.fields import GenericRelation
-
-from django.db import models
+from random import Random
 
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
+from django.db import models
 from django.utils.functional import cached_property
-
 from django.utils.translation import ugettext_lazy as _
 
-from organizers.models import Organizer, Instructor
-
 from locations.models import Location
-from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
-from utils.mixins import AssignPermissionsMixin
+from organizers.models import Organizer, Instructor
+from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.behaviors import Updateable
+from utils.mixins import AssignPermissionsMixin, ImageOptimizable
+from . import constants
 
 
 class Category(models.Model):
@@ -83,7 +78,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         ('5', _('Viernes')),
     )
 
-    permissions = ('organizers.delete_instructor',)
+    # permissions = ('organizers.delete_instructor',)
+    permissions = ('activities.change_activity',)
 
     sub_category = models.ForeignKey(SubCategory)
     organizer = models.ForeignKey(Organizer)
@@ -109,6 +105,9 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        super(Activity, self).save(user=self.organizer.user, obj=self, *args, **kwargs)
 
     def steps_completed(self):
         steps_requirements = settings.REQUIRED_STEPS
@@ -170,29 +169,26 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.save(update_fields=['published'])
 
     def last_sale_date(self):
-
-        calendars = self.calendars.values('sessions__date') \
-            .order_by('-sessions__date').all()
-        if not calendars:
+        dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
+        if not dates:
             return None
 
-        return calendars[0]['sessions__date']
+        return sorted(dates, reverse=True)[0]
 
     @cached_property
     def closest_calendar(self):
         today = date.today()
-        if not self.calendars.count():
-            return
-        closest_greater_qs = self.calendars.filter(initial_date__gte=today)\
-                                 .order_by('initial_date')
-        try:
-            return closest_greater_qs[0]
-        except IndexError:
-            closest_less_qs = self.calendars.filter(initial_date__lt=today)\
-                                  .order_by('-initial_date')
-            return closest_less_qs[0]
-        except IndexError:
-            return None
+        closest = None
+        if self.calendars.count():
+            calendars = [c for c in self.calendars.all() if c.initial_date.date() >= today]
+            if calendars:
+                closest = sorted(calendars, key=lambda c: c.initial_date)[0]
+            else:
+                calendars = [c for c in self.calendars.all() if c.initial_date.date() < today]
+                if calendars:
+                    closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
+
+        return closest
 
     def set_location(self, location):
         self.location = location
@@ -211,10 +207,24 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         return orders
 
 
-class ActivityPhoto(models.Model):
+class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     photo = models.ImageField(upload_to="activities")
+    thumbnail = models.ImageField(upload_to='activities', blank=True, null=True)
     activity = models.ForeignKey(Activity, related_name="pictures")
     main_photo = models.BooleanField(default=False)
+
+    permissions = ('activities.delete_activityphoto',)
+
+    def save(self, *args, **kwargs):
+        filename = os.path.split(self.photo.name)[-1]
+        simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
+                                            width=400, height=350)
+        self.thumbnail.save(
+                'thumbnail_%s' % filename,
+                simple_file,
+                save=False)
+
+        super(ActivityPhoto, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):
@@ -267,11 +277,11 @@ class ActivityStockPhoto(models.Model):
             sub_category_pictures += category_pictures
 
 
-        # category_images 
+        # category_images
         return sub_category_pictures
 
 
-class Calendar(Updateable, models.Model):
+class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
     initial_date = models.DateTimeField()
     closing_sale = models.DateTimeField()
@@ -283,6 +293,10 @@ class Calendar(Updateable, models.Model):
     is_free = models.BooleanField(default=False)
     tasks = GenericRelation('utils.CeleryTask')
 
+    permissions = ('activities.change_calendar', 'activities.delete_calendar')
+
+    def save(self, *args, **kwargs):
+        super(Calendar, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @cached_property
     def duration(self):
@@ -292,18 +306,19 @@ class Calendar(Updateable, models.Model):
             return None
         get_datetime = lambda time:datetime.combine(datetime(1,1,1,0,0,0), time)
         timedeltas = map(lambda s:get_datetime(s.end_time)-get_datetime(s.start_time),sessions)
-        duration = reduce(operator.add, timedeltas).total_seconds() 
-        return duration 
+        duration = reduce(operator.add, timedeltas).total_seconds()
+        return duration
 
     @cached_property
     def num_enrolled(self):
-        return sum([order.assistants.enrolled().count() for order in self.orders.availables()])
+        return len(self.get_assistants())
 
     def available_capacity(self):
         return self.capacity - self.num_enrolled
 
     def get_assistants(self):
-        return [a for o in self.orders.availables() for a in o.assistants.enrolled()]
+        return [a for o in self.orders.all() if o.status == 'approved' or o.status == 'pending' for a in
+                o.assistants.all() if a.enrolled]
 
 
 class CalendarSession(models.Model):

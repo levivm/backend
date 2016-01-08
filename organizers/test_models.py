@@ -5,6 +5,7 @@ from model_mommy import mommy
 from rest_framework.test import APITestCase
 
 from activities.models import Activity
+from organizers.factories import OrganizerFactory, InstructorFactory
 from organizers.models import OrganizerBankInfo, Organizer
 from reviews.models import Review
 
@@ -55,3 +56,18 @@ class OrganizerModelTest(APITestCase):
         reviews.pop().delete()
         average = statistics.mean([r.rating for r in reviews])
         self.assertEqual(self.organizer.rating, average)
+
+
+class InstructorModelTest(APITestCase):
+    """
+    Class for testing the model Instructor
+    """
+
+    def setUp(self):
+        self.organizer = OrganizerFactory()
+        self.instructor = InstructorFactory(organizer=self.organizer)
+
+    def test_permissions(self):
+        user = self.organizer.user
+        self.assertTrue(user.has_perm('organizers.change_instructor', self.instructor))
+        self.assertTrue(user.has_perm('organizers.delete_instructor', self.instructor))

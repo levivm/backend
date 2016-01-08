@@ -101,7 +101,7 @@ class CreateCouponTaskTest(BaseAPITestCase):
 
         # Call the task
         task = CreateCouponTask()
-        task.delay(sstudent_id=self.student.id, coupon_type_name=self.referred_type.name)
+        task.delay(student_id=self.student.id, coupon_type_name=self.referred_type.name)
 
         self.assertEqual(Coupon.objects.count(), coupon_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)

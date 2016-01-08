@@ -2,16 +2,18 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
+
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
-from activities.models import Activity, Category, SubCategory, Tags, Calendar,\
-                              CalendarSession, ActivityPhoto
+
+from activities.models import Activity, Category, SubCategory, Tags, Calendar, \
+    CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
-from utils.mixins import AssignPermissionsMixin, FileUploadMixin
+from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 
 
@@ -25,8 +27,8 @@ class TagsSerializer(serializers.ModelSerializer):
 
 class SubCategoriesSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
-        slug_field='id',
+            queryset=Category.objects.all(),
+            slug_field='id',
     )
 
     class Meta:
@@ -73,9 +75,8 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         file_name = urllib.parse.quote(file_name)
         return ("%s%s") % (url, file_name)
 
-class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializers.ModelSerializer):
-    permissions = ('activities.delete_activityphoto',)
 
+class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     class Meta:
         model = ActivityPhoto
         fields = (
@@ -111,8 +112,6 @@ class ActivityPhotosSerializer(AssignPermissionsMixin, FileUploadMixin, serializ
 
         photo = super(ActivityPhotosSerializer, self).create(validated_data)
 
-        request = self.context['request']
-        self.assign_permissions(request.user, photo)
         return photo
 
 
@@ -131,13 +130,12 @@ class CalendarSessionSerializer(serializers.ModelSerializer):
         )
 
 
-class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
-    permissions = ('activities.change_calendar', 'activities.delete_calendar')
     available_capacity = serializers.SerializerMethodField()
 
     class Meta:
@@ -161,7 +159,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True,context=self.context)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context)
         return assistants_serialzer.data
 
     def get_available_capacity(self, obj):
@@ -273,7 +271,7 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         closing_sale = data['closing_sale']
         if initial_date < closing_sale:
             raise serializers.ValidationError(
-                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
+                    {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
                                         a la fecha de inicio.")})
 
         return data
@@ -284,10 +282,6 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         calendar = Calendar.objects.create(**validated_data)
         _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
         CalendarSession.objects.bulk_create(_sessions)
-
-        request = self.context['request']
-
-        self.assign_permissions(request.user, calendar)
 
         return calendar
 
@@ -304,8 +298,51 @@ class CalendarSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         return instance
 
 
+class ActivitiesCardSerializer(serializers.ModelSerializer):
+    last_date = serializers.SerializerMethodField()
+    closest_calendar = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    pictures = serializers.SerializerMethodField()
+    organizer = serializers.SerializerMethodField()
 
-class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = (
+            'id',
+            'title',
+            'category',
+            'sub_category',
+            'pictures',
+            'organizer',
+            'published',
+            'closest_calendar',
+            'last_date',
+            'organizer',
+        )
+
+    def get_category(self, obj):
+        return CategoriesSerializer(instance=obj.sub_category.category,
+                                    remove_fields=['subcategories']).data
+
+    def get_closest_calendar(self, obj):
+        return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants', 'activity',
+                                                                       'number_of_sessions', 'capacity',
+                                                                       'available_capacity', 'is_weekend']).data
+
+    def get_last_date(self, obj):
+        return UnixEpochDateField().to_representation(obj.last_sale_date())
+
+    def get_pictures(self, obj):
+        pictures = [p for p in obj.pictures.all() if p.main_photo]
+        return ActivityPhotosSerializer(pictures, many=True).data
+
+    def get_organizer(self, obj):
+        return OrganizersSerializer(obj.organizer,
+                                    remove_fields=['bio', 'headline', 'website', 'youtube_video_url', 'telephone',
+                                                   'instructors', 'locations', 'user', 'user_type', 'created_at']).data
+
+
+class ActivitiesSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
     sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
     category = serializers.SerializerMethodField()
@@ -319,7 +356,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
     instructors = InstructorsSerializer(many=True, required=False)
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
-    permissions = ('activities.change_activity',)
     closest_calendar = CalendarSerializer(read_only=True)
 
     class Meta:
@@ -406,7 +442,6 @@ class ActivitiesSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
         activity = Activity.objects.create(**validated_data)
         activity.update_tags(tags)
 
-        self.assign_permissions(request.user, activity)
         return activity
 
     def update(self, instance, validated_data):

@@ -88,3 +88,17 @@ class ActivitySearchEngine(object):
             query &= Q(calendars__is_weekend=True)
 
         return query
+
+    def get_order(self, order_param):
+        if order_param == 'min_price':
+            order = ['calendars__session_price']
+        elif order_param == 'max_price':
+            order = ['-calendars__session_price']
+        elif order_param == 'score':
+            order = ['-score']
+        elif order_param == 'num_assistants':
+            order = ['-number_assistants']
+        else:
+            order = []
+
+        return order

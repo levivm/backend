@@ -2,17 +2,16 @@ from rest_framework import serializers
 from organizers.models import OrganizerBankInfo
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
-from utils.serializers import UnixEpochDateField
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
 from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
-from utils.mixins import FileUploadMixin, AssignPermissionsMixin
+from utils.mixins import FileUploadMixin
 
 
-class InstructorsSerializer(AssignPermissionsMixin, serializers.ModelSerializer):
+class InstructorsSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     organizer = serializers.PrimaryKeyRelatedField(read_only=True)
-    permissions = ('organizers.change_instructor', 'organizers.delete_instructor')
 
     class Meta:
         model = Instructor
@@ -28,12 +27,10 @@ class InstructorsSerializer(AssignPermissionsMixin, serializers.ModelSerializer)
     def create(self, validated_data):
         organizer = self.context['request'].user.organizer_profile
         validated_data.update({ 'organizer': organizer })
-        instance = super(InstructorsSerializer, self).create(validated_data)
-        self.assign_permissions(user=instance.organizer.user, instance=instance)
-        return instance
+        return super(InstructorsSerializer, self).create(validated_data)
 
 
-class OrganizersSerializer(FileUploadMixin, serializers.ModelSerializer):
+class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()

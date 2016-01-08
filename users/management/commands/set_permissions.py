@@ -1,7 +1,7 @@
-import pdb
 from django.contrib.auth.models import Group, Permission
-from django.core.management.base import BaseCommand, CommandError
-from trulii.constants import ORGANIZER_PERMISSIONS, STUDENT_PERMISSIONS
+from django.core.management.base import BaseCommand
+
+from trulii.settings.constants import ORGANIZER_PERMISSIONS, STUDENT_PERMISSIONS
 
 
 class Command(BaseCommand):

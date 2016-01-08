@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch.dispatcher import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
-from django.utils.functional import cached_property
-
 
 from activities.models import Calendar
 from orders.querysets import OrderQuerySet, AssistantQuerySet
@@ -38,35 +38,38 @@ class Order(models.Model):
 
     objects = OrderQuerySet.as_manager()
 
+    def __str__(self):
+        return self.student.user.username
+
     def change_status(self, status):
         self.status = status
         self.save(update_fields=['status'])
 
     @cached_property
     def total(self):
-        _amount = self.get_total(self.student) - self.total_refunds_amount 
+        _amount = self.get_total(self.student) - self.total_refunds_amount
         return _amount if _amount > 0 else 0
 
     @cached_property
     def total_refunds_amount(self):
-        #Substract approved refunds amounts
+        # Substract approved refunds amounts
         amount = 0
         if self.refunds.exists():
-            approved_refunds = self.refunds.filter(status = Refund.APPROVED_STATUS)
+            approved_refunds = self.refunds.filter(status=Refund.APPROVED_STATUS)
 
-            refunds_total = sum(map(lambda x:x.amount,approved_refunds))
+            refunds_total = sum(map(lambda x: x.amount, approved_refunds))
             amount += refunds_total
 
         return amount
 
     @cached_property
     def total_refunds_amount_without_coupon(self):
-        #Substract approved refunds amounts
+        # Substract approved refunds amounts
         amount = 0
         if self.refunds.exists():
-            approved_refunds = self.refunds.filter(status = Refund.APPROVED_STATUS)
+            approved_refunds = self.refunds.filter(status=Refund.APPROVED_STATUS)
 
-            refunds_total = sum(map(lambda x:x.amount_without_coupon,approved_refunds))
+            refunds_total = sum(map(lambda x: x.amount_without_coupon, approved_refunds))
             amount += refunds_total
 
         return amount
@@ -74,8 +77,6 @@ class Order(models.Model):
     @cached_property
     def total_without_coupon(self):
         return self.amount - self.total_refunds_amount_without_coupon
-
-
 
     def get_total(self, student):
         if self.coupon and self.coupon.redeem_set.filter(student=student, used=True).exists():
@@ -99,12 +100,16 @@ class Assistant(Tokenizable):
 
     objects = AssistantQuerySet.as_manager()
 
+    def __str__(self):
+        return '%s %s' % (self.first_name, self.last_name)
+
     def dismiss(self):
         self.enrolled = False
         self.save(update_fields=['enrolled'])
 
         if self.order.assistants.enrolled().count() == 0:
             self.order.change_status(Order.ORDER_CANCELLED_STATUS)
+
 
 class Refund(models.Model):
     APPROVED_STATUS = 'approved'
@@ -130,6 +135,15 @@ class Refund(models.Model):
     def __str__(self):
         return '%s: %s' % (self.user.username, self.order.id)
 
+    def save(self, *args, **kwargs):
+        if self.status == Refund.APPROVED_STATUS:
+            if self.assistant is None:
+                self.order.change_status(Order.ORDER_CANCELLED_STATUS)
+            else:
+                self.assistant.dismiss()
+
+        super(Refund, self).save(*args, **kwargs)
+
     @cached_property
     def amount_without_coupon(self):
         amount = self.order.amount
@@ -141,9 +155,9 @@ class Refund(models.Model):
     def amount(self):
         profile = self.user.get_profile()
         if isinstance(profile, Student):
-           amount = self.order.get_total(profile)
+            amount = self.order.get_total(profile)
         else:
-           amount = self.order.amount
+            amount = self.order.amount
 
         if self.assistant:
             amount /= self.order.quantity

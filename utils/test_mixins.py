@@ -30,3 +30,17 @@ class ImageOptimizableTest(APITestCase):
 
         image = self.image_optimizable.resize(image=self.image, size=200)
         self.assertEqual(image.size, (200, 200))
+
+    def test_thumbnail(self):
+        """
+        Test the create_thumbnail method
+        """
+        width = 100
+        height = 100
+        bytesio = self.image_optimizable.save_buffer(self.image)
+        bytesio.seek(0)
+        file = self.image_optimizable.create_thumbnail(bytesio=bytesio, filename='test', width=width, height=height)
+        image = Image.open(file)
+
+        self.assertLessEqual(image.size[0], width)
+        self.assertLessEqual(image.size[1], height)

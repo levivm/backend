@@ -1,12 +1,15 @@
 import statistics
 from itertools import cycle
 
+from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.models import Calendar, Activity
+from activities.factories import ActivityFactory, ActivityPhotoFactory
+from activities.models import Calendar, Activity, CalendarSession
 from orders.models import Order, Assistant
 from reviews.models import Review
+from users.factories import UserFactory
 
 
 class CalendarTestCase(APITestCase):
@@ -47,6 +50,26 @@ class CalendarTestCase(APITestCase):
 
         self.assertEqual(self.calendar.available_capacity(), 6)
 
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        user = self.calendar.activity.organizer.user
+
+        self.assertTrue(user.has_perm('activities.change_calendar', self.calendar))
+        self.assertTrue(user.has_perm('activities.delete_calendar', self.calendar))
+
+    def test_get_assistants(self):
+        """
+        Test the method get_assistants
+        """
+
+        assistants = Assistant.objects.filter(
+                order__calendar=self.calendar,
+                order__status__in=[Order.ORDER_APPROVED_STATUS, Order.ORDER_PENDING_STATUS],
+                enrolled=True)
+        self.assertEqual(self.calendar.get_assistants(), list(assistants))
 
 class ActivityTestCase(APITestCase):
     """
@@ -70,3 +93,39 @@ class ActivityTestCase(APITestCase):
         reviews.pop().delete()
         average = statistics.mean([r.rating for r in reviews])
         self.assertEqual(self.activity.rating, average)
+
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        user = self.activity.organizer.user
+        self.assertTrue(user.has_perm('activities.change_activity', self.activity))
+
+    def test_last_sale_date(self):
+        """
+        Test the last sale date of the calendar's sessions associated
+        """
+
+        calendars = mommy.make(Calendar, _quantity=3, activity=self.activity)
+        sessions = mommy.make(CalendarSession, _quantity=6, calendar=cycle(calendars), date=now())
+
+        self.assertEqual(self.activity.last_sale_date(), sessions[-1].date)
+
+
+class ActivityPhotoTestCase(APITestCase):
+    """
+    Class to test the model ActivityPhoto
+    """
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.activity = ActivityFactory(organizer__user=self.user)
+
+    def test_permissions(self):
+        """
+        When an instance is created should set the permissions
+        """
+
+        activity_photo = ActivityPhotoFactory(activity=self.activity)
+        self.assertTrue(self.user.has_perm('activities.delete_activityphoto', activity_photo))

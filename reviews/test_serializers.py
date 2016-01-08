@@ -58,7 +58,14 @@ class ReviewSerializerTest(APITestCase):
         review = Review.objects.create(rating=5, activity=self.activity, author=self.author)
         serializer = ReviewSerializer(review)
 
-        content = {**self.data, **{'created_at': review.created_at.isoformat()[:-6] + 'Z'}}
+        content = {
+            **self.data,
+            'created_at': review.created_at.isoformat()[:-6] + 'Z',
+            'activity_data':{
+                'id': self.activity.id,
+                'title': self.activity.title,
+            }
+        }
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
     def test_reply(self):

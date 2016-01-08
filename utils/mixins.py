@@ -4,6 +4,7 @@ import io
 
 from PIL import Image
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import assign_perm
@@ -12,10 +13,32 @@ from rest_framework import serializers
 
 class AssignPermissionsMixin(object):
     permissions = tuple()
+    user = None
+    obj = None
+    kwargs = dict()
 
-    def assign_permissions(self, user, instance):
+    def assign_permissions(self):
         for permission in self.permissions:
-            assign_perm(permission, user, instance)
+            assign_perm(permission, self.user, self.obj)
+
+    def save(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.get_objs()
+
+        create = False
+        if not self.pk:
+            create = True
+
+        super(AssignPermissionsMixin, self).save(*args, **kwargs)
+
+        if create:
+            self.assign_permissions()
+
+    def get_objs(self):
+        self.user = self.kwargs.pop('user', None)
+        self.obj = self.kwargs.pop('obj', None)
+        assert self.user, 'Se necesita el parámetro user para poder asignar los permisos'
+        assert self.obj, 'Se necesita el parámetro obj para poder asignar los permisos'
 
 
 class FileUploadMixin(object):
@@ -40,8 +63,21 @@ class ImageOptimizable(object):
     QUALITY = 90
     FORMAT = 'JPEG'
 
+    def open(self, bytesio):
+        return Image.open(bytesio)
+
+    def create_thumbnail(self, bytesio, filename, width, height):
+        image = self.open(bytesio)
+        size = (width, height)
+        image.thumbnail(size, Image.ANTIALIAS)
+
+        buffer = self.save_buffer(image)
+        buffer.seek(0)
+
+        return SimpleUploadedFile(filename, buffer.read(), content_type='image/jpeg')
+
     def optimize(self, bytesio, width, height):
-        image = Image.open(bytesio)
+        image = self.open(bytesio)
         image = self.crop_square(image, width, height)
 
         if width > self.MAX_SIZE and height > self.MAX_SIZE:
