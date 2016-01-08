@@ -311,7 +311,6 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'category',
-            'short_description',
             'sub_category',
             'pictures',
             'organizer',
@@ -319,9 +318,6 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'closest_calendar',
             'last_date',
             'organizer',
-            'score',
-            'rating',
-            'location',
         )
 
     def get_category(self, obj):
@@ -329,7 +325,9 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
                                     remove_fields=['subcategories']).data
 
     def get_closest_calendar(self, obj):
-        return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants']).data
+        return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants', 'activity',
+                                                                       'number_of_sessions', 'capacity',
+                                                                       'available_capacity', 'is_weekend']).data
 
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_sale_date())
@@ -339,8 +337,9 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
         return ActivityPhotosSerializer(pictures, many=True).data
 
     def get_organizer(self, obj):
-        return OrganizersSerializer(obj.organizer, remove_fields=['bio', 'headline', 'website', 'youtube_video_url', 'telephone',
-                                                        'instructors', 'locations']).data
+        return OrganizersSerializer(obj.organizer,
+                                    remove_fields=['bio', 'headline', 'website', 'youtube_video_url', 'telephone',
+                                                   'instructors', 'locations', 'user', 'user_type', 'created_at']).data
 
 
 class ActivitiesSerializer(serializers.ModelSerializer):
