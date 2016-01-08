@@ -7,7 +7,7 @@ from orders.models import Order, Assistant, Refund
 from orders.tasks import SendEMailStudentRefundTask
 from organizers.models import Organizer
 from payments.models import Fee
-from payments.serializers import PaymentsSerializer
+from payments.serializers import PaymentSerializer
 from referrals.tasks import ReferrerCouponTask
 from students.models import Student
 from students.serializer import StudentsSerializer
@@ -88,7 +88,7 @@ class OrdersSerializer(serializers.ModelSerializer):
     calendar_initial_date = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     created_at = UnixEpochDateField(read_only=True)
-    payment = PaymentsSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
     fee = serializers.SerializerMethodField(read_only=True)
     lastest_refund = serializers.SerializerMethodField()
     coupon = serializers.SerializerMethodField()

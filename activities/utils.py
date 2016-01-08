@@ -212,12 +212,8 @@ class PaymentUtil(object):
         self.card_association = self.get_creditcard_association()
         self.last_four_digits = self.get_last_four_digits()
         payu_data = json.dumps(self.get_payu_data())
-        if not settings.PAYU_TEST:
-            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
-            result = result.json()
-        else:
-            result = self.test_response()
-
+        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+        result = result.json()
         return self.response(result)
 
     def get_cookie(self):
@@ -303,33 +299,6 @@ class PaymentUtil(object):
                 'error': 'ERROR'
             }
 
-    def test_response(self):
-        result = {}
-        result['code'] = 'SUCCESS';
-        result['transactionResponse'] = {}
-        result['transactionResponse']['state'] = self.request.data['buyer']['name']
-        result['transactionResponse']['transactionId'] = '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c'
-        return result
-
-    def pse_test_response(self, result):
-        if result['code'] == 'SUCCESS':
-            if self.request.data['buyer']['name'] == 'PENDING':
-
-                result['transactionResponse']['state'] = self.request.data['buyer']['name']
-                result['transactionResponse'].update({
-                    'extraParameters': {
-                        'BANK_URL': "https://pse.todo1.com/PseBancolombia/control/\
-                                        ElectronicPayment.bancolombia?\
-                                        PAYMENT_ID=21429692224921982576571322905"
-                    }
-                })
-            else:
-                result['transactionResponse']['state'] = self.request.data['buyer']['name']
-                result['transactionResponse']['responseCode'] = \
-                    PaymentUtil.RESPONSE_CODE_NOTIFICATION_URL['ERROR']
-
-        return result
-
     def get_payu_pse_data(self):
         amount = self.get_amount()
         reference_code = self.get_reference_code()
@@ -377,18 +346,9 @@ class PaymentUtil(object):
 
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
-        if settings.PAYU_TEST:
-            result = {
-                'code': 'SUCCESS',
-                'transactionResponse': {
-                    'transactionId': '21429692224921982576571322905'
-                }
-            }
-            result = self.pse_test_response(result)
-        else:
-            payu_data = json.dumps(self.get_payu_pse_data())
-            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
-            result = result.json()
+        payu_data = json.dumps(self.get_payu_pse_data())
+        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+        result = result.json()
         return self.pse_response(result)
 
     @staticmethod

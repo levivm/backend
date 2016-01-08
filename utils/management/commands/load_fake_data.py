@@ -93,7 +93,7 @@ class Command(BaseCommand):
             instructors = list(organizer.instructors.all())
             instructors_sample = self.get_sample(instructors, len(instructors) - 1)
             activities.append(
-                    ActivityFactory.create_batch(quantity, organizer=organizer,
+                    ActivityFactory.create_batch(quantity, organizer=organizer, published=True,
                                                  sub_category=factory.Iterator(subcategories),
                                                  instructors=instructors_sample, location__organizer=organizer,
                                                  certification=factory.Faker('boolean')))

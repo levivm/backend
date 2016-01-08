@@ -3,7 +3,7 @@ from django.conf import settings
 from utils.tasks import SendEmailTaskMixin
 from orders.models import Order
 from orders.serializers import OrdersSerializer, AssistantsSerializer
-from .serializers import PaymentsSerializer
+from .serializers import PaymentSerializer
 from activities.serializers import CalendarSerializer, ActivitiesSerializer
 
 
@@ -14,7 +14,6 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
 
         payment_method = kwargs.get('payment_method')
         if payment_method == settings.CC_METHOD_PAYMENT_ID:
-
             if order.status == Order.ORDER_APPROVED_STATUS:
                 template = "payments/email/payment_approved_cc"
             elif order.status == Order.ORDER_DECLINED_STATUS:
@@ -46,7 +45,7 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
 
         calendar_data = CalendarSerializer(instance=calendar).data
         activity_data = ActivitiesSerializer(instance=activity).data
-        payment_data = PaymentsSerializer(instance=payment).data
+        payment_data = PaymentSerializer(instance=payment).data
         order_data = OrdersSerializer(instance=order).data
 
         context_data = {
