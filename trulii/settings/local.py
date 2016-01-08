@@ -2,6 +2,15 @@ import os
 
 import dj_database_url
 
+from .base import *
+
+DEBUG = True
+TEMPLATE_DEBUG = True
+
+INSTALLED_APPS += (
+    'debug_toolbar',
+)
+
 # DATABASE CONFIG
 
 POSTGRES_PORT = os.environ.get('POSTGRES_PORT_5432_TCP_PORT', '5432')

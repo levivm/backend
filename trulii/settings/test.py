@@ -1,5 +1,5 @@
 import logging
-from .settings import *
+from .base import *
 
 
 DATABASES = {

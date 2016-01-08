@@ -1,28 +1,23 @@
 # -*- coding: utf-8 -*-
 import io
-from random import Random
-
-import os
-
-from . import constants
 import operator
+import os
 from datetime import datetime,date
 from functools import reduce
-from django.contrib.contenttypes.fields import GenericRelation
-
-from django.db import models
+from random import Random
 
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
+from django.db import models
 from django.utils.functional import cached_property
-
 from django.utils.translation import ugettext_lazy as _
 
-from organizers.models import Organizer, Instructor
-
 from locations.models import Location
-from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
-from utils.mixins import AssignPermissionsMixin, ImageOptimizable
+from organizers.models import Organizer, Instructor
+from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.behaviors import Updateable
+from utils.mixins import AssignPermissionsMixin, ImageOptimizable
+from . import constants
 
 
 class Category(models.Model):

@@ -1,6 +1,6 @@
 # django-allauth Configuration variables you might like to change.
 #
-# DO NOT CHANGE THIS FILE. Instead, copy it to local_settings.py
+# DO NOT CHANGE THIS FILE. Instead, copy it to local.py
 # and make your changes there.
 
 
