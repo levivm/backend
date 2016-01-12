@@ -238,6 +238,14 @@ class PaymentUtil(object):
         reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
         return reference
 
+    def test_response(self):
+        result = {}
+        result['code'] = 'SUCCESS'
+        result['transactionResponse'] = {}
+        result['transactionResponse']['state'] = self.request.data['buyer']['name']
+        result['transactionResponse']['transactionId'] = '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c'
+        return result
+
     def response(self, result):
 
         if result['code'] == 'SUCCESS':

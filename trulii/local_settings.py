@@ -40,3 +40,7 @@ PAYU_URL = 'http://stg.api.payulatam.com/payments-api/4.0/service.cgi'
 PAYU_NOTIFY_URL = "https://api.trulii.com/api/payments/notification"
 PAYU_RESPONSE_URL = "https://api.trulii.com/api/payments/pse/response"
 PAYU_TEST = True
+# PAYU_CHT = "Imatesterso?" ?osretsetamI
+# PAYU_CCT = "111111111111111"
+# PAYU_VUDT = "4/19"
+# PAYU_CCV = "223"
