@@ -2,10 +2,13 @@ import calendar
 import hashlib
 import json
 
+
+from django.core import signing
 from django.conf import settings
 from django.utils.timezone import now
 from requests.api import post
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import PermissionDenied
 
 from activities.models import Calendar
 from utils.exceptions import ServiceUnavailable
@@ -212,8 +215,13 @@ class PaymentUtil(object):
         self.card_association = self.get_creditcard_association()
         self.last_four_digits = self.get_last_four_digits()
         payu_data = json.dumps(self.get_payu_data())
-        result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
-        result = result.json()
+        # result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+        # result = result.json()
+        if settings.PAYU_TEST and self.valid_test_user():
+            result = self.test_response()
+        else:
+            result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
+            result = result.json()
         return self.response(result)
 
     def get_cookie(self):
@@ -237,6 +245,21 @@ class PaymentUtil(object):
         calendar_id = self.request.data.get('calendar')
         reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
         return reference
+
+    def valid_test_user(self):
+        transaction_data = {
+            'token': self.request.data['token']
+        }
+        token_data = signing.loads(settings.PAYU_TEST_TOKEN)
+        return token_data == transaction_data
+
+    def test_response(self):
+        result = {}
+        result['code'] = 'SUCCESS'
+        result['transactionResponse'] = {}
+        result['transactionResponse']['state'] = self.request.data['buyer']['name']
+        result['transactionResponse']['transactionId'] = '3e37de3a-1fb3-4f5b-ae99-5f7517ddf81c'
+        return result
 
     def response(self, result):
 

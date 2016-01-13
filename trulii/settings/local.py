@@ -48,3 +48,6 @@ PAYU_URL = 'http://stg.api.payulatam.com/payments-api/4.0/service.cgi'
 PAYU_NOTIFY_URL = "https://api.trulii.com/api/payments/notification"
 PAYU_RESPONSE_URL = "https://api.trulii.com/api/payments/pse/response"
 PAYU_TEST = True
+PAYU_TEST_TOKEN = 'eyJ0b2tlbiI6ImEyMDA0NmU3LWZjOTktNDc3OS04ZGQ3LTA'
+PAYU_TEST_TOKEN += 'zMzE1ZjBjY2VhMSJ9:1aJ6Yo:OkyLEE5T'
+PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
