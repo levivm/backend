@@ -1,8 +1,11 @@
 import dj_database_url
-import os
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+from .base import *
+
 ################AMAZON S3 STORAGE ##########################
 
+DEBUG = True
+TEMPLATE_DEBUG = True
 
 AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
 AWS_ACCESS_KEY_ID     = 'AKIAJRUNNQDO2LM6OSEA'

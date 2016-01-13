@@ -1,19 +1,18 @@
 import json
 
+from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.http.request import HttpRequest
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
-from django.http.request import HttpRequest
-
-from django.contrib.auth.models import User, Permission
 
 from activities.models import Activity
+from locations.serializers import LocationsSerializer
 from organizers.models import Instructor, Organizer, OrganizerBankInfo
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, InstructorViewSet, \
     ActivityInstructorViewSet
-from locations.serializers import LocationsSerializer
-from trulii.constants import MAX_ACTIVITY_INSTRUCTORS
+from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 

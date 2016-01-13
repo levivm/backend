@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
+import datetime
+
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
-from django.db.models.aggregates import Count
-from django.utils.timezone import now
+from django.db.models import Count
+from django.utils.timezone import now, utc
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,12 +20,13 @@ from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
+from utils.paginations import MediumResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
-    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer
+    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -73,7 +76,6 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
 
-
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
         location_data = request.data.copy()
@@ -98,7 +100,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
-            'price_range':settings.PRICE_RANGE
+            'price_range': settings.PRICE_RANGE
         }
 
         return Response(data)
@@ -142,9 +144,9 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         activity_serializer = self.get_activity_serializer(instance=activity,
                                                            context={'request': request})
         return Response(
-            data={'activity': activity_serializer.data, 'picture': serializer.data},
-            status=status.HTTP_201_CREATED,
-            headers=headers)
+                data={'activity': activity_serializer.data, 'picture': serializer.data},
+                status=status.HTTP_201_CREATED,
+                headers=headers)
 
     def set_cover_from_stock(self, request, *args, **kwargs):
         activity = self.get_activity_object(**kwargs)
@@ -159,9 +161,9 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         activity_serializer = self.get_activity_serializer(instance=activity,
                                                            context={'request': request})
         return Response(
-            data={'activity': activity_serializer.data, 'picture': serializer.data},
-            status=status.HTTP_201_CREATED,
-            headers=headers)
+                data={'activity': activity_serializer.data, 'picture': serializer.data},
+                status=status.HTTP_201_CREATED,
+                headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         gallery_pk = kwargs.get('gallery_pk')
@@ -175,8 +177,8 @@ class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         self.perform_destroy(instance)
         self.calculate_score(activity_id=activity.id)
         return Response(
-            data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
-            status=status.HTTP_200_OK)
+                data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
+                status=status.HTTP_200_OK)
 
     def get_activity_object(self, **kwargs):
         activity_pk = kwargs.get('activity_pk')
@@ -204,8 +206,8 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
         serializer = ActivityPhotosSerializer(pictures, many=True)
 
         return Response(
-            data={'pictures': serializer.data},
-            status=status.HTTP_200_OK)
+                data={'pictures': serializer.data},
+                status=status.HTTP_200_OK)
 
 
 class TagsViewSet(viewsets.ModelViewSet):
@@ -235,27 +237,54 @@ class ListCategories(APIView):
         return Response(data)
 
 
-class ActivitiesSearchView(ListUniqueOrderedElementsMixin,APIView):
-    def get(self, request, **kwargs):
+class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
+    serializer_class = ActivitiesCardSerializer
+    pagination_class = MediumResultsSetPagination
+    queryset = Activity.objects.all()
+    select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
+    prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
+                        'calendars__orders__assistants', 'calendars__orders__student__user']
+    query = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
+
+    def list(self, request, **kwargs):
         q = request.query_params.get('q')
+        o = request.query_params.get('o')
+
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
-        # excludes = search.exclude_query(request.query_params)
+        order = search.get_order(o)
 
-        query = search.get_query(q, ['title', 'short_description', 'content',
-                                     'tags__name', 'organizer__name'])
+        query = search.get_query(q, self.query)
         if query:
-            activities = Activity.objects.filter(query)
+            activities = Activity.objects.select_related(*self.select_related) \
+                .prefetch_related(*self.prefetch_related) \
+                .filter(query, filters) \
+                .annotate(number_assistants=Count('calendars__orders__assistants')) \
+                .order_by(*order)
         else:
-            activities = Activity.objects.all()
+            activities = Activity.objects.select_related(*self.select_related) \
+                .prefetch_related(*self.prefetch_related) \
+                .filter(filters) \
+                .annotate(number_assistants=Count('calendars__orders__assistants')) \
+                .order_by(*order)
 
-        activities = activities.filter(filters) \
-            .annotate(number_assistants=Count('calendars__orders__assistants')) \
-            .order_by('number_assistants', 'calendars__initial_date')
-        # .order_by('score', 'number_assistants', 'calendars__initial_date')
+        if not order:
+            unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
+            if o == 'closest':
+                activities = sorted(activities,
+                                    key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
+            else:
+                activities = sorted(activities, key=lambda a: (
+                a.number_assistants, a.closest_calendar.initial_date if a.closest_calendar else unix_epoch))
 
-        serializer = ActivitiesSerializer(self.unique_everseen(activities,
-                                            lambda activity:activity.id), many=True)
+        activities = list(self.unique_everseen(activities))
+
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(activities, many=True)
         result = serializer.data
         return Response(result)
 
@@ -281,7 +310,8 @@ class ShareActivityEmailView(APIView):
             try:
                 self.email_validator(email)
             except DjangoValidationError:
-                return Response(_('Introduzca una dirección de correo electrónico válida'), status=status.HTTP_400_BAD_REQUEST)
+                return Response(_('Introduzca una dirección de correo electrónico válida'),
+                                status=status.HTTP_400_BAD_REQUEST)
 
         task = SendEmailShareActivityTask()
         task.delay(request.user.id, activity.id, emails=emails, message=request.data.get('message'))
@@ -290,7 +320,6 @@ class ShareActivityEmailView(APIView):
 
 
 class AutoCompleteView(APIView):
-
     def get(self, request, *args, **kwargs):
         query = request.GET.get('q')
         result = []

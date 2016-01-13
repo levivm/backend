@@ -31,7 +31,11 @@ urlpatterns = [
     url(r'^subcategories/?$', SubCategoriesViewSet.as_view({'get': 'list'})),
     url(r'^subcategories/(?P<subcategory_id>\d+)/covers/?$', SubCategoriesViewSet.as_view({'get': 'get_pool_from_stock'}),name='get_covers_photos'),
 
-    url(r'^search/?$', ActivitiesSearchView.as_view()),
+    # {% url activities:search %}
+    url(regex=r'^search/?$',
+        view=ActivitiesSearchView.as_view(),
+        name='search',
+    ),
 
     # {% url activities:share_email_activity %}
     url(

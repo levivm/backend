@@ -8,16 +8,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 import django.conf.global_settings as DEFAULT_SETTINGS
-# import dj_database_url
 import os
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
-IS_PRODUCTION = os.environ.get('PRODUCTION_SERVER')
-
-DEBUG = True if not IS_PRODUCTION else False
-
-
+BASE_DIR = os.path.dirname(os.path.join(os.path.dirname(__file__), '..'))
+PROJECT_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 SITE_ID = 1
 
@@ -25,13 +19,9 @@ SITE_ID = 1
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-='
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '(7bg%ta_6%n%j76lws1h-t8s-y&4a7mr)7v39%1*y*v*te)q-=')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-
-
-
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -42,10 +32,9 @@ REST_FRAMEWORK = {
 
 ANONYMOUS_USER_ID = -1
 
-TEMPLATE_DEBUG = True
+# TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -66,7 +55,7 @@ INSTALLED_APPS = (
     # 'admin_honeypot',
     'landing',
     'activities',
-    'locations',    
+    'locations',
     'users',
     'organizers',
     'students',
@@ -82,31 +71,27 @@ INSTALLED_APPS = (
     'referrals',
 )
 
-
-
-
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS =  DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + [
-    "django.core.context_processors.request",    
 ]
 
+TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + [
+    "django.core.context_processors.request",
+]
 
 TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + [
-    PROJECT_PATH + '/templates/', 
+    PROJECT_PATH + '/templates/',
 ]
 
-#TEMPLATES_PATH = os.path.join[SETTINGS_PATH, "templates"]
+# TEMPLATES_PATH = os.path.join[SETTINGS_PATH, "templates"]
 
 
 AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + [
@@ -120,23 +105,18 @@ ROOT_URLCONF = 'trulii.urls'
 
 WSGI_APPLICATION = 'trulii.wsgi.application'
 
-
-#---------CORS SETTINGS------------
-#CORS_URLS_REGEX = r'^/api/.*$'
+# ---------CORS SETTINGS------------
+# CORS_URLS_REGEX = r'^/api/.*$'
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
-#LANGUAGE_CODE = 'en-us'
-
-
-
+# LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'America/Bogota'
 
@@ -146,14 +126,13 @@ USE_L10N = True
 
 USE_TZ = True
 
-
-ugettext = lambda s : s
+ugettext = lambda s: s
 LANGUAGE_CODE = 'es-ES'
 LANGUAGES = (
-    #('en', ugettext('English')),
+    # ('en', ugettext('English')),
     ('es', ugettext('Spanish')),
 )
-LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'), )
+LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
@@ -168,11 +147,9 @@ AWS_SECRET_ACCESS_KEY = 'H4r9fQA1fW70nZq6S+n4WSZu+m9BXLmmBYJaWhPd'
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_FILE_OVERWRITE = False
 
-
-MEDIAFILES_LOCATION = 'media' 
+MEDIAFILES_LOCATION = 'media'
 DEFAULT_FILE_STORAGE = 'trulii.custom_storages.MediaRootS3BotoStorage'
 MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
-
 
 STATICFILES_DIRS = (
     os.path.join(PROJECT_PATH, "static"),
@@ -183,17 +160,9 @@ STATIC_ROOT = os.path.join(PROJECT_PATH, 'staticfiles')
 STATICFILES_LOCATION = 'static'
 STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
 STATIC_IMAGE_LOCATION = 'img'
-STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL,STATIC_IMAGE_LOCATION )
+STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL, STATIC_IMAGE_LOCATION)
 
-
-MEDIA_ROOT  = os.path.join(PROJECT_PATH, 'media')
-
-if not DEBUG:
-    from .prod_settings import *
-    DEBUG = True
-else:
-    from .local_settings import *
-
+MEDIA_ROOT = os.path.join(PROJECT_PATH, 'media')
 
 from .allauth_settings import *
 from .constants import *
