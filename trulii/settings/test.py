@@ -16,6 +16,9 @@ DATABASES = {
     }
 }
 
+del MEDIAFILES_LOCATION
+del DEFAULT_FILE_STORAGE
+
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 MIDDLEWARE_CLASSES = (
