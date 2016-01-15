@@ -5,12 +5,14 @@ from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+
+from activities.mixins import ActivityCardMixin
 from activities.models import Activity
 from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesCardSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
@@ -23,7 +25,7 @@ def signup(request):
     return render(request, 'organizers/signup.html', {})
 
 
-class OrganizerViewSet(viewsets.ModelViewSet):
+class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
     """
     A viewset that provides the standard actions
     """
@@ -34,8 +36,8 @@ class OrganizerViewSet(viewsets.ModelViewSet):
 
     def activities(self, request, **kwargs):
         organizer = self.get_object()
-        activities = organizer.activity_set.all()
-        data = ActivitiesSerializer(activities, many=True,context=self.get_serializer_context()).data
+        activities = organizer.activity_set.select_related(*self.select_related).prefetch_related(*self.prefetch_related).all()
+        data = ActivitiesCardSerializer(activities, many=True, context=self.get_serializer_context()).data
         return Response(data)
 
 
