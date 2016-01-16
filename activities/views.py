@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 import datetime
+from itertools import chain
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -327,9 +328,17 @@ class AutoCompleteView(APIView):
             categories = self.get_list(Category.objects.filter(name__istartswith=query), 'name')
             subcategories = self.get_list(SubCategory.objects.filter(name__istartswith=query), 'name')
             organizers = self.get_list(Organizer.objects.filter(name__istartswith=query), 'name')
-            result = [*activities, *tags, *categories, *subcategories, *organizers]
+            result = chain(activities, tags, categories, subcategories, organizers)
 
-        return Response(list(set(result)))
+        return Response(list(self.unique_and_capitalize(result)))
 
     def get_list(self, queryset, attr):
         return queryset.only(attr).values_list(attr, flat=True)
+
+    def unique_and_capitalize(self, iterable):
+        seen = set()
+        for item in iterable:
+            item = item.lower()
+            if item not in seen:
+                seen.add(item)
+                yield item
