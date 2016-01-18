@@ -216,13 +216,14 @@ class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     permissions = ('activities.delete_activityphoto',)
 
     def save(self, *args, **kwargs):
-        filename = os.path.split(self.photo.name)[-1]
-        simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
-                                            width=400, height=350)
-        self.thumbnail.save(
-                'thumbnail_%s' % filename,
-                simple_file,
-                save=False)
+        if not self.thumbnail:
+            filename = os.path.split(self.photo.name)[-1]
+            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
+                                                width=400, height=350)
+            self.thumbnail.save(
+                    'thumbnail_%s' % filename,
+                    simple_file,
+                    save=False)
 
         super(ActivityPhoto, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 

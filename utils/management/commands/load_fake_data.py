@@ -1,3 +1,4 @@
+import pdb
 import random
 
 import factory
@@ -7,6 +8,7 @@ from django.core.management.base import BaseCommand
 from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
     CalendarSessionFactory
 from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto
+from locations.factories import CityFactory
 from orders.factories import OrderFactory, AssistantFactory, RefundFactory
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
 from payments.factories import FeeFactory
@@ -20,12 +22,28 @@ from utils.management.commands import load_data
 class Command(BaseCommand):
     help = "Load fake data"
 
+    def add_arguments(self, parser):
+        parser.add_argument('-l', '--load-data',
+                            action='store_true',
+                            default=False,
+                            help='Load initial data before create fake data')
+        parser.add_argument('-c', '--city',
+                            default=False,
+                            type=str,
+                            help='The name of the city for the activities')
+        parser.add_argument('-n', '--num-activities',
+                            type=int,
+                            help='The number of activities to create')
+
     def handle(self, *args, **options):
         # Load data
-        self.ask_for_load_data()
+        self.ask_for_load_data(options['load_data'])
 
         # Users
         self.students = self.create_students()
+
+        # Locations
+        self.city = self.create_city(options['city'])
 
         # Organizers
         self.organizers = self.create_organizers()
@@ -34,7 +52,7 @@ class Command(BaseCommand):
 
         # Activities
         self.subcategories = list(SubCategory.objects.all())
-        self.activities = self.create_activities()
+        self.activities = self.create_activities(options.get('num_activities'))
         self.activity_photos = self.create_activity_photos()
         self.calendars = self.create_calendars()
         self.calendar_sessions = self.create_calendar_sessions()
@@ -51,9 +69,8 @@ class Command(BaseCommand):
         # Reviews
         self.reviews = self.create_reviews()
 
-    def ask_for_load_data(self):
-        load = input('Este comando necesita primero correr load_data. ¿Desea correrlo ahora? (y/[n]): ')
-        if load == 'y':
+    def ask_for_load_data(self, create_data):
+        if create_data:
             self.stdout.write('Creando data inicial')
             load_data.Command().handle()
 
@@ -67,6 +84,11 @@ class Command(BaseCommand):
     @staticmethod
     def flat_list(array):
         return [item for sublist in array for item in sublist]
+
+    def create_city(self, city):
+        if city:
+            self.stdout.write('Creando ciudad')
+            return CityFactory(name=city.capitalize())
 
     def create_organizers(self):
         self.stdout.write('Creando organizers')
@@ -84,26 +106,41 @@ class Command(BaseCommand):
         self.stdout.write('Creando students')
         return StudentFactory.create_batch(self.get_quantity())
 
-    def create_activities(self):
+    def create_activities(self, num_activities):
         self.stdout.write('Creando activities')
         activities = list()
+        size = None
+
+        if num_activities:
+            size = num_activities // len(self.organizers)
+
         for organizer in self.organizers:
-            quantity = self.get_quantity()
-            subcategories = self.get_sample(self.subcategories, quantity)
+            quantity = size if size else self.get_quantity()
             instructors = list(organizer.instructors.all())
-            instructors_sample = self.get_sample(instructors, len(instructors) - 1)
-            activities.append(
-                    ActivityFactory.create_batch(quantity, organizer=organizer, published=True,
-                                                 sub_category=factory.Iterator(subcategories),
-                                                 instructors=instructors_sample, location__organizer=organizer,
-                                                 certification=factory.Faker('boolean')))
+            instructors_sample = self.get_sample(instructors, 1)
+
+            params = {
+                'organizer': organizer,
+                'published': True,
+                'sub_category': factory.Iterator(self.subcategories, cycle=True),
+                'instructors': instructors_sample,
+                'location__organizer': organizer,
+                'certification': factory.Faker('boolean')
+            }
+
+            if self.city:
+                params['location__city'] = self.city
+
+            activities.append(ActivityFactory.create_batch(quantity, **params))
 
         activities = self.flat_list(activities)
 
         for activity in activities:
             try:
                 stock_photo = random.choice(ActivityStockPhoto.objects.filter(sub_category=activity.sub_category))
-                ActivityPhoto.objects.create(photo=stock_photo.photo, activity=activity, main_photo=True)
+                ActivityPhoto.objects.create(photo=stock_photo.photo,
+                                             thumbnail=stock_photo.thumbnail,
+                                             activity=activity, main_photo=True)
             except:
                 pass
 
@@ -158,7 +195,7 @@ class Command(BaseCommand):
         self.stdout.write('Creando assistants')
         assistants = list()
         for order in self.orders:
-            quantity = self.get_quantity(range(1, order.quantity))
+            quantity = self.get_quantity(range(1, order.quantity + 1))
             assistants.append(AssistantFactory.create_batch(quantity, order=order))
 
         return self.flat_list(assistants)

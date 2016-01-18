@@ -14,6 +14,7 @@ def get_point():
 class CityFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = City
+        django_get_or_create = ('name',)
 
     name = factory.Faker('city')
     order = factory.Sequence(lambda n: '%d' % n)

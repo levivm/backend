@@ -255,6 +255,8 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
         order = search.get_order(o)
 
         query = search.get_query(q, self.query)
+        import time
+        start = time.time()
         if query:
             activities = Activity.objects.select_related(*self.select_related) \
                 .prefetch_related(*self.prefetch_related) \
@@ -267,21 +269,34 @@ class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
                 .filter(filters) \
                 .annotate(number_assistants=Count('calendars__orders__assistants')) \
                 .order_by(*order)
+        end = time.time()
+        print('query', end - start)
+        print('count', activities.count())
 
-        if not order:
-            unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
-            if o == 'closest':
-                activities = sorted(activities,
-                                    key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
-            else:
-                activities = sorted(activities, key=lambda a: (
-                a.number_assistants, a.closest_calendar.initial_date if a.closest_calendar else unix_epoch))
+        # start = time.time()
+        # activities = self.unique_everseen(activities)
+        # # activities = list(self.unique_everseen(activities))
+        # end = time.time()
+        # print('unique', end - start)
 
-        activities = list(self.unique_everseen(activities))
+        # start = time.time()
+        # if not order:
+        #     unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
+        #     # if o == 'closest':
+        #     activities = sorted(activities,
+        #                         key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
+        #     # else:
+        #     #     activities = sorted(activities, key=lambda a: (
+        #     #     a.number_assistants, a.closest_calendar.initial_date if a.closest_calendar else unix_epoch))
+        # end = time.time()
+        # print('order', end - start)
 
+        start = time.time()
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
+            end = time.time()
+            print('serializer', end - start)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(activities, many=True)

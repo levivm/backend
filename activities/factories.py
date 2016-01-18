@@ -96,7 +96,8 @@ class ActivityPhotoFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ActivityPhoto
 
-    photo = factory.django.ImageField()
+    photo = 'activities/blue.jpg'
+    thumbnail = 'activities/thumbnail_blue.jpg'
     activity = factory.SubFactory(ActivityFactory)
     main_photo = False
 

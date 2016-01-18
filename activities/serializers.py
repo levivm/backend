@@ -300,7 +300,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
 class ActivitiesCardSerializer(serializers.ModelSerializer):
     last_date = serializers.SerializerMethodField()
-    closest_calendar = serializers.SerializerMethodField()
+    # closest_calendar = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     pictures = serializers.SerializerMethodField()
     organizer = serializers.SerializerMethodField()
@@ -315,7 +315,7 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'pictures',
             'organizer',
             'published',
-            'closest_calendar',
+            # 'closest_calendar',
             'last_date',
             'organizer',
         )
