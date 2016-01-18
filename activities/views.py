@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 import datetime
+from itertools import chain
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -14,7 +15,7 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin
+from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin, ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
@@ -237,13 +238,10 @@ class ListCategories(APIView):
         return Response(data)
 
 
-class ActivitiesSearchView(ListUniqueOrderedElementsMixin, ListAPIView):
+class ActivitiesSearchView(ActivityCardMixin, ListUniqueOrderedElementsMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = MediumResultsSetPagination
     queryset = Activity.objects.all()
-    select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
-    prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
-                        'calendars__orders__assistants', 'calendars__orders__student__user']
     query = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
 
     def list(self, request, **kwargs):
@@ -345,9 +343,17 @@ class AutoCompleteView(APIView):
             categories = self.get_list(Category.objects.filter(name__istartswith=query), 'name')
             subcategories = self.get_list(SubCategory.objects.filter(name__istartswith=query), 'name')
             organizers = self.get_list(Organizer.objects.filter(name__istartswith=query), 'name')
-            result = [*activities, *tags, *categories, *subcategories, *organizers]
+            result = chain(activities, tags, categories, subcategories, organizers)
 
-        return Response(list(set(result)))
+        return Response(list(self.unique_and_capitalize(result)))
 
     def get_list(self, queryset, attr):
         return queryset.only(attr).values_list(attr, flat=True)
+
+    def unique_and_capitalize(self, iterable):
+        seen = set()
+        for item in iterable:
+            item = item.lower()
+            if item not in seen:
+                seen.add(item)
+                yield item

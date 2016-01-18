@@ -27,3 +27,9 @@ class ListUniqueOrderedElementsMixin(object):
                 if k not in seen:
                     seen_add(k)
                     yield element
+
+
+class ActivityCardMixin(object):
+    select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
+    prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
+                        'calendars__orders__assistants', 'calendars__orders__student__user']

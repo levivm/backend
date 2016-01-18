@@ -1110,7 +1110,7 @@ class AutoCompleteViewTest(BaseAPITestCase):
         Test the result of the autocomplete
         """
 
-        contains = ['Danza', 'Deportes', 'Documentales', 'Derecho', 'Docencia', 'Deportes de Colombia']
+        contains = ['danza', 'deportes', 'documentales', 'derecho', 'docencia', 'deportes de colombia']
 
         # Should response the contains data
         response = self.client.get(self.auto_complete_url, {'q': 'd'})
