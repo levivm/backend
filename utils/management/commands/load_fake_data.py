@@ -1,4 +1,3 @@
-import pdb
 import random
 
 import factory
@@ -7,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
     CalendarSessionFactory
-from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto
+from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Tags
 from locations.factories import CityFactory
 from orders.factories import OrderFactory, AssistantFactory, RefundFactory
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
@@ -21,6 +20,22 @@ from utils.management.commands import load_data
 
 class Command(BaseCommand):
     help = "Load fake data"
+    students = None
+    city = None
+    organizers = None
+    instructors = None
+    bank_info = None
+    subcategories = None
+    activities = None
+    activity_photos = None
+    calendars = None
+    calendar_sessions = None
+    orders = None
+    assistants = None
+    refunds = None
+    referral = None
+    redeem = None
+    reviews = None
 
     def add_arguments(self, parser):
         parser.add_argument('-l', '--load-data',
@@ -74,7 +89,8 @@ class Command(BaseCommand):
             self.stdout.write('Creando data inicial')
             load_data.Command().handle()
 
-    def get_quantity(self, sample=range(3, 6)):
+    @staticmethod
+    def get_quantity(sample=range(3, 6)):
         return random.choice(sample)
 
     @staticmethod
@@ -122,10 +138,10 @@ class Command(BaseCommand):
             params = {
                 'organizer': organizer,
                 'published': True,
-                'sub_category': factory.Iterator(self.subcategories, cycle=True),
+                'sub_category': factory.Iterator(self.subcategories),
                 'instructors': instructors_sample,
                 'location__organizer': organizer,
-                'certification': factory.Faker('boolean')
+                'certification': factory.Faker('boolean'),
             }
 
             if self.city:
@@ -134,7 +150,11 @@ class Command(BaseCommand):
             activities.append(ActivityFactory.create_batch(quantity, **params))
 
         activities = self.flat_list(activities)
+        self.create_main_photo(activities)
+        self.create_tags(activities)
+        return activities
 
+    def create_main_photo(self, activities):
         for activity in activities:
             try:
                 stock_photo = random.choice(ActivityStockPhoto.objects.filter(sub_category=activity.sub_category))
@@ -144,7 +164,12 @@ class Command(BaseCommand):
             except:
                 pass
 
-        return activities
+    def create_tags(self, activities):
+        for activity in activities:
+            subcategory_tag, _ = Tags.objects.get_or_create(name=activity.sub_category.name.lower())
+            category_tag, _ = Tags.objects.get_or_create(name=activity.sub_category.category.name.lower())
+            tags = [subcategory_tag, category_tag]
+            activity.tags.add(*tags)
 
     def create_activity_photos(self):
         self.stdout.write('Creando activity photos')
