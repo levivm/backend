@@ -40,11 +40,12 @@ class RestFacebookLoginTest(BaseAPITestCase):
 
     def get_signup_data(self):
         # TODO
-        # Este token dura dos meses, expira 14 noviembre
-        # Automatizar para pedir uno nuevo
-        auth_token = "CAAWOByANCTUBACmgLKEKHGsZBliCHrnAGF0ZC36rSqklnIFtZCDh2CkdM4mKRhhqy" \
-                     "MZBw2PRNbYVKZC68FDYXEgl9NcIipcoDIXMy8j2I4GvFccJLBfUGeeS7yI85ZC5jdr" \
-                     "OgiJrFAonlLjRWJrOdCPysMZAp79bjZAOp2TXIKOBt6ZC9X7jRHI5e"
+        # Este token dura dos meses, expira en marzo
+        # Automatizar para pedir uno
+
+        auth_token = "CAAWOByANCTUBAOd9x0yTEYdAuuMUG7WvYZAzdAp4otJOi7gIsOWCnuAvNADtYqW7CW9AhF" \
+                     "6uUCIQMI975sxnAvZBU8csApZC5RHWoKmHsuqU639wSTLdBkqBpCdkqbVmmZA8" \
+                     "Hp4pJAJCCCmyZAvOUColRumTi6z22niA3ZAVzm8s4Qzdjm7BVT9tMLPZAiZCDSMZD"
         return {'auth_token': auth_token}
 
     def test_signup(self):
