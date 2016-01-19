@@ -76,15 +76,8 @@ class ActivityFactory(factory.django.DjangoModelFactory):
 
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):
-        if create:
-            if extracted:
-                self.tags.add(*extracted)
-            else:
-                subcategory_tag_name = self.sub_category.name.lower()
-                subcategory_tag, _ = Tags.objects.get_or_create(name=subcategory_tag_name)
-                category_tag_name = self.sub_category.category.name.lower()
-                category_tag, _ = Tags.objects.get_or_create(name=category_tag_name)
-                self.tags.add(category_tag, subcategory_tag)
+        if create and extracted:
+            self.tags.add(*extracted)
 
     @factory.post_generation
     def instructors(self, create, extracted, **kwargs):
