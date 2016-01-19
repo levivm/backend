@@ -36,8 +36,10 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
 
     def activities(self, request, **kwargs):
         organizer = self.get_object()
-        activities = organizer.activity_set.select_related(*self.select_related).prefetch_related(*self.prefetch_related).all()
-        data = ActivitiesCardSerializer(activities, many=True, context=self.get_serializer_context()).data
+        activities = organizer.activity_set.select_related(*self.select_related).\
+            prefetch_related(*self.prefetch_related).all()
+        data = ActivitiesSerializer(activities, many=True,
+                                    context=self.get_serializer_context()).data
         return Response(data)
 
 
