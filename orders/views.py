@@ -94,15 +94,15 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
             .prefetch_related('refunds')\
             .filter(calendar__activity__organizer=organizer)
 
-        page = self.paginate_queryset(orders)
-        if page is not None:
-            serializer = OrdersSerializer(page, many=True,
-                                          remove_fields=['calendar', 'assistants','payment',
-                                                         'coupon', 'student', 'quantity',
-                                                         'activity_id', 'lastest_refund'])
-            return self.get_paginated_response(serializer.data)
+        # page = self.paginate_queryset(orders)
+        # if page is not None:
+        serializer = OrdersSerializer(orders, many=True,
+                                      remove_fields=['calendar', 'assistants','payment',
+                                                     'coupon', 'student', 'quantity',
+                                                     'activity_id', 'lastest_refund'])
+            # return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(orders, many=True)
+        # serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)
 
 
