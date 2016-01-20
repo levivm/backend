@@ -90,19 +90,19 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def list_by_organizer(self, request, *args, **kwargs):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
+        params = {'remove_fields' : ['calendar', 'assistants','payment','coupon', 'student',
+                                     'quantity','activity_id', 'lastest_refund']}
+
         orders = Order.objects.select_related('calendar__activity', 'fee', 'student')\
             .prefetch_related('refunds')\
             .filter(calendar__activity__organizer=organizer)
 
-        # page = self.paginate_queryset(orders)
-        # if page is not None:
-        serializer = OrdersSerializer(orders, many=True,
-                                      remove_fields=['calendar', 'assistants','payment',
-                                                     'coupon', 'student', 'quantity',
-                                                     'activity_id', 'lastest_refund'])
-            # return self.get_paginated_response(serializer.data)
+        page = self.paginate_queryset(orders)
+        if page is not None:
+            serializer = OrdersSerializer(page, many=True, **params)
+            return self.get_paginated_response(serializer.data)
 
-        # serializer = self.get_serializer(orders, many=True)
+        serializer = self.get_serializer(orders, many=True, **params)
         return Response(serializer.data)
 
 
