@@ -80,7 +80,7 @@ class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return student_serializer.data
 
 
-class OrdersSerializer(serializers.ModelSerializer):
+class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     assistants = AssistantsSerializer(many=True)
     student = StudentsSerializer(read_only=True)
     amount = serializers.FloatField(read_only=True)

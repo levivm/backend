@@ -38,9 +38,6 @@ class Order(models.Model):
 
     objects = OrderQuerySet.as_manager()
 
-    def __str__(self):
-        return self.student.user.username
-
     def change_status(self, status):
         self.status = status
         self.save(update_fields=['status'])

@@ -6,6 +6,7 @@ from organizers.models import Organizer, Instructor, OrganizerBankInfo
 @admin.register(Organizer)
 class OrganizerAdmin(admin.ModelAdmin):
     list_display = ('name', 'user')
+    raw_id_fields = ('user',)
 
 
 @admin.register(Instructor)
