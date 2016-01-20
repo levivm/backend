@@ -299,8 +299,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
 
 class ActivitiesCardSerializer(serializers.ModelSerializer):
-    last_date = serializers.SerializerMethodField()
-    # closest_calendar = serializers.SerializerMethodField()
+    closest_calendar = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     pictures = serializers.SerializerMethodField()
     organizer = serializers.SerializerMethodField()
@@ -315,8 +314,7 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'pictures',
             'organizer',
             'published',
-            # 'closest_calendar',
-            'last_date',
+            'closest_calendar',
             'organizer',
         )
 
@@ -328,9 +326,6 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
         return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants', 'activity',
                                                                        'number_of_sessions', 'capacity',
                                                                        'available_capacity', 'is_weekend']).data
-
-    def get_last_date(self, obj):
-        return UnixEpochDateField().to_representation(obj.last_sale_date())
 
     def get_pictures(self, obj):
         pictures = [p for p in obj.pictures.all() if p.main_photo]

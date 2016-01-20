@@ -96,9 +96,9 @@ class ActivitySearchEngine(object):
             order = ['-calendars__session_price']
         elif order_param == 'score':
             order = ['-score']
-        elif order_param == 'num_assistants':
-            order = ['-number_assistants']
+        elif order_param == 'closest':
+            order = ['closest']
         else:
-            order = []
+            order = ['-score', 'closest']
 
         return order

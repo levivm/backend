@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
-import datetime
 from itertools import chain
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
-from django.db.models import Count
-from django.utils.timezone import now, utc
+from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
@@ -15,13 +13,15 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin, ActivityCardMixin
+from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin, \
+    ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
-from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, SendEmailShareActivityTask
+from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
+    SendEmailShareActivityTask
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
-from utils.paginations import MediumResultsSetPagination
+from utils.paginations import MediumResultsSetPagination, SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
@@ -240,7 +240,7 @@ class ListCategories(APIView):
 
 class ActivitiesSearchView(ActivityCardMixin, ListUniqueOrderedElementsMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
-    pagination_class = MediumResultsSetPagination
+    pagination_class = SmallResultsSetPagination
     queryset = Activity.objects.all()
     query = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
 
@@ -253,48 +253,29 @@ class ActivitiesSearchView(ActivityCardMixin, ListUniqueOrderedElementsMixin, Li
         order = search.get_order(o)
 
         query = search.get_query(q, self.query)
-        import time
-        start = time.time()
+
+        activities = Activity.objects.select_related(*self.select_related)\
+            .prefetch_related(*self.prefetch_related)
+
         if query:
-            activities = Activity.objects.select_related(*self.select_related) \
-                .prefetch_related(*self.prefetch_related) \
-                .filter(query, filters) \
-                .annotate(number_assistants=Count('calendars__orders__assistants')) \
-                .order_by(*order)
+            activities = activities.filter(query, filters)
         else:
-            activities = Activity.objects.select_related(*self.select_related) \
-                .prefetch_related(*self.prefetch_related) \
-                .filter(filters) \
-                .annotate(number_assistants=Count('calendars__orders__assistants')) \
-                .order_by(*order)
-        end = time.time()
-        print('query', end - start)
-        print('count', activities.count())
+            activities = activities.filter(filters)
 
-        # start = time.time()
-        # activities = self.unique_everseen(activities)
-        # # activities = list(self.unique_everseen(activities))
-        # end = time.time()
-        # print('unique', end - start)
+        if 'closest' in order:
+            activities = activities.extra(select={
+                    'closest':
+                        'SELECT "activities_calendar"."initial_date" '
+                        'FROM "activities_calendar" '
+                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                        'AND "activities_calendar"."initial_date" > now() '
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'})
 
-        # start = time.time()
-        # if not order:
-        #     unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
-        #     # if o == 'closest':
-        #     activities = sorted(activities,
-        #                         key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
-        #     # else:
-        #     #     activities = sorted(activities, key=lambda a: (
-        #     #     a.number_assistants, a.closest_calendar.initial_date if a.closest_calendar else unix_epoch))
-        # end = time.time()
-        # print('order', end - start)
+        activities = activities.order_by(*order)
 
-        start = time.time()
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            end = time.time()
-            print('serializer', end - start)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(activities, many=True)
@@ -327,7 +308,8 @@ class ShareActivityEmailView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
         task = SendEmailShareActivityTask()
-        task.delay(request.user.id, activity.id, emails=emails, message=request.data.get('message'))
+        task.delay(request.user.id, activity.id, emails=emails,
+                   message=request.data.get('message'))
 
         return Response('OK')
 
@@ -341,7 +323,8 @@ class AutoCompleteView(APIView):
             activities = self.get_list(Activity.objects.filter(title__istartswith=query), 'title')
             tags = self.get_list(Tags.objects.filter(name__istartswith=query), 'name')
             categories = self.get_list(Category.objects.filter(name__istartswith=query), 'name')
-            subcategories = self.get_list(SubCategory.objects.filter(name__istartswith=query), 'name')
+            subcategories = self.get_list(SubCategory.objects.filter(name__istartswith=query),
+                                          'name')
             organizers = self.get_list(Organizer.objects.filter(name__istartswith=query), 'name')
             result = chain(activities, tags, categories, subcategories, organizers)
 

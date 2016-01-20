@@ -30,6 +30,5 @@ class ListUniqueOrderedElementsMixin(object):
 
 
 class ActivityCardMixin(object):
-    select_related = ['location', 'organizer', 'sub_category', 'sub_category__category', 'organizer__user']
-    prefetch_related = ['pictures', 'organizer__locations__city', 'organizer__instructors', 'calendars__sessions',
-                        'calendars__orders__assistants', 'calendars__orders__student__user']
+    select_related = ['organizer', 'sub_category__category',]
+    prefetch_related = ['pictures', 'calendars__sessions']
