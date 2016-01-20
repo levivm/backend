@@ -22,9 +22,11 @@ from rest_framework import status
 
 from activities import constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory
-from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, SubCategory
+from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
+    SubCategory
 from activities.models import Category
-from activities.serializers import ActivitiesSerializer, CalendarSerializer, ActivitiesCardSerializer
+from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
+    ActivitiesCardSerializer
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory
@@ -66,7 +68,8 @@ class ActivitiesListViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_create_an_activity(self):
@@ -124,7 +127,8 @@ class GetActivityViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_update_the_activity(self):
@@ -181,8 +185,10 @@ class CalendarsByActivityViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_create_a_calendar(self):
         organizer = self.get_organizer_client()
@@ -256,7 +262,8 @@ class GetCalendarByActivityViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         # self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
     def test_organizer_should_update_the_calendar(self):
@@ -273,14 +280,16 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         self.assertTrue(calendar.orders.count() > 0)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_400_BAD_REQUEST)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_400_BAD_REQUEST)
 
     def test_organizer_should_delete_calendar_if_hasnt_students(self):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         calendar.orders.all().delete()
         self.assertTrue(calendar.orders.count() == 0)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_204_NO_CONTENT)
 
     def test_another_organizer_shouldnt_udpate_the_calendar(self):
         organizer = self.get_organizer_client(self.ANOTHER_ORGANIZER_ID)
@@ -305,20 +314,24 @@ class PublishActivityViewTest(BaseViewTest):
         self.url_resolve_to_view_correctly()
 
     def test_methods_for_anonymous(self):
-        self.method_should_be(clients=self.client, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=self.client, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.authorization_should_be_require()
 
     def test_methods_for_student(self):
         student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_publish_the_activity(self):
@@ -349,20 +362,24 @@ class UnpublishActivityViewTest(BaseViewTest):
         self.url_resolve_to_view_correctly()
 
     def test_methods_for_anonymous(self):
-        self.method_should_be(clients=self.client, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=self.client, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.authorization_should_be_require()
 
     def test_methods_for_student(self):
         student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_unpublish_the_activity(self):
@@ -604,8 +621,10 @@ class ActivityInfoViewTest(BaseViewTest):
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
 
@@ -669,22 +688,29 @@ class UpdateActivityLocationViewTest(BaseViewTest):
         self.url_resolve_to_view_correctly()
 
     def test_methods_for_anonymous(self):
-        self.method_should_be(clients=self.client, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=self.client, method='post', status=status.HTTP_401_UNAUTHORIZED)
-        self.method_should_be(clients=self.client, method='put', status=status.HTTP_401_UNAUTHORIZED)
-        self.method_should_be(clients=self.client, method='delete', status=status.HTTP_401_UNAUTHORIZED)
+        self.method_should_be(clients=self.client, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=self.client, method='post',
+                              status=status.HTTP_401_UNAUTHORIZED)
+        self.method_should_be(clients=self.client, method='put',
+                              status=status.HTTP_401_UNAUTHORIZED)
+        self.method_should_be(clients=self.client, method='delete',
+                              status=status.HTTP_401_UNAUTHORIZED)
 
     def test_methods_for_student(self):
         student = self.get_student_client()
-        self.method_should_be(clients=student, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=student, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
         self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_update_location(self):
@@ -770,7 +796,8 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
     def test_email_task_should_create_if_has_students(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        orders = [order for calendar in activity.calendars.all() for order in calendar.orders.all()]
+        orders = [order for calendar in activity.calendars.all() for order in
+                  calendar.orders.all()]
         self.assertGreater(len(orders), 0)
         task = SendEmailLocationTask()
         task.apply((self.ACTIVITY_ID, False), countdown=60)
@@ -779,7 +806,8 @@ class SendEmailLocationTaskTest(BaseViewTest):
     def test_email_task_shouldnt_create_if_hasnt_students(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
         [calendar.orders.all().delete() for calendar in activity.calendars.all()]
-        orders = [order for calendar in activity.calendars.all() for order in calendar.orders.all()]
+        orders = [order for calendar in activity.calendars.all() for order in
+                  calendar.orders.all()]
         self.assertEqual(len(orders), 0)
         task = SendEmailLocationTask()
         task.apply((self.ACTIVITY_ID, False))
@@ -788,9 +816,8 @@ class SendEmailLocationTaskTest(BaseViewTest):
 
 class SearchActivitiesViewTest(BaseAPITestCase):
     def _get_activities_ordered(self, queryset=Activity.objects.all(), order_by=None):
-        order = order_by or ('number_assistants', 'calendars__initial_date')
-        return queryset.annotate(number_assistants=Count('calendars__orders__assistants')) \
-            .order_by(*order)
+        order = order_by or ('-score', 'calendars__initial_date')
+        return queryset.order_by(*order)
 
     def unique(self, array):
         seen = list()
@@ -817,20 +844,25 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def create_activities(self):
         tag = TagsFactory(name=self.tag_name)
         titles = ['%s de %s' % (t, self.query_keyword.capitalize()) for t in ['Clases', 'Curso']]
-        activities = ActivityFactory.create_batch(2, title=factory.Iterator(titles), location__city=self.city,
+        activities = ActivityFactory.create_batch(2, title=factory.Iterator(titles),
+                                                  location__city=self.city,
                                                   level=constants.LEVEL_P, published=True)
-        activities.append(ActivityFactory(title='Curso de Cocina', organizer=self.organizer, level=constants.LEVEL_I,
+        activities.append(ActivityFactory(title='Curso de Cocina', organizer=self.organizer,
+                                          level=constants.LEVEL_I,
                                           published=True))
-        activities.append(ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
-                                          certification=True, published=True))
-        CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10), session_price=self.price,
+        activities.append(
+            ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
+                            certification=True, published=True))
+        CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10),
+                        session_price=self.price,
                         is_weekend=True)
         return activities
 
     def create_calendars(self):
         calendars = list()
         for i, activity in enumerate(self.activities):
-            dates = [now() - timedelta(days=1), now(), now() + timedelta(days=2), now() - timedelta(days=4)]
+            dates = [now() - timedelta(days=1), now(), now() + timedelta(days=2),
+                     now() - timedelta(days=4)]
             price = (i + 1) * 100000
             calendars.append(mommy.make(Calendar, _quantity=4, activity=activity,
                                         session_price=price, initial_date=cycle(dates)))
@@ -844,14 +876,16 @@ class SearchActivitiesViewTest(BaseAPITestCase):
 
     def test_search_query(self):
         response = self.client.get(self.url, data={'q': 'curso de %s' % self.query_keyword})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(title__icontains=self.query_keyword))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_query_organizer_name(self):
         response = self.client.get(self.url, data={'q': self.organizer_name})
-        activities = self._get_activities_ordered(Activity.objects.filter(organizer=self.organizer))
+        activities = self._get_activities_ordered(
+            Activity.objects.filter(organizer=self.organizer))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -866,7 +900,8 @@ class SearchActivitiesViewTest(BaseAPITestCase):
 
     def test_search_subcategory(self):
         response = self.client.get(self.url, data={'subcategory': self.subcategory.id})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(sub_category=self.subcategory))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(sub_category=self.subcategory))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertCountEqual(response.data['results'], serializer.data)
@@ -875,21 +910,24 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def test_search_date(self):
         date = int(time.mktime(self.now.timetuple()) * 1000)
         response = self.client.get(self.url, data={'date': date})
-        activity = self._get_activities_ordered(queryset=Activity.objects.filter(calendars__initial_date__gte=self.now))
+        activity = self._get_activities_ordered(
+            queryset=Activity.objects.filter(calendars__initial_date__gte=self.now))
         serializer = ActivitiesCardSerializer(activity, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_tags(self):
         response = self.client.get(self.url, data={'q': self.tag_name})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(tags__name__icontains=self.tag_name))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(tags__name__icontains=self.tag_name))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_city(self):
         response = self.client.get(self.url, data={'city': self.city.id})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(location__city=self.city))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(location__city=self.city))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -901,28 +939,32 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         }
         response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
-                queryset=Activity.objects.filter(calendars__session_price__range=(self.price, self.price + 100000)))
+                queryset=Activity.objects.filter(
+                    calendars__session_price__range=(self.price, self.price + 100000)))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_level(self):
         response = self.client.get(self.url, data={'level': 'I'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(level=constants.LEVEL_I))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(level=constants.LEVEL_I))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_certification(self):
         response = self.client.get(self.url, data={'certification': 'false'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(certification=False))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(certification=False))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_search_weekends(self):
         response = self.client.get(self.url, data={'weekends': 'true'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(calendars__is_weekend=True))
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(calendars__is_weekend=True))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -937,15 +979,16 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         response = self.client.get(self.url, data={'city': self.city.id})
         activities = self._get_activities_ordered(
                 queryset=Activity.objects.filter(location__city=self.city, published=True))
-        serializer = ActivitiesCardSerializer(activities[:25], many=True)
+        serializer = ActivitiesCardSerializer(activities[:10], many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_min_price_order(self):
         self.create_calendars()
         response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'min_price'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-                                                  order_by=['calendars__session_price'])
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+            order_by=['calendars__session_price'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -953,8 +996,9 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def test_max_price_order(self):
         self.create_calendars()
         response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'max_price'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-                                                  order_by=['-calendars__session_price'])
+        activities = self._get_activities_ordered(
+            queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+            order_by=['-calendars__session_price'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -962,19 +1006,9 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def test_score_order(self):
         self.create_calendars()
         response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'score'})
-        activities = self._get_activities_ordered(queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-                                                  order_by=['-score'])
-        serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['results'], serializer.data)
-
-    def test_number_assistants_order(self):
-        self.calendars = self.create_calendars()
-        self.create_assistants()
-        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'num_assistants'})
         activities = self._get_activities_ordered(
-            queryset=Activity.objects.filter(title__icontains=self.query_keyword).annotate(
-                number_assistants=Count('calendars__orders__assistants')), order_by=['-number_assistants'])
+            queryset=Activity.objects.filter(title__icontains=self.query_keyword),
+            order_by=['-score'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -985,7 +1019,8 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         activities = Activity.objects.filter(title__icontains=self.query_keyword)
         unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
         activities = sorted(activities,
-                            key=lambda a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
+                            key=lambda
+                                a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -1014,7 +1049,8 @@ class SubCategoriesViewTest(BaseAPITestCase):
                                       kwargs={'subcategory_id': self.sub_category.id})
 
         self.get_covers_url_another_subcategory = reverse('activities:get_covers_photos',
-                                                          kwargs={'subcategory_id': self.another_sub_category.id})
+                                                          kwargs={
+                                                              'subcategory_id': self.another_sub_category.id})
 
     def test_get_covers_photos_from_subcategory_with_not_enough_pictures(self):
         """
@@ -1053,7 +1089,8 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         self.activity = mommy.make(Activity)
 
         # URLs
-        self.share_url = reverse('activities:share_email_activity', kwargs={'activity_pk': self.activity.id})
+        self.share_url = reverse('activities:share_email_activity',
+                                 kwargs={'activity_pk': self.activity.id})
 
         # Celery
         settings.CELERY_ALWAYS_EAGER = True
@@ -1110,7 +1147,8 @@ class AutoCompleteViewTest(BaseAPITestCase):
         Test the result of the autocomplete
         """
 
-        contains = ['danza', 'deportes', 'documentales', 'derecho', 'docencia', 'deportes de colombia']
+        contains = ['danza', 'deportes', 'documentales', 'derecho', 'docencia',
+                    'deportes de colombia']
 
         # Should response the contains data
         response = self.client.get(self.auto_complete_url, {'q': 'd'})
@@ -1127,9 +1165,12 @@ class AutoCompleteViewTest(BaseAPITestCase):
         return categories
 
     def create_subcategories(self):
-        subcategories = mommy.make(SubCategory, name='Docencia', category=self.categories[0], _quantity=1)
-        subcategories += mommy.make(SubCategory, name='Idiomas', category=self.categories[1], _quantity=1)
-        subcategories += mommy.make(SubCategory, name='Otros', category=self.categories[0], _quantity=1)
+        subcategories = mommy.make(SubCategory, name='Docencia', category=self.categories[0],
+                                   _quantity=1)
+        subcategories += mommy.make(SubCategory, name='Idiomas', category=self.categories[1],
+                                    _quantity=1)
+        subcategories += mommy.make(SubCategory, name='Otros', category=self.categories[0],
+                                    _quantity=1)
         return subcategories
 
     def create_tags(self):

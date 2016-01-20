@@ -238,7 +238,7 @@ class ListCategories(APIView):
         return Response(data)
 
 
-class ActivitiesSearchView(ActivityCardMixin, ListUniqueOrderedElementsMixin, ListAPIView):
+class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = SmallResultsSetPagination
     queryset = Activity.objects.all()
@@ -258,7 +258,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListUniqueOrderedElementsMixin, Li
             .prefetch_related(*self.prefetch_related)
 
         if query:
-            activities = activities.filter(query, filters)
+            activities = activities.filter(query, filters).distinct()
         else:
             activities = activities.filter(filters)
 
