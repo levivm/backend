@@ -1,4 +1,5 @@
 import random
+from typing import Optional, Any, List
 
 import factory
 from django.contrib.auth.models import User
@@ -6,13 +7,20 @@ from django.core.management.base import BaseCommand
 
 from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
     CalendarSessionFactory
-from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Tags
-from locations.factories import CityFactory
+from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Tags, Activity, \
+    Calendar, CalendarSession
+from locations.factories import CityFactory, LocationFactory
+from locations.models import City, Location
 from orders.factories import OrderFactory, AssistantFactory, RefundFactory
+from orders.models import Order, Assistant, Refund
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
+from organizers.models import Organizer, Instructor, OrganizerBankInfo
 from payments.factories import FeeFactory
+from payments.models import Fee
 from referrals.factories import ReferralFactory, RedeemFactory, CouponTypeFactory
+from referrals.models import Referral, Redeem
 from reviews.factories import ReviewFactory
+from reviews.models import Review
 from students.factories import StudentFactory
 from students.models import Student
 from utils.management.commands import load_data
@@ -20,22 +28,6 @@ from utils.management.commands import load_data
 
 class Command(BaseCommand):
     help = "Load fake data"
-    students = None
-    city = None
-    organizers = None
-    instructors = None
-    bank_info = None
-    subcategories = None
-    activities = None
-    activity_photos = None
-    calendars = None
-    calendar_sessions = None
-    orders = None
-    assistants = None
-    refunds = None
-    referral = None
-    redeem = None
-    reviews = None
 
     def add_arguments(self, parser):
         parser.add_argument('-l', '--load-data',
@@ -54,11 +46,12 @@ class Command(BaseCommand):
         # Load data
         self.ask_for_load_data(options['load_data'])
 
+        # Locations
+        self.city = self.create_city(options['city'].strip())
+        self.locations = self.create_locations()
+
         # Users
         self.students = self.create_students()
-
-        # Locations
-        self.city = self.create_city(options['city'])
 
         # Organizers
         self.organizers = self.create_organizers()
@@ -84,33 +77,38 @@ class Command(BaseCommand):
         # Reviews
         self.reviews = self.create_reviews()
 
-    def ask_for_load_data(self, create_data):
+    def ask_for_load_data(self, create_data: bool) -> None:
         if create_data:
             self.stdout.write('Creando data inicial')
             load_data.Command().handle()
 
     @staticmethod
-    def get_quantity(sample=range(3, 6)):
+    def get_quantity(sample: iter = range(3, 6)) -> int:
         return random.choice(sample)
 
     @staticmethod
-    def get_sample(array, quantity):
-        return random.sample(array, quantity)
+    def get_sample(iterable: list, quantity: int) -> Any:
+        return random.sample(iterable, quantity)
 
     @staticmethod
-    def flat_list(array):
-        return [item for sublist in array for item in sublist]
+    def flat_list(iterable: list) -> list:
+        return [item for sublist in iterable for item in sublist]
 
-    def create_city(self, city):
+    def create_city(self, city: str) -> Optional[City]:
         if city:
             self.stdout.write('Creando ciudad')
             return CityFactory(name=city.capitalize())
 
-    def create_organizers(self):
+    def create_locations(self) -> List[Location]:
+        self.stdout.write('Creado locations')
+        params = {'city': self.city} if self.city else {}
+        return LocationFactory.create_batch(self.get_quantity(), **params)
+
+    def create_organizers(self) -> List[Organizer]:
         self.stdout.write('Creando organizers')
         return OrganizerFactory.create_batch(self.get_quantity())
 
-    def create_instructors(self):
+    def create_instructors(self) -> List[Instructor]:
         self.stdout.write('Creando instructors')
         instructors = list()
         for organizer in self.organizers:
@@ -118,11 +116,12 @@ class Command(BaseCommand):
             instructors.append(InstructorFactory.create_batch(quantity, organizer=organizer))
         return self.flat_list(instructors)
 
-    def create_students(self):
+    def create_students(self) -> List[Student]:
         self.stdout.write('Creando students')
-        return StudentFactory.create_batch(self.get_quantity())
+        params = {'city': self.city} if self.city else {}
+        return StudentFactory.create_batch(self.get_quantity(), **params)
 
-    def create_activities(self, num_activities):
+    def create_activities(self, num_activities: int) -> List[Activity]:
         self.stdout.write('Creando activities')
         activities = list()
         size = None
@@ -140,12 +139,9 @@ class Command(BaseCommand):
                 'published': True,
                 'sub_category': factory.Iterator(self.subcategories),
                 'instructors': instructors_sample,
-                'location__organizer': organizer,
+                'location': factory.Iterator(self.locations),
                 'certification': factory.Faker('boolean'),
             }
-
-            if self.city:
-                params['location__city'] = self.city
 
             activities.append(ActivityFactory.create_batch(quantity, **params))
 
@@ -154,24 +150,27 @@ class Command(BaseCommand):
         self.create_tags(activities)
         return activities
 
-    def create_main_photo(self, activities):
+    def create_main_photo(self, activities: List[Activity]) -> None:
         for activity in activities:
             try:
-                stock_photo = random.choice(ActivityStockPhoto.objects.filter(sub_category=activity.sub_category))
+                stock_photo = random.choice(
+                    ActivityStockPhoto.objects.filter(sub_category=activity.sub_category))
                 ActivityPhoto.objects.create(photo=stock_photo.photo,
                                              thumbnail=stock_photo.thumbnail,
                                              activity=activity, main_photo=True)
             except:
                 pass
 
-    def create_tags(self, activities):
+    def create_tags(self, activities: List[Activity]) -> None:
         for activity in activities:
-            subcategory_tag, _ = Tags.objects.get_or_create(name=activity.sub_category.name.lower())
-            category_tag, _ = Tags.objects.get_or_create(name=activity.sub_category.category.name.lower())
+            subcategory_tag, _ = Tags.objects.get_or_create(
+                name=activity.sub_category.name.lower())
+            category_tag, _ = Tags.objects.get_or_create(
+                name=activity.sub_category.category.name.lower())
             tags = [subcategory_tag, category_tag]
             activity.tags.add(*tags)
 
-    def create_activity_photos(self):
+    def create_activity_photos(self) -> List[ActivityPhoto]:
         self.stdout.write('Creando activity photos')
         photos = list()
         for activity in self.activities:
@@ -180,19 +179,22 @@ class Command(BaseCommand):
 
         return self.flat_list(photos)
 
-    def create_calendars(self):
+    def create_calendars(self) -> List[Calendar]:
         self.stdout.write('Creando calendars')
         calendars = list()
         for activity in self.activities:
             quantity = self.get_quantity()
-            calendars.append(CalendarFactory.create_batch(quantity, activity=activity,
-                                                          enroll_open=factory.Faker('boolean'),
-                                                          is_weekend=factory.Faker('boolean'),
-                                                          is_free=factory.Faker('boolean', chance_of_getting_true=20)))
+            calendars.append(
+                CalendarFactory.create_batch(quantity,
+                                             activity=activity,
+                                             enroll_open=factory.Faker('boolean'),
+                                             is_weekend=factory.Faker('boolean'),
+                                             is_free=factory.Faker('boolean',
+                                                                   chance_of_getting_true=20)))
 
         return self.flat_list(calendars)
 
-    def create_calendar_sessions(self):
+    def create_calendar_sessions(self) -> List[CalendarSession]:
         self.stdout.write('Creando calendar sessions')
         sessions = list()
         for calendar in self.calendars:
@@ -201,7 +203,7 @@ class Command(BaseCommand):
 
         return self.flat_list(sessions)
 
-    def create_orders(self):
+    def create_orders(self) -> List[Order]:
         self.stdout.write('Creando orders')
         orders = list()
         fee = self.create_fee()
@@ -211,12 +213,13 @@ class Command(BaseCommand):
             if quantity < 1:
                 continue
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
-                                                    student=factory.Iterator(Student.objects.all()),
+                                                    student=factory.Iterator(
+                                                        Student.objects.all()),
                                                     fee=fee, quantity=quantity))
 
         return self.flat_list(orders)
 
-    def create_assistants(self):
+    def create_assistants(self) -> List[Assistant]:
         self.stdout.write('Creando assistants')
         assistants = list()
         for order in self.orders:
@@ -225,36 +228,39 @@ class Command(BaseCommand):
 
         return self.flat_list(assistants)
 
-    def create_refunds(self):
+    def create_refunds(self) -> List[Refund]:
         self.stdout.write('Creando refunds')
         quantity = self.get_quantity()
         users = self.get_sample(list(User.objects.all()), quantity)
         orders = self.get_sample(self.orders, quantity)
         assistants = [*self.get_sample(self.assistants, quantity - 1), None]
 
-        return RefundFactory.create_batch(quantity, user=factory.Iterator(users), order=factory.Iterator(orders),
+        return RefundFactory.create_batch(quantity, user=factory.Iterator(users),
+                                          order=factory.Iterator(orders),
                                           assistant=factory.Iterator(assistants))
 
-    def create_bank_info(self):
+    def create_bank_info(self) -> List[OrganizerBankInfo]:
         self.stdout.write('Creando bank infos')
-        return [OrganizerBankInfoFactory.create(organizer=o) for o in self.organizers]
+        size = len(self.organizers)
+        organizers = factory.Iterator(self.organizers)
+        return OrganizerBankInfoFactory.create_batch(size, organizer=organizers)
 
-    @staticmethod
-    def create_fee():
+    def create_fee(self) -> Fee:
+        self.stdout.write('Creando fee')
         return FeeFactory()
 
-    def create_referrals(self):
+    def create_referrals(self) -> Referral:
         self.stdout.write('Creando referrals')
         quantity = 1
         referrer, referred = self.get_sample(self.students, quantity + 1)
         return ReferralFactory(referrer=referrer, referred=referred)
 
-    def create_redeems(self):
+    def create_redeems(self) -> List[Redeem]:
         self.stdout.write('Creando redeems')
         coupon_type = CouponTypeFactory()
         return RedeemFactory(student=self.referral.referred, coupon__coupon_type=coupon_type)
 
-    def create_reviews(self):
+    def create_reviews(self) -> List[Review]:
         self.stdout.write('Creando reviews')
         reviews = list()
         quantity = self.get_quantity()

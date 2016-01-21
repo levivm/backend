@@ -2,7 +2,6 @@ import factory
 import factory.fuzzy
 
 from locations.models import City, Location
-from organizers.factories import OrganizerFactory
 
 
 def get_point():
@@ -28,4 +27,3 @@ class LocationFactory(factory.django.DjangoModelFactory):
     address = factory.Faker('address')
     city = factory.SubFactory(CityFactory)
     point = factory.fuzzy.FuzzyAttribute(get_point)
-    organizer = factory.SubFactory(OrganizerFactory)
