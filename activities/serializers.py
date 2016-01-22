@@ -70,7 +70,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return ("%s%s") % (url, file_name)
 
     def get_cover(self, obj):
-        url = '/css/img/categories/'
+        url = ('%scategories/cover/') % (settings.STATIC_IMAGES_URL)
         file_name = ("%s.jpg") % obj.name.lower()
         file_name = urllib.parse.quote(file_name)
         return ("%s%s") % (url, file_name)
