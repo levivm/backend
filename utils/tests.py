@@ -198,3 +198,17 @@ class BaseAPITestCase(APITestCase):
         client = APIClient()
         client.force_authenticate(user=user, token=token)
         return client
+
+
+class TestMixinUtils(object):
+    """
+    Some method to help the test
+    """
+
+    def all_serializer_items_diff_assertion(self, serializer, content):
+        "Find out the different items and print them out"
+        for item in content.items():
+            if item not in serializer.data.items():
+                key, val = item
+                print('CONTENT %s' % key.upper(), val)
+                print('SERIALIZER %s' % key.upper(), serializer.data[key])

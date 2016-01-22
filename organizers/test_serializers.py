@@ -2,11 +2,14 @@ from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
+from locations.serializers import LocationsSerializer
+from organizers.factories import OrganizerFactory
 from organizers.models import Organizer, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer, OrganizersSerializer
 from users.forms import UserCreateForm
 from users.serializers import UsersSerializer
 from utils.serializers import UnixEpochDateField
+from utils.tests import TestMixinUtils
 
 
 class OrganizerBankInfoSerializerTest(APITestCase):
@@ -38,8 +41,9 @@ class OrganizerBankInfoSerializerTest(APITestCase):
         serializer.is_valid(raise_exception=True)
         bank_info = serializer.save()
 
-        self.assertTrue(
-            OrganizerBankInfo.objects.filter(organizer=self.organizer, beneficiary=self.data['beneficiary']).exists())
+        self.assertTrue(OrganizerBankInfo.objects.filter(organizer=self.organizer,
+                                                         beneficiary=self.data['beneficiary'])
+                                                 .exists())
         self.assertTrue(all(item in bank_info.__dict__.items() for item in self.content.items()))
 
     def test_read(self):
@@ -74,7 +78,8 @@ class OrganizerBankInfoSerializerTest(APITestCase):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        self.assertTrue(OrganizerBankInfo.objects.filter(organizer=self.organizer, **update_data).exists())
+        self.assertTrue(
+            OrganizerBankInfo.objects.filter(organizer=self.organizer, **update_data).exists())
 
     def test_validation_all_fields_required(self):
         """
@@ -88,13 +93,13 @@ class OrganizerBankInfoSerializerTest(APITestCase):
             serializer.is_valid(raise_exception=True)
 
 
-class OrganizerSerialiezerTest(APITestCase):
+class OrganizerSerialiezerTest(TestMixinUtils, APITestCase):
     """
     Test the OrganizerSerializer
     """
 
     def setUp(self):
-        self.organizer = mommy.make(Organizer)
+        self.organizer = OrganizerFactory()
 
     def test_read(self):
         """
@@ -113,13 +118,14 @@ class OrganizerSerialiezerTest(APITestCase):
             'website': self.organizer.website,
             'youtube_video_url': self.organizer.youtube_video_url,
             'telephone': self.organizer.telephone,
-            'photo': self.organizer.photo,
+            'photo': None,
             'user_type': UserCreateForm.USER_TYPES[0][0],
             'created_at': created_at,
             'instructors': [],
-            'locations': [],
+            'locations': LocationsSerializer(self.organizer.locations.all(), many=True).data,
             'rating': self.organizer.rating,
         }
 
         serializer = OrganizersSerializer(self.organizer)
-        self.assertTrue(all(item in serializer.data.items() for item in content.items()))
+        self.assertTrue(all(item in serializer.data.items() for item in content.items()),
+                        self.all_serializer_items_diff_assertion(serializer, content))

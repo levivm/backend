@@ -8,7 +8,7 @@ def get_point():
     latitude = factory.Faker('latitude').generate({})
     longitude = factory.Faker('longitude').generate({})
 
-    return '(%s, %s)' % (latitude, longitude)
+    return 'POINT(%s %s)' % (longitude, latitude)
 
 class CityFactory(factory.django.DjangoModelFactory):
     class Meta:

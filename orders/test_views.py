@@ -145,11 +145,11 @@ class OrdersAPITest(BaseAPITestCase):
 
         # List order owned by an organizer
         response = self.organizer_client.get(self.orders_by_organizer_url)
-        order_id = response.data[0].get('id')
+        order_id = response.data['results'][0].get('id')
         orders_owner = Order.objects.get(id=order_id).calendar. \
             activity.organizer.id
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), self.organizer_orders_count)
+        self.assertEqual(len(response.data['results']), self.organizer_orders_count)
         self.assertEqual(orders_owner, self.organizer.id)
 
     def test_retrieve(self):

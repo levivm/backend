@@ -29,7 +29,7 @@ from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
     ActivitiesCardSerializer
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
-from locations.factories import CityFactory
+from locations.factories import CityFactory, LocationFactory
 from orders.models import Assistant
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
@@ -673,7 +673,7 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 
     def get_data_to_update(self):
         return {
-            'point': [1, 2],
+            'point': 'POINT(1 2)',
             'address': 'Calle falsa 123',
             'city': 1
         }
@@ -834,6 +834,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.now = now()
         self.tag_name = 'fitness'
         self.city = CityFactory()
+        self.location = LocationFactory(city=self.city)
         self.price = 100000
 
         self.organizer = OrganizerFactory(name='%s Group' % self.organizer_name.capitalize())
@@ -975,7 +976,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], [])
 
     def test_pagination(self):
-        mommy.make(Activity, _quantity=50, location__city=self.city, published=True)
+        ActivityFactory.create_batch(50, location=self.location, published=True)
         response = self.client.get(self.url, data={'city': self.city.id})
         activities = self._get_activities_ordered(
                 queryset=Activity.objects.filter(location__city=self.city, published=True))

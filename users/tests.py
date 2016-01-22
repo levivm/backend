@@ -145,7 +145,7 @@ class RequestSignupTestView(BaseAPITestCase):
         # URL
         self.create_url = reverse('users:request_signup')
 
-        self.city = mommy.make(City, point='(1, 2)')
+        self.city = mommy.make(City, point='POINT(1 2)')
         self.data = {
             'name': 'Organizador',
             'email': 'organizer@testing.com',

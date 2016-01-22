@@ -137,9 +137,9 @@ class Command(BaseCommand):
             params = {
                 'organizer': organizer,
                 'published': True,
-                'sub_category': factory.Iterator(self.subcategories),
+                'sub_category': factory.Iterator(self.subcategories, cycle=True),
                 'instructors': instructors_sample,
-                'location': factory.Iterator(self.locations),
+                'location': factory.Iterator(self.locations, cycle=True),
                 'certification': factory.Faker('boolean'),
             }
 
@@ -214,7 +214,7 @@ class Command(BaseCommand):
                 continue
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
                                                     student=factory.Iterator(
-                                                        Student.objects.all()),
+                                                        Student.objects.all(), cycle=True),
                                                     fee=fee, quantity=quantity))
 
         return self.flat_list(orders)
@@ -235,9 +235,9 @@ class Command(BaseCommand):
         orders = self.get_sample(self.orders, quantity)
         assistants = [*self.get_sample(self.assistants, quantity - 1), None]
 
-        return RefundFactory.create_batch(quantity, user=factory.Iterator(users),
-                                          order=factory.Iterator(orders),
-                                          assistant=factory.Iterator(assistants))
+        return RefundFactory.create_batch(quantity, user=factory.Iterator(users, cycle=True),
+                                          order=factory.Iterator(orders, cycle=True),
+                                          assistant=factory.Iterator(assistants, cycle=True))
 
     def create_bank_info(self) -> List[OrganizerBankInfo]:
         self.stdout.write('Creando bank infos')

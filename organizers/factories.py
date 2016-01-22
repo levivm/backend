@@ -32,7 +32,6 @@ class InstructorFactory(factory.django.DjangoModelFactory):
 
     full_name = factory.Faker('name')
     bio = factory.Faker('paragraph')
-    photo = factory.Faker('image_url')
     organizer = factory.SubFactory(OrganizerFactory)
     website = factory.Faker('url')
 

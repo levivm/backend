@@ -1,6 +1,7 @@
 from ast import literal_eval
 
 from rest_framework import serializers
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from .models import Location,City
 
@@ -36,28 +37,30 @@ class PointStrField(serializers.Field):
         return point
 
 
-class CitiesSerializer(serializers.ModelSerializer):
-    point = PointStrField()
+class CitiesSerializer(GeoFeatureModelSerializer):
+    # point = PointStrField()
     class Meta:
         model = City
+        geo_field = "point"
         fields = (
             'id',
             'name',
-            'point'
+            # 'point'
             )
 
 
 
-class LocationsSerializer(serializers.ModelSerializer):
+class LocationsSerializer(GeoFeatureModelSerializer):
     city  = serializers.SlugRelatedField(slug_field='id',queryset=City.objects.all(),required=True)
-    point = PointStrField()
+    # point = PointStrField()
 
     class Meta:
         model = Location
+        geo_field = "point"
         fields = (
             'id',
             'city',
-            'point',
+            # 'point',
             'address',
             'organizer'
             )

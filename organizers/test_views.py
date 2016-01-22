@@ -89,7 +89,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
         return {
             "id": 2,
             "city": 1,
-            "point": [4.610676392396654, -74.07760244445802],
+            "point": 'POINT(4 -74)',
             "address": "Address Here",
         }
 
@@ -119,10 +119,10 @@ class OrganizerLocationsViewTest(BaseViewTest):
         client = self.get_organizer_client()
         data = json.dumps(self._get_location_data())
         response = client.post(self.url, data, **self.headers)
-        expected_organizer_id = bytes('"organizer":%s' % self.ORGANIZER_ID, 'utf8')
+        rjson = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(expected_organizer_id, response.content)
-        self.assertIn(b'"point":[4.610676392396654,-74.07760244445802]', response.content)
+        self.assertTrue("'organizer': %d" % self.ORGANIZER_ID in str(rjson))
+        self.assertTrue("'coordinates': [4.0, -74.0]" in str(rjson))
 
     def test_other_organizer_shouldnt_create_location(self):
         client = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
