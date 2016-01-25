@@ -1,11 +1,10 @@
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 
 class Payment(models.Model):
-
-    CC_PAYMENT_TYPE  = 'CC'
-    PSE_PAYMENT_TYPE = 'PSE' 
-
+    CC_PAYMENT_TYPE = 'CC'
+    PSE_PAYMENT_TYPE = 'PSE'
     PAYMENT_TYPE = (
         (PSE_PAYMENT_TYPE, 'PSE'),
         (CC_PAYMENT_TYPE, 'Crédito')
@@ -21,6 +20,7 @@ class Payment(models.Model):
     card_type = models.CharField(choices=CARD_TYPE, max_length=25)
     transaction_id = models.CharField(max_length=150)
     last_four_digits = models.CharField(max_length=5)
+    response = JSONField()
 
 
 class Fee(models.Model):

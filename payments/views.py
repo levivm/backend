@@ -30,27 +30,27 @@ class PayUBankList(APIView):
         return Response(bank_list)
 
 
-class PayUPSE(viewsets.ViewSet):
-    def _get_activity(self, data):
-        return get_object_or_404(Activity, id=data.get('activity'))
+# class PayUPSE(viewsets.ViewSet):
+#     def _get_activity(self, data):
+#         return get_object_or_404(Activity, id=data.get('activity'))
 
-    def payment_response(self, request):
-        logger.error("ESTO ES LA RESPUESTA DE PSE --------------------\n")
-        logger.error(json.dumps(request.GET))
-        logger.error("ESTO ES LA RESPUESTA DE PSE ////////------------\n")
-        return Response(request.data)
+#     def payment_response(self, request):
+#         logger.error("ESTO ES LA RESPUESTA DE PSE --------------------\n")
+#         logger.error(json.dumps(request.GET))
+#         logger.error("ESTO ES LA RESPUESTA DE PSE ////////------------\n")
+#         return Response(request.data)
 
-    def post(self, request, *args, **kwargs):
-        activity = self._get_activity(request.data)
-        order_serializer = OrdersSerializer(data=request.data)
-        order_serializer.is_valid(raise_exception=True)
+#     def post(self, request, *args, **kwargs):
+#         activity = self._get_activity(request.data)
+#         order_serializer = OrdersSerializer(data=request.data)
+#         order_serializer.is_valid(raise_exception=True)
 
-        payment_util = PaymentUtil(request, activity)
-        charge = payment_util.pse_payu_payment()
-        logger.error("ESTO ES EL URL DE PAGO --------------------\n")
-        logger.error(charge)
-        logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
-        return Response(charge, status=status.HTTP_200_OK)
+#         payment_util = PaymentUtil(request, activity)
+#         charge = payment_util.pse_payu_payment()
+#         logger.error("ESTO ES EL URL DE PAGO --------------------\n")
+#         logger.error(charge)
+#         logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
+#         return Response(charge, status=status.HTTP_200_OK)
 
 
 class PayUNotificationPayment(APIView):
@@ -81,7 +81,7 @@ class PayUNotificationPayment(APIView):
         task = SendPaymentEmailTask()
         task.apply_async((order.id,), task_data, countdown=4)
 
-    def _proccess_pse_payment(self, order, data):
+    def _proccess_pse_payment_response(self, order, data):
         # state_pol response_code_pol
         #     4            1           Transacción aprobada
         #     6            5           Transacción fallida
@@ -113,7 +113,7 @@ class PayUNotificationPayment(APIView):
 
         return Response(status=status.HTTP_200_OK)
 
-    def _proccess_cc_payment(self, order, data):
+    def _proccess_cc_payment_response(self, order, data):
 
         transaction_status = data.get('state_pol')
 
@@ -146,6 +146,8 @@ class PayUNotificationPayment(APIView):
 
         try:
             payment = Payment.objects.get(transaction_id=transaction_id)
+            payment.response = json.dumps(request.POST)
+            payment.save()
         except Payment.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -154,6 +156,6 @@ class PayUNotificationPayment(APIView):
         payment_method = data.get('payment_method_type')
 
         if payment_method == settings.PSE_METHOD_PAYMENT_ID:
-            return self._proccess_pse_payment(order, data)
+            return self._proccess_pse_payment_response(order, data)
         else:
-            return self._proccess_cc_payment(order, data)
+            return self._proccess_cc_payment_response(order, data)
