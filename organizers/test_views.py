@@ -89,7 +89,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
         return {
             "id": 2,
             "city": 1,
-            "point": 'POINT(4 -74)',
+            "point": [4, -74],
             "address": "Address Here",
         }
 
@@ -122,7 +122,7 @@ class OrganizerLocationsViewTest(BaseViewTest):
         rjson = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue("'organizer': %d" % self.ORGANIZER_ID in str(rjson))
-        self.assertTrue("'coordinates': [4.0, -74.0]" in str(rjson))
+        self.assertTrue("'point': [4.0, -74.0]" in str(rjson))
 
     def test_other_organizer_shouldnt_create_location(self):
         client = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)

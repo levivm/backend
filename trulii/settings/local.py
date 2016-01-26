@@ -27,13 +27,6 @@ DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 LOGGING_CONFIG = {}
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': 'localhost:11211',
-    }
-}
-
 # REDIS CONFIG
 REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR', 'localhost')
 REDIS_PORT = os.environ.get('REDIS_1_PORT_6379_TCP_PORT', '6379')
