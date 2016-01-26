@@ -20,7 +20,7 @@ class Payment(models.Model):
     card_type = models.CharField(choices=CARD_TYPE, max_length=25)
     transaction_id = models.CharField(max_length=150)
     last_four_digits = models.CharField(max_length=5)
-    response = JSONField()
+    response = JSONField(null=True)
 
 
 class Fee(models.Model):
