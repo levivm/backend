@@ -93,13 +93,14 @@ class SendCouponEmailTask(SendEmailTaskMixin):
 
     def run(self, redeem_id, *args, **kwargs):
         self.redeem = Redeem.objects.get(id=redeem_id)
-        template = 'referrals/email/coupon_cc'
-        return super(SendCouponEmailTask, self).run(instance=self.redeem, template=template, **kwargs)
+        self.template_name = 'referrals/email/coupon_cc_message.txt'
+        self.emails = [self.redeem.student.user.email]
+        self.subject = 'Tienes un cupón en Trulii!'
+        self.context = self.get_context_data()
+        self.global_merge_vars = self.get_global_merge_vars()
+        return super(SendCouponEmailTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, *args, **kwargs):
-        return [self.redeem.student.user.email]
-
-    def get_context_data(self, data):
+    def get_context_data(self):
         return {
             'name': self.redeem.student.user.first_name,
             'coupon_code': self.redeem.coupon.token,

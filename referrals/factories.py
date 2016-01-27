@@ -37,4 +37,3 @@ class RedeemFactory(factory.django.DjangoModelFactory):
 
     student = factory.SubFactory(StudentFactory)
     coupon = factory.SubFactory(CouponFactory)
-    used = factory.Faker('boolean')

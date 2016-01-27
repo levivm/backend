@@ -1,5 +1,7 @@
+import mock
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.template import loader
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -67,17 +69,40 @@ class SendContactFormEmailTaskTest(APITestCase):
         }
 
     def setUp(self):
-        pass
+        self.email = 'contact@trulii.com'
 
-    def test_send_contact_form_email_task_dispatch(self):
-        contact_form_data = self._get_contact_form_data()
-        task = SendContactFormEmailTask()
-        result = task.apply_async((None,), contact_form_data, countdown=2)
-        self.assertEqual(result.result, 'Task scheduled')
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_run(self, send_mail):
+        """
+        Test that the task sends the email
+        """
 
-    def test_send_contact_form_email_task_should_been_send_on_success(self):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         contact_form_data = self._get_contact_form_data()
+
         task = SendContactFormEmailTask()
-        result = task.apply_async((None,), contact_form_data, countdown=2)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
+        task_id = task.delay(contact_form_data)
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.email,
+                status='sent').exists())
+
+        message = {
+            'from_email': 'contacto@trulii.com',
+            'html': loader.get_template('landing/email/contact_us_form_message.txt').render(),
+            'subject': 'Subject contact form',
+            'to': [{'email': self.email}],
+            'merge_vars': [],
+            'global_merge_vars': [{'name': k, 'content': v} for k, v in contact_form_data.items()],
+        }
+
+        called_message = send_mail.call_args[1]['message']
+
+        self.assertTrue(all(item in called_message.items() for item in message.items()))

@@ -18,7 +18,7 @@ urlpatterns = [
 
     # {% url referrals:referrer %}
     url(
-        regex=r'^(?P<referrer_code>\w+)/?$',
+        regex=r'^(?P<referrer_code>[\w\-]+)/?$',
         view=AcceptInvitation.as_view(),
         name='referrer',
     ),

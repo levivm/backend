@@ -46,5 +46,6 @@ class ContactFormView(APIView):
         form_serializer.is_valid(raise_exception=True)
         contact_form_data = request.data
         task = SendContactFormEmailTask()
-        task.apply_async((None,), contact_form_data, countdown=2)
+        # task.apply_async((None,), contact_form_data, countdown=2)
+        task.delay(contact_form_data)
         return Response(form_serializer.data, status=status.HTTP_200_OK)

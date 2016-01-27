@@ -279,34 +279,48 @@ class SendCouponEmailTaskTest(APITestCase):
     """
 
     def setUp(self):
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Arrangement
         self.redeem = mommy.make(Redeem)
         self.email = self.redeem.student.user.email
 
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
+    @mock.patch('utils.mixins.mandrill.Messages.send')
     def test_run(self, send_mail):
         """
         Test that the task sends the email
         """
 
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         task = SendCouponEmailTask()
         task_id = task.delay(redeem_id=self.redeem.id)
 
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.email, send=True).exists())
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.email,
+                status='sent').exists())
 
         context = {
-            'name': self.email,
+            'name': self.redeem.student.user.first_name,
             'coupon_code': self.redeem.coupon.token,
         }
 
-        send_mail.assert_called_with(
-            'referrals/email/coupon_cc',
-            self.email,
-            context,
-        )
+        message = {
+            'from_email': 'contacto@trulii.com',
+            'html': loader.get_template('referrals/email/coupon_cc_message.txt').render(),
+            'subject': 'Tienes un cupón en Trulii!',
+            'to': [{'email': self.email}],
+            'merge_vars': [],
+            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
+        }
+
+        called_message = send_mail.call_args[1]['message']
+
+        self.assertTrue(all(item in called_message.items() for item in message.items()))
 
 
 class SendReferralEmailTaskTest(APITestCase):
