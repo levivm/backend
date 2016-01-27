@@ -6,17 +6,16 @@ class SendEMailStudentRefundTask(SendEmailTaskMixin):
     """
     Task to send an email for the user depending the refund's status
     """
-    refund = None
 
     def run(self, refund_id, *args, **kwargs):
         self.refund = Refund.objects.get(id=refund_id)
-        template = 'orders/email/refund_%s_cc' % self.refund.status
-        return super(SendEMailStudentRefundTask, self).run(instance=self.refund, template=template, **kwargs)
+        self.template_name = 'orders/email/refund_%s_cc_message.txt' % self.refund.status
+        self.emails = [self.refund.user.email]
+        self.subject = 'Información sobre tu reembolso'
+        self.context = self.get_context_data()
+        return super(SendEMailStudentRefundTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, *args, **kwargs):
-        return [self.refund.user.email]
-
-    def get_context_data(self, data):
+    def get_context_data(self):
         return {
             'name': self.refund.user.first_name,
             'order': self.refund.order.id,
@@ -31,13 +30,14 @@ class SendEmailOrganizerRefundTask(SendEmailTaskMixin):
 
     def run(self, refund_id, *args, **kwargs):
         self.refund = Refund.objects.get(id=refund_id)
-        template = 'orders/email/refund_organizer_cc'
-        return super(SendEmailOrganizerRefundTask, self).run(instance=self.refund, template=template, **kwargs)
+        self.template_name = 'orders/email/refund_organizer_cc_message.txt'
+        self.emails = [self.refund.order.calendar.activity.organizer.user.email]
+        self.subject = 'Reembolso aprobado'
+        self.context = self.get_context_data()
+        self.global_merge_vars = self.get_global_merge_vars()
+        return super(SendEmailOrganizerRefundTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, *args, **kwargs):
-        return [self.refund.order.calendar.activity.organizer.user.email]
-
-    def get_context_data(self, data):
+    def get_context_data(self):
         return {
             'name': self.refund.order.calendar.activity.organizer.user.first_name,
             'activity': self.refund.order.calendar.activity.title,

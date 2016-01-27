@@ -1,58 +1,54 @@
 from __future__ import absolute_import
 
-from allauth.account.adapter import get_adapter
 from celery import Task
 
+from utils.mixins import MandrillMixin
 from .models import EmailTaskRecord
 
 
-class SendEmailTaskMixin(Task):
+class SendEmailTaskMixin(MandrillMixin, Task):
     abstract = True
-    success_handler = True
+    email_records = None
+    context = None
 
-    def run(self, instance, template, **kwargs):
-        emails = self.get_emails_to(instance)
-        if emails:
-            context = self.get_context_data(kwargs)
+    def run(self, *args, **kwargs):
+        assert (self.template_name and
+                self.emails and
+                self.subject and
+                self.context), ('Cannot send email on task that does not set template_name, '
+                                'emails, subject, context and merge_vars')
 
-            for email in emails:
-                self.register_email_record_task(template, self.request.id, email, **kwargs)
-                get_adapter().send_mail(
-                    template,
-                    email,
-                    context,
-                )
+        self.email_records = self.create_email_record_task()
+        return self.send_mail()
 
-            return 'Task scheduled'
+    def create_email_record_task(self):
+        params = [{
+            'to': email,
+            'template_name': self.template_name,
+            'subject': self.subject,
+            'data': self.context,
+            'task_id': self.request.id,
+        } for email in self.emails]
 
-    def get_email_record_task_data(self, template, task_id, to_email, **kwargs):
-
-        data = {
-            'to': to_email,
-            'template': template,
-            'data': self.get_context_data(kwargs),
-            'task_id': task_id,
-        }
-
-        return data
-
-    def register_email_record_task(self, template, task_id, to_email, **kwargs):
-        data = self.get_email_record_task_data(template, task_id, to_email, **kwargs)
-        email_task_record = EmailTaskRecord(**data)
-        email_task_record.save()
-
-    def get_context_data(self, instance):
-        data = {}
-        return data
-
-    def get_emails_to(self, *args, **kwargs):
-        return []
+        return [EmailTaskRecord.objects.create(**param) for param in params]
 
     def on_success(self, retval, task_id, args, kwargs):
-        if self.success_handler:
-            try:
-                email_task_record = EmailTaskRecord.objects.get(task_id=task_id)
-                email_task_record.send = True
-                email_task_record.save()
-            except EmailTaskRecord.MultipleObjectsReturned:
-                EmailTaskRecord.objects.filter(task_id=task_id).update(send=True)
+        records_hash = {e.to: e for e in self.email_records}
+
+        for result in retval:
+            email_record = records_hash[result['email']]
+            email_record.status = result['status']
+            email_record.reject_reason = '' if not result['reject_reason'] else \
+                result['reject_reason']
+            email_record.smtp_id = result['_id']
+            email_record.save()
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if self.email_records:
+            for email_record in self.email_records:
+                email_record.status = 'error'
+                email_record.reject_reason = exc
+                email_record.save(update_fields=['status', 'reject_reason'])
+
+    def get_global_merge_vars(self):
+        return [{'name': k, 'content': v} for k, v in self.context.items()]

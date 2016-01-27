@@ -1,17 +1,22 @@
 import json
 import urllib.parse
 
+import mock
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
+from django.template import loader
 from model_mommy import mommy
 
 from rest_framework import status
+from rest_framework.test import APITestCase
 
+from locations.factories import CityFactory
 from locations.models import City
 from locations.serializers import CitiesSerializer
+from users.models import OrganizerConfirmation
 from utils.tests import BaseViewTest, BaseAPITestCase
 from utils.models import EmailTaskRecord
 from users.allauth_adapter import MyAccountAdapter
@@ -195,31 +200,50 @@ class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
 
 
-class SendEmailOrganizerConfirmationTaskTest(BaseViewTest):
-    CONFIRMATION_ID = 1
+class SendEmailOrganizerConfirmationTaskTest(APITestCase):
+    # CONFIRMATION_ID = 1
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
+        self.confirmation = mommy.make(OrganizerConfirmation, requested_signup__city=CityFactory())
 
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_success(self, send_mail):
+        """
+        Test case when it's success
+        """
 
-    def test_task_dispatch_if_there_is_not_other_task(self):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.confirmation.requested_signup.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         task = SendEmailOrganizerConfirmationTask()
-        data = {
-            'confirmation_id': self.CONFIRMATION_ID
-        }
-        result = task.apply((self.CONFIRMATION_ID,), data, )
-        self.assertEqual(result.result, 'Task scheduled')
+        task_id = task.delay(self.confirmation.id)
 
-    def test_task_should_send_on_success(self):
-        task = SendEmailOrganizerConfirmationTask()
-        data = {
-            'confirmation_id': self.CONFIRMATION_ID
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.confirmation.requested_signup.email,
+                status='sent').exists())
+
+        context = {
+            'activate_url': self.confirmation.get_confirmation_url(),
+            'organizer': self.confirmation.requested_signup.name
         }
-        result = task.apply((self.CONFIRMATION_ID,), data, )
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
+
+        message = {
+            'from_email': 'contacto@trulii.com',
+            'html': loader.get_template('account/email/request_signup_confirmation_message.txt').render(),
+            'subject': 'Crea tu cuenta y comienza a user Trulii',
+            'to': [{'email': self.confirmation.requested_signup.email}],
+            'merge_vars': [],
+            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
+        }
+
+        called_message = send_mail.call_args[1]['message']
+
+        self.assertTrue(all(item in called_message.items() for item in message.items()))
 
 
 class SendAllAuthEmailTaskTest(BaseViewTest):

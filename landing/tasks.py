@@ -1,9 +1,4 @@
-from celery import Task
-# from utils.models import CeleryTask
 from utils.tasks import SendEmailTaskMixin
-# from allauth.account.utils import send_email_confirmation
-
-
 
 
 class SendContactFormEmailTask(SendEmailTaskMixin):

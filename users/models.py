@@ -14,6 +14,8 @@ from guardian.shortcuts import assign_perm
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.contrib.contenttypes.fields import GenericRelation
+
+from users.tasks import SendEmailOrganizerConfirmationTask
 from utils.models import CeleryTask
 from organizers.models import Organizer
 from students.models import Student
@@ -83,12 +85,9 @@ class RequestSignup(models.Model):
         return "Nombre: %s - Email: %s - ID: %s" % (self.name, self.email, self.id)
 
     def save(self, *args, **kwargs):
-        if self.approved:
-            instance, created = OrganizerConfirmation.objects.get_or_create(requested_signup=self)
-            if created:
-                instance.save()
-
-            # instance.send()
+        if self.approved and not self.organizerconfirmation:
+            confirmation = OrganizerConfirmation.objects.create(requested_signup=self)
+            confirmation.send()
 
         super(RequestSignup, self).save(*args, **kwargs)
 
@@ -125,19 +124,8 @@ class OrganizerConfirmation(models.Model):
 
 
     def send(self):
-        # task = SendEmailOrganizerConfirmationTaskTest()
-        # task.apply_async((self.id,), countdown=2)
-        ctx = {
-            'activate_url': self.get_confirmation_url(),
-            'organizer': self.requested_signup.name
-
-        }
-        email_template = "account/email/request_signup_confirmation"
-        get_adapter().send_mail(email_template,
-                                self.requested_signup.email,
-                                ctx)
-        self.sent = datetime.now()
-        self.save()
+        task = SendEmailOrganizerConfirmationTask()
+        task.delay(self.id)
 
 
 def get_profile(self):

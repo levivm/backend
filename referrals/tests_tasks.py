@@ -1,12 +1,15 @@
 import mock
 from django.conf import settings
+from django.template import loader
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
 from activities.models import Calendar
 from orders.models import Order
 from referrals.models import Referral, Coupon, CouponType, Redeem
-from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask
+from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask, \
+    SendReferralEmailTask
+from students.models import Student
 from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
@@ -304,3 +307,53 @@ class SendCouponEmailTaskTest(APITestCase):
             self.email,
             context,
         )
+
+
+class SendReferralEmailTaskTest(APITestCase):
+    """
+    Class to test SendReferralEmailTask task
+    """
+
+    def setUp(self):
+        self.student = mommy.make(Student)
+
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_success(self, send_mail):
+        """
+        Test success case
+        """
+        emails = [mommy.generators.gen_email() for _ in range(3)]
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        } for email in emails]
+
+        task = SendReferralEmailTask()
+        task_id = task.delay(self.student.id, emails=emails)
+
+        for email in emails:
+            self.assertTrue(EmailTaskRecord.objects.filter(
+                    task_id=task_id,
+                    to=email,
+                    status='sent').exists())
+
+        context = {
+            'name': self.student.user.first_name,
+            'invite_url': self.student.get_referral_url()
+        }
+
+        message = {
+            'from_email': 'contacto@trulii.com',
+            'html': loader.get_template('referrals/email/referral_cc_message.txt').render(),
+            'subject': '%s te ha invitado a Trulii' % self.student.user.first_name,
+            'to': [{'email': email} for email in emails],
+            'merge_vars': [],
+            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
+        }
+
+        called_message = send_mail.call_args[1]['message']
+
+        self.assertTrue(all(item in called_message.items() for item in message.items()))

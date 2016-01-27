@@ -1,6 +1,6 @@
 Hola,
 
-{{name}} ha querido compartir contigo una actividad que puede interesarte.
+*|name|* ha querido compartir contigo una actividad que puede interesarte.
 
-{{title}}
-{{url}}
+*|title|*
+*|url|*

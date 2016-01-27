@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from rest_framework import status
+from rest_framework.test import APITestCase
 
 from users import users_constants
 from utils.models import EmailTaskRecord
@@ -54,7 +55,7 @@ class ContactFormTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class SendContactFormEmailTaskTest(BaseViewTest):
+class SendContactFormEmailTaskTest(APITestCase):
     def _get_contact_form_data(self):
         return {
             "topic": "suggestion",
@@ -66,10 +67,7 @@ class SendContactFormEmailTaskTest(BaseViewTest):
         }
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
+        pass
 
     def test_send_contact_form_email_task_dispatch(self):
         contact_form_data = self._get_contact_form_data()

@@ -1,43 +1,32 @@
 import json
+
+from django.utils.timezone import now
+
 from utils.tasks import SendEmailTaskMixin
-# from allauth.account.utils import send_email_confirmation
-from .models import OrganizerConfirmation
-
-
 
 
 class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
 
-    def run(self, organizer_confirmation_id, success_handler=True, **kwargs):
-        self.success_handler = success_handler
-        confirmation  = OrganizerConfirmation.objects.get(id=organizer_confirmation_id)
-        template = "account/email/request_signup_confirmation"
-        return super(SendEmailOrganizerConfirmationTask, self).run(instance=confirmation, \
-                        template=template,**kwargs)
+    def run(self, organizer_confirmation_id, *args, **kwargs):
+        from .models import OrganizerConfirmation
+        self.confirmation = OrganizerConfirmation.objects.get(id=organizer_confirmation_id)
+        self.template_name = "account/email/request_signup_confirmation_message.txt"
+        self.emails = [self.confirmation.requested_signup.email]
+        self.subject = 'Crea tu cuenta y comienza a user Trulii'
+        self.context = self.get_context_data()
+        self.global_merge_vars = self.get_global_merge_vars()
+        return super(SendEmailOrganizerConfirmationTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, confirmation):
-        emails = [confirmation.requested_signup.email]
-        return emails
-
-    def get_context_data(self,data):
-        from users.allauth_adapter import MyAccountAdapter
-        confirmation_id = data.get('confirmation_id')
-        confirmation  = OrganizerConfirmation.objects.get(id=confirmation_id)
-
-        if not confirmation.key:
-            confirmation.key = confirmation.generate_key()
-            confirmation.save()
-
-        _activate_url = confirmation.get_confirmation_url()
-        activate_url = MyAccountAdapter().get_frontend_formmated_url(_activate_url)
-
-        data = {
-            'activate_url': activate_url,
-            'organizer': confirmation.requested_signup.name
-
+    def get_context_data(self):
+        return {
+            'activate_url': self.confirmation.get_confirmation_url(),
+            'organizer': self.confirmation.requested_signup.name
         }
 
-        return data
+    def on_success(self, retval, task_id, args, kwargs):
+        self.confirmation.sent = now()
+        self.confirmation.save(update_fields=['sent'])
+        super(SendEmailOrganizerConfirmationTask, self).on_success(retval, task_id, args, kwargs)
 
 
 class SendAllAuthEmailTask(SendEmailTaskMixin):

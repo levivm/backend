@@ -25,6 +25,7 @@ gunicorn==19.3.0
 invoke==0.10.1
 ipython==4.0.0
 kombu==3.0.30
+mandrill==1.0.57
 model-mommy==1.2.6
 oauthlib==1.0.3
 paramiko==1.15.2

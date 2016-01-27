@@ -10,16 +10,16 @@ class SendReferralEmailTask(SendEmailTaskMixin):
     student = None
     kwargs = None
 
-    def run(self, student_id, **kwargs):
+    def run(self, student_id, *args, **kwargs):
         self.student = Student.objects.get(id=student_id)
-        self.kwargs = kwargs
-        template = "referrals/email/referral_cc"
-        return super(SendReferralEmailTask, self).run(instance=self.student, template=template, **kwargs)
+        self.template_name = "referrals/email/referral_cc_message.txt"
+        self.emails = kwargs.get('emails')
+        self.subject = '%s te ha invitado a Trulii' % self.student.user.first_name
+        self.context = self.get_context_data()
+        self.global_merge_vars = self.get_global_merge_vars()
+        return super(SendReferralEmailTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, *args, **kwargs):
-        return self.kwargs.get('emails')
-
-    def get_context_data(self, data):
+    def get_context_data(self):
         return {
             'name': self.student.user.first_name,
             'invite_url': self.student.get_referral_url()

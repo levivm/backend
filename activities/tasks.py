@@ -43,7 +43,7 @@ class SendEmailActivityEditTaskMixin(Task):
     def get_emails_to(self, instance):
         return []
 
-    def on_success(self, retval, task_id, args, kwargs):
+    def on_success(self, retval, task_id, *args, **kwargs):
         if self.success_handler:
             task = CeleryTask.objects.get(task_id=task_id)
             task.delete()
@@ -113,24 +113,20 @@ class ActivityScoreTask(Task):
 class SendEmailShareActivityTask(SendEmailTaskMixin):
 
     def run(self, user_id, activity_id, *args, **kwargs):
-        self.user = User.objects.get(id=user_id) if user_id else None
+        self.user = User.objects.get(id=user_id)
         self.activity = Activity.objects.get(id=activity_id)
-        self.kwargs = kwargs
-        template = 'activities/email/share_activity_cc'
-        return super(SendEmailShareActivityTask, self).run(instance=self.activity, template=template, **kwargs)
+        self.template_name = 'activities/email/share_activity_cc_message.txt'
+        self.emails = kwargs.get('emails')
+        self.subject = '%s ha compartido contigo algo en Trulii' % self.user.first_name
+        self.context = self.get_context_data()
+        self.global_merge_vars = self.get_global_merge_vars()
 
-    def get_emails_to(self, *args, **kwargs):
-        return self.kwargs.get('emails')
+        return super(SendEmailShareActivityTask, self).run(*args, **kwargs)
 
-    def get_context_data(self, instance):
-        if not self.user:
-            name = 'Alguien'
-        else:
-            name = self.user.first_name
-
+    def get_context_data(self):
         return {
-            'name': name,
+            'name': self.user.first_name,
             'title': self.activity.title,
             'url': 'https://www.trulli.com/activities/%s/' % self.activity.id,
-            'message': self.kwargs.get('message'),
+            # 'message': self.kwargs.get('message'),
         }
