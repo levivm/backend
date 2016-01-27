@@ -30,29 +30,6 @@ class PayUBankList(APIView):
         return Response(bank_list)
 
 
-# class PayUPSE(viewsets.ViewSet):
-#     def _get_activity(self, data):
-#         return get_object_or_404(Activity, id=data.get('activity'))
-
-#     def payment_response(self, request):
-#         logger.error("ESTO ES LA RESPUESTA DE PSE --------------------\n")
-#         logger.error(json.dumps(request.GET))
-#         logger.error("ESTO ES LA RESPUESTA DE PSE ////////------------\n")
-#         return Response(request.data)
-
-#     def post(self, request, *args, **kwargs):
-#         activity = self._get_activity(request.data)
-#         order_serializer = OrdersSerializer(data=request.data)
-#         order_serializer.is_valid(raise_exception=True)
-
-#         payment_util = PaymentUtil(request, activity)
-#         charge = payment_util.pse_payu_payment()
-#         logger.error("ESTO ES EL URL DE PAGO --------------------\n")
-#         logger.error(charge)
-#         logger.error("ESTO ES EL URL DE PAGO ////////------------\n")
-#         return Response(charge, status=status.HTTP_200_OK)
-
-
 class PayUNotificationPayment(APIView):
     PSE_METHOD_PAYMENT_ID = '4'
     CC_METHOD_PAYMENT_ID = '2'
