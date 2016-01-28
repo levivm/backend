@@ -26,13 +26,10 @@ from locations.models import City
 def after_sign_up(sender, **kwargs):
 
     sociallogin = kwargs.get('sociallogin')
-    user     = kwargs.get('user')
-    request  = kwargs.get('request')
+    user = kwargs.get('user')
+    request = kwargs.get('request')
     data = request.POST
-
-    user_type = 'S' if sociallogin else data.get('user_type') 
-    # import pdb
-    # pdb.set_trace()
+    user_type = 'S' if sociallogin else data.get('user_type')
     group = None
     if user_type == 'S':
         student = Student.objects.create(user=user)
@@ -41,9 +38,8 @@ def after_sign_up(sender, **kwargs):
         if not user.socialaccount_set.exists():
             # task = SendEmailStudentSignupTask()
             # task.apply_async((student.id,), countdown=2)
-
-            #TODO  Eliminar la llamada send_email_confirmation luego de 
-            #migrar al servidor
+            # TODO  Eliminar la llamada send_email_confirmation luego de
+            # migrar al servidor
             send_email_confirmation(request, user, signup=True)
 
     elif user_type == 'O':

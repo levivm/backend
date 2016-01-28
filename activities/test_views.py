@@ -673,7 +673,7 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 
     def get_data_to_update(self):
         return {
-            'point': 'POINT(1 2)',
+            'point': [4, -74],
             'address': 'Calle falsa 123',
             'city': 1
         }
