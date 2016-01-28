@@ -11,7 +11,6 @@ from .models import RequestSignup, OrganizerConfirmation
 
 # from allauth.account.forms import LoginForm
 
-# 
 
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,8 +21,21 @@ class UsersSerializer(serializers.ModelSerializer):
             'email',
         )
 
+    def validate_first_name(self, value):
+        if not value:
+            _msg = _("Este campo es requerido")
+            raise serializers.ValidationError(_msg)
+        return value
+
+    def validate_last_name(self, value):
+        if not value:
+            _msg = _("Este campo es requerido")
+            raise serializers.ValidationError(_msg)
+        return value
+
 
 class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
+
     class Meta:
         model = OrganizerConfirmation
 
@@ -31,7 +43,7 @@ class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
 class RequestSignupsSerializers(serializers.ModelSerializer):
     class Meta:
         model = RequestSignup
-        
+
     def create(self, validated_data):
         validated_data['approved'] = False
         return super(RequestSignupsSerializers, self).create(validated_data)

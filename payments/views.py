@@ -11,13 +11,10 @@ from rest_framework import status
 from django.utils.translation import ugettext_lazy as _
 
 from .models import Payment
-from activities.models import Activity
 from referrals.tasks import ReferrerCouponTask
 from .tasks import SendPaymentEmailTask
 from orders.models import Order
 from activities.utils import PaymentUtil
-from orders.serializers import OrdersSerializer
-
 
 # Create your views here.
 logger = logging.getLogger(__name__)

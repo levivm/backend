@@ -28,7 +28,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     city = models.ForeignKey(City, null=True)
     tasks = GenericRelation(CeleryTask)
     referrer_code = models.CharField(max_length=20, unique=True)
-    telephone = models.CharField(max_length=100,blank=True)
+    telephone = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -45,7 +45,6 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
     @classmethod
     def get_by_email(cls, email):
-        
         if not email:
             return None
         try:
