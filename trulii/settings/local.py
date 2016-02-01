@@ -21,7 +21,7 @@ PG_DB = os.environ.get('POSTGRES_1_ENV_POSTGRES_DB', 'trulii')
 PG_PW = os.environ.get('POSTGRES_1_ENV_POSTGRES_PASSWORD', 'trulii')
 
 DATABASE_URL = "postgis://{user}:{password}@{host}:{port}/{db}".format(host=POSTGRES_HOST,
-                                                                        port=POSTGRES_PORT, db=PG_DB, user=PG_USER,
+                                                                         port=POSTGRES_PORT, db=PG_DB, user=PG_USER,
                                                                         password=PG_PW)
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
@@ -60,3 +60,8 @@ PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
 
 # Mandrill
 MANDRILL_API_KEY = 'm-ote3aQtBaqBNRUuFd7gg'
+
+# Social Auth
+SOCIAL_AUTH_FACEBOOK_KEY = '1563536137193781'
+SOCIAL_AUTH_FACEBOOK_SECRET = '9fecd238829796fd99109283aca7d4ff'
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']

@@ -54,18 +54,17 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'rest_framework_swagger',
     'rest_framework_gis',
+    'social.apps.django_app.default',
+    'rest_social_auth',
     # 'admin_honeypot',
+    'authentication.apps.AuthenticationConfig',
     'landing',
     'activities',
     'locations',
     'users',
     'organizers',
     'students',
-    'allauth',
     'utils',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.facebook',
     'orders',
     'guardian',
     'payments',
@@ -98,8 +97,8 @@ TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + [
 
 AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + [
 
-    # `allauth` specific authentication methods, such as login by e-mail
-    "allauth.account.auth_backends.AuthenticationBackend",
+    'social.backends.facebook.FacebookOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',
 ]
 
@@ -166,5 +165,4 @@ STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL, STATIC_IMAGE_LOCATION)
 
 MEDIA_ROOT = os.path.join(PROJECT_PATH, 'media')
 
-from .allauth_settings import *
 from .constants import *
