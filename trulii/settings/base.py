@@ -96,7 +96,7 @@ TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + [
 
 
 AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + [
-
+    'authentication.backends.EmailAuthBackend',
     'social.backends.facebook.FacebookOAuth2',
     'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',

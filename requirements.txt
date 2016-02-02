@@ -39,6 +39,7 @@ PyYAML==3.11
 redis==2.10.3
 requests==2.9.1
 requests-oauthlib==0.6.0
+rest-social-auth==0.4.1
 six==1.10.0
 static3==0.5.1
 yolk==0.4.3

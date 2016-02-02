@@ -15,6 +15,9 @@ class StudentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Student
 
+    def __new__(cls, *args, **kwargs):
+        return super(StudentFactory, cls).__new__(*args, **kwargs)
+
     user = factory.SubFactory(UserFactory)
     city = factory.SubFactory(CityFactory)
     gender = factory.LazyAttribute(lambda n: random.choice([k for k, v in Student.GENDER_CHOICES]))

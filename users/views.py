@@ -35,9 +35,6 @@ def _set_ajax_response(_super):
 
 
 def get_user_profile_data(user):
-    profile = None
-    data = None
-
     try:
         profile = Organizer.objects.get(user=user)
         data = OrganizersSerializer(profile).data

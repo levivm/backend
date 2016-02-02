@@ -1,5 +1,3 @@
-import os
-
 import dj_database_url
 
 from .base import *
@@ -21,18 +19,19 @@ PG_DB = os.environ.get('POSTGRES_1_ENV_POSTGRES_DB', 'trulii')
 PG_PW = os.environ.get('POSTGRES_1_ENV_POSTGRES_PASSWORD', 'trulii')
 
 DATABASE_URL = "postgis://{user}:{password}@{host}:{port}/{db}".format(host=POSTGRES_HOST,
-                                                                         port=POSTGRES_PORT, db=PG_DB, user=PG_USER,
-                                                                        password=PG_PW)
+                                                                       port=POSTGRES_PORT,
+                                                                       db=PG_DB, user=PG_USER,
+                                                                       password=PG_PW)
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 LOGGING_CONFIG = {}
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': 'localhost:11211',
-    }
-}
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#         'LOCATION': 'localhost:11211',
+#     }
+# }
 
 # REDIS CONFIG
 REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR', 'localhost')
