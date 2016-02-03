@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from allauth.account.adapter import get_adapter
+# from allauth.account.adapter import get_adapter
 from celery import Task
 from django.contrib.auth.models import User
 
@@ -25,11 +25,12 @@ class SendEmailActivityEditTaskMixin(Task):
                 context = self.get_context_data()
 
                 for email in emails:
-                    get_adapter().send_mail(
-                        template,
-                        email,
-                        context
-                    )
+                    pass
+                    # get_adapter().send_mail(
+                    #     template,
+                    #     email,
+                    #     context
+                    # )
                 self.register_task(instance)
                 return 'Task scheduled'
 

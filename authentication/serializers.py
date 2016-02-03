@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate
-from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+from django.utils.translation import ugettext as _
 from rest_framework import serializers, exceptions
+
+from organizers.models import Organizer
 
 
 class AuthTokenSerializer(serializers.Serializer):
@@ -26,4 +29,25 @@ class AuthTokenSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         data['user'] = user
+        return data
+
+
+class SignUpStudentSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    password1 = serializers.CharField()
+
+    def validate_email(self, data):
+        if User.objects.filter(email=data).exists():
+            msg = _("A user is already registered with this e-mail address.")
+            raise exceptions.ValidationError(msg)
+
+        return data
+
+    def validate(self, data):
+        first_name = data['first_name']
+        last_name = data['last_name']
+
+        data['username'] = '%s.%s' % (first_name.lower(), last_name.lower())
         return data

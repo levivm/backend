@@ -1,6 +1,6 @@
 import urllib
 
-from allauth.socialaccount.models import SocialApp
+# from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
@@ -42,12 +42,13 @@ class InviteAPITest(BaseAPITestCase):
         self.referred_coupon = mommy.make(CouponType, name='referred')
 
         # SocialApp
-        mommy.make(SocialApp,
-                   name='trulii',
-                   client_id='1563536137193781',
-                   secret='9fecd238829796fd99109283aca7d4ff',
-                   provider='facebook',
-                   sites=[Site.objects.get(id=settings.SITE_ID)])
+        # Todo refactor this
+        # mommy.make(SocialApp,
+        #            name='trulii',
+        #            client_id='1563536137193781',
+        #            secret='9fecd238829796fd99109283aca7d4ff',
+        #            provider='facebook',
+        #            sites=[Site.objects.get(id=settings.SITE_ID)])
 
         # Celery
         settings.CELERY_ALWAYS_EAGER = True

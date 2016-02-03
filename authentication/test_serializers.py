@@ -1,7 +1,8 @@
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from authentication.serializers import AuthTokenSerializer
+from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer
+from organizers.factories import OrganizerFactory
 from users.factories import UserFactory
 
 
@@ -12,11 +13,9 @@ class AuthTokenSerializerTest(APITestCase):
 
     def setUp(self):
         self.password = 'MlRdoAPzfe'
-        self.user = UserFactory()
-        self.user.set_password(self.password)
-        self.user.save()
+        self.user = UserFactory(password=self.password)
 
-    def validate_user_success(self):
+    def test_validate_user_success(self):
         """
         Validate user successful
         """
@@ -29,7 +28,7 @@ class AuthTokenSerializerTest(APITestCase):
         self.assertTrue(serializer.is_valid(raise_exception=True))
         self.assertEqual(serializer.validated_data['user'], self.user)
 
-    def validate_user_inactive(self):
+    def test_validate_user_inactive(self):
         """
         Validate an inactive user
         """
@@ -45,7 +44,7 @@ class AuthTokenSerializerTest(APITestCase):
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
 
-    def validate_user_wrong_password(self):
+    def test_validate_user_wrong_password(self):
         """
         Validate a user with wrong password
         """
@@ -61,7 +60,7 @@ class AuthTokenSerializerTest(APITestCase):
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
 
-    def validate_user_missig_data(self):
+    def test_validate_user_missig_data(self):
         """
         Validate with missing data
         """
@@ -75,3 +74,64 @@ class AuthTokenSerializerTest(APITestCase):
         serializer = AuthTokenSerializer(data=data)
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
+
+
+class SignUpStudentSerializerTest(APITestCase):
+    """
+    Test cases for SignUpStudentSerializer
+    """
+
+    def test_all_fields_required(self):
+        """
+        Test all fields are required
+        """
+        data = {}
+        exceptions = [
+            'email',
+            'first_name',
+            'last_name',
+            'password1',
+        ]
+
+        serializer = SignUpStudentSerializer(data=data)
+
+        for exception in exceptions:
+            message = "'%s': ['Este campo es requerido.']" % exception
+            with self.assertRaisesMessage(ValidationError, message):
+                serializer.is_valid(raise_exception=True)
+
+    def test_validate_unique_email(self):
+        """
+        Test the email is unique
+        """
+        UserFactory(email='jack.bauer@example.com')
+        data = {
+            'email': 'jack.bauer@example.com',
+            'first_name': 'Jack',
+            'last_name': 'Bauer',
+            'password1': 'jackisthebest',
+            'user_type': 'S',
+        }
+
+        serializer = SignUpStudentSerializer(data=data)
+
+        message = "A user is already registered with this e-mail address."
+        with self.assertRaisesMessage(ValidationError, message):
+            serializer.is_valid(raise_exception=True)
+
+    def test_generate_username(self):
+        """
+        Test the username generation
+        """
+        data = {
+            'email': 'jack.bauer@example.com',
+            'first_name': 'Jack',
+            'last_name': 'Bauer',
+            'password1': 'jackisthebest',
+            'user_type': 'S',
+        }
+
+        serializer = SignUpStudentSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        self.assertEqual(serializer.validated_data['username'], 'jack.bauer')

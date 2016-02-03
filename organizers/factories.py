@@ -10,6 +10,9 @@ from users.factories import UserFactory
 class OrganizerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Organizer
+        
+    def __new__(cls, *args, **kwargs):
+        return super(OrganizerFactory, cls).__new__(*args, **kwargs)
 
     user = factory.SubFactory(UserFactory)
     name = factory.Faker('company')

@@ -78,7 +78,7 @@ class RequestSignup(models.Model):
         return "Nombre: %s - Email: %s - ID: %s" % (self.name, self.email, self.id)
 
     def save(self, *args, **kwargs):
-        if self.approved and not self.organizerconfirmation:
+        if self.approved and not hasattr(self, 'organizerconfirmation'):
             confirmation = OrganizerConfirmation.objects.create(requested_signup=self)
             confirmation.send()
 

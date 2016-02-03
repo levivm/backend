@@ -19,7 +19,7 @@ from students.serializer import StudentsSerializer
 from utils.form_utils import ajax_response
 from utils.forms import FileUploadForm
 from .models import RequestSignup, OrganizerConfirmation
-from .serializers import RequestSignupsSerializers, UsersSerializer
+from .serializers import RequestSignUpSerializer, UsersSerializer
 
 
 def _set_ajax_response(_super):
@@ -51,7 +51,7 @@ sensitive_post_parameters_m = method_decorator(
 
 class RequestSignupViewSet(viewsets.ModelViewSet):
     queryset = RequestSignup.objects.all()
-    serializer_class = RequestSignupsSerializers
+    serializer_class = RequestSignUpSerializer
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -81,7 +81,7 @@ class UsersViewSet(viewsets.ModelViewSet):
             raise exceptions.ValidationError(msg)
 
         request_signup = oc.requested_signup
-        request_signup_data = RequestSignupsSerializers(request_signup).data
+        request_signup_data = RequestSignUpSerializer(request_signup).data
 
         return Response(request_signup_data, status=status.HTTP_200_OK)
 
