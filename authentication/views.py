@@ -1,13 +1,16 @@
 from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
+from django.utils.decorators import method_decorator
+from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, get_object_or_404
 from rest_framework.response import Response
+from social.apps.django_app.utils import psa
 
 from authentication.mixins import SignUpMixin
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
+from referrals.mixins import ReferralMixin
 from students.models import Student
 from students.serializer import StudentsSerializer
 from users.models import RequestSignup
@@ -27,13 +30,12 @@ class LoginView(GenericAPIView):
         user = serializer.validated_data['user']
 
         profile_data = get_user_profile_data(user=user)
-        token = Token.objects.get(user=user)
-        data = {'token': token.key, 'user': profile_data}
+        data = {'token': user.auth_token.key, 'user': profile_data}
 
         return Response(data)
 
 
-class SignUpStudentView(SignUpMixin, GenericAPIView):
+class SignUpStudentView(SignUpMixin, ReferralMixin):
     """
     Class to register students
     """
@@ -53,6 +55,7 @@ class SignUpStudentView(SignUpMixin, GenericAPIView):
         self.assign_permissions(user, profile)
         token = self.create_token(user)
 
+        self.referral_handler(referred_id=profile.id)
         return Response({'user': profile_data, 'token': token.key})
 
     def create_user(self, serializer):
@@ -115,3 +118,33 @@ class SignUpOrganizerView(SignUpMixin, GenericAPIView):
             raise ValidationError({'password': ['The password is required.']})
 
         return password
+
+
+class SocialAuthView(ReferralMixin, GenericAPIView):
+    """
+    Class to login or register an student using Facebook
+    """
+
+    def post(self, request, *args, **kwargs):
+        provider = kwargs.get('provider')
+
+        token = self.request.data.get('access_token')
+        if token is None:
+            return Response({'error': 'The access_token parameter is required'}, status=400)
+
+        try:
+            user = self.register_by_access_token(request, provider, token)
+        except HTTPError:
+            return Response({'error': 'No se puede conectar a %s' % provider}, status=400)
+
+        profile_data = self.get_profile_data(user.student_profile)
+
+        self.referral_handler(referred_id=user.student_profile.id)
+        return Response({'user': profile_data, 'token': user.auth_token.key})
+
+    @method_decorator(psa())
+    def register_by_access_token(self, request, backend, token):
+        return request.backend.do_auth(token)
+
+    def get_profile_data(self, profile):
+        return StudentsSerializer(profile).data

@@ -55,7 +55,6 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'rest_framework_gis',
     'social.apps.django_app.default',
-    'rest_social_auth',
     # 'admin_honeypot',
     'authentication.apps.AuthenticationConfig',
     'landing',
@@ -164,5 +163,24 @@ STATIC_IMAGE_LOCATION = 'img'
 STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL, STATIC_IMAGE_LOCATION)
 
 MEDIA_ROOT = os.path.join(PROJECT_PATH, 'media')
+
+SOCIAL_AUTH_PIPELINE = [
+    'social.pipeline.social_auth.social_details',
+    'social.pipeline.social_auth.social_uid',
+    'social.pipeline.social_auth.auth_allowed',
+    'social.pipeline.social_auth.social_user',
+    'utils.pipelines.get_username',
+    # 'social.pipeline.user.get_username',
+    # Send a validation email to the user to verify its email address.
+    # Disabled by default.
+    # 'social.pipeline.mail.mail_validation',
+    'social.pipeline.user.create_user',
+    'utils.pipelines.create_profile',
+    'utils.pipelines.create_token',
+    'utils.pipelines.assign_group',
+    'utils.pipelines.assign_permissions',
+    'social.pipeline.social_auth.associate_user',
+    'social.pipeline.social_auth.load_extra_data',
+]
 
 from .constants import *

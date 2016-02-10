@@ -1,12 +1,14 @@
-import mock
 import json
 import urllib
 
+import mock
 from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse
+from requests.exceptions import HTTPError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
+from social.apps.django_app.default.models import UserSocialAuth
 
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
@@ -188,3 +190,124 @@ class SignUpOrganizerViewTest(APITestCase):
 
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class SocialAuthViewTest(APITestCase):
+    """
+    Tests for SocialAuthView
+    """
+
+    def setUp(self):
+        self.url = reverse('auth:social_login_signup', kwargs={'provider': 'facebook'})
+
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_login_success(self, get_json):
+        """
+        Test social login for student
+        """
+
+        student = StudentFactory()
+        token = Token.objects.create(user=student.user)
+        UserSocialAuth.objects.create(user=student.user, uid='123456789', provider='facebook')
+        user_counter = User.objects.count()
+
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'link': 'https://www.facebook.com/app_scoped_user_id/123456789',
+            'locale': 'en_US',
+            'name': 'Geralt De Rivia',
+            'timezone': -5,
+            'verified': True,
+        }
+
+        response = self.client.post(self.url, data={
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
+        content = {
+            'user': StudentsSerializer(student).data,
+            'token': token.key,
+        }
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.count(), user_counter)
+        self.assertEqual(response.data, content)
+
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_login_fail(self, get_json):
+        get_json.side_effect = HTTPError('Bad request for url')
+
+        response = self.client.post(self.url, data={
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_signup_success(self, get_json):
+        user_counter = User.objects.count()
+        student_group = Group.objects.create(name='Students')
+
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'link': 'https://www.facebook.com/app_scoped_user_id/123456789',
+            'locale': 'en_US',
+            'name': 'Geralt De Rivia',
+            'timezone': -5,
+            'verified': True,
+        }
+
+        response = self.client.post(self.url, data={
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
+        student = Student.objects.last()
+        content = {
+            'user': StudentsSerializer(student).data,
+            'token': student.user.auth_token.key,
+        }
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.count(), user_counter + 1)
+        self.assertEqual(response.data, content)
+        self.assertEqual(student.user.username, 'geralt.derivia')
+        self.assertEqual(student.user.email, 'derivia@witcher.com')
+        self.assertEqual(student.gender, Student.MALE)
+        self.assertIn(student_group, student.user.groups.all())
+        self.assertTrue(student.user.has_perm('students.change_student', student))
+
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_signup_username_already_exists(self, get_json):
+        StudentFactory(user__username='geralt.derivia')
+        user_counter = User.objects.count()
+
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'link': 'https://www.facebook.com/app_scoped_user_id/123456789',
+            'locale': 'en_US',
+            'name': 'Geralt De Rivia',
+            'timezone': -5,
+            'verified': True,
+        }
+
+        response = self.client.post(self.url, data={
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
+        student = Student.objects.last()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.count(), user_counter + 1)
+        self.assertEqual(student.user.username, 'geralt.derivia2')
+
+    def test_validate_access_token_required(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'error': 'The access_token parameter is required'})

@@ -17,7 +17,7 @@ class OrganizerFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     name = factory.Faker('company')
     telephone = factory.Faker('phone_number')
-    youtube_video_url = factory.Faker('phone_number')
+    youtube_video_url = factory.Faker('url')
     website = factory.Faker('url')
     headline = factory.Faker('catch_phrase')
     bio = factory.Faker('bs')

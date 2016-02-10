@@ -67,3 +67,9 @@ PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
 MANDRILL_API_KEY = 'm4ndr1ll_4p1_k3y'
 
 logging.disable(logging.CRITICAL)
+
+# Social Auth
+SOCIAL_AUTH_FACEBOOK_KEY = '1701354690078591'
+SOCIAL_AUTH_FACEBOOK_SECRET = '50b6017d2f21dc898fad2fc23f23cf44'
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']
+SOCIAL_AUTH_FACEBOOK_REDIRECT_URI = 'http://trulii.com/home'

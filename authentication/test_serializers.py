@@ -2,7 +2,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer
-from organizers.factories import OrganizerFactory
 from users.factories import UserFactory
 
 
