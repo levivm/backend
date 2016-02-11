@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 import mock
-
+from django.conf import settings
 from django.contrib.auth.models import Permission
+from django.core.urlresolvers import reverse
 from django.db.models import Q
 from model_mommy import mommy
 from requests.models import Response
 from rest_framework import status
-from django.core.urlresolvers import reverse
-from django.conf import settings
 from rest_framework.test import APITestCase
 
 from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Calendar
 from orders.factories import OrderFactory, AssistantFactory
-from orders.models import Order, Assistant
+from orders.models import Order
 from payments.factories import PaymentFactory
 from payments.models import Payment
 from referrals.models import Redeem, Referral, Coupon, CouponType
@@ -30,10 +29,12 @@ class PaymentCreditCardTest(BaseAPITestCase):
 
         self.activity = ActivityFactory(published=True)
         self.calendar = CalendarFactory(activity=self.activity)
-        self.url = reverse('orders:create_or_list_by_activity', kwargs={'activity_pk': self.activity.id})
+        self.url = reverse('orders:create_or_list_by_activity',
+                           kwargs={'activity_pk': self.activity.id})
 
         # Permissions
-        permissions = Permission.objects.filter(Q(codename='add_order') | Q(codename='add_assistant'))
+        permissions = Permission.objects.filter(
+            Q(codename='add_order') | Q(codename='add_assistant'))
         self.student.user.user_permissions.add(*permissions)
 
     def get_payment_data(self):
@@ -43,7 +44,7 @@ class PaymentCreditCardTest(BaseAPITestCase):
                 'name': 'Ivan Kiehn',
                 'email': 'arlington.buckridge@yahoo.com',
             },
-            'last_four_digits':'1111',
+            'last_four_digits': '1111',
             'card_association': 'visa',
             'calendar': self.calendar.id,
             'payment_method': Payment.CC_PAYMENT_TYPE,
@@ -276,15 +277,16 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
 
 
 class PayUPSETest(BaseAPITestCase):
-
     def setUp(self):
         super(PayUPSETest, self).setUp()
         self.activity = ActivityFactory(published=True)
         self.calendar = CalendarFactory(activity=self.activity)
-        self.url = reverse('orders:create_or_list_by_activity', kwargs={'activity_pk': self.activity.id})
+        self.url = reverse('orders:create_or_list_by_activity',
+                           kwargs={'activity_pk': self.activity.id})
 
         # Permissions
-        permissions = Permission.objects.filter(Q(codename='add_order') | Q(codename='add_assistant'))
+        permissions = Permission.objects.filter(
+            Q(codename='add_order') | Q(codename='add_assistant'))
         self.student.user.user_permissions.add(*permissions)
 
     def get_payment_data(self):
@@ -292,15 +294,15 @@ class PayUPSETest(BaseAPITestCase):
             'buyer': {
                 'name': 'Deane Shanahan',
                 'payerEmail': 'psatterfield@gmail.com',
-                 'contactPhone':"037-424-5383"
+                'contactPhone': "037-424-5383"
 
             },
-            'buyer_pse_data':{
-                 "response_url": settings.PAYU_RESPONSE_URL,
-                 "bank": "1007",
-                 "userType": "J",
-                 "idType": "NIT",
-                 "idNumber": "900823805",
+            'buyer_pse_data': {
+                "response_url": settings.PAYU_RESPONSE_URL,
+                "bank": "1007",
+                "userType": "J",
+                "idType": "NIT",
+                "idNumber": "900823805",
             },
             'calendar': self.calendar.id,
             'activity': self.activity.id,
@@ -367,7 +369,6 @@ class PayUPSETest(BaseAPITestCase):
 
 
 class PayUPSEConfirmationTransactionTest(APITestCase):
-
     def setUp(self):
         self.payu_callback_url = reverse('payments:notification')
         self.payment = PaymentFactory()
@@ -464,7 +465,8 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         super(PaymentCreditCardWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = CalendarFactory(session_price=100000.0, capacity=20, activity__published=True)
+        self.calendar = CalendarFactory(session_price=100000.0, capacity=20,
+                                        activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment)
         self.post_data = self.get_post_data()
@@ -512,8 +514,10 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
 
         response = self.student_client.post(self.create_read_url, self.post_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
-        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
-                                             coupon=self.redeem.coupon, status='approved').exists())
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar,
+                                             payment=self.payment,
+                                             coupon=self.redeem.coupon,
+                                             status='approved').exists())
         self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
 
     @mock.patch('activities.utils.PaymentUtil.creditcard')
@@ -529,7 +533,8 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
 
         response = self.student_client.post(self.create_read_url, self.post_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
-        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar,
+                                             payment=self.payment,
                                              coupon=self.redeem.coupon, status='pending').exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
@@ -571,9 +576,11 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
 
         response = self.student_client.post(self.create_read_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
-        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar,
+                                             payment=self.payment,
                                              coupon=coupon, status='approved').exists())
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertTrue(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     @mock.patch('activities.utils.PaymentUtil.creditcard')
     def test_creditcard_pending_global_coupon(self, creditcard):
@@ -586,15 +593,16 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
             'payment': self.payment,
         }
 
-
         coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
         data = {**self.post_data, 'coupon_code': coupon.token}
 
         response = self.student_client.post(self.create_read_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
-        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar, payment=self.payment,
+        self.assertTrue(Order.objects.filter(student=self.student, calendar=self.calendar,
+                                             payment=self.payment,
                                              coupon=coupon, status='pending').exists())
-        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertFalse(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     @mock.patch('activities.utils.PaymentUtil.creditcard')
     def test_creditcard_declined_global_coupon(self, creditcard):
@@ -618,7 +626,8 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
         self.assertEqual(Order.objects.count(), order_counter)
         self.assertFalse(Order.objects.filter(coupon=coupon).exists())
-        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertFalse(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     def test_creditcard_non_existent_coupon(self):
         """
@@ -644,7 +653,8 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         order_counter = Order.objects.count()
 
         # Another_student doesn't have a coupon
-        response = self.another_student_client.post(self.create_read_url, self.post_data, format='json')
+        response = self.another_student_client.post(self.create_read_url, self.post_data,
+                                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Order.objects.count(), order_counter)
 
@@ -666,7 +676,8 @@ class PaymentPSEWithCouponTest(BaseAPITestCase):
         super(PaymentPSEWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20, activity__published=True)
+        self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20,
+                                   activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment)
         self.post_data = self.get_post_data()
@@ -727,9 +738,10 @@ class PaymentPSEWithCouponTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn(b'"bank_url":"https://pse.todo1.com/', response.content)
         self.assertEqual(Order.objects.count(), order_counter + 1)
-        self.assertTrue(Order.objects.filter(coupon=self.redeem.coupon, status=Order.ORDER_PENDING_STATUS,
-                                             calendar=self.calendar, student=self.student,
-                                             payment=self.payment).exists())
+        self.assertTrue(
+            Order.objects.filter(coupon=self.redeem.coupon, status=Order.ORDER_PENDING_STATUS,
+                                 calendar=self.calendar, student=self.student,
+                                 payment=self.payment).exists())
 
     @mock.patch('activities.utils.PaymentUtil.pse_payu_payment')
     def test_fail(self, pse_payu_payment):
@@ -773,7 +785,8 @@ class PaymentPSEWithCouponTest(BaseAPITestCase):
         order_counter = Order.objects.count()
 
         # Another_student doesn't have a coupon
-        response = self.another_student_client.post(self.create_read_url, self.post_data, format='json')
+        response = self.another_student_client.post(self.create_read_url, self.post_data,
+                                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Order.objects.count(), order_counter)
 
@@ -795,11 +808,13 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         super(PaymentWebHookWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = CalendarFactory(session_price=100000.0, capacity=20, activity__published=True)
+        self.calendar = CalendarFactory(session_price=100000.0, capacity=20,
+                                        activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
         self.order = mommy.make(Order, status=Order.ORDER_PENDING_STATUS, payment=self.payment,
-                                coupon=self.redeem.coupon, calendar=self.calendar, student=self.student)
+                                coupon=self.redeem.coupon, calendar=self.calendar,
+                                student=self.student)
         self.assistants = AssistantFactory.create_batch(3, order=self.order)
 
         self.post_data = self.get_post_data()
@@ -905,7 +920,6 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
             'reject_reason': None
         }]
 
-
         coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
         self.order.coupon = coupon
         self.order.save()
@@ -913,7 +927,8 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertTrue(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     @mock.patch('utils.mixins.mandrill.Messages.send')
     def test_decline_global_coupon(self, send_mail):
@@ -927,7 +942,6 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
             'reject_reason': None
         }]
 
-
         coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
         self.order.coupon = coupon
         self.order.save()
@@ -936,7 +950,8 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
-        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertFalse(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     def test_pse_approved_global_coupon(self):
         """
@@ -953,7 +968,8 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertTrue(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
     @mock.patch('utils.mixins.mandrill.Messages.send')
     def test_pse_decline_global_coupon(self, send_mail):
@@ -980,7 +996,8 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
-        self.assertFalse(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
+        self.assertFalse(
+            Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
 
 class PaymentWebHookTest(BaseAPITestCase):
@@ -994,7 +1011,8 @@ class PaymentWebHookTest(BaseAPITestCase):
         # Arrangement
         self.calendar = CalendarFactory(activity__published=True, capacity=10)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
-        self.order = mommy.make(Order, calendar=self.calendar, student=self.another_student, payment=self.payment)
+        self.order = mommy.make(Order, calendar=self.calendar, student=self.another_student,
+                                payment=self.payment)
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
         self.coupon_type = mommy.make(CouponType, name='referrer')
 
@@ -1023,7 +1041,8 @@ class PaymentWebHookTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
         self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student,
+                                              coupon__coupon_type=self.coupon_type).exists())
 
     def test_pse_create_referrer_coupon(self):
         """
@@ -1044,4 +1063,5 @@ class PaymentWebHookTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
         self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student,
+                                              coupon__coupon_type=self.coupon_type).exists())
