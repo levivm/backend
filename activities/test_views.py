@@ -8,6 +8,7 @@ from datetime import timedelta
 from itertools import cycle
 
 import factory
+import mock
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import Permission
@@ -1087,6 +1088,7 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
     """
 
     def setUp(self):
+        super(ShareActivityEmailViewTest, self).setUp()
         self.activity = mommy.make(Activity)
 
         # URLs
@@ -1096,21 +1098,34 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         # Celery
         settings.CELERY_ALWAYS_EAGER = True
 
-    def test_post(self):
+    # def test_run(self, send_mail):
+    #     """
+    #     Test that the task sends the email
+    #     """
+    #
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_post(self, send_mail):
         """
         Test the sending email
         """
 
-        data = {
-            'emails': 'email1@example.com, email2@example.com'
-        }
+        emails = ['email1@example.com', 'email2@example.com']
 
-        response = self.client.post(self.share_url, data)
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        } for email in emails]
+
+        data = {'emails': ', '.join(emails)}
+
+        response = self.student_client.post(self.share_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        for email in data['emails'].split(','):
-            self.assertTrue(EmailTaskRecord.objects.filter(to=email.strip(), send=True).exists())
+        for email in emails:
+            self.assertTrue(EmailTaskRecord.objects.filter(to=email, status='sent').exists())
 
     def test_validation_emails(self):
         """

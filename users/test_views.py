@@ -20,122 +20,6 @@ from .models import RequestSignup
 from .tasks import SendEmailOrganizerConfirmationTask  #, SendAllAuthEmailTask
 
 
-# class RestFacebookLoginTest(BaseAPITestCase):
-#     """
-#     Class to test sign up and login with Facebook
-#     """
-#
-#     def setUp(self):
-#         super(RestFacebookLoginTest, self).setUp()
-#
-#         # URLs
-#         self.facebook_signup_login_url = reverse('facebook_signup_login')
-#
-#         # Objects
-#         mommy.make(SocialApp,
-#                    name='trulii',
-#                    client_id='1563536137193781',
-#                    secret='9fecd238829796fd99109283aca7d4ff',
-#                    provider='facebook',
-#                    sites=[Site.objects.get(id=settings.SITE_ID)])
-#
-#     def get_signup_data(self):
-#         # TODO
-#         # Este token dura dos meses, expira en marzo
-#         # Automatizar para pedir uno
-#
-#         auth_token = "CAAWOByANCTUBAOd9x0yTEYdAuuMUG7WvYZAzdAp4otJOi7gIsOWCnuAvNADtYqW7CW9AhF" \
-#                      "6uUCIQMI975sxnAvZBU8csApZC5RHWoKmHsuqU639wSTLdBkqBpCdkqbVmmZA8" \
-#                      "Hp4pJAJCCCmyZAvOUColRumTi6z22niA3ZAVzm8s4Qzdjm7BVT9tMLPZAiZCDSMZD"
-#         return {'auth_token': auth_token}
-#
-#     def test_signup(self):
-#         """
-#         Test to signup with Facebook
-#         """
-#
-#         data = self.get_signup_data()
-#
-#         # Anonymous should sign up
-#         response = self.client.post(self.facebook_signup_login_url, data)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
-#
-#     def test_login(self):
-#         """
-#         Test to login with Facebook
-#         """
-#
-#         data = self.get_signup_data()
-#
-#         # signup
-#         self.client.post(self.facebook_signup_login_url, data)
-#
-#         # login
-#         response = self.client.post(self.facebook_signup_login_url, data)
-#
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
-
-
-# class ObtainAuthTokenTestView(BaseAPITestCase):
-#     """
-#     Class to test sign up and login
-#     """
-#     urlencoded = {'content_type': 'application/x-www-form-urlencoded'}
-#     jsonencoded = {'content_type': 'application/json'}
-#
-#     def setUp(self):
-#         super(ObtainAuthTokenTestView, self).setUp()
-#
-#         # Objects
-#         self.password = '12345678'
-#         self.email = 'student@trulii.com'
-#         self.student.user.set_password(self.password)
-#         self.student.user.email = self.email
-#         self.student.user.save()
-#
-#         # URLs
-#         self.signup_login_url = reverse('users:signup_login')
-#
-#     def get_signup_data(self):
-#         return {
-#             'email': self.email,
-#             'first_name': 'John',
-#             'last_name': 'Messi',
-#             'password1': self.password,
-#             'user_type': 'S'
-#         }
-
-        # def get_login_data(self):
-        #     return {
-        #         'login': self.email,
-        #         'password': self.password,
-        #     }
-
-        # def test_signup(self):
-        #     """
-        #     Test to sign up an user
-        #     """
-        #
-        #     # Anonymous should sign up
-        #     data = self.get_signup_data()
-        #     response = self.client.post(self.signup_login_url, urllib.parse.urlencode(data), **self.urlencoded)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
-        #     self.assertTrue(User.objects.filter(email=data['email']).exists())
-        #
-        # def test_login(self):
-        #     """
-        #     Test to login an user
-        #     """
-        #
-        #     # Anonymous should login
-        #     data = self.get_login_data()
-        #     response = self.client.post(self.signup_login_url, json.dumps(data), **self.jsonencoded)
-        #     self.assertContains(response, data['login'])
-        #     self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
-
 
 class RequestSignupTestView(BaseAPITestCase):
     """
@@ -198,8 +82,6 @@ class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
 
 
 class SendEmailOrganizerConfirmationTaskTest(APITestCase):
-    # CONFIRMATION_ID = 1
-
     def setUp(self):
         self.confirmation = mommy.make(OrganizerConfirmation, requested_signup__city=CityFactory())
 
@@ -236,12 +118,12 @@ class SendEmailOrganizerConfirmationTaskTest(APITestCase):
             'subject': 'Crea tu cuenta y comienza a user Trulii',
             'to': [{'email': self.confirmation.requested_signup.email}],
             'merge_vars': [],
-            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
         }
 
+        global_merge_vars = [{'name': k, 'content': v} for k, v in context.items()]
         called_message = send_mail.call_args[1]['message']
-
         self.assertTrue(all(item in called_message.items() for item in message.items()))
+        self.assertTrue(all(item in called_message['global_merge_vars'] for item in global_merge_vars))
 
 
 # class SendAllAuthEmailTaskTest(BaseViewTest):

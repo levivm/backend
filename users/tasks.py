@@ -24,9 +24,9 @@ class SendEmailOrganizerConfirmationTask(SendEmailTaskMixin):
         }
 
     def on_success(self, retval, task_id, args, kwargs):
+        super(SendEmailOrganizerConfirmationTask, self).on_success(retval, task_id, args, kwargs)
         self.confirmation.sent = now()
         self.confirmation.save(update_fields=['sent'])
-        super(SendEmailOrganizerConfirmationTask, self).on_success(retval, task_id, args, kwargs)
 
 
 class SendAllAuthEmailTask(SendEmailTaskMixin):

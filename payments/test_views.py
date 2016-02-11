@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 
 from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Calendar
-from orders.factories import OrderFactory
+from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Order, Assistant
 from payments.factories import PaymentFactory
 from payments.models import Payment
@@ -193,10 +193,19 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.payment = PaymentFactory()
         self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
 
-    def test_payu_confirmation_url_transaction_approved(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_transaction_approved(self, send_mail):
         """
         Test the payu response by web hook when is approved
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_APPROVED_CODE,
@@ -208,10 +217,18 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.assertEqual(order.status, Order.ORDER_APPROVED_STATUS)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_transaction_declined(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_transaction_declined(self, send_mail):
         """
         Test the payu response by web hook when is declined
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         data = {
             'transaction_id': self.payment.transaction_id,
@@ -225,10 +242,18 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.assertEqual(orders.count(), 0)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_transaction_expired(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_transaction_expired(self, send_mail):
         """
         Test the payu response by web hook when is expired
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         data = {
             'transaction_id': self.payment.transaction_id,
@@ -348,7 +373,15 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.payment = PaymentFactory()
         self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
 
-    def test_payu_confirmation_url_pse_transaction_declined(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_pse_transaction_declined(self, send_mail):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_DECLINED_CODE,
@@ -361,7 +394,15 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_pse_transaction_pending(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_pse_transaction_pending(self, send_mail):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_PENDING_PSE_CODE,
@@ -372,7 +413,15 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertTrue(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_pse_transaction_failed(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_pse_transaction_failed(self, send_mail):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_DECLINED_CODE,
@@ -385,7 +434,15 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertEqual(orders.count(), 0)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    def test_payu_confirmation_url_pse_transaction_approved(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_payu_confirmation_url_pse_transaction_approved(self, send_mail):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'transaction_id': self.payment.transaction_id,
             'state_pol': settings.TRANSACTION_APPROVED_CODE,
@@ -407,7 +464,7 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         super(PaymentCreditCardWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20, activity__published=True)
+        self.calendar = CalendarFactory(session_price=100000.0, capacity=20, activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment)
         self.post_data = self.get_post_data()
@@ -738,12 +795,13 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         super(PaymentWebHookWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20, activity__published=True)
+        self.calendar = CalendarFactory(session_price=100000.0, capacity=20, activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
         self.order = mommy.make(Order, status=Order.ORDER_PENDING_STATUS, payment=self.payment,
                                 coupon=self.redeem.coupon, calendar=self.calendar, student=self.student)
-        self.assistants = mommy.make(Assistant, order=self.order, _quantity=3)
+        self.assistants = AssistantFactory.create_batch(3, order=self.order)
+
         self.post_data = self.get_post_data()
 
         # URLs
@@ -756,30 +814,53 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
             'payment_method_type': settings.CC_METHOD_PAYMENT_ID
         }
 
-    def test_approved(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_approved(self, send_mail):
         """
         Test PayU send approved a pending payment
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
 
-    def test_decline(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_decline(self, send_mail):
         """
         Test PayU send declined
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         self.post_data['state_pol'] = settings.TRANSACTION_DECLINED_CODE
         response = self.client.post(self.payu_callback_url, self.post_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
-    def test_pse_approved(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_pse_approved(self, send_mail):
         """
         Test approved payment with pse
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
         self.payment.save(update_fields=['payment_type'])
         self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
@@ -789,10 +870,18 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
 
-    def test_pse_decline(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_pse_decline(self, send_mail):
         """
         Test PayU send declined
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
         self.payment.save(update_fields=['payment_type'])
         self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
@@ -804,10 +893,18 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
-    def test_approved_global_coupon(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_approved_global_coupon(self, send_mail):
         """
         Test PayU send approved a pending payment with a global coupon
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
 
         coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
         self.order.coupon = coupon
@@ -818,10 +915,18 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
-    def test_decline_global_coupon(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_decline_global_coupon(self, send_mail):
         """
         Test PayU send declined with global coupon
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
 
         coupon = mommy.make(Coupon, coupon_type__type='global', coupon_type__amount=100000)
         self.order.coupon = coupon
@@ -850,10 +955,18 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
-    def test_pse_decline_global_coupon(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_pse_decline_global_coupon(self, send_mail):
         """
         Test PayU send declined with global coupon
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         self.payment.payment_type = Payment.PSE_PAYMENT_TYPE
         self.payment.save(update_fields=['payment_type'])
         self.post_data['payment_method_type'] = settings.PSE_METHOD_PAYMENT_ID
@@ -879,7 +992,7 @@ class PaymentWebHookTest(BaseAPITestCase):
         super(PaymentWebHookTest, self).setUp()
 
         # Arrangement
-        self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
+        self.calendar = CalendarFactory(activity__published=True, capacity=10)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
         self.order = mommy.make(Order, calendar=self.calendar, student=self.another_student, payment=self.payment)
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
