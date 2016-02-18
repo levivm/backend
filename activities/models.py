@@ -6,6 +6,7 @@ from datetime import datetime,date
 from functools import reduce
 from random import Random
 
+from django.db.models import Q
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
@@ -175,16 +176,29 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         return sorted(dates, reverse=True)[0]
 
-    @cached_property
-    def closest_calendar(self):
+    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None):
         today = date.today()
         closest = None
-        if self.calendars.count():
-            calendars = [c for c in self.calendars.all() if c.initial_date.date() >= today]
+        query = Q()
+        if cost_start is not None and cost_end is not None:
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                query &= Q(session_price__gte=(cost_start))
+            else:
+                query &= Q(session_price__range=(cost_start, cost_end))
+        
+        if initial_date is not None:
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
+            query = query & Q(initial_date__gte=initial_date)
+
+        calendars = self.calendars.filter(query)
+
+        if  calendars:
+            calendars = [c for c in calendars if c.initial_date.date() >= today]
             if calendars:
                 closest = sorted(calendars, key=lambda c: c.initial_date)[0]
             else:
-                calendars = [c for c in self.calendars.all() if c.initial_date.date() < today]
+                calendars = [c for c in calendars if c.initial_date.date() < today]
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
 

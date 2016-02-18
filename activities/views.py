@@ -260,19 +260,13 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
         if query:
             activities = activities.filter(query, filters).distinct()
         else:
-            activities = activities.filter(filters)
+            activities = activities.filter(filters).distinct()
 
         if 'closest' in order:
-            activities = activities.extra(select={
-                    'closest':
-                        'SELECT "activities_calendar"."initial_date" '
-                        'FROM "activities_calendar" '
-                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
-                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'})
+            extra_q = search.extra_query(request.query_params)
+            activities = activities.extra(**extra_q) if extra_q else activities
 
         activities = activities.order_by(*order)
-
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
