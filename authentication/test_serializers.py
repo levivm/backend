@@ -1,7 +1,8 @@
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer
+from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
+    ChangePasswordSerializer
 from users.factories import UserFactory
 
 
@@ -134,3 +135,37 @@ class SignUpStudentSerializerTest(APITestCase):
         serializer.is_valid(raise_exception=True)
 
         self.assertEqual(serializer.validated_data['username'], 'jack.bauer')
+
+
+class ChangePasswordSerializerTest(APITestCase):
+
+    def setUp(self):
+        self.user = UserFactory(password='rWF&jmlc_g')
+
+    def test_validate_user(self):
+        """
+        Validate the current password is correct for that user
+        """
+        data = {
+            'password': 'invalid',
+            'password1': 'hMTq8Re7Xv',
+            'password2': 'hMTq8Re7Xv',
+        }
+
+        serializer = ChangePasswordSerializer(data=data, context={'user': self.user})
+        with self.assertRaisesMessage(ValidationError, 'The current password is incorrect.'):
+            serializer.is_valid(raise_exception=True)
+
+    def test_validate_new_password(self):
+        """
+        Validate the password1 and password2 match
+        """
+        data = {
+            'password': 'rWF&jmlc_g',
+            'password1': 'hMTq8Re7Xv',
+            'password2': 'ZehQsIQFi(',
+        }
+
+        serializer = ChangePasswordSerializer(data=data, context={'user': self.user})
+        with self.assertRaisesMessage(ValidationError, 'The new password doesn\'t match.'):
+            serializer.is_valid(raise_exception=True)

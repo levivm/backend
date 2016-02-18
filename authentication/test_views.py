@@ -4,19 +4,23 @@ import urllib
 import mock
 from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse
+from django.utils.timezone import now
 from requests.exceptions import HTTPError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 from social.apps.django_app.default.models import UserSocialAuth
 
+from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
 from students.factories import StudentFactory
 from students.models import Student
 from students.serializer import StudentsSerializer
-from users.factories import RequestSignUpFactory
+from users.factories import RequestSignUpFactory, UserFactory
+from utils.models import EmailTaskRecord
+from utils.tests import BaseAPITestCase
 
 
 class LoginViewTest(APITestCase):
@@ -311,3 +315,317 @@ class SocialAuthViewTest(APITestCase):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {'error': 'The access_token parameter is required'})
+
+
+class ChangePasswordViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        super(ChangePasswordViewTest, self).setUp()
+
+        self.student.user.set_password('rWF&jmlc_g')
+        self.student.user.save(update_fields=['password'])
+
+        self.organizer.user.set_password('Ta0sFFetV1')
+        self.organizer.user.save(update_fields=['password'])
+
+        self.url = reverse('auth:change_password')
+
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_change_password(self, send_mail):
+        # Anonymous should get 401
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should be allowed to change the password
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.organizer.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+        data = {
+            'password': 'Ta0sFFetV1',
+            'password1': '36o4dFi6Rt',
+            'password2': '36o4dFi6Rt',
+        }
+        response = self.organizer_client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.organizer.user.check_password('36o4dFi6Rt'))
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.organizer.user.email,
+            status='sent').exists())
+
+        # Student should be allowed to change the password
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.student.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+        data = {
+            'password': 'rWF&jmlc_g',
+            'password1': 'hMTq8Re7Xv',
+            'password2': 'hMTq8Re7Xv',
+        }
+        response = self.student_client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.student.user.check_password('hMTq8Re7Xv'))
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.student.user.email,
+            status='sent').exists())
+
+class ForgotPasswordViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        super(ForgotPasswordViewTest, self).setUp()
+        self.url = reverse('auth:forgot_password')
+
+        self.user = UserFactory(email='drake.nathan@uncharted.com')
+
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_forgot_password(self, send_mail):
+        # Anonymous should be allowed to ask for new password
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+        response = self.client.post(self.url, data={'email': self.user.email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.user.email,
+            status='sent').exists())
+
+        # Student should not be allowed
+        response = self.student_client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should not be allowed
+        response = self.organizer_client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_validate_email(self):
+        response = self.client.post(self.url, data={'email': 'invalid@email.com'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This email does not exist.'])
+
+    @mock.patch('authentication.tasks.SendEmailResetPasswordTask.delay')
+    def test_invalidate_pending_token(self, task_delay):
+        reset_password = ResetPasswordToken.objects.create(user=self.user)
+        self.client.post(self.url, data={'email': 'drake.nathan@uncharted.com'})
+        self.assertFalse(ResetPasswordToken.objects.filter(id=reset_password.id).exists())
+        self.assertEqual(ResetPasswordToken.objects.filter(user=self.user).count(), 1)
+
+
+class ResetPasswordViewTest(APITestCase):
+
+    def setUp(self):
+        self.user = UserFactory(password='8LmmlZn@JD')
+        self.reset_password = ResetPasswordToken.objects.create(
+            user=self.user,
+            token='5da256d75377d67e770d83247ca1d538c182c814')
+        self.url = reverse('auth:reset_password')
+
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_reset_password(self, send_mail):
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        data = {
+            'token': self.reset_password.token,
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        user = User.objects.get(id=self.user.id)
+        reset_password = ResetPasswordToken.objects.get(id=self.reset_password.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(user.check_password('3jHZGtfqAS'))
+        self.assertTrue(reset_password.used)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.user.email,
+            status='sent').exists())
+
+    def test_validate_token_key(self):
+        data = {
+            'token': '1c77d52e79d1b3d11a07f8423e71f2ecc41bff53',
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+    def test_validate_token_date(self):
+        reset_password = ResetPasswordToken.objects.create(user=self.user, valid_until=now())
+        data = {
+            'token': reset_password.token,
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+    def test_validate_token_used(self):
+        reset_password = ResetPasswordToken.objects.create(user=self.user, used=True)
+        data = {
+            'token': reset_password.token,
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+    def test_validate_password(self):
+        data = {
+            'token': self.reset_password.token,
+            'password1': '3jHZGtfqAS',
+            'password2': 'SAqftGZHj3',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['The passwords do not match.'])
+
+
+class ConfirmEmailViewTest(APITestCase):
+
+    def setUp(self):
+        self.url = reverse('auth:confirm_email')
+        self.student = StudentFactory(user__email='derivia@witcher.com')
+
+    def test_confirm_email(self):
+        confirm_email = ConfirmEmailToken.objects.create(
+            user=self.student.user,
+            email='drake.nathan@uncharted.com')
+        data = {
+            'token': confirm_email.token,
+        }
+        response = self.client.post(self.url, data=data)
+        student = Student.objects.get(id=self.student.id)
+        confirm_email = ConfirmEmailToken.objects.get(id=confirm_email.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, StudentsSerializer(student).data)
+        self.assertEqual(student.user.email, 'drake.nathan@uncharted.com')
+        self.assertTrue(student.verified_email)
+        self.assertTrue(confirm_email.used)
+
+    def test_validate_token_key(self):
+        data = {
+            'token': '1c77d52e79d1b3d11a07f8423e71f2ecc41bff53',
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+    def test_validate_token_date(self):
+        confirm_email = ConfirmEmailToken.objects.create(
+            user=self.student.user, valid_until=now())
+        data = {
+            'token': confirm_email.token,
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+    def test_validate_token_used(self):
+        confirm_email = ConfirmEmailToken.objects.create(user=self.student.user, used=True)
+        data = {
+            'token': confirm_email.token,
+            'password1': '3jHZGtfqAS',
+            'password2': '3jHZGtfqAS',
+        }
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+
+class ChangeEmailViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        super(ChangeEmailViewTest, self).setUp()
+        self.url = reverse('auth:change_email')
+
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_change_email(self, send_mail):
+        # Anonymous should get unauthorized
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should change the email
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'kratos@godofwar.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+        response = self.student_client.post(self.url, data={'email': 'kratos@godofwar.com'})
+        student = Student.objects.get(id=self.student.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(student.verified_email)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to='kratos@godofwar.com',
+            status='sent').exists())
+
+        # Organizer should change the email
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'aiden.pearce@watchdogs.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+        response = self.organizer_client.post(
+            self.url, data={'email': 'aiden.pearce@watchdogs.com'})
+        organizer = Organizer.objects.get(id=self.organizer.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(organizer.verified_email)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to='aiden.pearce@watchdogs.com',
+            status='sent').exists())
+
+    @mock.patch('authentication.tasks.SendEmailConfirmEmailTask.delay')
+    def test_invalidate_pending_token(self, task_delay):
+        confirm_email = ConfirmEmailToken.objects.create(user=self.student.user)
+        self.student_client.post(self.url, data={'email': 'drake.nathan@uncharted.com'})
+        self.assertFalse(ConfirmEmailToken.objects.filter(id=confirm_email.id).exists())
+        self.assertEqual(ConfirmEmailToken.objects.filter(user=self.student.user).count(), 1)
+
+
+class VerifyConfirmEmailTokenViewTest(APITestCase):
+
+    def test_valid(self):
+        confirm_email = ConfirmEmailToken.objects.create(user=UserFactory())
+        url = reverse('auth:verify_email_token', args=(confirm_email.token,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid(self):
+        url = reverse('auth:verify_email_token', args=('1nv4l1dt0k3n',))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])
+
+
+class VerifyResetPasswordTokenViewTest(APITestCase):
+
+    def test_valid(self):
+        reset_password = ResetPasswordToken.objects.create(user=UserFactory())
+        url = reverse('auth:verify_password_token', args=(reset_password.token,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid(self):
+        url = reverse('auth:verify_password_token', args=('1nv4l1dt0k3n',))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['This token is not valid.'])

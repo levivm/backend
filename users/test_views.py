@@ -1,9 +1,5 @@
-import json
-
 import mock
-# from allauth.socialaccount.models import SocialApp
-from django.conf import settings
-from django.contrib.sites.models import Site
+
 from django.core.urlresolvers import reverse
 from django.template import loader
 from model_mommy import mommy
@@ -12,13 +8,11 @@ from rest_framework.test import APITestCase
 
 from locations.factories import CityFactory
 from locations.models import City
-# from users.allauth_adapter import MyAccountAdapter
 from users.models import OrganizerConfirmation
 from utils.models import EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 from .models import RequestSignup
-from .tasks import SendEmailOrganizerConfirmationTask  #, SendAllAuthEmailTask
-
+from .tasks import SendEmailOrganizerConfirmationTask
 
 
 class RequestSignupTestView(BaseAPITestCase):
@@ -59,12 +53,6 @@ class RequestSignupTestView(BaseAPITestCase):
 class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
     url = '/olympus/users/requestsignup/'
     REQUEST_SIGNUP_ID = 1
-
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
 
     def _get_send_verification_email_action_data(self):
         return {'action': 'send_verification_email',
@@ -123,88 +111,5 @@ class SendEmailOrganizerConfirmationTaskTest(APITestCase):
         global_merge_vars = [{'name': k, 'content': v} for k, v in context.items()]
         called_message = send_mail.call_args[1]['message']
         self.assertTrue(all(item in called_message.items() for item in message.items()))
-        self.assertTrue(all(item in called_message['global_merge_vars'] for item in global_merge_vars))
-
-
-# class SendAllAuthEmailTaskTest(BaseViewTest):
-#     password_reset_template_prefix = 'account/email/password_reset_key'
-#     email_confirmation_template_prefix = 'account/email/email_confirmation'
-#     USER_ID = 1
-#
-#     def setUp(self):
-#         settings.CELERY_ALWAYS_EAGER = True
-#
-#     def tearDown(self):
-#         settings.CELERY_ALWAYS_EAGER = False
-#
-#     def _get_reset_password_data(self):
-#         pass_reset_url = 'http://localhost:8000/users/password/reset/key/4-437-597e9e6b21e5adc283b2/'
-#         return {
-#             'user': self.USER_ID,
-#             'site': "trulii.com",
-#             'password_reset_url': pass_reset_url
-#         }
-#
-#     def _get_email_confirmation_data(self):
-#         activate_url = 'http://localhost:8000/users/confirm-email/'
-#         activate_url += 'kjbps8tqbmngdk1vqub8lqlgwd6hfuznkloeh8ul2gfndalyb86kn4fswslazkzv/'
-#         return {
-#             'user': self.USER_ID,
-#             'key': 'kjbps8tqbmngdk1vqub8lqlgwd6hfuznkloeh8ul2gfndalyb86kn4fswslazkzv',
-#             'activate_url': activate_url,
-#             'current_site': 1
-#         }
-#
-#     def _get_password_reset_task_data(self):
-#         context = self._get_reset_password_data()
-#         adapter = MyAccountAdapter()
-#
-#         return {
-#             'account_adapter': adapter,
-#             'email_data': {
-#                 'template_prefix': self.password_reset_template_prefix,
-#                 'email': "h@trulii.com",
-#                 'context': json.dumps(context)
-#             }
-#
-#         }
-#
-#     def _get_email_confirmation_task_data(self):
-#         context = self._get_email_confirmation_data()
-#         adapter = MyAccountAdapter()
-#
-#         return {
-#             'account_adapter': adapter,
-#             'email_data': {
-#                 'template_prefix': self.password_reset_template_prefix,
-#                 'email': "h@trulii.com",
-#                 'context': json.dumps(context)
-#             }
-#
-#         }
-#
-#     def test_email_confirmation_task_dispatch(self):
-#         task_data = self._get_email_confirmation_task_data()
-#         task = SendAllAuthEmailTask()
-#         result = task.apply_async((self.USER_ID,), task_data, countdown=2)
-#         self.assertEqual(result.result, 'Task scheduled')
-#
-#     def test_remail_confirmation_task_should_been_send_on_success(self):
-#         task_data = self._get_email_confirmation_task_data()
-#         task = SendAllAuthEmailTask()
-#         result = task.apply_async((self.USER_ID,), task_data, countdown=2)
-#         email_task = EmailTaskRecord.objects.get(task_id=result.id)
-#         self.assertTrue(email_task.send)
-#
-#     def treset_password_email_task_dispatch(self):
-#         task_data = self._get_password_reset_task_data()
-#         task = SendAllAuthEmailTask()
-#         result = task.apply_async((self.USER_ID,), task_data, countdown=2)
-#         self.assertEqual(result.result, 'Task scheduled')
-#
-#     def test_reset_password_email_task_should_been_send_on_success(self):
-#         task_data = self._get_password_reset_task_data()
-#         task = SendAllAuthEmailTask()
-#         result = task.apply_async((self.USER_ID,), task_data, countdown=2)
-#         email_task = EmailTaskRecord.objects.get(task_id=result.id)
-#         self.assertTrue(email_task.send)
+        self.assertTrue(
+            all(item in called_message['global_merge_vars'] for item in global_merge_vars))

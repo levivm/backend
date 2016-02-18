@@ -12,6 +12,7 @@ class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     birth_date = UnixEpochDateField()
     referrer_code = serializers.CharField(read_only=True)
+    verified_email = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Student
@@ -26,6 +27,7 @@ class StudentsSerializer(FileUploadMixin, serializers.ModelSerializer):
             'telephone',
             'city',
             'referrer_code',
+            'verified_email',
         )
 
     def validate_photo(self, file):

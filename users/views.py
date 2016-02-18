@@ -25,7 +25,6 @@ from .serializers import RequestSignUpSerializer, UsersSerializer
 def _set_ajax_response(_super):
     form_class = _super.get_form_class()
     form = _super.get_form(form_class)
-    response = None
     if form.is_valid():
         response = _super.form_valid(form)
     else:
@@ -58,7 +57,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
 
-    def retrieve(self, request):
+    def retrieve(self, request, *args, **kwargs):
         user = request.user
 
         if user.is_anonymous():
@@ -84,117 +83,6 @@ class UsersViewSet(viewsets.ModelViewSet):
         request_signup_data = RequestSignUpSerializer(request_signup).data
 
         return Response(request_signup_data, status=status.HTTP_200_OK)
-
-
-# class ObtainAuthTokenView(ReferralMixin):
-#     throttle_classes = ()
-#     permission_classes = ()
-#     parser_classes = (FormParser, MultiPartParser, JSONParser,)
-#     renderer_classes = (JSONRenderer,)
-#     serializer_class = AuthTokenSerializer
-#
-#     @sensitive_post_parameters_m
-#     def dispatch(self, request, *args, **kwargs):
-#         self.is_sign_up = request.POST.get('user_type')
-#         self.request_copy = request
-#         return super(ObtainAuthTokenView, self).dispatch(request, *args, **kwargs)
-#
-#     def post(self, request, *args, **kwargs):
-#         response = self.register_or_login(*args, **kwargs)
-#
-#         if response:
-#             return response
-#
-#         auth_data = self.get_auth_data()
-#
-#         serializer = self.serializer_class(data=auth_data, context={'request': request})
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.validated_data['user']
-#
-#         user_data = get_user_profile_data(user)
-#
-#         token, created = Token.objects.get_or_create(user=user)
-#         data = {'token': token.key, 'user': user_data}
-#         return super(ObtainAuthTokenView, self).post(data, request, *args, **kwargs)
-#
-#     def get_auth_data(self):
-#         if self.is_sign_up:
-#             auth_data = {
-#                 'email': self.request.data.get('email'),
-#                 'password': self.request.data.get('password1'),
-#             }
-#         else:
-#             auth_data = {
-#                 'email': self.request.data.get('login'),
-#                 'password': self.request.data.get('password')
-#             }
-#
-#         return auth_data
-#
-#     def register_or_login(self, *args, **kwargs):
-#         if self.is_sign_up:
-#             signup_response = SignupView().dispatch(self.request_copy, *args, **kwargs)
-#             if (signup_response.status_code == status.HTTP_400_BAD_REQUEST):
-#                 return signup_response
-#
-#         else:
-#             login_response = LoginView().dispatch(self.request_copy, *args, **kwargs)
-#             if (login_response.status_code == status.HTTP_400_BAD_REQUEST):
-#                 return login_response
-
-
-# class RestFacebookLogin(ReferralMixin):
-#     """
-#     Login or register a user based on an authentication token coming
-#     from Facebook.
-#     Returns user data including session id.
-#     """
-#
-#     permission_classes = (AllowAny,)
-#
-#     def dispatch(self, *args, **kwargs):
-#         return super(RestFacebookLogin, self).dispatch(*args, **kwargs)
-#
-#     def post(self, request, *args, **kwargs):
-#
-#         try:
-#             original_request = request._request
-#             auth_token = request.data.get('auth_token', '')
-#             # Find the token matching the passed Auth token
-#             app = SocialApp.objects.get(provider='facebook')
-#             fb_auth_token = SocialToken(app=app, token=auth_token)
-#
-#             # check token against facebook
-#             login = fb_complete_login(original_request, app, fb_auth_token)
-#             login.token = fb_auth_token
-#             login.state = SocialLogin.state_from_request(original_request)
-#
-#             # add or update the user into users table
-#             complete_social_login(original_request, login)
-#             # Create or fetch the session id for this user
-#             user = original_request.user
-#
-#             token, _ = Token.objects.get_or_create(user=user)
-#
-#             # token, _ = Token.objects.get_or_create(user=original_request.user)
-#             # if we get here we've succeeded
-#             user_data = get_user_profile_data(user)
-#
-#             data = {
-#                 'user': user_data,
-#                 'token': token.key,
-#             }
-#
-#             # return Response(
-#             #     status=status.HTTP_200_OK,
-#             #     data=data
-#             # )
-#             return super(RestFacebookLogin, self).post(data, request, *args, **kwargs)
-#
-#         except Exception as error:
-#             return Response(status=status.HTTP_401_UNAUTHORIZED, data={
-#                 'detail': error,
-#             })
 
 
 class PhotoUploadView(APIView):

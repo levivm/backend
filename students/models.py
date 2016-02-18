@@ -29,6 +29,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     tasks = GenericRelation(CeleryTask)
     referrer_code = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=100,blank=True)
+    verified_email = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username

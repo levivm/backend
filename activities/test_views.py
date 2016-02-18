@@ -105,12 +105,6 @@ class GetActivityViewTest(BaseViewTest):
         super(GetActivityViewTest, self).__init__(methodName)
         self.url = '/api/activities/%s' % self.ACTIVITY_ID
 
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
-
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
 
@@ -239,12 +233,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
                 'end_time': now_unix_timestamp + 100000,
             }]
         }
-
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -423,8 +411,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
     def setUp(self):
         super(ActivityGalleryAPITest, self).setUp()
 
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Objects
         self.another_activity = mommy.make(Activity, organizer=self.organizer,
                                            published=True, score=4.8)
@@ -457,9 +443,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Counters
         self.activity_photos_count = ActivityPhoto.objects.count()
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
 
     def test_create(self):
         """
@@ -679,12 +662,6 @@ class UpdateActivityLocationViewTest(BaseViewTest):
             'city': 1
         }
 
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
-
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
 
@@ -730,12 +707,6 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 class SendEmailCalendarTaskTest(BaseViewTest):
     CALENDAR_ID = 1
 
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
-
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailCalendarTask()
         result = task.apply((self.CALENDAR_ID,))
@@ -771,12 +742,6 @@ class SendEmailCalendarTaskTest(BaseViewTest):
 
 class SendEmailLocationTaskTest(BaseViewTest):
     ACTIVITY_ID = 1
-
-    def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
 
     def test_task_dispatch_if_there_is_not_other_task(self):
         task = SendEmailLocationTask()

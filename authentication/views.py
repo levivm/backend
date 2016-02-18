@@ -1,13 +1,21 @@
 from django.contrib.auth.models import User
+from django.core.validators import validate_email
 from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext as _
 from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from social.apps.django_app.utils import psa
 
-from authentication.mixins import SignUpMixin
-from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer
+from authentication.mixins import SignUpMixin, ValidateTokenMixin, InvalidateTokenMixin
+from authentication.models import ResetPasswordToken, ConfirmEmailToken
+from authentication.permissions import IsNotAuthenticated
+from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
+    ChangePasswordSerializer
+from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
+    SendEmailConfirmEmailTask
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
 from referrals.mixins import ReferralMixin
@@ -148,3 +156,151 @@ class SocialAuthView(ReferralMixin, GenericAPIView):
 
     def get_profile_data(self, profile):
         return StudentsSerializer(profile).data
+
+
+class ChangePasswordView(GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ChangePasswordSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data['password1'])
+        request.user.save(update_fields=['password'])
+
+        task = ChangePasswordNoticeTask()
+        task.delay(request.user.id)
+
+        return Response('OK')
+
+    def get_serializer_context(self):
+        context = super(ChangePasswordView, self).get_serializer_context()
+        context['user'] = self.request.user
+        return context
+
+
+class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
+    permission_classes = (IsNotAuthenticated,)
+    model = ResetPasswordToken
+
+    def post(self, *args, **kwargs):
+        user = self.get_user()
+        self.invalidate_token(user)
+        reset_password = ResetPasswordToken.objects.create(user=user)
+        task = SendEmailResetPasswordTask()
+        task.delay(reset_password.id)
+        return Response('OK')
+
+    def get_user(self):
+        try:
+            return User.objects.get(email=self.request.data.get('email'))
+        except User.DoesNotExist:
+            raise ValidationError(_('This email does not exist.'))
+
+
+class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
+    model = ResetPasswordToken
+
+    def post(self, request, *args, **kwargs):
+        request_password = self.validate_token(request.data.get('token'))
+        password = self.validate_password()
+
+        request_password.user.set_password(password)
+        request_password.user.save(update_fields=['password'])
+
+        task = ChangePasswordNoticeTask()
+        task.delay(request_password.user.id)
+
+        request_password.used = True
+        request_password.save(update_fields=['used'])
+
+        return Response('OK')
+
+    def validate_password(self):
+        password1 = self.request.data.get('password1')
+        password2 = self.request.data.get('password2')
+
+        if password1 and password2 and password1 == password2:
+            return password1
+
+        raise ValidationError(_('The passwords do not match.'))
+
+
+class ConfirmEmailView(ValidateTokenMixin, GenericAPIView):
+    model = ConfirmEmailToken
+
+    def post(self, request, *args, **kwargs):
+        confirm_email = self.validate_token(request.data.get('token'))
+
+        confirm_email.user.email = confirm_email.email
+        confirm_email.user.save(update_fields=['email'])
+
+        profile = confirm_email.user.get_profile()
+        profile.verified_email = True
+        profile.save(update_fields=['verified_email'])
+
+        confirm_email.used = True
+        confirm_email.save(update_fields=['used'])
+
+        profile_data = self.get_profile_data(profile)
+
+        return Response(profile_data)
+
+    def get_profile_data(self, profile):
+        if isinstance(profile, Organizer):
+            serializer_class = OrganizersSerializer
+        else:
+            serializer_class = StudentsSerializer
+
+        return serializer_class(profile).data
+
+
+class ChangeEmailView(InvalidateTokenMixin, GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    model = ConfirmEmailToken
+
+    def post(self, request, *args, **kwargs):
+        email = self.get_email()
+        self.invalidate_token(request.user)
+
+        confirm_email = ConfirmEmailToken.objects.create(
+            user=request.user,
+            email=email)
+
+        task = SendEmailConfirmEmailTask()
+        task.delay(confirm_email.id)
+
+        profile = confirm_email.user.get_profile()
+        profile.verified_email = False
+        profile.save(update_fields=['verified_email'])
+
+        return Response('OK')
+
+    def get_email(self):
+        email = self.request.data.get('email')
+
+        try:
+            validate_email(email)
+        except TypeError:
+            raise ValidationError(_('Email parameter is required.'))
+        except ValidationError:
+            raise
+
+        return email
+
+
+class VerifyConfirmEmailTokenView(ValidateTokenMixin, GenericAPIView):
+    model = ConfirmEmailToken
+
+    def get(self, request, token, *args, **kwargs):
+        self.validate_token(token=token)
+        return Response({'OK'})
+
+
+class VerifyResetPasswordTokenView(ValidateTokenMixin, GenericAPIView):
+    model = ResetPasswordToken
+
+    def get(self, request, token, *args, **kwargs):
+        self.validate_token(token=token)
+        return Response({'OK'})

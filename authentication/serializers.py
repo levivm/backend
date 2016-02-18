@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 from rest_framework import serializers, exceptions
 
-from organizers.models import Organizer
-
 
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
@@ -50,4 +48,25 @@ class SignUpStudentSerializer(serializers.Serializer):
         last_name = data['last_name']
 
         data['username'] = '%s.%s' % (first_name.lower(), last_name.lower())
+        return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    password1 = serializers.CharField()
+    password2 = serializers.CharField()
+
+    def validate_password(self, password):
+        user = self.context['user']
+        if not user.check_password(password):
+            raise serializers.ValidationError(_('The current password is incorrect.'))
+        return password
+
+    def validate(self, data):
+        password1 = data['password1']
+        password2 = data['password2']
+
+        if password1 != password2:
+            raise serializers.ValidationError(_("The new password doesn't match."))
+
         return data
