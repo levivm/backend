@@ -61,6 +61,7 @@ class SignUpStudentView(SignUpMixin, ReferralMixin):
         profile_data = self.get_profile_data(profile)
         self.assign_group(user)
         self.assign_permissions(user, profile)
+        self.confirm_email_handler(user)
         token = self.create_token(user)
 
         self.referral_handler(referred_id=profile.id)
@@ -77,6 +78,11 @@ class SignUpStudentView(SignUpMixin, ReferralMixin):
 
     def create_profile(self, user):
         return Student.objects.create(user=user)
+
+    def confirm_email_handler(self, user):
+        confirm_email_token = ConfirmEmailToken.objects.create(user=user, email=user.email)
+        task = SendEmailConfirmEmailTask()
+        task.delay(confirm_email_token.id)
 
 
 class SignUpOrganizerView(SignUpMixin, GenericAPIView):

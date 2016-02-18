@@ -89,10 +89,18 @@ class SignUpStudentViewTest(APITestCase):
         self.url = reverse('auth:signup_student')
         self.student_group = Group.objects.create(name='Students')
 
-    def test_student_signup_success(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_student_signup_success(self, send_mail):
         """
         Test case success for a student sign up
         """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'jack.bauer@example.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         data = {
             'email': 'jack.bauer@example.com',
             'first_name': 'Jack',
@@ -116,6 +124,10 @@ class SignUpStudentViewTest(APITestCase):
         self.assertEqual(response.data, content)
         self.assertIn(self.student_group, student.user.groups.all())
         self.assertTrue(student.user.has_perm('students.change_student', student))
+        self.assertTrue(ConfirmEmailToken.objects.filter(user=student.user, used=False).exists())
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to='jack.bauer@example.com',
+            status='sent').exists())
 
 
 class SignUpOrganizerViewTest(APITestCase):
@@ -249,8 +261,9 @@ class SocialAuthViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @mock.patch('utils.mixins.mandrill.Messages.send')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_signup_success(self, get_json):
+    def test_signup_success(self, get_json, send_mail):
         user_counter = User.objects.count()
         student_group = Group.objects.create(name='Students')
 
@@ -266,6 +279,13 @@ class SocialAuthViewTest(APITestCase):
             'timezone': -5,
             'verified': True,
         }
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'derivia@witcher.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         response = self.client.post(self.url, data={
             'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
@@ -284,6 +304,10 @@ class SocialAuthViewTest(APITestCase):
         self.assertEqual(student.gender, Student.MALE)
         self.assertIn(student_group, student.user.groups.all())
         self.assertTrue(student.user.has_perm('students.change_student', student))
+        self.assertTrue(ConfirmEmailToken.objects.filter(user=student.user, used=False).exists())
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to='derivia@witcher.com',
+            status='sent').exists())
 
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
     def test_signup_username_already_exists(self, get_json):

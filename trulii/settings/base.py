@@ -170,15 +170,13 @@ SOCIAL_AUTH_PIPELINE = [
     'social.pipeline.social_auth.auth_allowed',
     'social.pipeline.social_auth.social_user',
     'utils.pipelines.get_username',
-    # 'social.pipeline.user.get_username',
-    # Send a validation email to the user to verify its email address.
-    # Disabled by default.
-    # 'social.pipeline.mail.mail_validation',
     'social.pipeline.user.create_user',
     'utils.pipelines.create_profile',
     'utils.pipelines.create_token',
     'utils.pipelines.assign_group',
     'utils.pipelines.assign_permissions',
+    'utils.pipelines.create_confirm_email_token',
+    'utils.pipelines.send_mail_validation',
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
 ]

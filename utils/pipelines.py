@@ -2,6 +2,8 @@ from django.contrib.auth.models import User, Group
 from guardian.shortcuts import assign_perm
 from rest_framework.authtoken.models import Token
 
+from authentication.models import ConfirmEmailToken
+from authentication.tasks import SendEmailConfirmEmailTask
 from students.models import Student
 
 
@@ -54,3 +56,22 @@ def assign_permissions(user, is_new, profile, *args, **kwargs):
     """
     if is_new:
         assign_perm('students.change_student', user, profile)
+
+
+
+def create_confirm_email_token(user, is_new, *args, **kwargs):
+    """
+    Create the confirm email token object
+    """
+    if is_new:
+        confirm_email_token = ConfirmEmailToken.objects.create(user=user, email=user.email)
+        return {'confirm_email_token': confirm_email_token}
+
+
+def send_mail_validation(is_new, confirm_email_token=None, *args, **kwargs):
+    """
+    Send the email validation mail
+    """
+    if is_new:
+        task = SendEmailConfirmEmailTask()
+        task.delay(confirm_email_token.id)
