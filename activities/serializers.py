@@ -323,7 +323,15 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
                                     remove_fields=['subcategories']).data
 
     def get_closest_calendar(self, obj):
-        return CalendarSerializer(obj.closest_calendar, remove_fields=['sessions', 'assistants', 'activity',
+        request = self.context.get('request')
+        if not request:
+            instance = obj.closest_calendar()
+        else:
+            cost_start = request.query_params.get('cost_start')
+            cost_end = request.query_params.get('cost_end')
+            initial_date = request.query_params.get('date')
+            instance = obj.closest_calendar(initial_date, cost_start, cost_end)
+        return CalendarSerializer(instance, remove_fields=['sessions', 'assistants', 'activity',
                                                                        'number_of_sessions', 'capacity',
                                                                        'available_capacity', 'is_weekend']).data
 
