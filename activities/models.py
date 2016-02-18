@@ -63,7 +63,6 @@ class Tags(models.Model):
 
 class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
-
     LEVEL_CHOICES = (
         (constants.LEVEL_P, _('Principiante')),
         (constants.LEVEL_I, _('Intermedio')),
@@ -186,14 +185,14 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
                 query &= Q(session_price__gte=(cost_start))
             else:
                 query &= Q(session_price__range=(cost_start, cost_end))
-        
+
         if initial_date is not None:
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
             query = query & Q(initial_date__gte=initial_date)
 
         calendars = self.calendars.filter(query)
 
-        if  calendars:
+        if calendars:
             calendars = [c for c in calendars if c.initial_date.date() >= today]
             if calendars:
                 closest = sorted(calendars, key=lambda c: c.initial_date)[0]
@@ -332,7 +331,8 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         return self.capacity - self.num_enrolled
 
     def get_assistants(self):
-        return [a for o in self.orders.all() if o.status == 'approved' or o.status == 'pending' for a in
+        orders_qs = self.orders.all()
+        return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
                 o.assistants.all() if a.enrolled]
 
 

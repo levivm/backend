@@ -159,7 +159,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context,
+                                                    remove_fields=['lastest_refund', 'student'])
         return assistants_serialzer.data
 
     def get_available_capacity(self, obj):
@@ -196,7 +197,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             raise serializers.ValidationError(error)
 
         if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
-            msg = _("El precio no puede ser menor de {:d}" \
+            msg = _("El precio no puede ser menor de {:d}"
                     .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
             error = {'session_price': msg}
             raise serializers.ValidationError(error)
@@ -331,23 +332,26 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             cost_end = request.query_params.get('cost_end')
             initial_date = request.query_params.get('date')
             instance = obj.closest_calendar(initial_date, cost_start, cost_end)
-        return CalendarSerializer(instance, remove_fields=['sessions', 'assistants', 'activity',
-                                                                       'number_of_sessions', 'capacity',
-                                                                       'available_capacity', 'is_weekend']).data
+        return CalendarSerializer(instance,
+                                  remove_fields=['sessions', 'assistants', 'activity',
+                                                 'number_of_sessions', 'capacity',
+                                                 'available_capacity', 'is_weekend']).data
 
     def get_pictures(self, obj):
         pictures = [p for p in obj.pictures.all() if p.main_photo]
         return ActivityPhotosSerializer(pictures, many=True).data
 
     def get_organizer(self, obj):
-        return OrganizersSerializer(obj.organizer,
-                                    remove_fields=['bio', 'headline', 'website', 'youtube_video_url', 'telephone',
-                                                   'instructors', 'locations', 'user', 'user_type', 'created_at']).data
+        return OrganizersSerializer(
+            obj.organizer, remove_fields=['bio', 'headline', 'website', 'youtube_video_url',
+                                          'telephone', 'instructors', 'locations', 'user',
+                                          'user_type', 'created_at']).data
 
 
 class ActivitiesSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
-    sub_category = serializers.SlugRelatedField(slug_field='id', queryset=SubCategory.objects.all(), required=True)
+    sub_category = serializers.SlugRelatedField(slug_field='id',
+                                                queryset=SubCategory.objects.all(), required=True)
     category = serializers.SerializerMethodField()
     location = LocationsSerializer(read_only=True)
     pictures = ActivityPhotosSerializer(read_only=True, many=True)
@@ -430,7 +434,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         try:
             organizer = Organizer.objects.get(user=user)
         except Organizer.DoesNotExist:
-            raise serializers.ValidationError(_msg("Usuario no es organizador"))
+            raise serializers.ValidationError(_("Usuario no es organizador"))
 
         data['organizer'] = organizer
 
