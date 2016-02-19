@@ -13,7 +13,7 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin, \
+from activities.mixins import ActivityMixin, \
     ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
@@ -66,11 +66,14 @@ class CalendarViewSet(viewsets.ModelViewSet):
         return result
 
 
-class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
+class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     serializer_class = ActivitiesSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwnerOrReadOnly)
     lookup_url_kwarg = 'activity_pk'
+
+    def get_queryset(self):
+        return Activity.objects.prefetch_related(*self.prefetch_related_fields)\
+                               .select_related(*self.select_related_fields).all()
 
     def partial_update(self, request, *args, **kwargs):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
@@ -121,7 +124,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         return Response(status.HTTP_200_OK)
 
 
-class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
+class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
     model = ActivityPhoto
     serializer_class = ActivityPhotosSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwner)
@@ -254,8 +257,8 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
         query = search.get_query(q, self.query)
 
-        activities = Activity.objects.select_related(*self.select_related)\
-            .prefetch_related(*self.prefetch_related)
+        activities = Activity.objects.select_related(*self.select_related_fields)\
+            .prefetch_related(*self.prefetch_related_fields)
 
         if query:
             activities = activities.filter(query, filters).distinct()

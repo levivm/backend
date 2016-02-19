@@ -11,10 +11,12 @@ from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesCardSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
+from utils.paginations import SmallResultsSetPagination
+
 from .models import Organizer
 from .serializers import OrganizersSerializer, InstructorsSerializer
 from .permissions import IsCurrentUserSameOrganizer
@@ -30,16 +32,26 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
     """
     queryset = Organizer.objects.all()
     serializer_class = OrganizersSerializer
+    pagination_class = SmallResultsSetPagination
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,)
     lookup_url_kwarg = 'organizer_pk'
 
     def activities(self, request, **kwargs):
         organizer = self.get_object()
+        # status = request.query_params.get('status')
         activities = organizer.activity_set.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).all()
-        data = ActivitiesSerializer(activities, many=True,
-                                    context=self.get_serializer_context()).data
-        return Response(data)
+
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = ActivitiesSerializer(page, many=True,
+                                              context=self.get_serializer_context())
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ActivitiesSerializer(activities, many=True, 
+                                          context=self.get_serializer_context())
+        result = serializer.data
+        return Response(result)
 
 
 class OrganizerLocationViewSet(viewsets.ModelViewSet):
