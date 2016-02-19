@@ -84,8 +84,15 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def list_by_student(self, request, *args, **kwargs):
         student = self.get_student(user=request.user, exception=PermissionDenied)
+        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon', 'student',
+                                    'quantity', 'activity_id', 'lastest_refund']}
         orders = student.orders.all()
-        serializer = self.get_serializer(orders, many=True)
+        page = self.paginate_queryset(orders)
+        if page is not None:
+            serializer = OrdersSerializer(page, many=True, **params)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(orders, many=True, **params)
         return Response(serializer.data)
 
     def list_by_organizer(self, request, *args, **kwargs):
