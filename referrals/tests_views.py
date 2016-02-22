@@ -262,8 +262,9 @@ class InviteAPITest(BaseAPITestCase):
         self.assertFalse(Redeem.objects.filter(student=student,
                                               coupon__coupon_type__name='referred').exists())
 
+    @mock.patch('authentication.tasks.SendEmailConfirmEmailTask.delay')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_facebook_login(self, get_json):
+    def test_facebook_login(self, get_json, delay):
         """
         Test to login with Facebook and should not create referrals nor coupons
         """

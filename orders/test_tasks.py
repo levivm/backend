@@ -88,6 +88,8 @@ class SendEMailStudentRefundTaskTest(APITestCase):
                 status='error',
                 reject_reason='Hard bounce').exists())
 
+        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+
 
 class SendEMailOrganizerRefundTaskTest(APITestCase):
     """

@@ -1,7 +1,6 @@
 import logging
 import json
 
-from celery import group
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -64,10 +63,8 @@ class PayUNotificationPayment(APIView):
         send_payment_email_task = SendPaymentEmailTask()
         task_data = {'payment_method': data.get('payment_method_type')}
         referral_coupon_task = ReferrerCouponTask()
-        group(
-            send_payment_email_task.subtask((order.id,), task_data, countdown=4),
-            referral_coupon_task.s(order.student.id, order.id)
-        )()
+        send_payment_email_task.apply_async((order.id,), task_data, countdown=4),
+        referral_coupon_task.delay(order.student.id, order.id)
 
     def _run_transaction_declined_task(self, order, data, msg='Error',
                                        status=Order.ORDER_DECLINED_STATUS):

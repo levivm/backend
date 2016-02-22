@@ -104,6 +104,6 @@ class ActivitiesByStudentViewTest(BaseViewTest):
 #     def test_task_should_delete_on_success(self):
 #         task = SendEmailStudentSignupTask()
 #         task.apply((self.STUDENT_ID, ))
-#         self.assertEqual(CeleryTask.objects.count(), 0)
+#         self.assertEqual(CeleryTaskEditActivity.objects.count(), 0)
 
 

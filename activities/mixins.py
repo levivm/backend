@@ -1,5 +1,6 @@
-from activities.tasks import ActivityScoreTask
 from itertools import filterfalse
+
+from activities.tasks import ActivityScoreTask
 
 
 class CalculateActivityScoreMixin(object):
@@ -9,7 +10,6 @@ class CalculateActivityScoreMixin(object):
 
 
 class ListUniqueOrderedElementsMixin(object):
-
     @staticmethod
     def unique_everseen(iterable, key=None):
         "List unique elements, preserving order. Remember all elements ever seen."
@@ -30,5 +30,5 @@ class ListUniqueOrderedElementsMixin(object):
 
 
 class ActivityCardMixin(object):
-    select_related = ['organizer', 'sub_category__category',]
+    select_related = ['organizer', 'sub_category__category', ]
     prefetch_related = ['pictures', 'calendars__sessions']

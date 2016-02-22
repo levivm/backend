@@ -114,4 +114,4 @@ class CalendarSessionFactory(factory.django.DjangoModelFactory):
     date = factory.fuzzy.FuzzyDateTime(now() + timedelta(days=30), now() + timedelta(days=365))
     start_time = factory.fuzzy.FuzzyDateTime(now() + timedelta(days=30), now() + timedelta(days=365))
     end_time = factory.LazyAttribute(lambda cs: cs.start_time + timedelta(days=60))
-    calendar = factory.SubFactory(Calendar)
+    calendar = factory.SubFactory(CalendarFactory)

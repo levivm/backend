@@ -58,7 +58,8 @@ class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):
         return {'action': 'send_verification_email',
                 '_selected_action': self.REQUEST_SIGNUP_ID}
 
-    def test_admin_send_verification_email_action(self):
+    @mock.patch('users.tasks.SendEmailOrganizerConfirmationTask.apply_async')
+    def test_admin_send_verification_email_action(self, apply_async):
         client = self.get_admin_client()
         data = self._get_send_verification_email_action_data()
         request_signup = RequestSignup.objects.get(id=self.REQUEST_SIGNUP_ID)

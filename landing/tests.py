@@ -40,7 +40,8 @@ class ContactFormTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item in response.data for item in content))
 
-    def test_post(self):
+    @mock.patch('landing.tasks.SendContactFormEmailTask.delay')
+    def test_post(self, delay):
         """
         Test the post of contact form
         """

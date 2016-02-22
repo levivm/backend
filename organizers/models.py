@@ -1,10 +1,9 @@
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
-from utils.models import CeleryTask
+from utils.models import CeleryTaskEditActivity
 
 
 class Organizer(ImageOptimizable, models.Model):
@@ -17,7 +16,6 @@ class Organizer(ImageOptimizable, models.Model):
     website = models.CharField(max_length=100, blank=True)
     headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
-    tasks = GenericRelation(CeleryTask)
     rating = models.FloatField(default=0)
     verified_email = models.BooleanField(default=True)
 

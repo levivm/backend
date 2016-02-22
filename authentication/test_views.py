@@ -309,8 +309,9 @@ class SocialAuthViewTest(APITestCase):
             to='derivia@witcher.com',
             status='sent').exists())
 
+    @mock.patch('authentication.tasks.SendEmailConfirmEmailTask.delay')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_signup_username_already_exists(self, get_json):
+    def test_signup_username_already_exists(self, get_json, delay):
         StudentFactory(user__username='geralt.derivia')
         user_counter = User.objects.count()
 

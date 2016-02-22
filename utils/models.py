@@ -1,17 +1,14 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from django.db import models
 from django.contrib.postgres.fields import JSONField
+from django.db import models
 
 
-class CeleryTask(models.Model):
+class CeleryTaskEditActivity(models.Model):
     task_id = models.CharField(max_length=40)
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    date = models.DateTimeField(auto_now_add=True)
+    state = models.CharField(max_length=30)
 
-    def __str__(self):
-        return self.task_id
+    class Meta:
+        abstract = True
 
 
 class EmailTaskRecord(models.Model):

@@ -57,8 +57,9 @@ class PaymentCreditCardTest(BaseAPITestCase):
             }]
         }
 
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
     @mock.patch('activities.utils.post')
-    def test_approved(self, payu_post):
+    def test_approved(self, payu_post, apply_async):
         """
         Test when a credit card is approved
         """
@@ -500,8 +501,9 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
             'coupon_code': self.redeem.coupon.token,
         }
 
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
     @mock.patch('activities.utils.PaymentUtil.creditcard')
-    def test_creditcard_approved(self, creditcard):
+    def test_creditcard_approved(self, creditcard, apply_async):
         """
         Test to create (and pay) an order with a coupon
         """
@@ -559,8 +561,9 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         self.assertFalse(Order.objects.filter(coupon=self.redeem.coupon).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
     @mock.patch('activities.utils.PaymentUtil.creditcard')
-    def test_creditcard_approved_global_coupon(self, creditcard):
+    def test_creditcard_approved_global_coupon(self, creditcard, apply_async):
         """
         Test to create a payed order with a global coupon
         """
@@ -953,7 +956,9 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertFalse(
             Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
-    def test_pse_approved_global_coupon(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
+    def test_pse_approved_global_coupon(self, referrer_apply_async, delay):
         """
         Test approved payment with pse
         """
@@ -1022,7 +1027,9 @@ class PaymentWebHookTest(BaseAPITestCase):
         # Celery
         settings.CELERY_ALWAYS_EAGER = True
 
-    def test_cc_create_referrer_coupon(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
+    def test_cc_create_referrer_coupon(self, referrer_apply_async, delay):
         """
         Test should create a referrer coupon
         """
@@ -1044,7 +1051,9 @@ class PaymentWebHookTest(BaseAPITestCase):
         self.assertTrue(Redeem.objects.filter(student=self.student,
                                               coupon__coupon_type=self.coupon_type).exists())
 
-    def test_pse_create_referrer_coupon(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')
+    def test_pse_create_referrer_coupon(self, referrer_apply_async, delay):
         """
         Test should create a referrer coupon
         """

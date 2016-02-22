@@ -1,86 +1,142 @@
 from __future__ import absolute_import
 
-# from allauth.account.adapter import get_adapter
-from celery import Task
+from celery import Task, states
 from django.contrib.auth.models import User
 
-from activities.models import  Calendar, Activity
-from utils.models import CeleryTask
+from activities.models import Calendar, Activity, CalendarCeleryTaskEditActivity, \
+    ActivityCeleryTaskEditActivity
 from utils.tasks import SendEmailTaskMixin
 
 
-class SendEmailActivityEditTaskMixin(Task):
-    abstract = True
-    success_handler = True
+class CeleryTaskEditActivityMixin(SendEmailTaskMixin):
+    CELERY_TASK_MODEL = None
+    celery_task = None
 
-    def run(self, instance, template, **kwargs):
-        emails = self.get_emails_to(instance)
+    def register_task(self):
+        self.celery_task = self.CELERY_TASK_MODEL.objects.create(
+            task_id=self.request.id,
+            state=states.PENDING,
+            activity=self.activity)
 
-        if emails:
-            for celery_task in instance.tasks.all():
-                task = self.AsyncResult(celery_task.task_id)
-                if task.state == 'PENDING':
-                    break
-            else:
-                context = self.get_context_data()
+    def get_merge_vars(self):
+        return [{
+                    'rcpt': assistant.email,
+                    'vars': [{
+                        'name': 'name',
+                        'content': assistant.first_name,
+                    }]
+                } for assistant in self.assistants]
 
-                for email in emails:
-                    pass
-                    # get_adapter().send_mail(
-                    #     template,
-                    #     email,
-                    #     context
-                    # )
-                self.register_task(instance)
-                return 'Task scheduled'
+    def on_success(self, retval, task_id, args, kwargs):
+        if self.celery_task is not None:
+            self.celery_task.delete()
+        return super(CeleryTaskEditActivityMixin, self).on_success(retval, task_id, args, kwargs)
 
-    def register_task(self, instance):
-        CeleryTask.objects.create(task_id=self.request.id, content_object=instance)
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if self.celery_task is not None:
+            self.celery_task.state = states.FAILURE
+            self.celery_task.save(update_fields=['state'])
+        return super(CeleryTaskEditActivityMixin, self).on_failure(exc, task_id, args, kwargs,
+                                                                   einfo)
+
+
+class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
+    CELERY_TASK_MODEL = CalendarCeleryTaskEditActivity
+
+    def run(self, calendar_id, *args, **kwargs):
+        self.calendar = Calendar.objects.get(id=calendar_id)
+        if not self.calendar.tasks.filter(state=states.PENDING).exists():
+            self.register_task()
+            self.template_name = 'activities/email/change_calendar_data_message.txt'
+            self.emails = self.get_emails_to()
+            self.subject = 'Una actividad ha cambiado'
+            self.context = self.get_context_data()
+            self.global_merge_vars = self.get_global_merge_vars()
+            self.merge_vars = self.get_merge_vars()
+            return super(SendEmailCalendarTask, self).run(*args, **kwargs)
+
+    def register_task(self):
+        self.celery_task = CalendarCeleryTaskEditActivity.objects.create(
+            task_id=self.request.id,
+            state=states.PENDING,
+            calendar=self.calendar)
+
+    def get_emails_to(self):
+        self.assistants = [assistant for order in self.calendar.orders.available() for assistant in
+                           order.assistants.enrolled()]
+        emails = [assistant.email for assistant in self.assistants]
+        return emails
 
     def get_context_data(self):
-        data = {}
-        return data
+        return {
+            'organizer': self.calendar.activity.organizer.name,
+            'activity': self.calendar.activity.title,
+            'closing_sales_date': self.calendar.closing_sale.strftime('%d %b %Y'),
+            'sessions': [{
+                             'date': session.date.strftime('%d %b %Y'),
+                             'start_time': session.start_time.strftime('%H:%M%p'),
+                             'end_time': session.end_time.strftime('%H:%M%p'),
+                         } for session in self.calendar.sessions.all()],
+            'price': self.calendar.session_price,
+            'url_activity_id': self.calendar.activity_id,
+        }
 
-    def get_emails_to(self, instance):
-        return []
+    def get_merge_vars(self):
+        return [{
+                    'rcpt': assistant.email,
+                    'vars': [{
+                        'name': 'name',
+                        'content': assistant.first_name,
+                    }]
+                } for assistant in self.assistants]
 
-    def on_success(self, retval, task_id, *args, **kwargs):
-        if self.success_handler:
-            task = CeleryTask.objects.get(task_id=task_id)
-            task.delete()
 
+class SendEmailLocationTask(CeleryTaskEditActivityMixin):
+    CELERY_TASK_MODEL = ActivityCeleryTaskEditActivity
 
-class SendEmailCalendarTask(SendEmailActivityEditTaskMixin):
+    def run(self, activity_id, *args, **kwargs):
+        self.activity = Activity.objects.get(id=activity_id)
+        if not self.activity.tasks.filter(state=states.PENDING).exists():
+            self.register_task()
+            self.template_name = 'activities/email/change_location_data_message.txt'
+            self.emails = self.get_emails_to()
+            self.subject = 'Una actividad ha cambiado'
+            self.context = self.get_context_data()
+            self.global_merge_vars = self.get_global_merge_vars()
+            self.merge_vars = self.get_merge_vars()
+            return super(SendEmailLocationTask, self).run(*args, **kwargs)
 
-    def run(self, calendar_id, success_handler=True, **kwargs):
-        self.success_handler = success_handler
-        calendar = Calendar.objects.get(id=calendar_id)
-        template = 'activities/email/change_calendar_data'
-        return super(SendEmailCalendarTask, self).run(instance=calendar, template=template)
+    # def register_task(self):
+    #     self.celery_task = ActivityCeleryTaskEditActivity.objects.create(
+    #         task_id=self.request.id,
+    #         state=states.PENDING,
+    #         activity=self.activity)
 
-    def get_emails_to(self, calendar):
-        assistants = [order.assistants.all() for order in calendar.orders.all()]
-        assistants = [item for sublist in assistants for item in sublist]
-        emails = [assistant.email for assistant in assistants]
+    def get_emails_to(self):
+        self.assistants = [assistant for calendar in self.activity.calendars.all()
+                           for order in calendar.orders.available()
+                           for assistant in order.assistants.enrolled()]
+        emails = [assistant.email for assistant in self.assistants]
         return emails
 
+    def get_context_data(self):
+        return {
+            'organizer': self.activity.organizer.name,
+            'activity': self.activity.title,
+            'address': self.activity.location.address,
+        }
 
-class SendEmailLocationTask(SendEmailActivityEditTaskMixin):
-    def run(self, activity_id, success_handler=True, **kwargs):
-        self.success_handler = success_handler
-        activity = Activity.objects.get(id=activity_id)
-        template = 'activities/email/change_location_data'
-        return super(SendEmailLocationTask, self).run(instance=activity, template=template)
-
-    def get_emails_to(self, activity):
-        assistants = [order.assistants.all() for calendar in activity.calendars.all() for order in calendar.orders.all()]
-        assistants = [item for sublist in assistants for item in sublist]
-        emails = [assistant.email for assistant in assistants]
-        return emails
+        # def get_merge_vars(self):
+        #     return [{
+        #         'rcpt': assistant.email,
+        #         'vars': [{
+        #             'name': 'name',
+        #             'content': assistant.first_name,
+        #         }]
+        #     } for assistant in self.assistants]
 
 
 class ActivityScoreTask(Task):
-
     def run(self, activity_id, *args, **kwargs):
         activity = Activity.objects.get(id=activity_id)
         details = self.get_detail_value(activity)
@@ -112,7 +168,6 @@ class ActivityScoreTask(Task):
 
 
 class SendEmailShareActivityTask(SendEmailTaskMixin):
-
     def run(self, user_id, activity_id, *args, **kwargs):
         self.user = User.objects.get(id=user_id)
         self.activity = Activity.objects.get(id=activity_id)

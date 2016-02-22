@@ -14,7 +14,6 @@ from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from django.db.models import Count
 from django.http.request import HttpRequest
 from django.utils.timezone import now, utc
 from guardian.shortcuts import assign_perm
@@ -28,13 +27,13 @@ from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityS
 from activities.models import Category
 from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
     ActivitiesCardSerializer
-from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask
+from activities.tasks import SendEmailCalendarTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory, LocationFactory
 from orders.models import Assistant
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
-from utils.models import CeleryTask, EmailTaskRecord
+from utils.models import CeleryTaskEditActivity, EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -255,7 +254,8 @@ class GetCalendarByActivityViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         # self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
-    def test_organizer_should_update_the_calendar(self):
+    @mock.patch('activities.tasks.SendEmailCalendarTask.apply_async')
+    def test_organizer_should_update_the_calendar(self, apply_async):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         data = self._get_data_to_create_a_calendar()
@@ -691,7 +691,8 @@ class UpdateActivityLocationViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
-    def test_organizer_should_update_location(self):
+    @mock.patch('activities.tasks.SendEmailLocationTask.apply_async')
+    def test_organizer_should_update_location(self, apply_async):
         organizer = self.get_organizer_client()
         data = json.dumps(self.get_data_to_update())
         response = organizer.put(self.url, data=data, content_type='application/json')
@@ -702,82 +703,6 @@ class UpdateActivityLocationViewTest(BaseViewTest):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
         response = organizer.put(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-
-class SendEmailCalendarTaskTest(BaseViewTest):
-    CALENDAR_ID = 1
-
-    def test_task_dispatch_if_there_is_not_other_task(self):
-        task = SendEmailCalendarTask()
-        result = task.apply((self.CALENDAR_ID,))
-        self.assertEqual(result.result, 'Task scheduled')
-
-    def test_ignore_task_if_there_is_a_pending_task(self):
-        task = SendEmailCalendarTask()
-        task.apply((self.CALENDAR_ID, False), countdown=60)
-        task2 = SendEmailCalendarTask()
-        result = task2.apply((self.CALENDAR_ID, False))
-        self.assertEqual(result.result, None)
-
-    def test_task_should_delete_on_success(self):
-        task = SendEmailCalendarTask()
-        task.apply((self.CALENDAR_ID,), countdown=60)
-        self.assertEqual(CeleryTask.objects.count(), 0)
-
-    def test_email_task_should_create_if_has_students(self):
-        calendar = Calendar.objects.get(id=self.CALENDAR_ID)
-        self.assertTrue(calendar.orders.count() > 0)
-        task = SendEmailCalendarTask()
-        task.apply((self.CALENDAR_ID, False), countdown=60)
-        self.assertEqual(CeleryTask.objects.count(), 1)
-
-    def test_email_task_shouldnt_create_if_hasnt_students(self):
-        calendar = Calendar.objects.get(id=self.CALENDAR_ID)
-        calendar.orders.all().delete()
-        self.assertEqual(calendar.orders.count(), 0)
-        task = SendEmailCalendarTask()
-        task.apply((self.CALENDAR_ID, False), countdown=60)
-        self.assertEqual(CeleryTask.objects.count(), 0)
-
-
-class SendEmailLocationTaskTest(BaseViewTest):
-    ACTIVITY_ID = 1
-
-    def test_task_dispatch_if_there_is_not_other_task(self):
-        task = SendEmailLocationTask()
-        result = task.apply((self.ACTIVITY_ID,), )
-        self.assertEqual(result.result, 'Task scheduled')
-
-    def test_ignore_task_if_there_is_a_pending_task(self):
-        task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID, False), countdown=60)
-        task2 = SendEmailLocationTask()
-        result = task2.apply((self.ACTIVITY_ID, False))
-        self.assertEqual(result.result, None)
-
-    def test_task_should_delete_on_success(self):
-        task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID,))
-        self.assertEqual(CeleryTask.objects.count(), 0)
-
-    def test_email_task_should_create_if_has_students(self):
-        activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        orders = [order for calendar in activity.calendars.all() for order in
-                  calendar.orders.all()]
-        self.assertGreater(len(orders), 0)
-        task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID, False), countdown=60)
-        self.assertEqual(CeleryTask.objects.count(), 1)
-
-    def test_email_task_shouldnt_create_if_hasnt_students(self):
-        activity = Activity.objects.get(id=self.ACTIVITY_ID)
-        [calendar.orders.all().delete() for calendar in activity.calendars.all()]
-        orders = [order for calendar in activity.calendars.all() for order in
-                  calendar.orders.all()]
-        self.assertEqual(len(orders), 0)
-        task = SendEmailLocationTask()
-        task.apply((self.ACTIVITY_ID, False))
-        self.assertEqual(CeleryTask.objects.count(), 0)
 
 
 class SearchActivitiesViewTest(BaseAPITestCase):

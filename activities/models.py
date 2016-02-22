@@ -7,7 +7,6 @@ from functools import reduce
 from random import Random
 
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
@@ -17,6 +16,7 @@ from organizers.models import Organizer, Instructor
 from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.behaviors import Updateable
 from utils.mixins import AssignPermissionsMixin, ImageOptimizable
+from utils.models import CeleryTaskEditActivity
 from . import constants
 
 
@@ -99,7 +99,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True)
-    tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
 
@@ -292,7 +291,6 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     enroll_open = models.NullBooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
-    tasks = GenericRelation('utils.CeleryTask')
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
@@ -327,3 +325,11 @@ class CalendarSession(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     calendar = models.ForeignKey(Calendar, related_name="sessions")
+
+
+class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):
+    activity = models.ForeignKey('Activity', related_name='tasks')
+
+
+class CalendarCeleryTaskEditActivity(CeleryTaskEditActivity):
+    calendar = models.ForeignKey('Calendar', related_name='tasks')

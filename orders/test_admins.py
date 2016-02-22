@@ -18,12 +18,18 @@ class RefundAdminTest(APITestCase):
         self.admin = RefundAdmin(Refund, AdminSite())
         self.refunds = mommy.make(Refund, _quantity=2, order__status=Order.ORDER_APPROVED_STATUS)
 
-        settings.CELERY_ALWAYS_EAGER = True
-
-    def test_set_decline(self):
+    @mock.patch('utils.mixins.mandrill.Messages.send')
+    def test_set_decline(self, send_mail):
         """
         Test the action set_decline
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.refunds[0].user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         # Counter
         email_counter = EmailTaskRecord.objects.count()
@@ -41,7 +47,9 @@ class RefundAdminTest(APITestCase):
         self.assertEqual(refund_2.status, Refund.PENDING_STATUS)
         self.assertEqual(EmailTaskRecord.objects.count(), email_counter + 1)
 
-    def test_set_approved(self):
+    @mock.patch('orders.tasks.SendEmailOrganizerRefundTask.delay')
+    @mock.patch('orders.tasks.SendEMailStudentRefundTask.delay')
+    def test_set_approved(self, student_task, organizer_task):
         """
         Test the action set_approved
         """
@@ -66,4 +74,3 @@ class RefundAdminTest(APITestCase):
         self.assertEqual(refund_1.order.status, Order.ORDER_CANCELLED_STATUS)
         self.assertEqual(refund_2.order.status, Order.ORDER_CANCELLED_STATUS)
         self.assertFalse(refund_2.assistant.enrolled)
-        self.assertEqual(EmailTaskRecord.objects.count(), email_counter + 4)

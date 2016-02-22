@@ -1,4 +1,6 @@
 from itertools import cycle
+
+import mock
 from rest_framework import status
 from model_mommy import mommy
 from mock import Mock
@@ -296,7 +298,8 @@ class RefundAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data, response)
 
-    def test_create_student(self):
+    @mock.patch('orders.tasks.SendEMailStudentRefundTask.delay')
+    def test_create_student(self, delay):
         """
         Test create a refund for a Student
         """
@@ -319,7 +322,8 @@ class RefundAPITest(BaseAPITestCase):
         self.assertTrue(Refund.objects.filter(user=self.student.user, order=order, status='pending',
                                               assistant=assistant).exists())
 
-    def test_create_organizer(self):
+    @mock.patch('orders.tasks.SendEMailStudentRefundTask.delay')
+    def test_create_organizer(self, delay):
         """
         Test create a refund for an Organizer
         """
@@ -337,7 +341,8 @@ class RefundAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
         self.assertTrue(Refund.objects.filter(user=self.organizer.user, order=order, status='pending').exists())
 
-    def test_order_refund(self):
+    @mock.patch('orders.tasks.SendEMailStudentRefundTask.delay')
+    def test_order_refund(self, delay):
         """
         Test full order refund
         """

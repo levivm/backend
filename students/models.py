@@ -5,10 +5,9 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from locations.models import City
 from utils.behaviors import Updateable
-from django.contrib.contenttypes.fields import GenericRelation
 
 from utils.mixins import ImageOptimizable
-from utils.models import CeleryTask
+from utils.models import CeleryTaskEditActivity
 
 
 
@@ -26,7 +25,6 @@ class Student(ImageOptimizable, Updateable, models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
     city = models.ForeignKey(City, null=True)
-    tasks = GenericRelation(CeleryTask)
     referrer_code = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=100,blank=True)
     verified_email = models.BooleanField(default=False)

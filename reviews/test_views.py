@@ -194,7 +194,8 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_report(self):
+    @mock.patch('reviews.tasks.SendReportReviewEmailTask.delay')
+    def test_report(self, delay):
         """
         Test report a review [POST]
         """

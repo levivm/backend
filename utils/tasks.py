@@ -16,7 +16,7 @@ class SendEmailTaskMixin(MandrillMixin, Task):
                 self.emails and
                 self.subject and
                 self.context), ('Cannot send email on task that does not set template_name, '
-                                'emails, subject, context and merge_vars')
+                                'emails, subject, context')
 
         self.email_records = self.create_email_record_task()
         return self.send_mail()
@@ -33,18 +33,19 @@ class SendEmailTaskMixin(MandrillMixin, Task):
         return [EmailTaskRecord.objects.create(**param) for param in params]
 
     def on_success(self, retval, task_id, args, kwargs):
-        records_hash = {e.to: e for e in self.email_records}
+        if self.email_records is not None:
+            records_hash = {e.to: e for e in self.email_records}
 
-        for result in retval:
-            email_record = records_hash[result['email']]
-            email_record.status = result['status']
-            email_record.reject_reason = '' if not result['reject_reason'] else \
-                result['reject_reason']
-            email_record.smtp_id = result['_id']
-            email_record.save()
+            for result in retval:
+                email_record = records_hash[result['email']]
+                email_record.status = result['status']
+                email_record.reject_reason = '' if not result['reject_reason'] else \
+                    result['reject_reason']
+                email_record.smtp_id = result['_id']
+                email_record.save()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        if self.email_records:
+        if self.email_records is not None:
             for email_record in self.email_records:
                 email_record.status = 'error'
                 email_record.reject_reason = exc

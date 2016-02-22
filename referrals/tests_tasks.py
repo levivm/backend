@@ -75,7 +75,8 @@ class CreateCouponTaskTest(BaseAPITestCase):
         self.referrer_type = mommy.make(CouponType, name='referrer')
         self.referred_type = mommy.make(CouponType, name='referred')
 
-    def test_create(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_create(self, delay):
         """
         Test to create the coupons
         """
@@ -128,7 +129,8 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
                                 calendar=self.calendar)
 
-    def test_create(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_create(self, delay):
         """
         Test create a referrer coupon
         """
@@ -166,7 +168,8 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         self.assertEqual(Redeem.objects.count(), redeem_counter)
         self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
 
-    def test_having_an_free_activity(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_having_an_free_activity(self, delay):
         """
         Test case should create the coupon
         because the student has a free activity
