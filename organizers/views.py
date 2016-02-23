@@ -38,9 +38,8 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
 
     def activities(self, request, **kwargs):
         organizer = self.get_object()
-        # status = request.query_params.get('status')
-        activities = organizer.activity_set.select_related(*self.select_related_fields).\
-            prefetch_related(*self.prefetch_related_fields).all()
+        status = request.query_params.get('status')
+        activities = organizer.get_activities_by_status(status)
 
         page = self.paginate_queryset(activities)
         if page is not None:
