@@ -21,7 +21,7 @@ from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
     SendEmailShareActivityTask
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
-from utils.paginations import MediumResultsSetPagination, SmallResultsSetPagination
+from utils.paginations import SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto

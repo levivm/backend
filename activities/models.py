@@ -19,6 +19,7 @@ from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.behaviors import Updateable
 from utils.mixins import AssignPermissionsMixin, ImageOptimizable
 from . import constants
+from .queryset import ActivityQuerySet
 
 
 class Category(models.Model):
@@ -102,6 +103,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
+    last_date = models.DateTimeField(null=True)
+
+    objects = ActivityQuerySet.as_manager()
+
 
     def __str__(self):
         return self.title
@@ -167,6 +172,12 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     def unpublish(self):
         self.published = False
         self.save(update_fields=['published'])
+
+    def set_last_date(self,new_last_date):
+        self.last_date = new_last_date if  not self.last_date or \
+                         self.last_date < new_last_date else self.last_date
+        self.save(update_fields=['last_date'])
+
 
     def last_sale_date(self):
         dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]

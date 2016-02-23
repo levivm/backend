@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from utils.models import CeleryTask
-
+from activities import constants as activities_constants
 
 class Organizer(ImageOptimizable, models.Model):
     user = models.OneToOneField(User, related_name='organizer_profile')
@@ -29,6 +29,18 @@ class Organizer(ImageOptimizable, models.Model):
                                                  height=self.photo.height)
 
         super(Organizer, self).save(*args, **kwargs)
+
+    def get_activities_by_status(self, status=activities_constants.OPENED):
+        activities = None
+        if status == activities_constants.CLOSED:
+            activities = self.activity_set.closed().all()
+        elif status == activities_constants.UNPUBLISHED:
+            activities = self.activity_set.unpublished().all()
+        else:
+            activities = self.activity_set.opened().all()
+
+        return activities
+
 
 
 # Create your models here.

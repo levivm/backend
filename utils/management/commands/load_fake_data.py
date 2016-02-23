@@ -198,8 +198,15 @@ class Command(BaseCommand):
         self.stdout.write('Creando calendar sessions')
         sessions = list()
         for calendar in self.calendars:
+
+
             quantity = self.get_quantity()
             sessions.append(CalendarSessionFactory.create_batch(quantity, calendar=calendar))
+            activity = calendar.activity
+            dates = [s.date for s in calendar.sessions.all()]
+            if dates:
+                last_date = sorted(dates, reverse=True)[0]
+                activity.set_last_date(last_date)
 
         return self.flat_list(sessions)
 

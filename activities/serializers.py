@@ -220,17 +220,17 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def _proccess_sessions(self, data):
 
-        session_data = data['sessions']
+        sessions_data = data['sessions']
         data['is_weekend'] = True
 
-        sessions_amount = len(session_data)
+        sessions_amount = len(sessions_data)
         if not sessions_amount:
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
 
         for i in range(sessions_amount):
 
-            session = session_data[i]
-            n_session = session_data[i + 1] if i + 1 < sessions_amount else None
+            session = sessions_data[i]
+            n_session = sessions_data[i + 1] if i + 1 < sessions_amount else None
 
             self._validate_session(sessions_amount, i, session)
 
@@ -288,6 +288,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def update(self, instance, validated_data):
         sessions_data = validated_data.get('sessions')
+        last_date = sessions_data[-1]
+        instance.activity.set_last_date(last_date)
         del (validated_data['sessions'])
         instance.update(validated_data)
         sessions = instance.sessions.all()
@@ -411,7 +413,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return settings.ACTIVITY_STEPS
 
     def get_last_date(self, obj):
-        return UnixEpochDateField().to_representation(obj.last_sale_date())
+        return UnixEpochDateField().to_representation(obj.last_date)
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
