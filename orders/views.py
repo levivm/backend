@@ -10,10 +10,11 @@ from orders.models import Refund
 from orders.serializers import RefundSerializer
 from referrals.models import Coupon
 from users.mixins import UserTypeMixin
+from activities.models import Activity
 from .models import Order
 from .mixins import ProcessPaymentMixin
-from activities.models import Activity
 from .serializers import OrdersSerializer
+from .searchs import OrderSearchEngine
 from utils.paginations import SmallResultsSetPagination, MediumResultsSetPagination
 from utils.permissions import IsOrganizer
 
@@ -86,7 +87,9 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
         student = self.get_student(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon', 'student',
                                     'quantity', 'activity_id', 'lastest_refund']}
-        orders = student.orders.all()
+        search = OrderSearchEngine()
+        filter_query = search.filter_query(request.query_params)        
+        orders = search.get_by_student(student, filter_query)
         page = self.paginate_queryset(orders)
         if page is not None:
             serializer = OrdersSerializer(page, many=True, **params)
@@ -99,10 +102,9 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon', 'student',
                                     'quantity', 'activity_id', 'lastest_refund']}
-
-        orders = Order.objects.select_related('calendar__activity', 'fee', 'student')\
-            .prefetch_related('refunds')\
-            .filter(calendar__activity__organizer=organizer)
+        search = OrderSearchEngine()
+        filter_query = search.filter_query(request.query_params)
+        orders = search.get_by_organizer(organizer, filter_query)
 
         page = self.paginate_queryset(orders)
         if page is not None:
