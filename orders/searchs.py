@@ -19,7 +19,7 @@ class OrderSearchEngine(object):
         if query:
             return query
 
-        query = Q(calendar__activity=activity) if activity else None
+        query = Q(calendar__activity_id=activity) if activity else None
         query = Q(status=status) if status else None
 
 

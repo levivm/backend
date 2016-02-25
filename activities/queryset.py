@@ -1,5 +1,7 @@
 import datetime
+import activities.constants as activities_constants
 from django.db import models
+
 
 class ActivityQuerySet(models.QuerySet):
 
@@ -25,3 +27,21 @@ class ActivityQuerySet(models.QuerySet):
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
             filter(published=False, *args, **kwargs)
+
+    def by_student(self, student, status=None, *args, **kwargs):
+        activities_q = self.select_related(*self.select_related_fields).\
+            prefetch_related(*self.prefetch_related_fields).\
+            filter(calendars__orders__student=student).distinct()
+
+        today = datetime.datetime.today().date()
+        if status == activities_constants.CURRENT:
+            activities = activities_q.filter(calendars__initial_date__lte=today,
+                                            last_date__gt=today)
+        elif status == activities_constants.PAST:
+            activities = activities_q.filter(last_date__lt=today)
+        elif status == activities_constants.NEXT:
+            activities = activities_q.filter(calendars__initial_date__gt=today)
+        else:
+            activities = activities_q.filter(calendars__initial_date__gt=today)
+
+        return activities
