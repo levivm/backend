@@ -36,9 +36,10 @@ class Organizer(ImageOptimizable, models.Model):
             activities = self.activity_set.closed().all()
         elif status == activities_constants.UNPUBLISHED:
             activities = self.activity_set.unpublished().all()
-        else:
+        elif status == activities_constants.OPENED:
             activities = self.activity_set.opened().all()
-
+        else:
+            activities = self.activity_set.opened().all() | self.activity_set.closed().all()
         return activities
 
 

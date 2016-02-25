@@ -64,7 +64,6 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
         orders = activity.get_orders()
         serializer = self.get_serializer(orders, many=True)
-        # serializer.context.update({'show_token':True})
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
