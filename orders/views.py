@@ -84,7 +84,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def list_by_student(self, request, *args, **kwargs):
         student = self.get_student(user=request.user, exception=PermissionDenied)
-        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon', 'student',
+        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
                                     'quantity', 'activity_id', 'lastest_refund']}
         search = OrderSearchEngine()
         filter_query = search.filter_query(request.query_params)        
@@ -99,7 +99,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def list_by_organizer(self, request, *args, **kwargs):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
-        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon', 'student',
+        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
                                     'quantity', 'activity_id', 'lastest_refund']}
         search = OrderSearchEngine()
         filter_query = search.filter_query(request.query_params)

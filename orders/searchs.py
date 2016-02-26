@@ -14,13 +14,16 @@ class OrderSearchEngine(object):
         status = query_params.get('status')
         order = query_params.get('id')
 
-        query = Q(id=order) if order else None
+        query_id = Q(id=order) if order else None
 
-        if query:
-            return query
+        if query_id:
+            return query_id
 
-        query = Q(calendar__activity_id=activity) if activity else None
-        query = Q(status=status) if status else None
+        query = Q()
+        query = query & Q(calendar__activity_id=activity) if activity else query
+        query = query & Q(status=status) if status else query
+
+
 
 
         if from_date is not None and until_date is not None:
@@ -36,7 +39,6 @@ class OrderSearchEngine(object):
         elif from_date is None and until_date is not None:
             until_date = datetime.datetime.fromtimestamp(int(until_date) // 1000).\
                                            replace(second=0).date()
-
             query = query & Q(created_at__lte=until_date)
         return query
 
