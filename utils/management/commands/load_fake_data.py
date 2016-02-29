@@ -203,10 +203,11 @@ class Command(BaseCommand):
             quantity = self.get_quantity()
             sessions.append(CalendarSessionFactory.create_batch(quantity, calendar=calendar))
             activity = calendar.activity
-            dates = [s.date for s in calendar.sessions.all()]
-            if dates:
-                last_date = sorted(dates, reverse=True)[0]
-                activity.set_last_date(last_date)
+            sessions_data = [s for s in calendar.sessions.all()]
+            if sessions_data:
+                last_session = sorted(sessions_data, key=lambda s: s.date, reverse=True)[0]
+                last_session = {'date':last_session.date} 
+                activity.set_last_date(last_session)
 
         return self.flat_list(sessions)
 
