@@ -103,7 +103,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     tasks = GenericRelation('utils.CeleryTask')
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
-    last_date = models.DateTimeField(null=True)
+    last_date = models.DateField(null=True)
 
     objects = ActivityQuerySet.as_manager()
 
@@ -173,10 +173,12 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
-    def set_last_date(self,new_last_date):
-        self.last_date = new_last_date if  not self.last_date or \
-                         self.last_date < new_last_date else self.last_date
-        self.save(update_fields=['last_date'])
+    def set_last_date(self,last_session):
+        new_last_date = last_session.get('date')
+        if new_last_date is not None or self.last_date is not None:
+            self.last_date = new_last_date if  not self.last_date or \
+                             self.last_date < new_last_date else self.last_date
+            self.save(update_fields=['last_date'])
 
 
     def last_sale_date(self):

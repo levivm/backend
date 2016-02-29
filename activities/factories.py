@@ -73,7 +73,8 @@ class ActivityFactory(factory.django.DjangoModelFactory):
     youtube_video_url = factory.Faker('url')
     location = factory.SubFactory(LocationFactory)
     score = factory.LazyAttribute(lambda a: random.choice(range(100)))
-
+    
+    
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):
         if create and extracted:

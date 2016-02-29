@@ -33,7 +33,7 @@ urlpatterns = [
     url(r'^api/', include('organizers.urls', namespace='organizers')),
     url(r'^api/activities/', include('activities.urls',namespace='activities')),
  	url(r'^api/locations/', include('locations.urls')),
-    url(r'^api/students/', include('students.urls')),
+    url(r'^api/students/', include('students.urls', namespace='students')),
  	url(r'^api/payments/', include('payments.urls', namespace='payments')),
     url(r'^api/', include('orders.urls',namespace='orders')),
  	url(r'^api/', include('reviews.urls',namespace='reviews')),

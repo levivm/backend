@@ -288,8 +288,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def update(self, instance, validated_data):
         sessions_data = validated_data.get('sessions')
-        last_date = sessions_data[-1]
-        instance.activity.set_last_date(last_date)
+        last_session = sessions_data[-1]
+        instance.activity.set_last_date(last_session)
         del (validated_data['sessions'])
         instance.update(validated_data)
         sessions = instance.sessions.all()

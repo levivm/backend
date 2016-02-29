@@ -12,13 +12,13 @@ class ActivityQuerySet(models.QuerySet):
                                'calendars__orders__assistants__refunds']
 
     def opened(self, *args, **kwargs):
-        today = datetime.datetime.today()
+        today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
             filter(last_date__gte=today, published=True, *args, **kwargs)
 
     def closed(self, *args, **kwargs):
-        today = datetime.datetime.today()
+        today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
             filter(last_date__lt=today, published=True, *args, **kwargs)

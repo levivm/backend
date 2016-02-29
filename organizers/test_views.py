@@ -1,4 +1,6 @@
 import json
+import factory
+from datetime import datetime, timedelta
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
@@ -6,8 +8,11 @@ from django.http.request import HttpRequest
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
+from activities import constants as activities_constants
 
 from activities.models import Activity
+from activities.factories import ActivityFactory
+from activities.serializers import ActivitiesSerializer
 from locations.serializers import LocationsSerializer
 from organizers.models import Instructor, Organizer, OrganizerBankInfo
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, InstructorViewSet, \
@@ -54,30 +59,102 @@ class OrganizerViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class OrganizerActivitiesViewTest(BaseViewTest):
-    url = '/api/organizers/1/activities'
-    view = OrganizerViewSet
+class OrganizerActivitiesViewTest(BaseAPITestCase):
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+    def _order_activities(self, activities):
+        activities = sorted(activities, key = lambda x:x.id, reverse=True)
+        return activities
 
-    def test_methods_for_anonymous(self):
-        self.method_get_should_return_data(clients=self.client)
-        self.authorization_should_be_require()
 
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student)
-        self.method_should_be(clients=student, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_403_FORBIDDEN)
+    def setUp(self):
+        super(OrganizerActivitiesViewTest, self).setUp()
 
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        #get organizer 
+        organizer = self.organizer
+
+        #create organizer activities
+        today = datetime.today().date()
+        yesterday = today - timedelta(1)
+
+        self.unpublished_activities = \
+            ActivityFactory.create_batch(2, organizer=organizer)
+
+        self.opened_activities = \
+            ActivityFactory.create_batch(2, published=True, 
+                                         organizer=organizer, last_date=today)
+
+        self.closed_activities = \
+            ActivityFactory.create_batch(2, published=True,
+                                         organizer=organizer, last_date=yesterday)
+
+
+        #set url
+        self.url = reverse('organizers:activities', kwargs={'organizer_pk':organizer.id})
+
+
+    def test_organizer_unpublished_activities(self):
+
+        data = {'status': activities_constants.UNPUBLISHED}
+        opened_activities = self._order_activities(self.unpublished_activities)
+        serializer = ActivitiesSerializer(opened_activities, many=True)
+
+        # Anonymous should return unauthorized
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should return forbidden
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        # Another organizer should return forbidden
+        response = self.another_organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should return data
+        response = self.organizer_client.get(self.url, data)        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_organizer_closed_activities(self):
+        data={'status': activities_constants.CLOSED}
+        closed_activities = self._order_activities(self.closed_activities)
+        serializer = ActivitiesSerializer(closed_activities, many=True)
+
+        # Anonymous should return data
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+        # Student should return data
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+        # Organizer should return data
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_organizer_opened_activities(self):
+        data={'status': activities_constants.OPENED}
+        opened_activities = self._order_activities(self.opened_activities)
+        serializer = ActivitiesSerializer(opened_activities, many=True)
+
+        # Anonymous should return data
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+        # Student should return data
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+        # Organizer should return data
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
 
 
 class OrganizerLocationsViewTest(BaseViewTest):
