@@ -14,7 +14,7 @@ from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer, ActivitiesCardSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer, \
@@ -55,6 +55,13 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
                                           context=self.get_serializer_context())
         result = serializer.data
         return Response(result)
+
+    def activities_autocomplete(self, request, **kwargs):
+        organizer = self.get_object()
+        activities = organizer.activity_set.all()
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+        return Response(serializer.data)
+
 
 
 class OrganizerLocationViewSet(viewsets.ModelViewSet):

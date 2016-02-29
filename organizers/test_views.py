@@ -12,7 +12,7 @@ from activities import constants as activities_constants
 
 from activities.models import Activity
 from activities.factories import ActivityFactory
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from locations.serializers import LocationsSerializer
 from organizers.models import Instructor, Organizer, OrganizerBankInfo
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, InstructorViewSet, \
@@ -87,10 +87,12 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
             ActivityFactory.create_batch(2, published=True,
                                          organizer=organizer, last_date=yesterday)
 
+        self.activities = self.organizer.activity_set.all()
 
         #set url
         self.url = reverse('organizers:activities', kwargs={'organizer_pk':organizer.id})
-
+        self.autocomplete_url = reverse('organizers:activities_autocomplete', 
+                                         kwargs={'organizer_pk':organizer.id})
 
     def test_organizer_unpublished_activities(self):
 
@@ -155,6 +157,13 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
         response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
+
+    def test_organizer_activities_autocomplete(self):
+        serializer = ActivitiesAutocompleteSerializer(self.activities, many=True)
+        response = self.organizer_client.get(self.autocomplete_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
 
 
 class OrganizerLocationsViewTest(BaseViewTest):

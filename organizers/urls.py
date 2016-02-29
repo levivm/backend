@@ -10,6 +10,10 @@ urlpatterns = [
         OrganizerViewSet.as_view({'put': 'partial_update', 'get': 'retrieve'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/activities/?$', OrganizerViewSet.as_view({'get': 'activities'}),
         name='activities'),
+    url(r'^organizers/(?P<organizer_pk>\d+)/activities/autocomplete?$', 
+        OrganizerViewSet.as_view({'get': 'activities_autocomplete'}),
+        name='activities_autocomplete'),
+
     # url(r'^(?P<pk>\d+)/locations/?$', OrganizerViewSet.as_view({'post':'set_location'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/locations/?$', OrganizerLocationViewSet.as_view({'post': 'set_location'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/instructors/?$',
@@ -19,6 +23,7 @@ urlpatterns = [
         ActivityInstructorViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^activities/(?P<activity_pk>\d+)/instructors/(?P<pk>\d+)?$',
         ActivityInstructorViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+
 
     # {% url organizers:bank_info_api %}
     url(

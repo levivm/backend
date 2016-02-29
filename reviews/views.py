@@ -4,7 +4,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
 from rest_framework.response import Response
 
-from activities.models import Activity, Calendar
+from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
 from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview

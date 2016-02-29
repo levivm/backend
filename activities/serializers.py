@@ -300,6 +300,14 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
         return instance
 
+class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = (
+            'id',
+            'title',
+        )
+
 
 class ActivitiesCardSerializer(serializers.ModelSerializer):
     closest_calendar = serializers.SerializerMethodField()
