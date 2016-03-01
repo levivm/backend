@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from model_mommy import mommy
+from mock import Mock
 from rest_framework import status
 from django.core.urlresolvers import reverse
 from orders.models import Order
@@ -53,6 +54,14 @@ class StudentViewTest(BaseViewTest):
 
 class ActivitiesByStudentViewTest(BaseAPITestCase):
 
+    def _get_context(self):
+        request = Mock()
+        request.user = self.student.user
+        return {
+            'request': request,
+            'show_reviews':True
+        }
+
     def _order_activities(self, activities):
         activities = sorted(activities, key = lambda x:x.id)
         return activities
@@ -96,7 +105,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         data={'status': activities_constants.CURRENT}
         current_activities = self._order_activities(self.current_activities)
         serializer = ActivitiesSerializer(current_activities, many=True,
-                                          context={'show_reviews':True})
+                                          context=self._get_context())
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -117,7 +126,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         data={'status': activities_constants.NEXT}
         next_activities = self._order_activities(self.next_activities)
         serializer = ActivitiesSerializer(next_activities, many=True,
-                                          context={'show_reviews':True})
+                                          context=self._get_context())
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -137,7 +146,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         data={'status': activities_constants.PAST}
         past_activities = self._order_activities(self.past_activities)
         serializer = ActivitiesSerializer(past_activities, many=True, 
-                                          context={'show_reviews':True})
+                                          context=self._get_context())
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)

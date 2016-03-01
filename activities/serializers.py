@@ -440,8 +440,10 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
     def get_reviews(self,obj):
         show_reviews = self.context.get('show_reviews')
-        if show_reviews:
-            return ReviewSerializer(obj.reviews, many=True).data
+        request = self.context.get('request')
+        if show_reviews and request:
+            reviews = obj.reviews.filter(author__user=request.user)
+            return ReviewSerializer(reviews, many=True).data
         return []
 
     def validate(self, data):
