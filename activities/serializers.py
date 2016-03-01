@@ -13,9 +13,9 @@ from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
+from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
-
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -374,6 +374,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
     closest_calendar = CalendarSerializer(read_only=True)
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -408,6 +409,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'instructors',
             'score',
             'rating',
+            'reviews'
         )
         depth = 1
 
@@ -435,6 +437,12 @@ class ActivitiesSerializer(serializers.ModelSerializer):
 
     def get_level_display(self, obj):
         return obj.get_level_display()
+
+    def get_reviews(self,obj):
+        show_reviews = self.context.get('show_reviews')
+        if show_reviews:
+            return ReviewSerializer(obj.reviews, many=True).data
+        return []
 
     def validate(self, data):
 

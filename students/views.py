@@ -23,6 +23,12 @@ class StudentActivitiesViewSet(ModelViewSet):
     pagination_class = SmallResultsSetPagination
     permission_classes = (IsAuthenticated, IsOwner)
 
+    def get_serializer_context(self):
+        context = super(StudentActivitiesViewSet,self).get_serializer_context()
+        context.update({'show_reviews':True})
+        return context
+
+
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
         status = request.query_params.get('status')

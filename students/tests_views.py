@@ -95,7 +95,8 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
 
         data={'status': activities_constants.CURRENT}
         current_activities = self._order_activities(self.current_activities)
-        serializer = ActivitiesSerializer(current_activities, many=True)
+        serializer = ActivitiesSerializer(current_activities, many=True,
+                                          context={'show_reviews':True})
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -115,7 +116,8 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
 
         data={'status': activities_constants.NEXT}
         next_activities = self._order_activities(self.next_activities)
-        serializer = ActivitiesSerializer(next_activities, many=True)
+        serializer = ActivitiesSerializer(next_activities, many=True,
+                                          context={'show_reviews':True})
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -134,7 +136,8 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
 
         data={'status': activities_constants.PAST}
         past_activities = self._order_activities(self.past_activities)
-        serializer = ActivitiesSerializer(past_activities, many=True)
+        serializer = ActivitiesSerializer(past_activities, many=True, 
+                                          context={'show_reviews':True})
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
