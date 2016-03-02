@@ -12,7 +12,7 @@ class SendEMailStudentRefundTask(SendEmailTaskMixin):
         self.template_name = 'orders/email/refund_%s_cc_message.txt' % self.refund.status
         self.emails = [self.refund.user.email]
         self.subject = 'Información sobre tu reembolso'
-        self.context = self.get_context_data()
+        self.global_context = self.get_context_data()
         return super(SendEMailStudentRefundTask, self).run(*args, **kwargs)
 
     def get_context_data(self):
@@ -33,8 +33,7 @@ class SendEmailOrganizerRefundTask(SendEmailTaskMixin):
         self.template_name = 'orders/email/refund_organizer_cc_message.txt'
         self.emails = [self.refund.order.calendar.activity.organizer.user.email]
         self.subject = 'Reembolso aprobado'
-        self.context = self.get_context_data()
-        self.global_merge_vars = self.get_global_merge_vars()
+        self.global_context = self.get_context_data()
         return super(SendEmailOrganizerRefundTask, self).run(*args, **kwargs)
 
     def get_context_data(self):

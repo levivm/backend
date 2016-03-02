@@ -70,3 +70,9 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
     def get_referral_hash(self):
         return signing.dumps({'referrer_code': self.referrer_code})
+
+    def get_photo_url(self):
+        if self.photo:
+            return self.photo.url
+
+        return None

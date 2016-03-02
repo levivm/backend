@@ -89,7 +89,7 @@ class SignUpStudentViewTest(APITestCase):
         self.url = reverse('auth:signup_student')
         self.student_group = Group.objects.create(name='Students')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_student_signup_success(self, send_mail):
         """
         Test case success for a student sign up
@@ -261,7 +261,7 @@ class SocialAuthViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
     def test_signup_success(self, get_json, send_mail):
         user_counter = User.objects.count()
@@ -355,7 +355,7 @@ class ChangePasswordViewTest(BaseAPITestCase):
 
         self.url = reverse('auth:change_password')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_change_password(self, send_mail):
         # Anonymous should get 401
         response = self.client.post(self.url)
@@ -407,7 +407,7 @@ class ForgotPasswordViewTest(BaseAPITestCase):
 
         self.user = UserFactory(email='drake.nathan@uncharted.com')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_forgot_password(self, send_mail):
         # Anonymous should be allowed to ask for new password
         send_mail.return_value = [{
@@ -452,7 +452,7 @@ class ResetPasswordViewTest(APITestCase):
             token='5da256d75377d67e770d83247ca1d538c182c814')
         self.url = reverse('auth:reset_password')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_reset_password(self, send_mail):
         send_mail.return_value = [{
             '_id': '042a8219744b4b40998282fcd50e678e',
@@ -581,7 +581,7 @@ class ChangeEmailViewTest(BaseAPITestCase):
         super(ChangeEmailViewTest, self).setUp()
         self.url = reverse('auth:change_email')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_change_email(self, send_mail):
         # Anonymous should get unauthorized
         response = self.client.post(self.url)

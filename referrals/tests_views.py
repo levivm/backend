@@ -70,7 +70,7 @@ class InviteAPITest(BaseAPITestCase):
         response = self.student_client.get(self.invite_url)
         self.assertContains(response, self.student.get_referral_url())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_send_invitation_mail(self, send_mail):
         """
         Test to send email with invitation
@@ -95,7 +95,6 @@ class InviteAPITest(BaseAPITestCase):
         email_task = EmailTaskRecord.objects.latest('pk')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(email_task.status, 'sent')
-        self.assertEqual(email_task.data['name'], self.student.user.first_name)
 
     def test_accept_invitation_view(self):
         """
@@ -122,7 +121,7 @@ class InviteAPITest(BaseAPITestCase):
         self.assertContains(response, self.student.user.first_name)
         self.assertContains(response, self.student.get_referral_hash())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_accept_invitation_submit(self, send_mail):
         """
         Test to submit accepting the invitation
@@ -199,7 +198,7 @@ class InviteAPITest(BaseAPITestCase):
         self.assertEqual(Referral.objects.count(), referral_counter)
         self.assertEqual(Coupon.objects.count(), redeem_counter)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
     def test_accept_invitation_facebook(self, get_json, send_mail):
         """

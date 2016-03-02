@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Actividad Compartida</title>
+</head>
+<body style="text-align: center;font-size: 14px;background: #f7f7f7;color: #949494;padding: 0;margin: 0;border: 0;">
+
+    <table width="100%" border="0" cellspacing="0" cellpading="0">
+        <tbody>
+            <tr style="padding: 0;margin: 0;border: 0;">
+                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                    <table id="content" style="width: 600px;margin: 0 auto;padding-top: 10px;">
+                        <tbody>
+                            <tr style="padding: 0;margin: 0;border: 0;">
+                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                                    <table id="inner" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 auto;position: relative;">
+                                        <tbody>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td style="padding: 0;margin: 0;border: 0;">
+                                                    <table style="margin: 0 auto;" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="header" valign="top" align="center" style="padding: 0px 0 25px 0 !important;margin: 0;border: 0;text-align: center;">
+                                                                    <a href="http://trulii.com/" style="padding: 0;margin: 0;border: 0;">
+                                                                        <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/logo.png" alt="" style="padding: 0;margin: 0;border: 0;width: 150px;">
+                                                                    </a>
+                                                                </td>
+
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+
+                                                <td id="second" style="padding: 0;margin: 0;border: 0;">
+                                                    <table id="description" style="margin: 0 auto; " border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="content-description" valign="top" align="center" style="padding: 20px 40px 20px 40px!important;margin: 0;border: 0;text-align: center;">
+                                                                    <div>
+                                                                        <div style="margin-bottom:30px;">
+                                                                             <h1 style="margin: 0 auto; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;  color: #7B7B7B;">¡Hoy es un nuevo día para aprender!</h1>
+                                                                             <div class="divider" style="height: 1px;width: 200px;margin: 0 auto;background-color: #DCDCDC;margin-top: 15px;margin-bottom: 25px;"></div>
+                                                                            <span style="font-size: 21px;font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;"><strong>{{ name }}</strong> quiere compartir esto contigo:</span>
+                                                                        </div>
+                                                                        <div style="margin-bottom:15px; margin-top: 15px;">
+                                                                            <img style="width: 460px;height: 270px;border-radius: 5px;border: 1px solid;"alt="" src="{{ activity.cover_url }}">
+                                                                        </div>
+
+                                                                        <div style="margin-bottom:10px;width: 400px;margin: 0 auto; text-align:center;">
+                                                                            <span style="font-size: 14px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; background-color: {{ category.color }}; color: white; padding: 3px; font-weight: 600; letter-spacing: 2px; border-radius: 3px;">
+                                                                                <span style="margin-left: 3px;">{{ category.name }}</span>
+                                                                            </span>
+                                                                            <h1 style="margin: 0 auto; font-size: 19px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; color: #7B7B7B; margin-bottom:10px; margin-top:10px">{{ activity.title }}</h1>
+                                                                            {% if message %}
+                                                                                <span>{{ message }}</span>
+                                                                            {% endif %}
+                                                                            <span style="font-size: 19px;font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">{{ organizer.name }}, {{ organizer.city }}.</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="second" style="padding: 0;margin: 0;border: 0;">
+                                                    <table id="description" style="margin: 0 auto; " border="0" cellpadding="0" cellspacing="0" width="320">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="" valign="top" align="center" style="padding: 10px 30px 10px 30px;margin: 0;border: 0;">
+                                                                    <div>
+                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600;">Inicia el {{ activity.initial_date|date:"j b Y" }}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td id="" valign="top" align="center" style="padding: 10px 30px 10px 30px;margin: 0;border: 0;">
+                                                                    {% if rating %}
+                                                                        <div>
+                                                                            <span><img style="vertical-align: text-bottom; margin-right: 5px;" src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/Estrella.png" alt=""></span>
+                                                                            <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600; ">{{ rating }}/5</span>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="second" style="padding: 0;margin: 0;border: 0;">
+                                                    <table id="description" style="margin: 0 auto; margin-top:10px;" border="0" cellpadding="0" cellspacing="0" width="520">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="" valign="top" align="center" style="padding: 10px 30px 10px 60px;margin: 0;border: 0;background: #F1F1F1;">
+                                                                    <div>
+                                                                        <span><img style="vertical-align: text-bottom; margin-right: 5px;" src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/Clock.png" alt=""></span>
+                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600;">{{ duration }} Horas</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td id="" valign="top" align="center" style="padding: 10px 60px 10px 30px;margin: 0;border: 0;background: #F1F1F1;">
+                                                                    <div>
+                                                                        <span><img style="vertical-align: text-bottom; margin-right: 5px;" src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/Precio.png" alt=""></span>
+                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600; ">COP {{ price }}</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="content-button-action" valign="top" align="center" style="padding: 20px 40px 40px 40px!important;margin: 0;border: 0;padding-top: 40px !important;text-align: center;">
+                                                    <a href="{{ url }}" style="padding: 0;margin: 0;border: 0;text-decoration: none;">
+                                                        <div id="button" style="margin: 0 auto;padding: 15px 60px 15px 60px;border: 0;background: #38dbc8;color: white;text-decoration: none;text-transform: uppercase;text-align: center;font-size: 13px;font-weight: bold;border-radius: 4px;">
+                                                            <span style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; ">Conoce más</span>
+                                                        </div>
+                                                    </a>
+
+                                                </td>
+                                            </tr>
+
+
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="footer" style="padding: 20px !important;margin: 0 auto !important;border: 0;">
+                                                    <table style="margin: 0 auto;" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                                                                    <div id="contact">
+                                                                        <span style="display: block; margin-bottom:25px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif">
+                                                                            Contáctate con nosotros
+                                                                        </span>
+                                                                        <span title="Facebook"><a  target="_blank" href="https://www.facebook.com/truliilatam/?fref=ts"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/facebook_gray.png" alt="" style="margin-right:2px;"></a></span>
+                                                                        <span title="Twitter"><a  target="_blank" href="https://twitter.com/Trulii_"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/twitter_gray.png" alt="" style="margin-right:2px;"></a></span>
+                                                                        <span title="Email"><a  target="_blank" href="mailto:contacto@trulii.com"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/email_gray.png" alt=""></a></span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

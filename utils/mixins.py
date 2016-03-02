@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 import io
-from typing import List
 
-import mandrill
 from PIL import Image
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.template import loader
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import assign_perm
@@ -45,14 +42,13 @@ class AssignPermissionsMixin(object):
 
 
 class FileUploadMixin(object):
-
-
     def clean_file(self, file):
         content_type = file.content_type.split('/')[0]
         if content_type in settings.CONTENT_TYPES:
             if file._size > settings.MAX_UPLOAD_PHOTO_SIZE:
                 msg = _('Mantenga el tamaño del archivo por debajo %s. Tamaño actual %s' \
-                        % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE), filesizeformat(file._size)))
+                        % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE),
+                           filesizeformat(file._size)))
                 raise serializers.ValidationError(msg)
         else:
             raise serializers.ValidationError(_('El tipo de archivo no es soportado'))
@@ -110,32 +106,3 @@ class ImageOptimizable(object):
         image_file = io.BytesIO()
         image.save(image_file, self.FORMAT, quality=self.QUALITY)
         return image_file
-
-
-class MandrillMixin(object):
-    template_name = None
-    emails = None
-    subject = None
-    merge_vars = []
-    global_merge_vars = []
-
-    def __init__(self):
-        super(MandrillMixin, self).__init__()
-        self.mandrill_client = mandrill.Mandrill(settings.MANDRILL_API_KEY)
-
-    def send_mail(self, *args, **kwargs) -> List[dict]:
-        template = loader.get_template(template_name=self.template_name)
-
-        message = {
-            'from_email': kwargs.get('from_email', 'contacto@trulii.com'),
-            'html': template.render(),
-            'subject': self.subject,
-            'to': [{'email': email} for email in self.emails],
-            'merge_vars': self.merge_vars,
-            'global_merge_vars': self.global_merge_vars,
-        }
-
-        try:
-            return self.mandrill_client.messages.send(message=message, **kwargs)
-        except mandrill.Error:
-            raise

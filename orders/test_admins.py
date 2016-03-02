@@ -18,7 +18,7 @@ class RefundAdminTest(APITestCase):
         self.admin = RefundAdmin(Refund, AdminSite())
         self.refunds = mommy.make(Refund, _quantity=2, order__status=Order.ORDER_APPROVED_STATUS)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_set_decline(self, send_mail):
         """
         Test the action set_decline

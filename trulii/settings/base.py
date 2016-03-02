@@ -111,7 +111,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'utils.mails.SendGridEmailBackend'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -133,6 +133,12 @@ LANGUAGES = (
     ('es', ugettext('Spanish')),
 )
 LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
+
+FORMAT_MODULE_PATH = [
+    'utils.formats',
+]
+
+USE_THOUSAND_SEPARATOR = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/

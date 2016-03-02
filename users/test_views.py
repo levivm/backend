@@ -1,7 +1,7 @@
 import mock
 
 from django.core.urlresolvers import reverse
-from django.template import loader
+from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -74,43 +74,35 @@ class SendEmailOrganizerConfirmationTaskTest(APITestCase):
     def setUp(self):
         self.confirmation = mommy.make(OrganizerConfirmation, requested_signup__city=CityFactory())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
-    def test_success(self, send_mail):
+    @mock.patch('users.tasks.now')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_success(self, send_mail, date_now):
         """
         Test case when it's success
         """
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': self.confirmation.requested_signup.email,
             'status': 'sent',
             'reject_reason': None
         }]
 
+        today = now()
+        date_now.return_value = today
+
         task = SendEmailOrganizerConfirmationTask()
         task_id = task.delay(self.confirmation.id)
+
+        context = {
+            'activate_url': self.confirmation.get_confirmation_url(),
+        }
 
         self.assertTrue(EmailTaskRecord.objects.filter(
             task_id=task_id,
             to=self.confirmation.requested_signup.email,
-            status='sent').exists())
+            status='sent',
+            data=context,
+            template_name='authentication/email/request_signup_confirmation.html').exists())
 
-        context = {
-            'activate_url': self.confirmation.get_confirmation_url(),
-            'organizer': self.confirmation.requested_signup.name
-        }
-
-        message = {
-            'from_email': 'contacto@trulii.com',
-            'html': loader.get_template(
-                'account/email/request_signup_confirmation_message.txt').render(),
-            'subject': 'Crea tu cuenta y comienza a user Trulii',
-            'to': [{'email': self.confirmation.requested_signup.email}],
-            'merge_vars': [],
-        }
-
-        global_merge_vars = [{'name': k, 'content': v} for k, v in context.items()]
-        called_message = send_mail.call_args[1]['message']
-        self.assertTrue(all(item in called_message.items() for item in message.items()))
-        self.assertTrue(
-            all(item in called_message['global_merge_vars'] for item in global_merge_vars))
+        confirmation = OrganizerConfirmation.objects.get(id=self.confirmation.id)
+        self.assertEqual(confirmation.sent, today)

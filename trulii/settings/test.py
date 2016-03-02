@@ -2,20 +2,6 @@ import logging
 from .base import *
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'HOST': '',
-#         'NAME': ':memory:',
-#         'PASSWORD': '',
-#         'PORT': '',
-#         'USER': '',
-#         'TEST': {
-#             'NAME': 'test_trulii_db'
-#         }
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',

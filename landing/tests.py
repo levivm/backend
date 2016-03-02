@@ -27,8 +27,6 @@ class ContactFormTest(BaseAPITestCase):
             "city": "Bogota"
         }
 
-        settings.CELERY_ALWAYS_EAGER = True
-
     def test_get(self):
         """
         Test the topics
@@ -72,14 +70,13 @@ class SendContactFormEmailTaskTest(APITestCase):
     def setUp(self):
         self.email = 'contact@trulii.com'
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
         """
         Test that the task sends the email
         """
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': self.email,
             'status': 'sent',
             'reject_reason': None
@@ -93,17 +90,6 @@ class SendContactFormEmailTaskTest(APITestCase):
         self.assertTrue(EmailTaskRecord.objects.filter(
                 task_id=task_id,
                 to=self.email,
-                status='sent').exists())
-
-        message = {
-            'from_email': 'contacto@trulii.com',
-            'html': loader.get_template('landing/email/contact_us_form_message.txt').render(),
-            'subject': 'Subject contact form',
-            'to': [{'email': self.email}],
-            'merge_vars': [],
-            'global_merge_vars': [{'name': k, 'content': v} for k, v in contact_form_data.items()],
-        }
-
-        called_message = send_mail.call_args[1]['message']
-
-        self.assertTrue(all(item in called_message.items() for item in message.items()))
+                status='sent',
+                data=contact_form_data,
+                template_name='landing/email/contact_us.html').exists())

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from celery import Task, states
+from django.conf import settings
 from django.contrib.auth.models import User
 
 from activities.models import Calendar, Activity, CalendarCeleryTaskEditActivity, \
@@ -47,12 +48,11 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
         self.calendar = Calendar.objects.get(id=calendar_id)
         if not self.calendar.tasks.filter(state=states.PENDING).exists():
             self.register_task()
-            self.template_name = 'activities/email/change_calendar_data_message.txt'
+            self.template_name = 'activities/email/change_calendar_data.html'
             self.emails = self.get_emails_to()
             self.subject = 'Una actividad ha cambiado'
-            self.context = self.get_context_data()
-            self.global_merge_vars = self.get_global_merge_vars()
-            self.merge_vars = self.get_merge_vars()
+            self.global_context = self.get_context_data()
+            self.recipient_context = self.get_recipient_data()
             return super(SendEmailCalendarTask, self).run(*args, **kwargs)
 
     def register_task(self):
@@ -71,24 +71,19 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
         return {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
-            'closing_sales_date': self.calendar.closing_sale.strftime('%d %b %Y'),
+            'closing_sales_date': self.calendar.closing_sale,
             'sessions': [{
-                             'date': session.date.strftime('%d %b %Y'),
-                             'start_time': session.start_time.strftime('%H:%M%p'),
-                             'end_time': session.end_time.strftime('%H:%M%p'),
+                             'date': session.date,
+                             'start_time': session.start_time,
+                             'end_time': session.end_time,
                          } for session in self.calendar.sessions.all()],
             'price': self.calendar.session_price,
-            'url_activity_id': self.calendar.activity_id,
+            'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
+                                                    self.calendar.activity_id)
         }
 
-    def get_merge_vars(self):
-        return [{
-                    'rcpt': assistant.email,
-                    'vars': [{
-                        'name': 'name',
-                        'content': assistant.first_name,
-                    }]
-                } for assistant in self.assistants]
+    def get_recipient_data(self):
+        return {a.email: {'name': a.first_name} for a in self.assistants}
 
 
 class SendEmailLocationTask(CeleryTaskEditActivityMixin):
@@ -98,19 +93,12 @@ class SendEmailLocationTask(CeleryTaskEditActivityMixin):
         self.activity = Activity.objects.get(id=activity_id)
         if not self.activity.tasks.filter(state=states.PENDING).exists():
             self.register_task()
-            self.template_name = 'activities/email/change_location_data_message.txt'
+            self.template_name = 'activities/email/change_location_data.html'
             self.emails = self.get_emails_to()
             self.subject = 'Una actividad ha cambiado'
-            self.context = self.get_context_data()
-            self.global_merge_vars = self.get_global_merge_vars()
-            self.merge_vars = self.get_merge_vars()
+            self.global_context = self.get_context_data()
+            self.recipient_context = self.get_recipient_data()
             return super(SendEmailLocationTask, self).run(*args, **kwargs)
-
-    # def register_task(self):
-    #     self.celery_task = ActivityCeleryTaskEditActivity.objects.create(
-    #         task_id=self.request.id,
-    #         state=states.PENDING,
-    #         activity=self.activity)
 
     def get_emails_to(self):
         self.assistants = [assistant for calendar in self.activity.calendars.all()
@@ -124,16 +112,16 @@ class SendEmailLocationTask(CeleryTaskEditActivityMixin):
             'organizer': self.activity.organizer.name,
             'activity': self.activity.title,
             'address': self.activity.location.address,
+            'detail_url': '%sactivity/%s' % (settings.FRONT_SERVER_URL, self.activity.id)
         }
 
-        # def get_merge_vars(self):
-        #     return [{
-        #         'rcpt': assistant.email,
-        #         'vars': [{
-        #             'name': 'name',
-        #             'content': assistant.first_name,
-        #         }]
-        #     } for assistant in self.assistants]
+    def get_recipient_data(self):
+        return {
+            a.email: {
+                'name': a.first_name,
+            }
+            for a in self.assistants
+        }
 
 
 class ActivityScoreTask(Task):
@@ -171,18 +159,47 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
     def run(self, user_id, activity_id, *args, **kwargs):
         self.user = User.objects.get(id=user_id)
         self.activity = Activity.objects.get(id=activity_id)
-        self.template_name = 'activities/email/share_activity_cc_message.txt'
+        self.template_name = 'activities/email/share_activity.html'
         self.emails = kwargs.get('emails')
+        self.message = kwargs.get('message')
         self.subject = '%s ha compartido contigo algo en Trulii' % self.user.first_name
-        self.context = self.get_context_data()
-        self.global_merge_vars = self.get_global_merge_vars()
+        self.global_context = self.get_context_data()
 
         return super(SendEmailShareActivityTask, self).run(*args, **kwargs)
 
     def get_context_data(self):
+        cover = self.activity.pictures.get(main_photo=True)
+
+        try:
+            organizer_city = self.activity.organizer.locations.all()[0].city.name
+        except IndexError:
+            organizer_city = None
+
+        if self.activity.rating > 0:
+            rating = self.activity.rating
+        elif self.activity.organizer.rating > 0:
+            rating = self.activity.organizer.rating
+        else:
+            rating = None
+
         return {
-            'name': self.user.first_name,
-            'title': self.activity.title,
-            'url': 'https://www.trulli.com/activities/%s/' % self.activity.id,
-            # 'message': self.kwargs.get('message'),
+            'name': self.user.get_full_name(),
+            'activity': {
+                'cover_url': cover.photo.url,
+                'title': self.activity.title,
+                'initial_date': self.activity.closest_calendar.initial_date,
+            },
+            'category': {
+                'color': self.activity.sub_category.category.color,
+                'name': self.activity.sub_category.category.name,
+            },
+            'message': self.message,
+            'organizer': {
+                'name': self.activity.organizer.name,
+                'city': organizer_city,
+            },
+            'rating': rating,
+            'duration': self.activity.closest_calendar.duration // 3600,
+            'price': self.activity.closest_calendar.session_price,
+            'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }

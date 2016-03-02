@@ -195,7 +195,7 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.payment = PaymentFactory()
         self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_transaction_approved(self, send_mail):
         """
         Test the payu response by web hook when is approved
@@ -219,7 +219,7 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.assertEqual(order.status, Order.ORDER_APPROVED_STATUS)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_transaction_declined(self, send_mail):
         """
         Test the payu response by web hook when is declined
@@ -244,7 +244,7 @@ class PayUCreditCardConfirmationTransactionTest(APITestCase):
         self.assertEqual(orders.count(), 0)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_transaction_expired(self, send_mail):
         """
         Test the payu response by web hook when is expired
@@ -375,7 +375,7 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.payment = PaymentFactory()
         self.order = OrderFactory(payment=self.payment, status=Order.ORDER_PENDING_STATUS)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_pse_transaction_declined(self, send_mail):
         send_mail.return_value = [{
             '_id': '042a8219744b4b40998282fcd50e678e',
@@ -396,7 +396,7 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_pse_transaction_pending(self, send_mail):
         send_mail.return_value = [{
             '_id': '042a8219744b4b40998282fcd50e678e',
@@ -415,7 +415,7 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertTrue(Order.objects.filter(id=self.order.id).exists())
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_pse_transaction_failed(self, send_mail):
         send_mail.return_value = [{
             '_id': '042a8219744b4b40998282fcd50e678e',
@@ -436,7 +436,7 @@ class PayUPSEConfirmationTransactionTest(APITestCase):
         self.assertEqual(orders.count(), 0)
         self.assertEqual(payu_callback_response.status_code, status.HTTP_200_OK)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_payu_confirmation_url_pse_transaction_approved(self, send_mail):
         send_mail.return_value = [{
             '_id': '042a8219744b4b40998282fcd50e678e',
@@ -832,7 +832,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
             'payment_method_type': settings.CC_METHOD_PAYMENT_ID
         }
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_approved(self, send_mail):
         """
         Test PayU send approved a pending payment
@@ -849,7 +849,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_decline(self, send_mail):
         """
         Test PayU send declined
@@ -867,7 +867,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_pse_approved(self, send_mail):
         """
         Test approved payment with pse
@@ -888,7 +888,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertEqual(Order.objects.get(id=self.order.id).status, Order.ORDER_APPROVED_STATUS)
         self.assertTrue(Redeem.objects.get(id=self.redeem.id).used)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_pse_decline(self, send_mail):
         """
         Test PayU send declined
@@ -911,7 +911,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertFalse(Order.objects.filter(id=self.order.id).exists())
         self.assertFalse(Redeem.objects.get(id=self.redeem.id).used)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_approved_global_coupon(self, send_mail):
         """
         Test PayU send approved a pending payment with a global coupon
@@ -933,7 +933,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertTrue(
             Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_decline_global_coupon(self, send_mail):
         """
         Test PayU send declined with global coupon
@@ -976,7 +976,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         self.assertTrue(
             Redeem.objects.filter(student=self.student, coupon=coupon, used=True).exists())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_pse_decline_global_coupon(self, send_mail):
         """
         Test PayU send declined with global coupon
@@ -1023,9 +1023,6 @@ class PaymentWebHookTest(BaseAPITestCase):
 
         # URLs
         self.payu_callback_url = reverse('payments:notification')
-
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
 
     @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
     @mock.patch('payments.tasks.SendPaymentEmailTask.apply_async')

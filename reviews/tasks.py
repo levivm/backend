@@ -8,8 +8,7 @@ class SendReportReviewEmailTask(SendEmailTaskMixin):
         self.template_name = "reviews/email/report_review_cc_message.txt"
         self.emails = ['contacto@trulii.com']
         self.subject = 'Denuncia de review!'
-        self.context = self.get_context_data()
-        self.global_merge_vars = self.get_global_merge_vars()
+        self.global_context = self.get_context_data()
         return super(SendReportReviewEmailTask, self).run(*args, **kwargs)
 
     def get_context_data(self):

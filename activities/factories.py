@@ -57,6 +57,9 @@ class ActivityFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Activity
 
+    def __new__(cls, *args, **kwargs):
+        return super(ActivityFactory, cls).__new__(*args, **kwargs)
+
     sub_category = factory.SubFactory(SubCategoryFactory)
     organizer = factory.SubFactory(OrganizerFactory)
     title = factory.LazyAttribute(

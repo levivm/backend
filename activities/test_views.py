@@ -21,7 +21,8 @@ from model_mommy import mommy
 from rest_framework import status
 
 from activities import constants
-from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory
+from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
+    ActivityPhotoFactory, CalendarSessionFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
@@ -980,20 +981,14 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
     def setUp(self):
         super(ShareActivityEmailViewTest, self).setUp()
         self.activity = mommy.make(Activity)
+        ActivityPhotoFactory(activity=self.activity, main_photo=True)
+        CalendarSessionFactory(calendar__activity=self.activity)
 
         # URLs
         self.share_url = reverse('activities:share_email_activity',
                                  kwargs={'activity_pk': self.activity.id})
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
-    # def test_run(self, send_mail):
-    #     """
-    #     Test that the task sends the email
-    #     """
-    #
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_post(self, send_mail):
         """
         Test the sending email
@@ -1002,7 +997,6 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         emails = ['email1@example.com', 'email2@example.com']
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': email,
             'status': 'sent',
             'reject_reason': None

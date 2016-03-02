@@ -1,18 +1,22 @@
-import mandrill
 import mock
+
 from celery import states
 from django.conf import settings
-from django.contrib.auth.models import User
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.factories import CalendarFactory, ActivityFactory, CalendarSessionFactory
+from django.test import override_settings
+
+from activities.factories import CalendarFactory, ActivityFactory, CalendarSessionFactory, \
+    ActivityPhotoFactory
 from activities.models import ActivityCeleryTaskEditActivity, \
     CalendarCeleryTaskEditActivity
 from activities.tasks import SendEmailShareActivityTask, SendEmailCalendarTask, \
     SendEmailLocationTask
+from locations.factories import LocationFactory
 from orders.factories import AssistantFactory, OrderFactory
 from orders.models import Order
+from users.factories import UserFactory
 from utils.models import EmailTaskRecord
 
 
@@ -27,10 +31,9 @@ class SendEmailCalendarTaskTest(APITestCase):
         self.order = OrderFactory(calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
         self.assistants = AssistantFactory.create_batch(2, order=self.order)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_task_dispatch_if_there_is_not_other_task(self, send_mail):
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': assistant.email,
             'status': 'sent',
             'reject_reason': None
@@ -39,11 +42,28 @@ class SendEmailCalendarTaskTest(APITestCase):
         task = SendEmailCalendarTask()
         task_id = task.delay(self.calendar.id)
 
+        context = {
+            'organizer': self.calendar.activity.organizer.name,
+            'activity': self.calendar.activity.title,
+            'closing_sales_date': self.calendar.closing_sale.isoformat(),
+            'sessions': [{
+                'date': session.date.isoformat(),
+                'start_time': session.start_time.isoformat(),
+                'end_time': session.end_time.isoformat(),
+            } for session in self.calendar.sessions.all()],
+            'price': self.calendar.session_price,
+            'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
+                                                    self.calendar.activity_id)
+        }
+
         for assistant in self.assistants:
+            data = {**context, 'name': assistant.first_name}
             self.assertTrue(EmailTaskRecord.objects.filter(
                 task_id=task_id,
                 to=assistant.email,
-                status='sent').exists())
+                status='sent',
+                data=data,
+                template_name='activities/email/change_calendar_data.html').exists())
 
     def test_ignore_task_if_there_is_a_pending_task(self):
         CalendarCeleryTaskEditActivity.objects.create(
@@ -61,10 +81,9 @@ class SendEmailCalendarTaskTest(APITestCase):
                 to=assistant.email,
                 status='sent').exists())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_task_should_delete_on_success(self, send_mail):
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': assistant.email,
             'status': 'sent',
             'reject_reason': None
@@ -73,9 +92,9 @@ class SendEmailCalendarTaskTest(APITestCase):
         task.delay(self.calendar.id)
         self.assertEqual(CalendarCeleryTaskEditActivity.objects.count(), 0)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=False)
     def test_task_should_update_error_on_failure(self, send_mail):
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
         send_mail.side_effect = Exception('This could be a mandrill exception')
         task = SendEmailCalendarTask()
         task_id = task.delay(self.calendar.id)
@@ -83,7 +102,6 @@ class SendEmailCalendarTaskTest(APITestCase):
             task_id=task_id,
             state=states.FAILURE,
             calendar=self.calendar).exists())
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 
 
 class SendEmailShareActivityTaskTest(APITestCase):
@@ -92,20 +110,21 @@ class SendEmailShareActivityTaskTest(APITestCase):
     """
 
     def setUp(self):
-        self.user = mommy.make(User)
-        self.activity = ActivityFactory()
+        self.user = UserFactory()
+        self.activity = ActivityFactory(rating=4)
+        self.cover = ActivityPhotoFactory(activity=self.activity, main_photo=True)
+        self.session = CalendarSessionFactory(calendar__activity=self.activity)
+        self.location = LocationFactory(organizer=self.activity.organizer)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_success(self, send_mail):
         """
         Test send the email to share the activity when it's success
         """
-
         emails = [mommy.generators.gen_email() for _ in range(0, 3)]
         message = 'Hey checa esto!'
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': e,
             'status': 'sent',
             'reject_reason': None
@@ -114,13 +133,37 @@ class SendEmailShareActivityTaskTest(APITestCase):
         task = SendEmailShareActivityTask()
         task_id = task.delay(self.user.id, self.activity.id, emails=emails, message=message)
 
+        context = {
+            'name': self.user.get_full_name(),
+            'activity': {
+                'cover_url': self.cover.photo.url,
+                'title': self.activity.title,
+                'initial_date': self.activity.closest_calendar.initial_date.isoformat(),
+            },
+            'category': {
+                'color': self.activity.sub_category.category.color,
+                'name': self.activity.sub_category.category.name,
+            },
+            'message': message,
+            'organizer': {
+                'name': self.activity.organizer.name,
+                'city': self.location.city.name,
+            },
+            'rating': self.activity.rating,
+            'duration': self.activity.closest_calendar.duration // 3600,
+            'price': self.activity.closest_calendar.session_price,
+            'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
+        }
+
         for email in emails:
             self.assertTrue(EmailTaskRecord.objects.filter(
                 task_id=task_id,
                 to=email,
-                status='sent').exists())
+                status='sent',
+                data=context,
+                template_name='activities/email/share_activity.html').exists())
 
-    @mock.patch('utils.mixins.MandrillMixin.send_mail')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_rejected(self, send_mail):
         """
         Test send the email to share the activity when it's rejected
@@ -130,7 +173,6 @@ class SendEmailShareActivityTaskTest(APITestCase):
         message = 'Hey checa esto!'
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': e,
             'status': 'rejected',
             'reject_reason': 'invalid-sender'
@@ -146,20 +188,17 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 status='rejected',
                 reject_reason='invalid-sender').exists())
 
-    @mock.patch('utils.mixins.MandrillMixin.send_mail')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=False)
     def test_error(self, send_mail):
         """
         Test send the email to share the activity when it's error
         """
-
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
-
         emails = [mommy.generators.gen_email() for _ in range(0, 3)]
         message = 'Hey checa esto!'
 
-        send_mail.side_effect = mandrill.Error('No subaccount exists with the id customer-123')
+        send_mail.side_effect = Exception('No subaccount exists with the id customer-123')
 
-        # with self.assertRaises(mandrill.Error):
         task = SendEmailShareActivityTask()
         task_id = task.delay(self.user.id, self.activity.id, emails=emails, message=message)
 
@@ -169,8 +208,6 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 to=email,
                 status='error',
                 reject_reason='No subaccount exists with the id customer-123').exists())
-
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 
 
 class SendEmailLocationTaskTest(APITestCase):
@@ -182,10 +219,9 @@ class SendEmailLocationTaskTest(APITestCase):
         self.order = OrderFactory(calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
         self.assistants = AssistantFactory.create_batch(2, order=self.order)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_task_dispatch_if_there_is_not_other_task(self, send_mail):
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': assistant.email,
             'status': 'sent',
             'reject_reason': None
@@ -194,11 +230,21 @@ class SendEmailLocationTaskTest(APITestCase):
         task = SendEmailLocationTask()
         task_id = task.delay(self.activity.id)
 
+        context = {
+            'organizer': self.activity.organizer.name,
+            'activity': self.activity.title,
+            'address': self.activity.location.address,
+            'detail_url': '%sactivity/%s' % (settings.FRONT_SERVER_URL, self.activity.id)
+        }
+
         for assistant in self.assistants:
+            data = {**context, 'name': assistant.first_name}
             self.assertTrue(EmailTaskRecord.objects.filter(
                 task_id=task_id,
                 to=assistant.email,
-                status='sent').exists())
+                status='sent',
+                data=data,
+                template_name='activities/email/change_location_data.html').exists())
 
     def test_ignore_task_if_there_is_a_pending_task(self):
         ActivityCeleryTaskEditActivity.objects.create(
@@ -216,10 +262,9 @@ class SendEmailLocationTaskTest(APITestCase):
                 to=assistant.email,
                 status='sent').exists())
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_task_should_delete_on_success(self, send_mail):
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': assistant.email,
             'status': 'sent',
             'reject_reason': None
@@ -228,9 +273,9 @@ class SendEmailLocationTaskTest(APITestCase):
         task.delay(self.activity.id)
         self.assertEqual(ActivityCeleryTaskEditActivity.objects.count(), 0)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=False)
     def test_task_should_update_error_on_failure(self, send_mail):
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
         send_mail.side_effect = Exception('This could be a mandrill exception')
         task = SendEmailLocationTask()
         task_id = task.delay(self.activity.id)
@@ -238,4 +283,3 @@ class SendEmailLocationTaskTest(APITestCase):
             task_id=task_id,
             state=states.FAILURE,
             activity=self.activity).exists())
-        settings.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True

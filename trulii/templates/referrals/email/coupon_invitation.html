@@ -1,14 +1,12 @@
-<!-- Este template es el mas simple, consiste en un titulo, un mensaje y un botón de acción -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
 
-    <title>Contraseña Olvidada</title>
+    <title>Cupón</title>
 </head>
+<body style="text-align: center;font-size: 14px;background: #f7f7f7;color: #949494;padding: 0;margin: 0;border: 0;">
 
-<body style="text-align: center;font-size: 14px;background-color: #f7f7f7;color: #949494;padding: 0;margin: 0;border: 0;">
     <table width="100%" border="0" cellspacing="0" cellpading="0">
         <tbody>
             <tr style="padding: 0;margin: 0;border: 0;">
@@ -41,28 +39,47 @@
                                                     <table id="description" style="margin: 0 auto; " border="0" cellpadding="0" cellspacing="0" width="100%">
                                                         <tbody>
                                                             <tr style="padding: 0;margin: 0;border: 0;">
-                                                                <td id="content-description" valign="top" align="center" style="padding: 20px 40px 60px 40px!important;margin: 0;border: 0;text-align: center;">
+                                                                <td id="content-description" valign="top" align="center" style="padding: 20px 40px 20px 40px!important;margin: 0;border: 0;text-align: center;">
                                                                     <div>
                                                                         <div style="margin-bottom:30px;">
-                                                                             <h1 style="margin: 0 auto; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; color: #7B7B7B; margin-bottom: 20px;">¿Olvidaste tu contraseña?</h1>
-                                                                            <span style="font-size: 19px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">Define tu nueva contraseña para acceder a tu cuenta. Procura que sea segura y fácil de recordar.</span>
+                                                                             <h1 style="margin: 0 auto; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;  color: #7B7B7B;">¡Felicitaciones!</h1>
+                                                                             <div class="divider" style="height: 1px;width: 200px;margin: 0 auto;background-color: #DCDCDC;margin-top: 15px;margin-bottom: 25px;"></div>
                                                                         </div>
-                                                                        <div style=" margin-bottom: 30px;">
-                                                                              <span style="
-                                                                                margin: 0 auto;
-                                                                                font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif;
-                                                                                text-align: center;
-                                                                                color: #383838;
-                                                                                margin-bottom: 20px;">Si no solicitaste esto, ignoralo y ponte en contacto con nosotros</span></div>
+                                                                        <div style="margin-bottom:30px; margin-top: 15px;">
+                                                                            <img style="width: 120px; border-radius: 50%;height: 120px;" alt="" src="{{ student.avatar }}">
+                                                                        </div>
 
-
-                                                                            <a href="{{ url }}" style="padding: 0;margin: 0;border: 0;text-decoration: none;">
-                                                                                <div id="button" style="margin: 0 auto;padding: 15px 60px 15px 60px;border: 0;background: #38dbc8;color: white;text-decoration: none;text-transform: uppercase;text-align: center;font-size: 13px;font-weight: bold;border-radius: 4px;">
-                                                                                    <span style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">Cambiar Contraseña</span>
-                                                                                </div>
-                                                                            </a>
+                                                                        <div style="margin-bottom:10px;">
+                                                                             <h1 style="margin: 0 auto; font-size: 20px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">{{ student.name }}</h1>
+                                                                            <h1 style="margin: 0 auto; font-size: 19px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">Te dió COP {{ amount }} de cupón</h1>
+                                                                        </div>
 
                                                                     </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="content-button-action" valign="top" align="center" style="padding: 20px 40px 40px 40px!important;margin: 0;border: 0;padding-top: 20px !important;text-align: center;">
+                                                    <a href="{{ url }}" style="padding: 0;margin: 0;border: 0;text-decoration: none;">
+                                                        <div id="button" style="margin: 0 auto;padding: 15px 60px 15px 60px;border: 0;background: #38dbc8;color: white;text-decoration: none;text-transform: uppercase;text-align: center;font-size: 13px;font-weight: bold;border-radius: 4px;">
+                                                            <span style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; ">Reclamar mi cupón</span>
+                                                        </div>
+                                                    </a>
+
+                                                </td>
+                                            </tr>
+
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="second" style="padding: 0;margin: 0;border: 0;">
+                                                    <table id="description" style="margin: 0 auto; " border="0" cellpadding="0" cellspacing="0" width="520">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="" valign="top" align="center" style="padding: 10px 30px 10px 30px;margin: 0;border: 0;background: #F1F1F1;">
+                                                                    <h4 style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-size: 20px;">Trulii es la mejor forma de encontrar e inscribirte lo que quieres aprender en tu ciudad</h4>
                                                                 </td>
                                                             </tr>
                                                         </tbody>

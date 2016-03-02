@@ -199,9 +199,6 @@ class ReviewAPITest(BaseAPITestCase):
         """
         Test report a review [POST]
         """
-        # Set Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Anonymous should return unauthorized
         response = self.client.post(self.report_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

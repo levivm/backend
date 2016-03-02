@@ -30,9 +30,6 @@ class OrdersSerializerTest(BaseAPITestCase):
     def setUp(self):
         super(OrdersSerializerTest, self).setUp()
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
         self.coupon_type = mommy.make(CouponType, name='referrer')
@@ -179,9 +176,6 @@ class RefundSerializerTest(APITestCase):
         self.order = mommy.make(Order, amount=500, quantity=1, status=Order.ORDER_APPROVED_STATUS)
         self.assistant = mommy.make(Assistant, order=self.order)
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
     def test_read(self):
         """
         Test the serialization of an instance
@@ -206,7 +200,7 @@ class RefundSerializerTest(APITestCase):
 
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_create(self, send_mail):
         """
         Test creation of a Refund

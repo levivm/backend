@@ -3,6 +3,8 @@ import hashlib
 import os
 
 from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
@@ -34,8 +36,13 @@ class AuthVerifyToken(models.Model):
 
 
 class ResetPasswordToken(AuthVerifyToken):
-    pass
+
+    def get_token_url(self):
+        return '%spassword/reset/key/%s' % (settings.FRONT_SERVER_URL, self.token)
 
 
 class ConfirmEmailToken(AuthVerifyToken):
     email = models.EmailField()
+
+    def get_token_url(self):
+        return '%semail/confirm/%s' % (settings.FRONT_SERVER_URL, self.token)

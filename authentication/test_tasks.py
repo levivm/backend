@@ -17,14 +17,13 @@ class ChangePasswordNoticeTaskTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_success(self, send_mail):
         """
         Test send change password notification successfully
         """
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': self.user.email,
             'status': 'sent',
             'reject_reason': None
@@ -33,27 +32,14 @@ class ChangePasswordNoticeTaskTest(APITestCase):
         task = ChangePasswordNoticeTask()
         task_id = task.delay(self.user.id)
 
+        context = {}
+
         self.assertTrue(EmailTaskRecord.objects.filter(
             task_id=task_id,
             to=self.user.email,
-            status='sent').exists())
-
-        context = {
-            'name': self.user.first_name
-        }
-
-        message = {
-            'from_email': 'contacto@trulii.com',
-            'html': loader.get_template(
-                'authentication/email/password_has_changed.html').render(),
-            'subject': 'Tu contraseña ha cambiado',
-            'to': [{'email': self.user.email}],
-            'merge_vars': [],
-            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
-        }
-
-        called_message = send_mail.call_args[1]['message']
-        self.assertTrue(all(item in called_message.items() for item in message.items()))
+            status='sent',
+            data=context,
+            template_name='authentication/email/password_has_changed.html').exists())
 
 
 class SendEmailResetPasswordTaskTest(APITestCase):
@@ -62,14 +48,13 @@ class SendEmailResetPasswordTaskTest(APITestCase):
         self.user = UserFactory()
         self.reset_password = ResetPasswordToken.objects.create(user=self.user)
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_success(self, send_mail):
         """
         Test send change password notification successfully
         """
 
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': self.user.email,
             'status': 'sent',
             'reject_reason': None
@@ -78,28 +63,16 @@ class SendEmailResetPasswordTaskTest(APITestCase):
         task = SendEmailResetPasswordTask()
         task_id = task.delay(self.reset_password.id)
 
+        context = {
+            'url': self.reset_password.get_token_url(),
+        }
+
         self.assertTrue(EmailTaskRecord.objects.filter(
             task_id=task_id,
             to=self.user.email,
-            status='sent').exists())
-
-        context = {
-            'name': self.user.first_name,
-            'token': self.reset_password.token,
-        }
-
-        message = {
-            'from_email': 'contacto@trulii.com',
-            'html': loader.get_template(
-                'authentication/email/reset_password.html').render(),
-            'subject': 'Reinicio de contraseña',
-            'to': [{'email': self.user.email}],
-            'merge_vars': [],
-            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
-        }
-
-        called_message = send_mail.call_args[1]['message']
-        self.assertTrue(all(item in called_message.items() for item in message.items()))
+            status='sent',
+            data=context,
+            template_name='authentication/email/reset_password.html').exists())
 
 
 class SendEmailConfirmEmailTaskTest(APITestCase):
@@ -110,10 +83,9 @@ class SendEmailConfirmEmailTaskTest(APITestCase):
             user=self.user,
             email='drake.nathan@uncharted.com')
 
-    @mock.patch('utils.mixins.mandrill.Messages.send')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_success(self, send_mail):
         send_mail.return_value = [{
-            '_id': '042a8219744b4b40998282fcd50e678e',
             'email': 'drake.nathan@uncharted.com',
             'status': 'sent',
             'reject_reason': None
@@ -122,25 +94,14 @@ class SendEmailConfirmEmailTaskTest(APITestCase):
         task = SendEmailConfirmEmailTask()
         task_id = task.delay(self.confirm_email.id)
 
+        context = {
+            'name': self.user.first_name,
+            'url': self.confirm_email.get_token_url(),
+        }
+
         self.assertTrue(EmailTaskRecord.objects.filter(
             task_id=task_id,
             to='drake.nathan@uncharted.com',
-            status='sent').exists())
-
-        context = {
-            'name': self.user.first_name,
-            'token': self.confirm_email.token,
-        }
-
-        message = {
-            'from_email': 'contacto@trulii.com',
-            'html': loader.get_template(
-                'authentication/email/confirm_email.html').render(),
-            'subject': 'Confirmación de correo',
-            'to': [{'email': 'drake.nathan@uncharted.com'}],
-            'merge_vars': [],
-            'global_merge_vars': [{'name': k, 'content': v} for k, v in context.items()],
-        }
-
-        called_message = send_mail.call_args[1]['message']
-        self.assertTrue(all(item in called_message.items() for item in message.items()))
+            status='sent',
+            data=context,
+            template_name='authentication/email/confirm_email.html').exists())
