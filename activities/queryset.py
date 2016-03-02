@@ -6,7 +6,7 @@ from django.db import models
 class ActivityQuerySet(models.QuerySet):
 
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
-    prefetch_related_fields = ['pictures', 'calendars__sessions',
+    prefetch_related_fields = ['pictures', 'calendars__sessions', 'reviews__author__user',
                                'calendars__orders__refunds',
                                'calendars__orders__student__user',
                                'calendars__orders__assistants__refunds']
@@ -42,6 +42,6 @@ class ActivityQuerySet(models.QuerySet):
         elif status == activities_constants.NEXT:
             activities = activities_q.filter(calendars__initial_date__gt=today)
         else:
-            activities = activities_q.filter(calendars__initial_date__gt=today)
+            activities = activities_q.all()
 
         return activities

@@ -5,9 +5,9 @@ from mock import Mock
 from rest_framework import status
 from django.core.urlresolvers import reverse
 from orders.models import Order
-from activities.models import Calendar
+from activities.models import Calendar, Activity
 from activities.factories import ActivityFactory
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from activities import constants as activities_constants
 from students.views import StudentViewSet, StudentActivitiesViewSet
 from utils.tests import BaseViewTest, BaseAPITestCase
@@ -98,7 +98,32 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
             ActivityFactory.create_batch(2, last_date=yesterday)
         self._create_calendars(self.past_activities, yesterday)
 
+        self.activities = Activity.objects.filter(calendars__orders__student=student)
+
+
         self.url = reverse('students:activities', kwargs={'pk':student.id})
+        self.url_autocomplete = reverse('students:activities_autocomplete', 
+                                        kwargs={'pk':student.id})
+
+    def test_student_activities_autocomplete(self):
+
+        activities = self._order_activities(self.activities)
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+
+        # Anonymous should return forbbiden
+        response = self.organizer_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        # Organizer should return forbbiden
+        response = self.organizer_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should return data
+        response = self.student_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
 
     def test_student_current_activities(self):
 

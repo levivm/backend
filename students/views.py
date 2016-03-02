@@ -1,7 +1,7 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from activities.models import Activity
 from .models import Student
 from .permissions import IsOwner
@@ -27,6 +27,13 @@ class StudentActivitiesViewSet(ModelViewSet):
         context = super(StudentActivitiesViewSet,self).get_serializer_context()
         context.update({'show_reviews':True})
         return context
+
+    def autocomplete(self, request, *args, **kwargs):
+        student = self.get_object()
+        activities = Activity.objects.by_student(student)
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+        result = serializer.data
+        return Response(result)
 
 
     def retrieve(self, request, *args, **kwargs):
