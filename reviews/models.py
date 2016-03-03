@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from activities.models import Activity
 from students.models import Student
 from utils.mixins import AssignPermissionsMixin
+from .queryset import ReviewQuerySet
 
 
 class Review(AssignPermissionsMixin, models.Model):
@@ -21,6 +22,8 @@ class Review(AssignPermissionsMixin, models.Model):
     replied_at = models.DateTimeField(blank=True, null=True)
 
     permissions = ('reviews.report_review', 'reviews.reply_review', 'reviews.read_review')
+
+    objects = ReviewQuerySet.as_manager()
 
     class Meta:
         permissions = (

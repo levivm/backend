@@ -79,7 +79,10 @@ class ReviewListByOrganizerViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         organizer = self.get_organizer(**kwargs)
-        reviews = [activity.reviews.all() for activity in organizer.activity_set.filter(published=True)]
+        status = request.query_params.get('status')
+
+        reviews = [activity.reviews.by_status(status).all() \
+                   for activity in organizer.activity_set.filter(published=True)]
         reviews = [item for sublist in reviews for item in sublist]
         page = self.paginate_queryset(reviews)
         serializer = self.get_serializer(page, many=True)
@@ -110,7 +113,8 @@ class ReviewListByStudentViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         student = self.get_student(**kwargs)
-        page = self.paginate_queryset(student.reviews.all())
+        reviews = student.reviews.all()
+        page = self.paginate_queryset(reviews)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
