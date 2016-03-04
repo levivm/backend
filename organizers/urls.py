@@ -10,7 +10,7 @@ urlpatterns = [
         OrganizerViewSet.as_view({'put': 'partial_update', 'get': 'retrieve'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/activities/?$', OrganizerViewSet.as_view({'get': 'activities'}),
         name='activities'),
-    url(r'^organizers/(?P<organizer_pk>\d+)/activities/autocomplete?$', 
+    url(r'^organizers/(?P<organizer_pk>\d+)/activities/autocomplete/?$', 
         OrganizerViewSet.as_view({'get': 'activities_autocomplete'}),
         name='activities_autocomplete'),
 
