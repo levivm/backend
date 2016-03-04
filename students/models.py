@@ -3,6 +3,8 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
+
+from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
 
@@ -28,6 +30,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     referrer_code = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=100,blank=True)
     verified_email = models.BooleanField(default=False)
+    wish_list = models.ManyToManyField(Activity, through='WishList')
 
     def __str__(self):
         return self.user.username
@@ -76,3 +79,8 @@ class Student(ImageOptimizable, Updateable, models.Model):
             return self.photo.url
 
         return None
+
+
+class WishList(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
