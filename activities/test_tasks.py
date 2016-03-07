@@ -234,7 +234,7 @@ class SendEmailLocationTaskTest(APITestCase):
             'organizer': self.activity.organizer.name,
             'activity': self.activity.title,
             'address': self.activity.location.address,
-            'detail_url': '%sactivity/%s' % (settings.FRONT_SERVER_URL, self.activity.id)
+            'detail_url': self.activity.get_frontend_url(),
         }
 
         for assistant in self.assistants:
