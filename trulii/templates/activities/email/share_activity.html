@@ -98,13 +98,13 @@
                                                                 <td id="" valign="top" align="center" style="padding: 10px 30px 10px 60px;margin: 0;border: 0;background: #F1F1F1;">
                                                                     <div>
                                                                         <span><img style="vertical-align: text-bottom; margin-right: 5px;" src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/Clock.png" alt=""></span>
-                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600;">{{ duration }} Horas</span>
+                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600;">{{ duration|floatformat:"0" }} Horas</span>
                                                                     </div>
                                                                 </td>
                                                                 <td id="" valign="top" align="center" style="padding: 10px 60px 10px 30px;margin: 0;border: 0;background: #F1F1F1;">
                                                                     <div>
                                                                         <span><img style="vertical-align: text-bottom; margin-right: 5px;" src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/Precio.png" alt=""></span>
-                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600; ">COP {{ price }}</span>
+                                                                        <span  style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; font-weight: 600; ">COP {{ price|floatformat:"0" }}</span>
                                                                     </div>
                                                                 </td>
                                                             </tr>
