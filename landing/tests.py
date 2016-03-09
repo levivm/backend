@@ -61,7 +61,7 @@ class SendContactFormEmailTaskTest(APITestCase):
         return {
             "topic": "suggestion",
             "name": "Levi",
-            "email": "truli@gmail.com",
+            "email": "trulii@gmail.com",
             "phone_number": "222222",
             "description": "hola soy una description",
             "city": "Bogota"
