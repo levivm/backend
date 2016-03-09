@@ -67,11 +67,6 @@ class UsersViewSet(viewsets.ModelViewSet):
 
         return Response(data)
 
-    def logout(self, request):
-
-        auth_logout(request)
-        return Response(status=status.HTTP_200_OK)
-
     def verify_organizer_pre_signup_key(self, request, key):
         oc = get_object_or_404(OrganizerConfirmation, key=key)
 
@@ -115,38 +110,3 @@ class PhotoUploadView(APIView):
 
         return Response(data)
 
-# class ChangeEmailView(APIView):
-#     def post(self, request, *args, **kwargs):
-#         res = None
-#         if "action_add" in request.POST:
-#             _super = EmailView()
-#             _super.request = request._request
-#             response, form = _set_ajax_response(_super)
-#             return _ajax_response(request, response, form=form)
-#
-#         elif request.POST.get("email"):
-#             if "action_send" in request.POST:
-#                 res = super(ChangeEmailView, self)._action_send(request)
-#             elif "action_remove" in request.POST:
-#                 res = super(ChangeEmailView, self)._action_remove(request)
-#             elif "action_primary" in request.POST:
-#                 res = super(ChangeEmailView, self)._action_primary(request)
-#             res = res or HttpResponseRedirect(reverse('account_email'))
-#
-#         return _ajax_response(request, res)
-#
-#
-# class PasswordChange(APIView):
-#     def post(self, request, *args, **kwargs):
-#         _super_response = PasswordChangeView()
-#         _super_response.request = request._request
-#         response, form = _set_ajax_response(_super_response)
-#         return _ajax_response(request, response, form=form)
-#
-#
-# class ConfirmEmail(ConfirmEmailView):
-#     def post(self, request, *args, **kwargs):
-#         super(ConfirmEmail, self).post(request, *args, **kwargs)
-#
-#         return HttpResponse(
-#             content_type="application/json", status=status.HTTP_200_OK)

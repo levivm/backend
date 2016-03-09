@@ -6,5 +6,4 @@ class ContactFormsSerializer(serializers.Serializer):
     topic = serializers.CharField(max_length=200)
     email = serializers.EmailField()
     phone_number = serializers.CharField(max_length=200)
-    city = serializers.CharField(max_length=200)
     description = serializers.CharField(max_length=1000)
