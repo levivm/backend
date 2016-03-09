@@ -15,7 +15,7 @@ from authentication.permissions import IsNotAuthenticated
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
     ChangePasswordSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
-    SendEmailConfirmEmailTask
+    SendEmailConfirmEmailTask, SendEmailHasChangedTask
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
 from referrals.mixins import ReferralMixin
@@ -248,6 +248,9 @@ class ConfirmEmailView(ValidateTokenMixin, GenericAPIView):
 
         confirm_email.used = True
         confirm_email.save(update_fields=['used'])
+
+        task = SendEmailHasChangedTask()
+        task.delay(confirm_email_id=confirm_email.id)
 
         profile_data = self.get_profile_data(profile)
 

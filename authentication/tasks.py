@@ -55,3 +55,17 @@ class SendEmailConfirmEmailTask(SendEmailTaskMixin):
             'name': self.confirm_email.user.first_name,
             'url': self.confirm_email.get_token_url(),
         }
+
+
+class SendEmailHasChangedTask(SendEmailTaskMixin):
+    """
+    Task to send the email when it has changed
+    """
+
+    def run(self, confirm_email_id, *args, **kwargs):
+        self.confirm_email = ConfirmEmailToken.objects.get(id=confirm_email_id)
+        self.template_name = 'authentication/email/email_has_changed.html'
+        self.emails = [self.confirm_email.email]
+        self.subject = 'Tu email en Trulii ha cambiado'
+        self.global_context = {}
+        return super(SendEmailHasChangedTask, self).run(*args, **kwargs)

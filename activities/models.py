@@ -205,6 +205,9 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         orders = [order for sublist in orders for order in sublist]
         return orders
 
+    def get_frontend_url(self):
+        return '%sactivity/%s' % (settings.FRONT_SERVER_URL, self.id)
+
 
 class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     photo = models.ImageField(upload_to="activities")

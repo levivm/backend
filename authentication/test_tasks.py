@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
-    SendEmailConfirmEmailTask
+    SendEmailConfirmEmailTask, SendEmailHasChangedTask
 from users.factories import UserFactory
 from utils.models import EmailTaskRecord
 
@@ -105,3 +105,33 @@ class SendEmailConfirmEmailTaskTest(APITestCase):
             status='sent',
             data=context,
             template_name='authentication/email/confirm_email.html').exists())
+
+
+class SendEmailHasChangedTaskTest(APITestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.confirm_email = ConfirmEmailToken.objects.create(
+            user=self.user,
+            email='drake.nathan@uncharted.com',
+        )
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_success(self, send_mail):
+        send_mail.return_value = [{
+            'email': 'drake.nathan@uncharted.com',
+            'status': 'sent',
+            'reject_reason': None,
+        }]
+
+        task = SendEmailHasChangedTask()
+        task_id = task.delay(confirm_email_id=self.confirm_email.id)
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to='drake.nathan@uncharted.com',
+            status='sent',
+            data={},
+            template_name='authentication/email/email_has_changed.html').exists())
+
+

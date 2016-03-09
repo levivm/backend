@@ -6,8 +6,9 @@ import factory.fuzzy
 from django.contrib.auth.models import Group
 from django.utils.timezone import now, utc, timedelta
 
+from activities.factories import ActivityFactory
 from locations.factories import CityFactory
-from students.models import Student
+from students.models import Student, WishList
 from users.factories import UserFactory
 
 
@@ -28,3 +29,11 @@ class StudentFactory(factory.django.DjangoModelFactory):
         if create:
             group, _ = Group.objects.get_or_create(name='Students')
             self.user.groups.add(group)
+
+
+class WishListFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = WishList
+
+    student = factory.SubFactory(StudentFactory)
+    activity = factory.SubFactory(ActivityFactory)

@@ -525,7 +525,14 @@ class ConfirmEmailViewTest(APITestCase):
         self.url = reverse('auth:confirm_email')
         self.student = StudentFactory(user__email='derivia@witcher.com')
 
-    def test_confirm_email(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_confirm_email(self, send_mail):
+        send_mail.return_value = [{
+            'email': 'drake.nathan@uncharted.com',
+            'status': 'sent',
+            'reject_reason': None,
+        }]
+
         confirm_email = ConfirmEmailToken.objects.create(
             user=self.student.user,
             email='drake.nathan@uncharted.com')
@@ -540,6 +547,9 @@ class ConfirmEmailViewTest(APITestCase):
         self.assertEqual(student.user.email, 'drake.nathan@uncharted.com')
         self.assertTrue(student.verified_email)
         self.assertTrue(confirm_email.used)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to='drake.nathan@uncharted.com',
+            status='sent').exists())
 
     def test_validate_token_key(self):
         data = {
