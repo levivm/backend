@@ -14,7 +14,7 @@ from authentication.mixins import SignUpMixin, ValidateTokenMixin, InvalidateTok
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from authentication.permissions import IsNotAuthenticated
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
-    ChangePasswordSerializer
+    ChangePasswordSerializer, ForgotPasswordSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
     SendEmailConfirmEmailTask, SendEmailHasChangedTask
 from organizers.models import Organizer
@@ -187,12 +187,15 @@ class ChangePasswordView(GenericAPIView):
         return context
 
 
-class ForgotPasswordView(InvalidateTokenMixin, APIView):
+class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
     permission_classes = (IsNotAuthenticated,)
-    serializer_class = None
+    serializer_class = ForgotPasswordSerializer
     model = ResetPasswordToken
 
-    def post(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
         user = self.get_user()
         self.invalidate_token(user)
         reset_password = ResetPasswordToken.objects.create(user=user)
@@ -201,11 +204,8 @@ class ForgotPasswordView(InvalidateTokenMixin, APIView):
         return Response('OK')
 
     def get_user(self):
-        try:
-            return User.objects.get(email=self.request.data.get('email'))
-        except User.DoesNotExist:
-            raise ValidationError({'email':[_('Este correo no existe')]})
-
+        user = User.objects.get(email=self.request.data.get('email'))
+        return user
 
 class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
     model = ResetPasswordToken

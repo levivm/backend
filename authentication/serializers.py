@@ -50,6 +50,14 @@ class SignUpStudentSerializer(serializers.Serializer):
         data['username'] = '%s.%s' % (first_name.lower(), last_name.lower())
         return data
 
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, email):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise exceptions.ValidationError(_('Este correo no existe'))
 
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField()
