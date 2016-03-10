@@ -27,7 +27,7 @@ class AssistantAdmin(admin.ModelAdmin):
 class RefundAdmin(admin.ModelAdmin):
     list_display = ('username', 'order', 'assistant', 'status')
     readonly_fields = ('created_at',)
-    actions = ['set_decline', 'set_approved']
+    actions = ['set_declined', 'set_approved']
 
     def username(self, obj):
         return obj.user.username

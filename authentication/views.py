@@ -5,6 +5,7 @@ from django.utils.translation import ugettext as _
 from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, get_object_or_404
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from social.apps.django_app.utils import psa
@@ -186,8 +187,9 @@ class ChangePasswordView(GenericAPIView):
         return context
 
 
-class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
+class ForgotPasswordView(InvalidateTokenMixin, APIView):
     permission_classes = (IsNotAuthenticated,)
+    serializer_class = None
     model = ResetPasswordToken
 
     def post(self, *args, **kwargs):
@@ -202,7 +204,7 @@ class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
         try:
             return User.objects.get(email=self.request.data.get('email'))
         except User.DoesNotExist:
-            raise ValidationError(_('This email does not exist.'))
+            raise ValidationError({'email':[_('Este correo no existe')]})
 
 
 class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
