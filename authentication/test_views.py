@@ -169,7 +169,7 @@ class SignUpOrganizerViewTest(APITestCase):
         """
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {'password': ['The password is required.']})
+        self.assertEqual(response.data, {'password': ['La contraseña es requerida.']})
 
     def test_validate_request_signup_approved(self):
         """
@@ -433,7 +433,7 @@ class ForgotPasswordViewTest(BaseAPITestCase):
     def test_validate_email(self):
         response = self.client.post(self.url, data={'email': 'invalid@email.com'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This email does not exist.'])
+        self.assertEqual(response.data, {'email': ['Este correo no existe']})
 
     @mock.patch('authentication.tasks.SendEmailResetPasswordTask.delay')
     def test_invalidate_pending_token(self, task_delay):
@@ -516,7 +516,7 @@ class ResetPasswordViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['The passwords do not match.'])
+        self.assertEqual(response.data, ['Las contraseñas no son iguales.'])
 
 
 class ConfirmEmailViewTest(APITestCase):

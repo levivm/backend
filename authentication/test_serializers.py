@@ -115,7 +115,7 @@ class SignUpStudentSerializerTest(APITestCase):
 
         serializer = SignUpStudentSerializer(data=data)
 
-        message = "A user is already registered with this e-mail address."
+        message = "Ya existe un usuario registrado con este correo electrónico."
         with self.assertRaisesMessage(ValidationError, message):
             serializer.is_valid(raise_exception=True)
 

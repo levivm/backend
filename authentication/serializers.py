@@ -4,6 +4,7 @@ from django.utils.translation import ugettext as _
 from rest_framework import serializers, exceptions
 
 
+
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField(style={'input_type': 'password'})
@@ -38,7 +39,7 @@ class SignUpStudentSerializer(serializers.Serializer):
 
     def validate_email(self, data):
         if User.objects.filter(email=data).exists():
-            msg = _("A user is already registered with this e-mail address.")
+            msg = _("Ya existe un usuario registrado con este correo electrónico.")
             raise exceptions.ValidationError(msg)
 
         return data
@@ -49,6 +50,9 @@ class SignUpStudentSerializer(serializers.Serializer):
 
         data['username'] = '%s.%s' % (first_name.lower(), last_name.lower())
         return data
+
+class ChangeEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
