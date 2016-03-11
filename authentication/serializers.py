@@ -48,7 +48,13 @@ class SignUpStudentSerializer(serializers.Serializer):
         first_name = data['first_name']
         last_name = data['last_name']
 
-        data['username'] = '%s.%s' % (first_name.lower(), last_name.lower())
+        username = '%s.%s' % (first_name.lower(), last_name.lower())
+        counter = User.objects.filter(username=username).count()
+
+        if counter > 0:
+            username += '%s' % (counter + 1)
+
+        data['username'] = username
         return data
 
 class ChangeEmailSerializer(serializers.Serializer):
