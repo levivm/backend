@@ -53,7 +53,6 @@ class SignUpStudentSerializer(serializers.Serializer):
 
         if counter > 0:
             username += '%s' % (counter + 1)
-
         data['username'] = username
         return data
 
