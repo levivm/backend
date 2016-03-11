@@ -68,7 +68,7 @@ urlpatterns = [
         name='change_email',
     ),
 
-    # auth:verify_email_token - api/auth/email/verify
+    # auth:verify_email_token - api/auth/email/verify/<token>
     url(
         regex=r'^email/verify/(?P<token>\w+)/?$',
         view=VerifyConfirmEmailTokenView.as_view(),

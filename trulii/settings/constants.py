@@ -93,6 +93,11 @@ ORGANIZER_PERMISSIONS = (
         'app': 'organizers',
         'model': 'organizerbankinfo',
         'codenames': ('add', 'change'),
+    },
+    {
+        'app': 'trulii_messages',
+        'model': 'organizermessage',
+        'codenames': ('add',)
     }
 )
 

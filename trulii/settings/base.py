@@ -69,6 +69,7 @@ INSTALLED_APPS = (
     'payments',
     'reviews',
     'referrals',
+    'messages.apps.MessagesConfig',
 )
 
 MIDDLEWARE_CLASSES = [
