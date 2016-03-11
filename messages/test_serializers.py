@@ -1,5 +1,7 @@
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
+from activities.factories import CalendarFactory
 from messages.factories import OrganizerMessageFactory
 from messages.models import OrganizerMessage
 from messages.serializers import OrganizerMessageSerializer
@@ -8,10 +10,10 @@ from students.factories import StudentFactory
 
 
 class OrganizerMessageSerializerTest(APITestCase):
-
     def setUp(self):
         self.organizer = OrganizerFactory()
         self.students = StudentFactory.create_batch(2)
+        self.calendar = CalendarFactory()
 
     def test_create(self):
         data = {
@@ -19,7 +21,8 @@ class OrganizerMessageSerializerTest(APITestCase):
             'message': 'Message',
         }
 
-        serializer = OrganizerMessageSerializer(data=data, context={'organizer': self.organizer})
+        serializer = OrganizerMessageSerializer(data=data, context={'organizer': self.organizer,
+                                                                    'calendar': self.calendar})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -47,3 +50,14 @@ class OrganizerMessageSerializerTest(APITestCase):
         }
 
         self.assertEqual(serializer.data, data)
+
+    def test_validate_organizer(self):
+        data = {
+            'subject': 'Subject',
+            'message': 'Message',
+        }
+
+        with self.assertRaisesMessage(ValidationError,
+                                      "{'organizer': ['El organizador es requerido.']}"):
+            serializer = OrganizerMessageSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
