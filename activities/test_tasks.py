@@ -138,7 +138,7 @@ class SendEmailShareActivityTaskTest(APITestCase):
             'activity': {
                 'cover_url': self.cover.photo.url,
                 'title': self.activity.title,
-                'initial_date': self.activity.closest_calendar.initial_date.isoformat(),
+                'initial_date': self.activity.closest_calendar().initial_date.isoformat(),
             },
             'category': {
                 'color': self.activity.sub_category.category.color,
@@ -150,8 +150,8 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 'city': self.location.city.name,
             },
             'rating': self.activity.rating,
-            'duration': self.activity.closest_calendar.duration // 3600,
-            'price': self.activity.closest_calendar.session_price,
+            'duration': self.activity.closest_calendar().duration // 3600,
+            'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from activities.models import Activity
-from activities.serializers import ActivitiesSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from students.models import Student, WishList
 from students.permissions import IsOwner
 from students.serializer import StudentsSerializer

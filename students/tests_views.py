@@ -1,5 +1,6 @@
 import json
 
+import mock
 from django.core.urlresolvers import reverse
 from datetime import datetime, timedelta
 from model_mommy import mommy
@@ -219,8 +220,12 @@ class WishListViewTest(BaseAPITestCase):
         # Student should get the list
         activities = [w.activity for w in wish_list]
         response = self.student_client.get(self.url)
+        request = mock.MagicMock()
+        request.user = self.student.user
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['results'], ActivitiesSerializer(activities, many=True).data)
+        self.assertEqual(response.data['results'],
+                         ActivitiesSerializer(activities,
+                                              many=True, context={'request': request}).data)
 
     def test_add_activity_to_wish_list(self):
         """
