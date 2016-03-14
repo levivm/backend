@@ -7,7 +7,7 @@ from activities.serializers import ActivitiesSerializer
 from students.models import Student, WishList
 from students.permissions import IsOwner
 from students.serializer import StudentsSerializer
-from utils.paginations import MediumResultsSetPagination
+from utils.paginations import MediumResultsSetPagination, SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsStudent
 
 
@@ -20,14 +20,36 @@ class StudentViewSet(ModelViewSet):
 class StudentActivitiesViewSet(ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentsSerializer
+    pagination_class = SmallResultsSetPagination
     permission_classes = (IsAuthenticated, IsOwner)
+
+    def get_serializer_context(self):
+        context = super(StudentActivitiesViewSet,self).get_serializer_context()
+        context.update({'show_reviews':True})
+        return context
+
+    def autocomplete(self, request, *args, **kwargs):
+        student = self.get_object()
+        activities = Activity.objects.by_student(student)
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+        result = serializer.data
+        return Response(result)
+
 
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
-        activities = [order.calendar.activity for order in student.orders.all()]
-        activities = list(set(activities))
-        serializer = ActivitiesSerializer(activities, many=True)
-        return Response(serializer.data)
+        status = request.query_params.get('status')
+        activities = Activity.objects.by_student(student, status)
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = ActivitiesSerializer(page, many=True,
+                                              context=self.get_serializer_context())
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ActivitiesSerializer(activities, many=True,
+                                          context=self.get_serializer_context())
+        result = serializer.data
+        return Response(result)
 
 
 class WishListViewSet(ModelViewSet):

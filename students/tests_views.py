@@ -1,13 +1,25 @@
 import json
 
 from django.core.urlresolvers import reverse
+from datetime import datetime, timedelta
+from model_mommy import mommy
+from mock import Mock
 from rest_framework import status
 
 from activities.factories import ActivityFactory
 from activities.serializers import ActivitiesSerializer
 from students.factories import WishListFactory
+from django.core.urlresolvers import reverse
+from orders.models import Order
+from activities.models import Calendar, Activity
+from activities.factories import ActivityFactory
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from activities import constants as activities_constants
 from students.views import StudentViewSet, StudentActivitiesViewSet
 from utils.tests import BaseViewTest, BaseAPITestCase
+from utils.tests import BaseViewTest, BaseAPITestCase
+
+
 
 
 class StudentViewTest(BaseViewTest):
@@ -47,33 +59,140 @@ class StudentViewTest(BaseViewTest):
         self.method_should_be(clients=student, method='put', status=status.HTTP_403_FORBIDDEN)
 
 
-class ActivitiesByStudentViewTest(BaseViewTest):
-    url = '/api/students/1/activities'
-    view = StudentActivitiesViewSet
+class ActivitiesByStudentViewTest(BaseAPITestCase):
 
-    def test_url_resolve_to_view_correctly(self):
-        self.url_resolve_to_view_correctly()
+    def _get_context(self):
+        request = Mock()
+        request.user = self.student.user
+        return {
+            'request': request,
+            'show_reviews':True
+        }
 
-    def test_methods_for_anonymous(self):
-        self.authorization_should_be_require(safe_methods=True)
+    def _order_activities(self, activities):
+        activities = sorted(activities, key = lambda x:x.id)
+        return activities
 
-    def test_methods_for_organizer(self):
-        organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_403_FORBIDDEN)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    def _create_calendars(self, activities, date,):
+        for activity in activities:
+            calendar = mommy.make(Calendar, activity=activity, initial_date=date)
+            mommy.make(Order, student=self.student, calendar=calendar)
 
-    def test_methods_for_student(self):
-        student = self.get_student_client()
-        self.method_get_should_return_data(clients=student, response_data=b'"title":"Yoga"')
-        self.method_should_be(clients=student, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=student, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_other_student_shouldnt_get_the_activitites(self):
-        student = self.get_student_client(user_id=self.ANOTHER_STUDENT_ID)
-        self.method_should_be(clients=student, method='get', status=status.HTTP_403_FORBIDDEN)
+    def setUp(self):
+        super(ActivitiesByStudentViewTest, self).setUp()
+
+        #get student
+        student = self.student
+
+        #create student activities
+        today = datetime.today().date()
+        yesterday = today - timedelta(1)
+        tomorrow = today + timedelta(1)
+
+        #create current activities
+        self.current_activities = \
+            ActivityFactory.create_batch(2,last_date=tomorrow)
+        self._create_calendars(self.current_activities,yesterday)
+
+        #create next activities
+        self.next_activities = \
+            ActivityFactory.create_batch(2)
+        self._create_calendars(self.next_activities, tomorrow)
+
+        #create past activities
+        self.past_activities = \
+            ActivityFactory.create_batch(2, last_date=yesterday)
+        self._create_calendars(self.past_activities, yesterday)
+
+        self.activities = Activity.objects.filter(calendars__orders__student=student)
+
+
+        self.url = reverse('students:activities', kwargs={'pk':student.id})
+        self.url_autocomplete = reverse('students:activities_autocomplete',
+                                        kwargs={'pk':student.id})
+
+    def test_student_activities_autocomplete(self):
+
+        activities = self._order_activities(self.activities)
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+
+        # Anonymous should return forbbiden
+        response = self.organizer_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        # Organizer should return forbbiden
+        response = self.organizer_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should return data
+        response = self.student_client.get(self.url_autocomplete)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+
+    def test_student_current_activities(self):
+
+        data={'status': activities_constants.CURRENT}
+        current_activities = self._order_activities(self.current_activities)
+        serializer = ActivitiesSerializer(current_activities, many=True,
+                                          context=self._get_context())
+
+        # Anonymous should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+        # Organizer should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should return data
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_student_next_activities(self):
+
+        data={'status': activities_constants.NEXT}
+        next_activities = self._order_activities(self.next_activities)
+        serializer = ActivitiesSerializer(next_activities, many=True,
+                                          context=self._get_context())
+
+        # Anonymous should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should return data
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_student_past_activities(self):
+
+        data={'status': activities_constants.PAST}
+        past_activities = self._order_activities(self.past_activities)
+        serializer = ActivitiesSerializer(past_activities, many=True,
+                                          context=self._get_context())
+
+        # Anonymous should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should return forbbiden
+        response = self.organizer_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should return data
+        response = self.student_client.get(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
 
 
 class WishListViewTest(BaseAPITestCase):

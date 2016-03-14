@@ -30,11 +30,20 @@ class ReviewAPITest(BaseAPITestCase):
 
         # Objects needed
         self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
-        self.calendar = mommy.make(Calendar, activity=self.activity, initial_date=now() - timedelta(days=2))
-        self.order = mommy.make(Order, student=self.student, calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
+        self.calendar = mommy.make(Calendar, activity=self.activity,
+                                   initial_date=now() - timedelta(days=2))
+        self.order = mommy.make(Order, student=self.student, calendar=self.calendar, 
+                                status=Order.ORDER_APPROVED_STATUS)
         self.post = {'rating': 4, 'comment': 'First comment!'}
+        self.read_review_post = {'rating': 4, 'comment': 'Im a read review!'}
+        self.unread_review_post = {'rating': 4, 'comment': 'Im an unread review!'}
         self.put = {'rating': 2, 'reply': 'Thank you!'}
         self.review = mommy.make(Review, author=self.student, activity=self.activity, **self.post)
+        self.read_review = mommy.make(Review, author=self.student, 
+                                      activity=self.activity, read=True, **self.read_review_post)
+        self.unread_review = mommy.make(Review, author=self.student, 
+                                        activity=self.activity, read=False, 
+                                        **self.unread_review_post)
 
         # URLs
         self.list_by_organizer_url = reverse('reviews:list_by_organizer', kwargs={'organizer_pk': self.organizer.id})
@@ -57,22 +66,62 @@ class ReviewAPITest(BaseAPITestCase):
         assign_perm('reviews.report_review', user_or_group=self.organizer.user, obj=self.review)
         assign_perm('reviews.read_review', user_or_group=self.organizer.user, obj=self.review)
 
-    def test_list_by_organizer(self):
+    # def test_list_by_organizer(self):
+    #     """
+    #     Test to list the reviews by organizer
+    #     """
+
+    #     # Anonymous should return a list of reviews
+    #     response = self.client.get(self.list_by_organizer_url)
+    #     self.assertContains(response, self.post.get('comment'))
+
+    #     # Student should return a list of reviews
+    #     response = self.student_client.get(self.list_by_organizer_url)
+    #     self.assertContains(response, self.post.get('comment'))
+
+    #     # Organizer should return a list of reviews
+    #     response = self.organizer_client.get(self.list_by_organizer_url)
+    #     self.assertContains(response, self.post.get('comment'))
+
+    def test_list_read_by_organizer(self):
         """
-        Test to list the reviews by organizer
+        Test to list the read reviews by organizer
         """
+        data = {
+            'status':'read'
+        }
 
         # Anonymous should return a list of reviews
-        response = self.client.get(self.list_by_organizer_url)
-        self.assertContains(response, self.post.get('comment'))
+        response = self.client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.read_review_post.get('comment'))
 
         # Student should return a list of reviews
-        response = self.student_client.get(self.list_by_organizer_url)
-        self.assertContains(response, self.post.get('comment'))
+        response = self.student_client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.read_review_post.get('comment'))
 
         # Organizer should return a list of reviews
-        response = self.organizer_client.get(self.list_by_organizer_url)
-        self.assertContains(response, self.post.get('comment'))
+        response = self.organizer_client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.read_review_post.get('comment'))
+
+    def test_list_unread_by_organizer(self):
+        """
+        Test to list the unread reviews by organizer
+        """
+        data = {
+            'status':'unread'
+        }
+
+        # Anonymous should return a list of reviews
+        response = self.client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.unread_review_post.get('comment'))
+
+        # Student should return a list of reviews
+        response = self.student_client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.unread_review_post.get('comment'))
+
+        # Organizer should return a list of reviews
+        response = self.organizer_client.get(self.list_by_organizer_url, data=data)
+        self.assertContains(response, self.unread_review_post.get('comment'))
 
     def test_list_by_student(self):
         """

@@ -45,6 +45,41 @@ class ActivitySearchEngine(object):
 
         return query
 
+
+    def extra_query(self,query_params):
+        cost_end = query_params.get('cost_end')
+        cost_start = query_params.get('cost_start')
+        if cost_start is not None and cost_end is not None:
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                extra = {
+                    'closest':
+                        'SELECT "activities_calendar"."initial_date"'
+                        'FROM "activities_calendar" '
+                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."session_price" >= %s '
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
+                }
+                params = (cost_start,)
+            else:
+                extra = {
+                    'closest':
+                        'SELECT "activities_calendar"."initial_date"'
+                        'FROM "activities_calendar" '
+                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."session_price" >= %s '
+                        'AND "activities_calendar"."session_price" <= %s '
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
+                }
+                params = (cost_start, cost_end)
+
+            return {'select':extra, 'select_params': params}
+
+
+
+
     def filter_query(self, query_params):
         subcategory = query_params.get('subcategory')
         category = query_params.get('category')
@@ -99,6 +134,6 @@ class ActivitySearchEngine(object):
         elif order_param == 'closest':
             order = ['closest']
         else:
-            order = ['-score', 'closest']
+            order = ['-score']
 
         return order

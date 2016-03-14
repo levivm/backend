@@ -15,9 +15,9 @@ from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from students.models import Student, WishList
+from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
-
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -161,7 +161,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context)
+        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context,
+                                                    remove_fields=['lastest_refund', 'student'])
         return assistants_serialzer.data
 
     def get_available_capacity(self, obj):
@@ -221,17 +222,17 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def _proccess_sessions(self, data):
 
-        session_data = data['sessions']
+        sessions_data = data['sessions']
         data['is_weekend'] = True
 
-        sessions_amount = len(session_data)
+        sessions_amount = len(sessions_data)
         if not sessions_amount:
             raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
 
         for i in range(sessions_amount):
 
-            session = session_data[i]
-            n_session = session_data[i + 1] if i + 1 < sessions_amount else None
+            session = sessions_data[i]
+            n_session = sessions_data[i + 1] if i + 1 < sessions_amount else None
 
             self._validate_session(sessions_amount, i, session)
 
@@ -290,6 +291,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def update(self, instance, validated_data):
         sessions_data = validated_data.get('sessions')
+        last_session = sessions_data[-1]
+        instance.activity.set_last_date(last_session)
         del (validated_data['sessions'])
         instance.update(validated_data)
         sessions = instance.sessions.all()
@@ -299,6 +302,14 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         CalendarSession.objects.bulk_create(_sessions)
 
         return instance
+
+class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = (
+            'id',
+            'title',
+        )
 
 
 class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSerializer):
@@ -327,7 +338,15 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
                                     remove_fields=['subcategories']).data
 
     def get_closest_calendar(self, obj):
-        return CalendarSerializer(obj.closest_calendar,
+        request = self.context.get('request')
+        if not request:
+            instance = obj.closest_calendar()
+        else:
+            cost_start = request.query_params.get('cost_start')
+            cost_end = request.query_params.get('cost_end')
+            initial_date = request.query_params.get('date')
+            instance = obj.closest_calendar(initial_date, cost_start, cost_end)
+        return CalendarSerializer(instance,
                                   remove_fields=['sessions', 'assistants', 'activity',
                                                  'number_of_sessions', 'capacity',
                                                  'available_capacity', 'is_weekend']).data
@@ -360,6 +379,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     required_steps = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
     closest_calendar = CalendarSerializer(read_only=True)
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -395,6 +415,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'score',
             'rating',
             'wish_list',
+            'reviews'
         )
         depth = 1
 
@@ -408,7 +429,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
         return settings.ACTIVITY_STEPS
 
     def get_last_date(self, obj):
-        return UnixEpochDateField().to_representation(obj.last_sale_date())
+        return UnixEpochDateField().to_representation(obj.last_date)
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
@@ -422,6 +443,14 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
 
     def get_level_display(self, obj):
         return obj.get_level_display()
+
+    def get_reviews(self,obj):
+        show_reviews = self.context.get('show_reviews')
+        request = self.context.get('request')
+        if show_reviews and request:
+            reviews = obj.reviews.filter(author__user=request.user)
+            return ReviewSerializer(reviews, many=True).data
+        return []
 
     def validate(self, data):
         request = self.context['request']

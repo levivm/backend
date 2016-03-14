@@ -4,10 +4,6 @@ from django.conf import settings
 from .models import OrganizerConfirmation
 
 
-
-
-
-
 class UserCreateForm(forms.Form):
 
     USER_TYPES = (
@@ -19,10 +15,8 @@ class UserCreateForm(forms.Form):
                                   required=True)
 
     first_name = forms.CharField(required=False)
-    last_name  = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
     email = forms.EmailField(required=True)
-
-
 
     def clean_first_name(self):
         data = self.cleaned_data
@@ -31,7 +25,7 @@ class UserCreateForm(forms.Form):
 
         if user_type == settings.STUDENT_TYPE:
             if not first_name:
-                raise forms.ValidationError(_("Este campo es requerido")) 
+                raise forms.ValidationError(_("Este campo es requerido"))
 
         return first_name
 
