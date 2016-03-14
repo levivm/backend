@@ -2,9 +2,11 @@ from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
+from django.core.exceptions import ValidationError as DjangoValidationError
 from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, get_object_or_404
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from social.apps.django_app.utils import psa
@@ -13,7 +15,7 @@ from authentication.mixins import SignUpMixin, ValidateTokenMixin, InvalidateTok
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from authentication.permissions import IsNotAuthenticated
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
-    ChangePasswordSerializer
+    ChangePasswordSerializer, ForgotPasswordSerializer, ChangeEmailSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
     SendEmailConfirmEmailTask, SendEmailHasChangedTask
 from organizers.models import Organizer
@@ -129,7 +131,7 @@ class SignUpOrganizerView(SignUpMixin, GenericAPIView):
     def validate_password(self):
         password = self.request.data.get('password')
         if not password:
-            raise ValidationError({'password': ['The password is required.']})
+            raise ValidationError({'password': ['La contraseña es requerida.']})
 
         return password
 
@@ -188,10 +190,16 @@ class ChangePasswordView(GenericAPIView):
 
 class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
     permission_classes = (IsNotAuthenticated,)
+    serializer_class = ForgotPasswordSerializer
     model = ResetPasswordToken
 
-    def post(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
         user = self.get_user()
+
         self.invalidate_token(user)
         reset_password = ResetPasswordToken.objects.create(user=user)
         task = SendEmailResetPasswordTask()
@@ -199,11 +207,8 @@ class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
         return Response('OK')
 
     def get_user(self):
-        try:
-            return User.objects.get(email=self.request.data.get('email'))
-        except User.DoesNotExist:
-            raise ValidationError(_('This email does not exist.'))
-
+        user = User.objects.get(email=self.request.data.get('email'))
+        return user
 
 class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
     model = ResetPasswordToken
@@ -230,7 +235,7 @@ class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
         if password1 and password2 and password1 == password2:
             return password1
 
-        raise ValidationError(_('The passwords do not match.'))
+        raise ValidationError(_('Las contraseñas no son iguales.'))
 
 
 class ConfirmEmailView(ValidateTokenMixin, GenericAPIView):
@@ -267,9 +272,14 @@ class ConfirmEmailView(ValidateTokenMixin, GenericAPIView):
 
 class ChangeEmailView(InvalidateTokenMixin, GenericAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = ChangeEmailSerializer
     model = ConfirmEmailToken
 
     def post(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
         email = self.get_email()
         self.invalidate_token(request.user)
 
@@ -288,14 +298,6 @@ class ChangeEmailView(InvalidateTokenMixin, GenericAPIView):
 
     def get_email(self):
         email = self.request.data.get('email')
-
-        try:
-            validate_email(email)
-        except TypeError:
-            raise ValidationError(_('Email parameter is required.'))
-        except ValidationError:
-            raise
-
         return email
 
 

@@ -24,7 +24,6 @@ def form_modal(request):
 class ContactFormView(APIView):
     def get(self, request, *args, **kwargs):
         contact_form_topics = [{'topic_id': k, 'topic_label': v} for k, v in users_constants.CONTACT_USER_FORM_TOPIC]
-        print("Contacto Form",contact_form_topics)
         return Response(contact_form_topics, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):

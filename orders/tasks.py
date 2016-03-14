@@ -47,7 +47,7 @@ class SendEmailOrganizerRefundTask(SendEmailTaskMixin):
     def get_context_data(self):
         return {
             'id': self.refund.id,
-            'name': self.refund.user.first_name,
+            'name': self.refund.order.calendar.activity.organizer.user.first_name,
             'order': self.refund.order.id,
             'activity': self.refund.order.calendar.activity.title,
             'status': self.refund.get_status_display(),
