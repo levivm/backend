@@ -1,23 +1,19 @@
 import json
+from datetime import datetime, timedelta
 
 import mock
 from django.core.urlresolvers import reverse
-from datetime import datetime, timedelta
-from model_mommy import mommy
 from mock import Mock
+from model_mommy import mommy
 from rest_framework import status
 
-from activities.factories import ActivityFactory
-from activities.serializers import ActivitiesSerializer
-from students.factories import WishListFactory
-from django.core.urlresolvers import reverse
-from orders.models import Order
-from activities.models import Calendar, Activity
-from activities.factories import ActivityFactory
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from activities import constants as activities_constants
-from students.views import StudentViewSet, StudentActivitiesViewSet
-from utils.tests import BaseViewTest, BaseAPITestCase
+from activities.factories import ActivityFactory
+from activities.models import Calendar, Activity
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from orders.models import Order
+from students.factories import WishListFactory
+from students.views import StudentViewSet
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
