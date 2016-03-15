@@ -1,0 +1,89 @@
+import mock
+from django.conf import settings
+from rest_framework.test import APITestCase
+
+from activities.factories import CalendarFactory
+from messages.factories import OrganizerMessageStudentRelationFactory, OrganizerMessageFactory
+from messages.tasks import SendEmailMessageNotificationTask, \
+    SendEmailOrganizerMessageAssistantsTask
+from orders.factories import AssistantFactory
+from orders.models import Order
+from organizers.factories import OrganizerFactory
+from utils.models import EmailTaskRecord
+
+
+class SendEmailMessageNotificationTaskTest(APITestCase):
+    def setUp(self):
+        self.organizer = OrganizerFactory()
+        self.organizer_message = OrganizerMessageFactory(organizer=self.organizer)
+        self.organizer_message_student = OrganizerMessageStudentRelationFactory.create_batch(
+            size=3,
+            organizer_message = self.organizer_message)
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_run(self, send_mail):
+        emails = [oms.student.user.email for oms in self.organizer_message_student]
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        } for email in emails]
+
+        task = SendEmailMessageNotificationTask()
+        task_id = task.delay(
+            organizer_message_id=self.organizer_message.id)
+
+        context = {
+            'organizer': self.organizer.name,
+            'url': '{base}student/dashboard/messages/'.format(base=settings.FRONT_SERVER_URL)
+        }
+
+        for messages in self.organizer_message_student:
+            data = {**context, 'name': messages.student.user.first_name}
+            self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=messages.student.user.email,
+                status='sent',
+                template_name='messages/email/student_notification.html',
+                data=data
+            ).exists())
+
+
+class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
+    def setUp(self):
+        self.organizer_message = OrganizerMessageFactory()
+        self.calendar = CalendarFactory(activity__organizer=self.organizer_message.organizer)
+        self.assistants = AssistantFactory.create_batch(
+            size=3,
+            order__calendar=self.calendar,
+            order__status=Order.ORDER_APPROVED_STATUS,
+            enrolled=True)
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_run(self, send_mail):
+        emails = [a.email for a in self.assistants]
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None,
+        } for email in emails]
+
+        task = SendEmailOrganizerMessageAssistantsTask()
+        task_id = task.delay(
+            organizer_message_id=self.organizer_message.id,
+            calendar_id=self.calendar.id)
+
+        context = {
+            'organizer': self.organizer_message.organizer.name,
+            'message': self.organizer_message.message,
+        }
+
+        for assistant in self.assistants:
+            data = {**context, 'name': assistant.first_name}
+            self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=assistant.email,
+                status='sent',
+                template_name='messages/email/assistant_message.html',
+                data=data
+            ).exists())

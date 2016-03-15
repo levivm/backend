@@ -1,3 +1,4 @@
+from celery import group
 from django.utils.translation import ugettext as _
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView
@@ -7,6 +8,8 @@ from activities.models import Calendar
 from messages.models import OrganizerMessageStudentRelation
 from messages.permissions import IsOrganizerOrReadOnly
 from messages.serializers import OrganizerMessageSerializer
+from messages.tasks import SendEmailMessageNotificationTask, \
+    SendEmailOrganizerMessageAssistantsTask
 from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
 
@@ -41,6 +44,13 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
     def perform_create(self, serializer):
         organizer_message = serializer.save()
         self.related_to_students(organizer_message)
+        notification_task = SendEmailMessageNotificationTask()
+        send_email_task = SendEmailOrganizerMessageAssistantsTask()
+        group(
+            notification_task.s(organizer_message_id=organizer_message.id),
+            send_email_task.s(organizer_message_id=organizer_message.id,
+                              calendar_id=self.calendar.id)
+        )()
 
     def related_to_students(self, organizer_message):
         students = [o.student for o in self.calendar.orders.available()]

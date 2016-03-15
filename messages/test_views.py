@@ -1,3 +1,4 @@
+import mock
 from django.core.urlresolvers import reverse
 from rest_framework import status
 
@@ -23,7 +24,9 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
             student=self.student,
         )
 
-    def test_create(self):
+    @mock.patch('messages.tasks.SendEmailOrganizerMessageAssistantsTask.s')
+    @mock.patch('messages.tasks.SendEmailMessageNotificationTask.s')
+    def test_create(self, notification_subtask, message_subtask):
         # Anonymous shouldn't be able to create a message
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -44,6 +47,10 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         organizer_message = OrganizerMessage.objects.get(id=response.json()['id'])
         self.assertEqual(list(organizer_message.students.all()),
                          [o.student for o in self.orders])
+        notification_subtask.assert_called_with(organizer_message_id=organizer_message.id)
+        message_subtask.assert_called_with(
+            organizer_message_id=organizer_message.id,
+            calendar_id = self.calendar.id)
 
     def test_list(self):
         # Anonymous shouldn't be able to create a message
