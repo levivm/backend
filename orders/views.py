@@ -10,10 +10,11 @@ from orders.models import Refund
 from orders.serializers import RefundSerializer
 from referrals.models import Coupon
 from users.mixins import UserTypeMixin
+from activities.models import Activity
 from .models import Order
 from .mixins import ProcessPaymentMixin
-from activities.models import Activity
 from .serializers import OrdersSerializer
+from .searchs import OrderSearchEngine
 from utils.paginations import SmallResultsSetPagination, MediumResultsSetPagination
 from utils.permissions import IsOrganizer
 
@@ -35,7 +36,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         calendar = self.get_calendar(request)
         if calendar.is_free:
-            request.data.update({'is_free':True})
+            request.data.update({'is_free': True})
         self.student = self.get_student(user=request.user)
         serializer = self.get_serializer(data=request.data)
         activity = self.get_activity(**kwargs)
@@ -63,7 +64,6 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
         orders = activity.get_orders()
         serializer = self.get_serializer(orders, many=True)
-        # serializer.context.update({'show_token':True})
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
@@ -75,7 +75,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
             if order.student != student:
                 raise Http404
         except PermissionDenied:
-            organizer = self.get_organizer(user=request.user, exception=PermissionDenied) 
+            organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
             if order.get_organizer() != organizer:
                 raise Http404
 
@@ -84,18 +84,26 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
     def list_by_student(self, request, *args, **kwargs):
         student = self.get_student(user=request.user, exception=PermissionDenied)
-        orders = student.orders.all()
-        serializer = self.get_serializer(orders, many=True)
+        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
+                                    'quantity', 'activity_id', 'lastest_refund']}
+        search = OrderSearchEngine()
+        filter_query = search.filter_query(request.query_params)        
+        orders = search.get_by_student(student, filter_query)
+        page = self.paginate_queryset(orders)
+        if page is not None:
+            serializer = OrdersSerializer(page, many=True, **params)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(orders, many=True, **params)
         return Response(serializer.data)
 
     def list_by_organizer(self, request, *args, **kwargs):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
-        params = {'remove_fields' : ['calendar', 'assistants','payment','coupon', 'student',
-                                     'quantity','activity_id', 'lastest_refund']}
-
-        orders = Order.objects.select_related('calendar__activity', 'fee', 'student')\
-            .prefetch_related('refunds')\
-            .filter(calendar__activity__organizer=organizer)
+        params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
+                                    'quantity', 'activity_id', 'lastest_refund']}
+        search = OrderSearchEngine()
+        filter_query = search.filter_query(request.query_params)
+        orders = search.get_by_organizer(organizer, filter_query)
 
         page = self.paginate_queryset(orders)
         if page is not None:

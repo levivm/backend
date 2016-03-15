@@ -6,6 +6,7 @@ from datetime import datetime,date
 from functools import reduce
 from random import Random
 
+from django.db.models import Q
 from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
@@ -18,6 +19,7 @@ from utils.behaviors import Updateable
 from utils.mixins import AssignPermissionsMixin, ImageOptimizable
 from utils.models import CeleryTaskEditActivity
 from . import constants
+from .queryset import ActivityQuerySet
 
 
 class Category(models.Model):
@@ -62,7 +64,6 @@ class Tags(models.Model):
 
 class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
-
     LEVEL_CHOICES = (
         (constants.LEVEL_P, _('Principiante')),
         (constants.LEVEL_I, _('Intermedio')),
@@ -101,6 +102,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
+    last_date = models.DateField(null=True)
+
+    objects = ActivityQuerySet.as_manager()
+
 
     def __str__(self):
         return self.title
@@ -167,6 +172,14 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
+    def set_last_date(self,last_session):
+        new_last_date = last_session.get('date')
+        if new_last_date is not None or self.last_date is not None:
+            self.last_date = new_last_date if  not self.last_date or \
+                             self.last_date < new_last_date else self.last_date
+            self.save(update_fields=['last_date'])
+
+
     def last_sale_date(self):
         dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
         if not dates:
@@ -174,16 +187,29 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         return sorted(dates, reverse=True)[0]
 
-    @cached_property
-    def closest_calendar(self):
+    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None):
         today = date.today()
         closest = None
-        if self.calendars.count():
-            calendars = [c for c in self.calendars.all() if c.initial_date.date() >= today]
+        query = Q()
+        if cost_start is not None and cost_end is not None:
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                query &= Q(session_price__gte=(cost_start))
+            else:
+                query &= Q(session_price__range=(cost_start, cost_end))
+
+        if initial_date is not None:
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
+            query = query & Q(initial_date__gte=initial_date)
+
+        calendars = self.calendars.filter(query)
+
+        if calendars:
+            calendars = [c for c in calendars if c.initial_date.date() >= today]
             if calendars:
                 closest = sorted(calendars, key=lambda c: c.initial_date)[0]
             else:
-                calendars = [c for c in self.calendars.all() if c.initial_date.date() < today]
+                calendars = [c for c in calendars if c.initial_date.date() < today]
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
 
@@ -319,7 +345,8 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         return self.capacity - self.num_enrolled
 
     def get_assistants(self):
-        return [a for o in self.orders.all() if o.status == 'approved' or o.status == 'pending' for a in
+        orders_qs = self.orders.all()
+        return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
                 o.assistants.all() if a.enrolled]
 
 

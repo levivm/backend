@@ -18,11 +18,11 @@ class Command(BaseCommand):
         return [
             {
                 "name": "Bogotá",
-                "point": "POINT(-74.0760867 4.5980478)"
+                "point": "POINT(4.5980478 -74.0760867)"
             },
             {
                 "name": "Barranquilla",
-                "point": "POINT(-74.7957384 10.979932)"
+                "point": "POINT(10.979932 -74.7957384)"
             },
 
         ]

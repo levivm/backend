@@ -187,7 +187,7 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
             'activity': {
                 'cover_url': cover.photo.url,
                 'title': self.activity.title,
-                'initial_date': self.activity.closest_calendar.initial_date,
+                'initial_date': self.activity.closest_calendar().initial_date,
             },
             'category': {
                 'color': self.activity.sub_category.category.color,
@@ -199,7 +199,7 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
                 'city': organizer_city,
             },
             'rating': rating,
-            'duration': self.activity.closest_calendar.duration // 3600,
-            'price': self.activity.closest_calendar.session_price,
+            'duration': self.activity.closest_calendar().duration // 3600,
+            'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }
