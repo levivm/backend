@@ -21,6 +21,7 @@ class CitiesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = City
+        geo_field = "point"
         fields = (
             'id',
             'name',

@@ -1,21 +1,26 @@
-from _ast import Is
 from django.shortcuts import render, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
+
 
 from activities.mixins import ActivityCardMixin
 from activities.models import Activity
 from activities.permissions import IsActivityOwner
 
+
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer, ActivitiesCardSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
-from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer, \
+                              UnpublishedActivitiesOnlyForOwner
+from utils.paginations import SmallResultsSetPagination
+
 from .models import Organizer
 from .serializers import OrganizersSerializer, InstructorsSerializer
 from .permissions import IsCurrentUserSameOrganizer
@@ -31,16 +36,32 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
     """
     queryset = Organizer.objects.all()
     serializer_class = OrganizersSerializer
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly,)
+    pagination_class = SmallResultsSetPagination
+    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, \
+                          UnpublishedActivitiesOnlyForOwner)
     lookup_url_kwarg = 'organizer_pk'
 
     def activities(self, request, **kwargs):
         organizer = self.get_object()
-        activities = organizer.activity_set.select_related(*self.select_related).\
-            prefetch_related(*self.prefetch_related).all()
-        data = ActivitiesSerializer(activities, many=True,
-                                    context=self.get_serializer_context()).data
-        return Response(data)
+        status = request.query_params.get('status')
+        activities = organizer.get_activities_by_status(status)
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = ActivitiesSerializer(page, many=True,
+                                              context=self.get_serializer_context())
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ActivitiesSerializer(activities, many=True, 
+                                          context=self.get_serializer_context())
+        result = serializer.data
+        return Response(result)
+
+    def activities_autocomplete(self, request, **kwargs):
+        organizer = self.get_object()
+        activities = organizer.activity_set.all()
+        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+        return Response(serializer.data)
+
 
 
 class OrganizerLocationViewSet(viewsets.ModelViewSet):
@@ -60,12 +81,12 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
         location_data['organizer'] = organizer.id
 
         location_serializer = LocationsSerializer(data=location_data,
-                                                  context={'request': request, 'organizer_location': True})
+                                                  context={'request': request,
+                                                           'organizer_location': True})
         if location_serializer.is_valid(raise_exception=True):
             organizer.locations.all().delete()
             location = location_serializer.save()
             organizer.locations.add(location)
-
         return Response(location_serializer.data)
 
 

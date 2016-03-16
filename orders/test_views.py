@@ -127,9 +127,9 @@ class OrdersAPITest(BaseAPITestCase):
 
         # List order owned by a student
         response = self.student_client.get(self.orders_by_student_url)
-        orders_owner = response.data[0].get('student').get('id')
+        orders_owner = response.data['results'][0].get('student').get('id')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), self.student_orders_count)
+        self.assertEqual(len(response.data['results']), self.student_orders_count)
         self.assertEqual(orders_owner, self.student.id)
 
     def test_list_by_organizer(self):

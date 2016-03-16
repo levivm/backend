@@ -13,7 +13,7 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from activities.mixins import CalculateActivityScoreMixin, ListUniqueOrderedElementsMixin, \
+from activities.mixins import ActivityMixin, \
     ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
@@ -21,7 +21,7 @@ from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
     SendEmailShareActivityTask
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
-from utils.paginations import MediumResultsSetPagination, SmallResultsSetPagination
+from utils.paginations import SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
@@ -66,11 +66,14 @@ class CalendarViewSet(viewsets.ModelViewSet):
         return result
 
 
-class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
+class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     serializer_class = ActivitiesSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwnerOrReadOnly)
     lookup_url_kwarg = 'activity_pk'
+
+    def get_queryset(self):
+        return Activity.objects.prefetch_related(*self.prefetch_related_fields)\
+                               .select_related(*self.select_related_fields).all()
 
     def partial_update(self, request, *args, **kwargs):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
@@ -121,7 +124,7 @@ class ActivitiesViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
         return Response(status.HTTP_200_OK)
 
 
-class ActivityPhotosViewSet(CalculateActivityScoreMixin, viewsets.ModelViewSet):
+class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
     model = ActivityPhoto
     serializer_class = ActivityPhotosSerializer
     permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, IsActivityOwner)
@@ -254,25 +257,19 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
         query = search.get_query(q, self.query)
 
-        activities = Activity.objects.select_related(*self.select_related)\
-            .prefetch_related(*self.prefetch_related)
+        activities = Activity.objects.select_related(*self.select_related_fields)\
+            .prefetch_related(*self.prefetch_related_fields)
 
         if query:
             activities = activities.filter(query, filters).distinct()
         else:
-            activities = activities.filter(filters)
+            activities = activities.filter(filters).distinct()
 
         if 'closest' in order:
-            activities = activities.extra(select={
-                    'closest':
-                        'SELECT "activities_calendar"."initial_date" '
-                        'FROM "activities_calendar" '
-                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
-                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'})
+            extra_q = search.extra_query(request.query_params)
+            activities = activities.extra(**extra_q) if extra_q else activities
 
         activities = activities.order_by(*order)
-
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

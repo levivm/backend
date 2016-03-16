@@ -47,7 +47,6 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
     @classmethod
     def get_by_email(cls, email):
-        
         if not email:
             return None
         try:

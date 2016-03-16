@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # "Content-Type: text/plain; charset=UTF-8\n"
 
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 from rest_framework import serializers, exceptions
@@ -17,6 +18,18 @@ class UsersSerializer(serializers.ModelSerializer):
             'email',
         )
 
+    def validate_first_name(self, value):
+        if not value:
+            _msg = _("Este campo es requerido")
+            raise serializers.ValidationError(_msg)
+        return value
+
+    def validate_last_name(self, value):
+        if not value:
+            _msg = _("Este campo es requerido")
+            raise serializers.ValidationError(_msg)
+        return value
+
 
 class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
     class Meta:
@@ -26,7 +39,7 @@ class OrganizerConfirmationsSerializers(serializers.ModelSerializer):
 class RequestSignUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestSignup
-        
+
     def create(self, validated_data):
         validated_data['approved'] = False
         return super(RequestSignUpSerializer, self).create(validated_data)

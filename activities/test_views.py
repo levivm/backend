@@ -4,6 +4,7 @@ import datetime
 import json
 import tempfile
 import time
+import mock
 from datetime import timedelta
 from itertools import cycle
 
@@ -658,7 +659,7 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 
     def get_data_to_update(self):
         return {
-            'point': 'POINT(1 2)',
+            'point': [4, -74],
             'address': 'Calle falsa 123',
             'city': 1
         }
@@ -708,7 +709,7 @@ class UpdateActivityLocationViewTest(BaseViewTest):
 
 class SearchActivitiesViewTest(BaseAPITestCase):
     def _get_activities_ordered(self, queryset=Activity.objects.all(), order_by=None):
-        order = order_by or ('-score', 'calendars__initial_date')
+        order = order_by or ('-score',)
         return queryset.order_by(*order)
 
     def unique(self, array):
@@ -868,7 +869,8 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], [])
 
     def test_pagination(self):
-        ActivityFactory.create_batch(50, location=self.location, published=True)
+        scores = factory.Iterator(range(100))
+        ActivityFactory.create_batch(50, location__city=self.city, published=True, score=scores)
         response = self.client.get(self.url, data={'city': self.city.id})
         activities = self._get_activities_ordered(
                 queryset=Activity.objects.filter(location__city=self.city, published=True))
@@ -907,14 +909,25 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_closest_order(self):
+        data = {
+            'cost_start': self.price,
+            'cost_end': self.price + 100000,
+            'q': self.query_keyword,
+            'o': 'closest'
+        }
         self.create_calendars()
-        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'closest'})
+        response = self.client.get(self.url, data=data)
         activities = Activity.objects.filter(title__icontains=self.query_keyword)
         unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc)
         activities = sorted(activities,
                             key=lambda
-                                a: a.closest_calendar.initial_date if a.closest_calendar else unix_epoch)
-        serializer = ActivitiesCardSerializer(activities, many=True)
+                                a: a.closest_calendar().initial_date if a.closest_calendar() else unix_epoch)
+        request = mock.MagicMock()
+        request.query_params = {
+                'cost_start': self.price,
+                'cost_end': self.price + 100000,
+            }
+        serializer = ActivitiesCardSerializer(activities, many=True,context={'request':request})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
