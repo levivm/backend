@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-# "Content-Type: text/plain; charset=UTF-8\n"
-from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import status
-from rest_framework import viewsets, exceptions
+from rest_framework import viewsets
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,8 +14,7 @@ from students.models import Student
 from students.serializer import StudentsSerializer
 from utils.form_utils import ajax_response
 from utils.forms import FileUploadForm
-from .models import RequestSignup, OrganizerConfirmation
-from .serializers import RequestSignUpSerializer, UsersSerializer
+from .serializers import UsersSerializer
 
 
 def _set_ajax_response(_super):
@@ -48,11 +43,6 @@ sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters('password', 'password1', 'password2'))
 
 
-class RequestSignupViewSet(viewsets.ModelViewSet):
-    queryset = RequestSignup.objects.all()
-    serializer_class = RequestSignUpSerializer
-
-
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
@@ -66,18 +56,6 @@ class UsersViewSet(viewsets.ModelViewSet):
         data = get_user_profile_data(user)
 
         return Response(data)
-
-    def verify_organizer_pre_signup_key(self, request, key):
-        oc = get_object_or_404(OrganizerConfirmation, key=key)
-
-        if oc.used:
-            msg = _('Token de confirmacion ha sido usado')
-            raise exceptions.ValidationError(msg)
-
-        request_signup = oc.requested_signup
-        request_signup_data = RequestSignUpSerializer(request_signup).data
-
-        return Response(request_signup_data, status=status.HTTP_200_OK)
 
 
 class PhotoUploadView(APIView):
