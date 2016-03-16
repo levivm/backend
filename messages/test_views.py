@@ -39,7 +39,7 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         data = {
             'subject': 'Asunto del mensaje',
             'message': 'Mensaje',
-            'calendar_id': self.calendar.id,
+            'calendar': self.calendar.id,
         }
         response = self.organizer_client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -48,9 +48,7 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         self.assertEqual(list(organizer_message.students.all()),
                          [o.student for o in self.orders])
         notification_subtask.assert_called_with(organizer_message_id=organizer_message.id)
-        message_subtask.assert_called_with(
-            organizer_message_id=organizer_message.id,
-            calendar_id = self.calendar.id)
+        message_subtask.assert_called_with(organizer_message_id=organizer_message.id)
 
     def test_list(self):
         # Anonymous shouldn't be able to create a message

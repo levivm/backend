@@ -51,8 +51,9 @@ class SendEmailMessageNotificationTaskTest(APITestCase):
 
 class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
     def setUp(self):
-        self.organizer_message = OrganizerMessageFactory()
-        self.calendar = CalendarFactory(activity__organizer=self.organizer_message.organizer)
+        self.organizer = OrganizerFactory()
+        self.calendar = CalendarFactory(activity__organizer=self.organizer)
+        self.organizer_message = OrganizerMessageFactory(calendar=self.calendar)
         self.assistants = AssistantFactory.create_batch(
             size=3,
             order__calendar=self.calendar,
@@ -70,8 +71,7 @@ class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
 
         task = SendEmailOrganizerMessageAssistantsTask()
         task_id = task.delay(
-            organizer_message_id=self.organizer_message.id,
-            calendar_id=self.calendar.id)
+            organizer_message_id=self.organizer_message.id)
 
         context = {
             'organizer': self.organizer_message.organizer.name,

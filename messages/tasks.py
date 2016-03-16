@@ -32,9 +32,9 @@ class SendEmailMessageNotificationTask(SendEmailTaskMixin):
 
 
 class SendEmailOrganizerMessageAssistantsTask(SendEmailTaskMixin):
-    def run(self, organizer_message_id, calendar_id, *args, **kwargs):
+    def run(self, organizer_message_id, *args, **kwargs):
         self.organizer_message = OrganizerMessage.objects.get(id=organizer_message_id)
-        self.calendar = Calendar.objects.get(id=calendar_id)
+        self.calendar = self.organizer_message.calendar
         self.template_name = 'messages/email/assistant_message.html'
         self.emails = self.get_emails()
         self.subject = self.organizer_message.subject
