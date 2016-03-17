@@ -1,9 +1,10 @@
 from celery import group
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, RetrieveDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from messages.models import OrganizerMessageStudentRelation, OrganizerMessage
-from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage
+from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage, \
+    CanDeleteOrganizerMessageRelation
 from messages.serializers import OrganizerMessageSerializer
 from messages.tasks import SendEmailMessageNotificationTask, \
     SendEmailOrganizerMessageAssistantsTask
@@ -56,7 +57,17 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
                 student=student)
 
 
-class DetailOrganizerMessageView(RetrieveAPIView):
+class RetrieveDestroyOrganizerMessageView(RetrieveDestroyAPIView):
     serializer_class = OrganizerMessageSerializer
-    permission_classes = (IsAuthenticated, CanRetrieveOrganizerMessage)
+    permission_classes = (IsAuthenticated, CanRetrieveOrganizerMessage,
+                          CanDeleteOrganizerMessageRelation)
     queryset = OrganizerMessage.objects.all()
+
+    def perform_destroy(self, instance):
+        try:
+            relation = instance.organizermessagestudentrelation_set.get(
+                student=self.request.user.student_profile)
+        except OrganizerMessageStudentRelation.DoesNotExist:
+            pass
+        else:
+            relation.delete()

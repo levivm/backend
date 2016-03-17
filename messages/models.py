@@ -20,6 +20,7 @@ class OrganizerMessage(AssignPermissionsMixin, models.Model):
     class Meta:
         permissions = (
             ('retrieve_message', 'Can retrieve a message'),
+            ('delete_message', 'Can delete a message'),
         )
 
     def save(self, *args, **kwargs):
@@ -33,7 +34,7 @@ class OrganizerMessageStudentRelation(AssignPermissionsMixin, models.Model):
     student = models.ForeignKey(Student)
     read = models.BooleanField(default=False)
 
-    permissions = ['trulii_messages.retrieve_message']
+    permissions = ['trulii_messages.retrieve_message', 'trulii_messages.delete_message']
 
     def save(self, *args, **kwargs):
         super(OrganizerMessageStudentRelation, self).save(

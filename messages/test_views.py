@@ -4,7 +4,7 @@ from rest_framework import status
 
 from activities.factories import CalendarFactory
 from messages.factories import OrganizerMessageFactory, OrganizerMessageStudentRelationFactory
-from messages.models import OrganizerMessage
+from messages.models import OrganizerMessage, OrganizerMessageStudentRelation
 from messages.serializers import OrganizerMessageSerializer
 from orders.factories import OrderFactory
 from orders.models import Order
@@ -48,8 +48,10 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         organizer_message = OrganizerMessage.objects.get(id=response.json()['id'])
         self.assertEqual(list(organizer_message.students.all()), students)
         self.assertTrue(self.organizer.user.has_perm('retrieve_message', organizer_message))
+        self.assertFalse(self.organizer.user.has_perm('delete_message', organizer_message))
         for student in students:
             self.assertTrue(student.user.has_perm('retrieve_message', organizer_message))
+            self.assertTrue(student.user.has_perm('delete_message', organizer_message))
         notification_subtask.assert_called_with(organizer_message_id=organizer_message.id)
         message_subtask.assert_called_with(organizer_message_id=organizer_message.id)
 
@@ -73,15 +75,15 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
                          OrganizerMessageSerializer([self.organizer_messages[0]], many=True).data)
 
 
-class DetailOrganizerMessageViewTest(BaseAPITestCase):
+class RetrieveDestroyOrganizerMessageViewTest(BaseAPITestCase):
 
     def setUp(self):
-        super(DetailOrganizerMessageViewTest, self).setUp()
+        super(RetrieveDestroyOrganizerMessageViewTest, self).setUp()
         self.organizer_message = OrganizerMessageFactory(organizer=self.organizer)
         self.organizer_message_relation = OrganizerMessageStudentRelationFactory(
             organizer_message=self.organizer_message,
             student=self.student)
-        self.url = reverse('messages:detail', args=[self.organizer_message.id])
+        self.url = reverse('messages:retrieve_and_destroy', args=[self.organizer_message.id])
 
     def test_retrieve(self):
         # Anonymous shouldn't be able to retrieve an organizer message
@@ -105,3 +107,24 @@ class DetailOrganizerMessageViewTest(BaseAPITestCase):
         # Another organizer shouldn't be allowed to get the data
         response = self.another_organizer_client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy(self):
+        # Anonymous should get unauthorized response
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer shouldn't be allowed to delete a message
+        response = self.organizer_client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Another student shouldn't be allowed to delete a message
+        response = self.another_student_client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should be allowed to delete an organizer message relation
+        response = self.student_client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(OrganizerMessage.objects.filter(
+            id=self.organizer_message.id).exists())
+        self.assertFalse(OrganizerMessageStudentRelation.objects.filter(
+            id=self.organizer_message_relation.id).exists())
