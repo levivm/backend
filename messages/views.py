@@ -1,9 +1,9 @@
 from celery import group
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from messages.models import OrganizerMessageStudentRelation
-from messages.permissions import IsOrganizerOrReadOnly
+from messages.models import OrganizerMessageStudentRelation, OrganizerMessage
+from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage
 from messages.serializers import OrganizerMessageSerializer
 from messages.tasks import SendEmailMessageNotificationTask, \
     SendEmailOrganizerMessageAssistantsTask
@@ -50,9 +50,13 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
     def related_to_students(self, organizer_message):
         students = [o.student for o in organizer_message.calendar.orders.available()]
 
-        objects = [OrganizerMessageStudentRelation(
-            organizer_message=organizer_message,
-            student=student
-        ) for student in students]
+        for student in students:
+            OrganizerMessageStudentRelation.objects.create(
+                organizer_message=organizer_message,
+                student=student)
 
-        OrganizerMessageStudentRelation.objects.bulk_create(objects)
+
+class DetailOrganizerMessageView(RetrieveAPIView):
+    serializer_class = OrganizerMessageSerializer
+    permission_classes = (IsAuthenticated, CanRetrieveOrganizerMessage)
+    queryset = OrganizerMessage.objects.all()

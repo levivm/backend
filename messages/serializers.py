@@ -39,11 +39,9 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
 
     def get_organizer(self, obj):
         try:
-            obj.organizer.photo.file
+            photo = obj.organizer.photo.url
         except ValueError:
             photo = None
-        else:
-            photo = obj.organizer.photo
 
         return {
             'id': obj.organizer.id,

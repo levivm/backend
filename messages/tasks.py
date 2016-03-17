@@ -19,7 +19,9 @@ class SendEmailMessageNotificationTask(SendEmailTaskMixin):
         base_url = settings.FRONT_SERVER_URL
         return {
             'organizer': self.organizer_message.organizer.name,
-            'url': '{base}student/dashboard/messages/'.format(base=base_url)
+            'url': '{base}student/dashboard/messages/{id}'.format(
+                base=base_url,
+                id=self.organizer_message.id)
         }
 
     def get_recipient_data(self):

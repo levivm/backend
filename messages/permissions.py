@@ -10,3 +10,8 @@ class IsOrganizerOrReadOnly(permissions.BasePermission):
             return True
 
         return isinstance(request.user.get_profile(), Organizer)
+
+
+class CanRetrieveOrganizerMessage(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm('trulii_messages.retrieve_message', obj)

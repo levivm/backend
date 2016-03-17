@@ -35,7 +35,9 @@ class SendEmailMessageNotificationTaskTest(APITestCase):
 
         context = {
             'organizer': self.organizer.name,
-            'url': '{base}student/dashboard/messages/'.format(base=settings.FRONT_SERVER_URL)
+            'url': '{base}student/dashboard/messages/{id}'.format(
+                base=settings.FRONT_SERVER_URL,
+                id=self.organizer_message.id)
         }
 
         for messages in self.organizer_message_student:
