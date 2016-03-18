@@ -162,7 +162,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
         assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context,
-                                                    remove_fields=['lastest_refund', 'student'])
+                                                    remove_fields=['student'])
         return assistants_serialzer.data
 
     def get_available_capacity(self, obj):

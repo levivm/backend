@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
-from orders.models import Order, Assistant, Refund
-from orders.tasks import SendEMailStudentRefundTask
+from orders.models import Order, Assistant
 from organizers.models import Organizer
 from payments.models import Fee
 from payments.serializers import PaymentSerializer
@@ -18,6 +16,9 @@ class AssistantTokenField(serializers.SerializerMethodField):
     """
     Show assistant token if the current user is the order owner
     """
+
+    def to_internal_value(self, data):
+        pass
 
     def to_representation(self, obj):
         request = self.context.get('request')
@@ -36,29 +37,11 @@ class AssistantTokenField(serializers.SerializerMethodField):
 class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     token = AssistantTokenField(read_only=True)
-    lastest_refund = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
     order = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def get_full_name(self, obj):
         return "{} {}".format(obj.first_name, obj.last_name)
-
-    def get_lastest_refund(self, obj):
-        try:
-            request = self.context.get('request')
-            refund = obj.refunds.latest('id')
-            requested_by_me = False
-            if request and request.user:
-                requested_by_me = refund.user == request.user
-
-            return {
-                'status': refund.get_status_display(),
-                'requested_by_me': requested_by_me
-            }
-        except Refund.DoesNotExist:
-            return None
-
-        return None
 
     class Meta:
         model = Assistant
@@ -70,7 +53,6 @@ class AssistantsSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'email',
             'student',
             'order',
-            'lastest_refund',
             'token'
         )
 
@@ -90,9 +72,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentSerializer(read_only=True)
     fee = serializers.SerializerMethodField(read_only=True)
-    lastest_refund = serializers.SerializerMethodField()
     coupon = serializers.SerializerMethodField()
-    total_refunds_amount = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
 
     class Meta:
@@ -113,8 +93,6 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'fee',
             'is_free',
             'total',
-            'lastest_refund',
-            'total_refunds_amount',
             'total_without_coupon',
             'coupon',
         )
@@ -124,24 +102,6 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'id': obj.calendar.activity.id,
             'name': obj.calendar.activity.title
         }
-
-    def get_total_refunds_amount(self, obj):
-        request = self.context.get('request')
-        amount = obj.total_refunds_amount
-        if request and request.user:
-            profile = request.user.get_profile()
-            if isinstance(profile, Organizer):
-                amount = obj.total_refunds_amount_without_coupon
-
-        return amount
-
-    def get_lastest_refund(self, obj):
-        try:
-            refund = obj.refunds.filter(assistant__isnull=True).latest('id')
-            return RefundSerializer(refund,
-                    remove_fields=['order', 'activity', 'assistant', 'user', 'amount']).data
-        except Refund.DoesNotExist:
-            return None
 
     def get_activity_id(self, obj):
         return obj.calendar.activity.id
@@ -162,7 +122,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         if obj.coupon:
             return {
                 'amount': obj.coupon.coupon_type.amount,
-                'code':obj.coupon.token
+                'code': obj.coupon.token
             }
         return None
 
@@ -177,7 +137,8 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             count_assistants = 1
 
         if quantity != count_assistants:
-            raise serializers.ValidationError(_('La cantidad de cupos no coincide con la cantidad de asistentes'))
+            raise serializers.ValidationError(_('La cantidad de cupos no coincide con la '
+                                                'cantidad de asistentes'))
 
         return quantity
 
@@ -230,109 +191,3 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         task = ReferrerCouponTask()
         task.delay(student_id=student.id, order_id=order.id)
         return order
-
-
-class RefundAssistantField(serializers.PrimaryKeyRelatedField):
-    def to_representation(self, value):
-        if not value.pk:
-            return None
-        assistant = self.queryset.get(id=value.pk)
-        return AssistantsSerializer(assistant,
-                                    remove_fields=['email', 'student', 'token', 'lastest_refund']).data
-
-
-class RefundSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
-    activity = serializers.SerializerMethodField()
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),
-                                              write_only=True)
-    assistant = RefundAssistantField(allow_null=True,
-                                     queryset=Assistant.objects.all(), default=None)
-    status = serializers.SerializerMethodField()
-    requested_by_me = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Refund
-        fields = (
-            'id',
-            'order',
-            'activity',
-            'created_at',
-            'amount',
-            'status',
-            'user',
-            'requested_by_me',
-            'assistant',
-        )
-
-    def get_status(self, obj):
-        return obj.get_status_display()
-
-    def get_activity(self, obj):
-        return {
-            'title': obj.order.calendar.activity.title,
-            'id': obj.order.calendar.activity.id
-        }
-
-    def get_amount(self,obj):
-        
-        request = self.context.get('request')
-        amount = obj.amount
-        if request and request.user:
-            profile = request.user.get_profile()
-            if isinstance(profile, Organizer):
-                amount = obj.amount_without_coupon
-        return amount
-
-    def get_requested_by_me(self,obj):
-        request = self.context.get('request')
-
-        if request and request.user:
-            return obj.user == request.user
-        return False
-
-    def validate_order(self, order):
-        if order.status != Order.ORDER_APPROVED_STATUS:
-            raise serializers.ValidationError(_('La orden debe estar aprobada'))
-
-        return order
-
-    def validate(self, data):
-        order = data.get('order')
-        assistant = data.get('assistant')
-        user = data.get('user')
-
-        if user:
-            profile = user.get_profile()
-            # Raise error if the order doesn't belong to the student
-            if isinstance(profile, Student):
-                if order.student != profile:
-                    raise serializers.ValidationError(_('La orden no pertenece a este usuario.'))
-
-            elif isinstance(profile, Organizer):
-                if order.calendar.activity.organizer != profile:
-                    raise serializers.ValidationError(_('La orden no pertenece a una actividad de este usuario.'))
-
-        # Doesn't allow to create if the assistant doesn't belong to the order
-        if assistant:
-            if assistant.order != order:
-                raise serializers.ValidationError(_('El asistente no pertenece a esa orden.'))
-
-            if Refund.objects.filter(order=order, assistant__isnull=True).exists():
-                raise serializers.ValidationError(_('No se puede crear un reembolso de orden '
-                                                    'porque ya existe un reembolso de orden '
-                                                    'para esta misma orden'))
-        else:
-            if Refund.objects.filter(order=order, assistant__isnull=False).exists():
-                raise serializers.ValidationError(_('No se puede crear un reembolso de asistente '
-                                                    'porque ya existe un reembolso de asistente '
-                                                    'para esta misma orden'))
-
-        return data
-
-    def create(self, validated_data):
-        validated_data['status'] = 'pending'
-        instance = super(RefundSerializer, self).create(validated_data)
-        task = SendEMailStudentRefundTask()
-        task.delay(instance.id)
-        return instance

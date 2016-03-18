@@ -1,7 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch.dispatcher import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
@@ -44,36 +42,12 @@ class Order(models.Model):
 
     @cached_property
     def total(self):
-        _amount = self.get_total(self.student) - self.total_refunds_amount
+        _amount = self.get_total(self.student)
         return _amount if _amount > 0 else 0
 
     @cached_property
-    def total_refunds_amount(self):
-        # Substract approved refunds amounts
-        amount = 0
-        if self.refunds.exists():
-            approved_refunds = self.refunds.filter(status=Refund.APPROVED_STATUS)
-
-            refunds_total = sum(map(lambda x: x.amount, approved_refunds))
-            amount += refunds_total
-
-        return amount
-
-    @cached_property
-    def total_refunds_amount_without_coupon(self):
-        # Substract approved refunds amounts
-        amount = 0
-        if self.refunds.exists():
-            approved_refunds = self.refunds.filter(status=Refund.APPROVED_STATUS)
-
-            refunds_total = sum(map(lambda x: x.amount_without_coupon, approved_refunds))
-            amount += refunds_total
-
-        return amount
-
-    @cached_property
     def total_without_coupon(self):
-        return self.amount - self.total_refunds_amount_without_coupon
+        return self.amount
 
     def get_total(self, student):
         if self.coupon and self.coupon.redeem_set.filter(student=student, used=True).exists():
@@ -110,57 +84,3 @@ class Assistant(Tokenizable):
 
         if self.order.assistants.enrolled().count() == 0:
             self.order.change_status(Order.ORDER_CANCELLED_STATUS)
-
-
-class Refund(models.Model):
-    APPROVED_STATUS = 'approved'
-    PENDING_STATUS = 'pending'
-    DECLINED_STATUS = 'declined'
-
-    STATUS = (
-        (APPROVED_STATUS, _('Aprobado')),
-        (PENDING_STATUS, _('Pendiente')),
-        (DECLINED_STATUS, _('Rechazado')),
-    )
-
-    user = models.ForeignKey(User, related_name='refunds')
-    order = models.ForeignKey(Order, related_name='refunds')
-    assistant = models.ForeignKey(Assistant, blank=True, null=True, related_name='refunds')
-    status = models.CharField(choices=STATUS, max_length=10, default=PENDING_STATUS, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    response_at = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        unique_together = ('order', 'assistant')
-
-    def __str__(self):
-        return '%s: %s' % (self.user.username, self.order.id)
-
-    def save(self, *args, **kwargs):
-        if self.status == Refund.APPROVED_STATUS:
-            if self.assistant is None:
-                self.order.change_status(Order.ORDER_CANCELLED_STATUS)
-            else:
-                self.assistant.dismiss()
-
-        super(Refund, self).save(*args, **kwargs)
-
-    @cached_property
-    def amount_without_coupon(self):
-        amount = self.order.amount
-        if self.assistant:
-            amount /= self.order.quantity
-        return amount
-
-    @cached_property
-    def amount(self):
-        profile = self.user.get_profile()
-        if isinstance(profile, Student):
-            amount = self.order.get_total(profile)
-        else:
-            amount = self.order.amount
-
-        if self.assistant:
-            amount /= self.order.quantity
-
-        return amount

@@ -1,22 +1,18 @@
 from django.http import Http404
 from rest_framework import viewsets
-from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions, DjangoModelPermissions
+from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
 
-from orders.models import Refund
-from orders.serializers import RefundSerializer
+from activities.models import Activity
 from referrals.models import Coupon
 from users.mixins import UserTypeMixin
-from activities.models import Activity
-from .models import Order
+from utils.paginations import MediumResultsSetPagination
 from .mixins import ProcessPaymentMixin
-from .serializers import OrdersSerializer
+from .models import Order
 from .searchs import OrderSearchEngine
-from utils.paginations import SmallResultsSetPagination, MediumResultsSetPagination
-from utils.permissions import IsOrganizer
+from .serializers import OrdersSerializer
 
 
 class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
@@ -85,7 +81,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def list_by_student(self, request, *args, **kwargs):
         student = self.get_student(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
-                                    'quantity', 'activity_id', 'lastest_refund']}
+                                    'quantity', 'activity_id']}
         search = OrderSearchEngine()
         filter_query = search.filter_query(request.query_params)        
         orders = search.get_by_student(student, filter_query)
@@ -100,7 +96,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def list_by_organizer(self, request, *args, **kwargs):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
-                                    'quantity', 'activity_id', 'lastest_refund']}
+                                    'quantity', 'activity_id']}
         search = OrderSearchEngine()
         filter_query = search.filter_query(request.query_params)
         orders = search.get_by_organizer(organizer, filter_query)
@@ -112,25 +108,3 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
 
         serializer = self.get_serializer(orders, many=True, **params)
         return Response(serializer.data)
-
-
-class RefundCreateReadView(ListCreateAPIView):
-    serializer_class = RefundSerializer
-    permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    pagination_class = SmallResultsSetPagination
-
-    def get_queryset(self):
-        return self.request.user.refunds.all()
-
-    def create(self, request, *args, **kwargs):
-        request.data['user'] = request.user.id
-        return super(RefundCreateReadView, self).create(request, *args, **kwargs)
-
-
-class RefundReadOrganizerView(ListAPIView):
-    serializer_class = RefundSerializer
-    permission_classes = [IsAuthenticated, IsOrganizer]
-    pagination_class = SmallResultsSetPagination
-
-    def get_queryset(self):
-        return Refund.objects.filter(order__calendar__activity__organizer=self.request.user.get_profile())

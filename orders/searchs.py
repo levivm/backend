@@ -43,8 +43,7 @@ class OrderSearchEngine(object):
         return query
 
     def get_by_organizer(self, organizer, filter_query=None):
-        orders_q = Order.objects.select_related('calendar__activity', 'fee', 'student')\
-            .prefetch_related('refunds')
+        orders_q = Order.objects.select_related('calendar__activity', 'fee', 'student')
         if filter_query:
             orders = orders_q.filter(calendar__activity__organizer=organizer)\
                   .filter(filter_query)
@@ -55,8 +54,7 @@ class OrderSearchEngine(object):
 
     def get_by_student(self, student, filter_query=None):
 
-        orders_q = student.orders.select_related('calendar__activity', 'fee', 'student')\
-            .prefetch_related('refunds')
+        orders_q = student.orders.select_related('calendar__activity', 'fee', 'student')
 
         if filter_query:
             orders = orders_q.filter(filter_query)

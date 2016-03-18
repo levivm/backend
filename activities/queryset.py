@@ -7,9 +7,8 @@ class ActivityQuerySet(models.QuerySet):
 
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
     prefetch_related_fields = ['pictures', 'calendars__sessions', 'reviews__author__user',
-                               'calendars__orders__refunds',
                                'calendars__orders__student__user',
-                               'calendars__orders__assistants__refunds']
+                               'calendars__orders__assistants']
 
     def opened(self, *args, **kwargs):
         today = datetime.datetime.today().date()
