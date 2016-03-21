@@ -102,11 +102,11 @@ class Command(BaseCommand):
     def create_user_tokens(self):
         students = self.students
         for student in students:
-            Token.objects.create(user=user)
+            Token.objects.create(user=student.user)
 
         organizers = self.organizers
         for organizer in organizers:
-            Token.objects.create(user=user)
+            Token.objects.create(user=organizer.user)
 
     def create_city(self, city: str) -> Optional[City]:
         if city:
