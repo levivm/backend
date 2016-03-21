@@ -99,7 +99,7 @@ class Command(BaseCommand):
     def flat_list(iterable: list) -> list:
         return [item for sublist in iterable for item in sublist]
 
-    def create_user_tokens(user):
+    def create_user_tokens(self):
         students = self.students
         for student in students:
             Token.objects.create(user=user)
