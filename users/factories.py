@@ -19,7 +19,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
-    password = factory.Faker('password')
+    password = '19737450'
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

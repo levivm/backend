@@ -4,6 +4,8 @@ from typing import Optional, Any, List
 import factory
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from rest_framework.authtoken.models import Token
+
 
 from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
     CalendarSessionFactory
@@ -77,6 +79,9 @@ class Command(BaseCommand):
         # Reviews
         self.reviews = self.create_reviews()
 
+        # Users tokens
+        self.create_user_tokens()
+
     def ask_for_load_data(self, create_data: bool) -> None:
         if create_data:
             self.stdout.write('Creando data inicial')
@@ -93,6 +98,15 @@ class Command(BaseCommand):
     @staticmethod
     def flat_list(iterable: list) -> list:
         return [item for sublist in iterable for item in sublist]
+
+    def create_user_tokens(self):
+        students = self.students
+        for student in students:
+            Token.objects.create(user=student.user)
+
+        organizers = self.organizers
+        for organizer in organizers:
+            Token.objects.create(user=organizer.user)
 
     def create_city(self, city: str) -> Optional[City]:
         if city:
