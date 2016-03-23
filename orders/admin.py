@@ -1,13 +1,26 @@
+from django.conf.urls import url
 from django.contrib import admin
 
 from orders.models import Order, Assistant
+from orders.views import RefundAdminTemplateView
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    search_fields = ('id',)
     list_display = ('name', 'activity_title', 'status')
     list_filter = ('status',)
     raw_id_fields = ('calendar', 'student', 'payment')
+
+    def get_urls(self):
+        urls = super(OrderAdmin, self).get_urls()
+        urls += [
+            url(
+                regex=r'^refunds/?$',
+                view=self.admin_site.admin_view(RefundAdminTemplateView.as_view()),
+                name='refunds'),
+        ]
+        return urls
 
     def name(self, obj):
         return obj.student.user.get_full_name()
