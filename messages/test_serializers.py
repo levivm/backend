@@ -13,12 +13,13 @@ class OrganizerMessageSerializerTest(APITestCase):
     def setUp(self):
         self.organizer = OrganizerFactory()
         self.students = StudentFactory.create_batch(2)
-        self.calendar = CalendarFactory()
+        self.calendar = CalendarFactory(activity__organizer=self.organizer)
 
     def test_create(self):
         data = {
             'subject': 'Subject',
             'message': 'Message',
+            'calendar': self.calendar.id,
         }
 
         serializer = OrganizerMessageSerializer(data=data, context={'organizer': self.organizer,
@@ -33,7 +34,8 @@ class OrganizerMessageSerializerTest(APITestCase):
             message='Message').exists())
 
     def test_read(self):
-        organizer_message = OrganizerMessageFactory(organizer=self.organizer)
+        organizer_message = OrganizerMessageFactory(organizer=self.organizer,
+                                                    calendar=self.calendar)
 
         serializer = OrganizerMessageSerializer(organizer_message)
 
@@ -45,8 +47,11 @@ class OrganizerMessageSerializerTest(APITestCase):
             'organizer': {
                 'id': organizer_message.organizer.id,
                 'name': organizer_message.organizer.name,
-                'photo': organizer_message.organizer.photo,
-            }
+                'photo': None,
+            },
+            'calendar': self.calendar.id,
+            'activity': self.calendar.activity.title,
+            'initial_date': self.calendar.initial_date.isoformat()[:-6] + 'Z'
         }
 
         self.assertEqual(serializer.data, data)
@@ -55,6 +60,7 @@ class OrganizerMessageSerializerTest(APITestCase):
         data = {
             'subject': 'Subject',
             'message': 'Message',
+            'calendar': self.calendar.id,
         }
 
         with self.assertRaisesMessage(ValidationError,
