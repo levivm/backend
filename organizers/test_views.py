@@ -1,21 +1,22 @@
 import json
-import factory
 from datetime import datetime, timedelta
 
+import mock
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.http.request import HttpRequest
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
-from activities import constants as activities_constants
 
-from activities.models import Activity
+from activities import constants as activities_constants
 from activities.factories import ActivityFactory
+from activities.models import Activity
 from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from locations.serializers import LocationsSerializer
 from organizers.models import Instructor, Organizer, OrganizerBankInfo
-from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, InstructorViewSet, \
+from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, \
+    OrganizerLocationViewSet, InstructorViewSet, \
     ActivityInstructorViewSet
 from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.tests import BaseViewTest, BaseAPITestCase
@@ -60,19 +61,17 @@ class OrganizerViewTest(BaseViewTest):
 
 
 class OrganizerActivitiesViewTest(BaseAPITestCase):
-
     def _order_activities(self, activities):
-        activities = sorted(activities, key = lambda x:x.id, reverse=True)
+        activities = sorted(activities, key=lambda x: x.id, reverse=True)
         return activities
-
 
     def setUp(self):
         super(OrganizerActivitiesViewTest, self).setUp()
 
-        #get organizer 
+        # get organizer
         organizer = self.organizer
 
-        #create organizer activities
+        # create organizer activities
         today = datetime.today().date()
         yesterday = today - timedelta(1)
 
@@ -80,7 +79,7 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
             ActivityFactory.create_batch(2, organizer=organizer)
 
         self.opened_activities = \
-            ActivityFactory.create_batch(2, published=True, 
+            ActivityFactory.create_batch(2, published=True,
                                          organizer=organizer, last_date=today)
 
         self.closed_activities = \
@@ -89,13 +88,12 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
         self.activities = self.organizer.activity_set.all()
 
-        #set url
-        self.url = reverse('organizers:activities', kwargs={'organizer_pk':organizer.id})
-        self.autocomplete_url = reverse('organizers:activities_autocomplete', 
-                                         kwargs={'organizer_pk':organizer.id})
+        # set url
+        self.url = reverse('organizers:activities', kwargs={'organizer_pk': organizer.id})
+        self.autocomplete_url = reverse('organizers:activities_autocomplete',
+                                        kwargs={'organizer_pk': organizer.id})
 
     def test_organizer_unpublished_activities(self):
-
         data = {'status': activities_constants.UNPUBLISHED}
         opened_activities = self._order_activities(self.unpublished_activities)
         serializer = ActivitiesSerializer(opened_activities, many=True)
@@ -108,52 +106,65 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
         response = self.student_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
         # Another organizer should return forbidden
         response = self.another_organizer_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should return data
-        response = self.organizer_client.get(self.url, data)        
+        response = self.organizer_client.get(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_organizer_closed_activities(self):
-        data={'status': activities_constants.CLOSED}
+        data = {'status': activities_constants.CLOSED}
         closed_activities = self._order_activities(self.closed_activities)
-        serializer = ActivitiesSerializer(closed_activities, many=True)
+        request = mock.MagicMock()
 
         # Anonymous should return data
         response = self.client.get(self.url, data=data)
+        serializer = ActivitiesSerializer(closed_activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Student should return data
+        request.user = self.student.user
+        serializer = ActivitiesSerializer(closed_activities, many=True,
+                                          context={'request': request})
         response = self.student_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Organizer should return data
+        request.user = self.organizer.user
+        serializer = ActivitiesSerializer(closed_activities, many=True,
+                                          context={'request': request})
         response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_organizer_opened_activities(self):
-        data={'status': activities_constants.OPENED}
+        data = {'status': activities_constants.OPENED}
         opened_activities = self._order_activities(self.opened_activities)
-        serializer = ActivitiesSerializer(opened_activities, many=True)
+        request = mock.MagicMock()
 
         # Anonymous should return data
         response = self.client.get(self.url, data=data)
+        serializer = ActivitiesSerializer(opened_activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Student should return data
+        request.user = self.student.user
+        serializer = ActivitiesSerializer(opened_activities, many=True,
+                                          context={'request': request})
         response = self.student_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Organizer should return data
+        request.user = self.organizer.user
+        serializer = ActivitiesSerializer(opened_activities, many=True,
+                                          context={'request': request})
         response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -163,7 +174,6 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
         response = self.organizer_client.get(self.autocomplete_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
-
 
 
 class OrganizerLocationsViewTest(BaseViewTest):
@@ -197,9 +207,12 @@ class OrganizerLocationsViewTest(BaseViewTest):
 
     def test_methods_for_organizer(self):
         organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_create_own_location(self):
         client = self.get_organizer_client()
@@ -249,8 +262,10 @@ class OrganizersInstructorsViewTest(BaseViewTest):
     def test_organizer_methods(self):
         organizer = self.get_organizer_client()
         self.method_get_should_return_data(clients=organizer)
-        self.method_should_be(clients=organizer, method='put', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='put',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_create_the_instructors(self):
         organizer = Organizer.objects.get(user__id=self.ORGANIZER_ID)
@@ -268,8 +283,10 @@ class OrganizersInstructorsViewTest(BaseViewTest):
         self.assertEqual(Instructor.objects.count(), instructors_count + 1)
         self.assertEqual(instructor.organizer, organizer)
         self.assertEqual(organizer.instructors.count(), organizer_instructors + 1)
-        self.assertTrue(organizer.user.has_perm(perm='organizers.change_instructor', obj=instructor))
-        self.assertTrue(organizer.user.has_perm(perm='organizers.delete_instructor', obj=instructor))
+        self.assertTrue(
+            organizer.user.has_perm(perm='organizers.change_instructor', obj=instructor))
+        self.assertTrue(
+            organizer.user.has_perm(perm='organizers.delete_instructor', obj=instructor))
 
     def test_another_organizer_methods(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
@@ -300,8 +317,10 @@ class InstructorViewTest(BaseViewTest):
 
     def test_organizer_methods(self):
         organizer = self.get_organizer_client()
-        self.method_should_be(clients=organizer, method='get', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='post', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='get',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='post',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_update_an_instructor(self):
         name = 'Destructor'
@@ -384,8 +403,10 @@ class ActivityInstructorsGetAndPostViewTest(BaseViewTest):
         self.assertEqual(activity.instructors.count(), activity_instructors + 1)
         self.assertEqual(instructor.organizer, organizer)
         self.assertTrue(activity.instructors.filter(id=instructor.id).exists())
-        self.assertTrue(organizer.user.has_perm(perm='organizers.change_instructor', obj=instructor))
-        self.assertTrue(organizer.user.has_perm(perm='organizers.delete_instructor', obj=instructor))
+        self.assertTrue(
+            organizer.user.has_perm(perm='organizers.change_instructor', obj=instructor))
+        self.assertTrue(
+            organizer.user.has_perm(perm='organizers.delete_instructor', obj=instructor))
 
     def test_another_organizer_shouldnt_get_or_create_an_instructor(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)
@@ -472,10 +493,12 @@ class ActivityInstructorsUpdateAndDeleteViewTest(BaseViewTest):
             'website': 'www.instructor2.com',
         }
         instructor = Instructor.objects.create(**data_post)
-        assign_perm(perm='organizers.change_instructor', user_or_group=organizer.user, obj=instructor)
+        assign_perm(perm='organizers.change_instructor', user_or_group=organizer.user,
+                    obj=instructor)
         data_post.update({'organizer': 2})
         for i in range(1, MAX_ACTIVITY_INSTRUCTORS):
-            client.post('/api/activities/%s/instructors' % self.ACTIVITY_ID, data=json.dumps(data_post), **self.headers)
+            client.post('/api/activities/%s/instructors' % self.ACTIVITY_ID,
+                        data=json.dumps(data_post), **self.headers)
         data = self.get_data(name='Destructor')
         url = '/api/activities/%s/instructors/%s' % (self.ACTIVITY_ID, instructor.id)
         response = client.put(url, data=json.dumps(data), **self.headers)
@@ -508,8 +531,11 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         }
 
         # Permissions
-        add_organizerbankinfo = Permission.objects.get_by_natural_key('add_organizerbankinfo', 'organizers', 'organizerbankinfo')
-        change_organizerbankinfo = Permission.objects.get_by_natural_key('change_organizerbankinfo', 'organizers', 'organizerbankinfo')
+        add_organizerbankinfo = Permission.objects.get_by_natural_key('add_organizerbankinfo',
+                                                                      'organizers',
+                                                                      'organizerbankinfo')
+        change_organizerbankinfo = Permission.objects.get_by_natural_key(
+            'change_organizerbankinfo', 'organizers', 'organizerbankinfo')
         add_organizerbankinfo.user_set.add(self.organizer.user, self.another_organizer.user)
         change_organizerbankinfo.user_set.add(self.organizer.user, self.another_organizer.user)
 
@@ -531,7 +557,8 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(all(item in response.data.items() for item in self.data.items()))
         self.assertTrue(
-            OrganizerBankInfo.objects.filter(organizer=self.organizer, beneficiary=self.data['beneficiary']).exists())
+            OrganizerBankInfo.objects.filter(organizer=self.organizer,
+                                             beneficiary=self.data['beneficiary']).exists())
 
     def test_read(self):
         """

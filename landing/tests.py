@@ -1,6 +1,9 @@
+import mock
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.template import loader
 from rest_framework import status
+from rest_framework.test import APITestCase
 
 from users import users_constants
 from utils.models import EmailTaskRecord
@@ -24,8 +27,6 @@ class ContactFormTest(BaseAPITestCase):
             "city": "Bogota"
         }
 
-        settings.CELERY_ALWAYS_EAGER = True
-
     def test_get(self):
         """
         Test the topics
@@ -37,7 +38,8 @@ class ContactFormTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item in response.data for item in content))
 
-    def test_post(self):
+    @mock.patch('landing.tasks.SendContactFormEmailTask.delay')
+    def test_post(self, delay):
         """
         Test the post of contact form
         """
@@ -54,32 +56,40 @@ class ContactFormTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class SendContactFormEmailTaskTest(BaseViewTest):
+class SendContactFormEmailTaskTest(APITestCase):
     def _get_contact_form_data(self):
         return {
             "topic": "suggestion",
             "name": "Levi",
-            "email": "truli@gmail.com",
+            "email": "trulii@gmail.com",
             "phone_number": "222222",
             "description": "hola soy una description",
             "city": "Bogota"
         }
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
+        self.email = 'contact@trulii.com'
 
-    def tearDown(self):
-        settings.CELERY_ALWAYS_EAGER = False
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_run(self, send_mail):
+        """
+        Test that the task sends the email
+        """
 
-    def test_send_contact_form_email_task_dispatch(self):
+        send_mail.return_value = [{
+            'email': self.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         contact_form_data = self._get_contact_form_data()
-        task = SendContactFormEmailTask()
-        result = task.apply_async((None,), contact_form_data, countdown=2)
-        self.assertEqual(result.result, 'Task scheduled')
 
-    def test_send_contact_form_email_task_should_been_send_on_success(self):
-        contact_form_data = self._get_contact_form_data()
         task = SendContactFormEmailTask()
-        result = task.apply_async((None,), contact_form_data, countdown=2)
-        email_task = EmailTaskRecord.objects.get(task_id=result.id)
-        self.assertTrue(email_task.send)
+        task_id = task.delay(contact_form_data)
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.email,
+                status='sent',
+                data=contact_form_data,
+                template_name='landing/email/contact_us.html').exists())

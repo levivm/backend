@@ -1,15 +1,19 @@
 import json
 from datetime import datetime, timedelta
-from model_mommy import mommy
-from mock import Mock
-from rest_framework import status
+
+import mock
 from django.core.urlresolvers import reverse
-from orders.models import Order
-from activities.models import Calendar, Activity
-from activities.factories import ActivityFactory
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from mock import Mock
+from model_mommy import mommy
+from rest_framework import status
+
 from activities import constants as activities_constants
-from students.views import StudentViewSet, StudentActivitiesViewSet
+from activities.factories import ActivityFactory
+from activities.models import Calendar, Activity
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from orders.models import Order
+from students.factories import WishListFactory
+from students.views import StudentViewSet
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -75,7 +79,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
     def setUp(self):
         super(ActivitiesByStudentViewTest, self).setUp()
 
-        #get student 
+        #get student
         student = self.student
 
         #create student activities
@@ -102,7 +106,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
 
 
         self.url = reverse('students:activities', kwargs={'pk':student.id})
-        self.url_autocomplete = reverse('students:activities_autocomplete', 
+        self.url_autocomplete = reverse('students:activities_autocomplete',
                                         kwargs={'pk':student.id})
 
     def test_student_activities_autocomplete(self):
@@ -170,7 +174,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
 
         data={'status': activities_constants.PAST}
         past_activities = self._order_activities(self.past_activities)
-        serializer = ActivitiesSerializer(past_activities, many=True, 
+        serializer = ActivitiesSerializer(past_activities, many=True,
                                           context=self._get_context())
 
         # Anonymous should return forbbiden
@@ -187,41 +191,87 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
 
-# class SendEmailStudentSignupTaskTest(BaseViewTest):
-#     STUDENT_ID = 1
-#     # url = '/api/students/1/activities'
 
-#     def test_task_dispatch_if_there_is_not_other_task(self):
-#         # student = self.get_student_client()
-#         # from rest_framework.test import APIRequestFactory
-#         # factory = APIRequestFactory()
-#         # data = {
-#         #     'first_name':'first_name',
-#         #     'last_name':'last_name',
-#         #     'login':'lolpe@gmail.com',
-#         #     'password':'19737450',
-#         #     'user_type':'S'
-#         # }
-#         # student = self.get_student_client()
-#         # request = factory.post('/api/users/signup', data, format='json')
-#         # import pdb
-#         # pdb.set_trace()
-#         task = SendEmailStudentSignupTask()
-#         # task.request = request
-#         result = task.apply((self.STUDENT_ID, ),)
-#         self.assertEqual(result.result, 'Task scheduled')
+class WishListViewTest(BaseAPITestCase):
 
-#     def test_ignore_task_if_there_is_a_pending_task(self):
-#         task = SendEmailStudentSignupTask()
-#         task.apply((self.STUDENT_ID, False), countdown=60)
-#         task2 = SendEmailStudentSignupTask()
-#         result = task2.apply((self.STUDENT_ID, False))
-#         self.assertEqual(result.result, None)
+    def setUp(self):
+        super(WishListViewTest, self).setUp()
 
+        self.url = reverse('students:wish_list')
 
-#     def test_task_should_delete_on_success(self):
-#         task = SendEmailStudentSignupTask()
-#         task.apply((self.STUDENT_ID, ))
-#         self.assertEqual(CeleryTask.objects.count(), 0)
+    def test_list(self):
+        """
+        Test get all the activities in the wish list
+        """
+        wish_list = WishListFactory.create_batch(5, student=self.student)
 
+        # Anonymous should get a 401 unauthorized
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+        # Organizer should get a 403 forbidden
+        response = self.organizer_client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should get the list
+        activities = [w.activity for w in wish_list]
+        response = self.student_client.get(self.url)
+        request = mock.MagicMock()
+        request.user = self.student.user
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'],
+                         ActivitiesSerializer(activities,
+                                              many=True, context={'request': request}).data)
+
+    def test_add_activity_to_wish_list(self):
+        """
+        Test adding an activity to the wish list
+        """
+
+        activity = ActivityFactory()
+
+        # Anonymous should get a 401 unauthorized
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should get a 403 forbidden
+        response = self.organizer_client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should be able to add an activity
+        response = self.student_client.post(self.url, data={'activity_id': activity.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(activity, self.student.wish_list.all())
+
+    def test_remove_activity_from_wish_list(self):
+        """
+        Test removing an activity from the wish list
+        """
+        activity = ActivityFactory()
+        wish_list = WishListFactory(student=self.student, activity=activity)
+
+        # Anonymous should get a 401 unauthorized
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should get a 403 forbidden
+        response = self.organizer_client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should be able to add an activity
+        response = self.student_client.post(self.url, data={'activity_id': activity.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn(activity, self.student.wish_list.all())
+
+    def test_validate_activity_exists(self):
+        # Anonymous should get a 401 unauthorized
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Organizer should get a 403 forbidden
+        response = self.organizer_client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student should get 400 bad request
+        response = self.student_client.post(self.url, data={'activity_id': 0})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

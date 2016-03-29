@@ -36,6 +36,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, read_only=True)
     locations = LocationsSerializer(many=True, read_only=True)
+    verified_email = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Organizer
@@ -54,6 +55,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
             'instructors',
             'locations',
             'rating',
+            'verified_email',
         )
         read_only_fields = ('id',)
         depth = 1

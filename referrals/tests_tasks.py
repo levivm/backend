@@ -1,12 +1,15 @@
 import mock
 from django.conf import settings
+from django.template import loader
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
 from activities.models import Calendar
 from orders.models import Order
 from referrals.models import Referral, Coupon, CouponType, Redeem
-from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask
+from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask, \
+    SendReferralEmailTask
+from students.models import Student
 from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
@@ -18,9 +21,6 @@ class CreateReferralTaskTest(BaseAPITestCase):
 
     def setUp(self):
         super(CreateReferralTaskTest, self).setUp()
-
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
 
         self.ip_address = '192.0.1.12'
 
@@ -65,14 +65,12 @@ class CreateCouponTaskTest(BaseAPITestCase):
     def setUp(self):
         super(CreateCouponTaskTest, self).setUp()
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Coupons
         self.referrer_type = mommy.make(CouponType, name='referrer')
         self.referred_type = mommy.make(CouponType, name='referred')
 
-    def test_create(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_create(self, delay):
         """
         Test to create the coupons
         """
@@ -115,9 +113,6 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
     def setUp(self):
         super(ReferrerCouponTaskTest, self).setUp()
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
         self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
@@ -125,7 +120,8 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
                                 calendar=self.calendar)
 
-    def test_create(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_create(self, delay):
         """
         Test create a referrer coupon
         """
@@ -163,7 +159,8 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         self.assertEqual(Redeem.objects.count(), redeem_counter)
         self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
 
-    def test_having_an_free_activity(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_having_an_free_activity(self, delay):
         """
         Test case should create the coupon
         because the student has a free activity
@@ -276,31 +273,77 @@ class SendCouponEmailTaskTest(APITestCase):
     """
 
     def setUp(self):
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Arrangement
         self.redeem = mommy.make(Redeem)
         self.email = self.redeem.student.user.email
 
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
         """
         Test that the task sends the email
         """
 
+        send_mail.return_value = [{
+            'email': self.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
         task = SendCouponEmailTask()
         task_id = task.delay(redeem_id=self.redeem.id)
 
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.email, send=True).exists())
-
         context = {
-            'name': self.email,
+            'name': self.redeem.student.user.first_name,
             'coupon_code': self.redeem.coupon.token,
         }
 
-        send_mail.assert_called_with(
-            'referrals/email/coupon_cc',
-            self.email,
-            context,
-        )
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.email,
+                status='sent',
+                data=context,
+                template_name='referrals/email/coupon_cc_message.txt').exists())
+
+
+class SendReferralEmailTaskTest(APITestCase):
+    """
+    Class to test SendReferralEmailTask task
+    """
+
+    def setUp(self):
+        mommy.make(CouponType, name='referred', amount=20000)
+        self.student = mommy.make(Student)
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_success(self, send_mail):
+        """
+        Test success case
+        """
+        emails = [mommy.generators.gen_email() for _ in range(3)]
+
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        } for email in emails]
+
+        task = SendReferralEmailTask()
+        task_id = task.delay(self.student.id, emails=emails)
+
+        context = {
+            'student': {
+                'name': self.student.user.get_full_name(),
+                'avatar': self.student.get_photo_url(),
+            },
+            'amount': 20000,
+            'url': '%sinvitation/%s' % (settings.FRONT_SERVER_URL,
+                                        self.student.referrer_code)
+        }
+
+        for email in emails:
+            self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=email,
+                status='sent',
+                data=context,
+                template_name='referrals/email/coupon_invitation.html').exists())

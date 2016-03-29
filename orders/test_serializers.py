@@ -1,3 +1,4 @@
+import mock
 from django.conf import settings
 from django.contrib.auth.models import User
 from mock import Mock
@@ -28,9 +29,6 @@ class OrdersSerializerTest(BaseAPITestCase):
 
     def setUp(self):
         super(OrdersSerializerTest, self).setUp()
-
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
 
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
@@ -95,7 +93,8 @@ class OrdersSerializerTest(BaseAPITestCase):
 
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
-    def test_create_referrer_coupon(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_create_referrer_coupon(self, delay):
         """
         Test to create a referrer coupon
         """
@@ -114,7 +113,8 @@ class OrdersSerializerTest(BaseAPITestCase):
         self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
         self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.coupon_type).exists())
 
-    def test_validate_quantity(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_validate_quantity(self, delay):
         """
         Test to validate quantity with the number of assistants
         """
@@ -149,7 +149,8 @@ class OrdersSerializerTest(BaseAPITestCase):
 
         self.assertIsNone(order.fee)
 
-    def test_fee(self):
+    @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
+    def test_fee(self, delay):
         """
         Test fee on the order
         """
@@ -175,9 +176,6 @@ class RefundSerializerTest(APITestCase):
         self.order = mommy.make(Order, amount=500, quantity=1, status=Order.ORDER_APPROVED_STATUS)
         self.assistant = mommy.make(Assistant, order=self.order)
 
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
     def test_read(self):
         """
         Test the serialization of an instance
@@ -202,10 +200,18 @@ class RefundSerializerTest(APITestCase):
 
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
 
-    def test_create(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_create(self, send_mail):
         """
         Test creation of a Refund
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         # Counter
         email_task_record_counter = EmailTaskRecord.objects.count()

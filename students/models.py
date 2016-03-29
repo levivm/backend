@@ -3,13 +3,12 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
+
+from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
-from django.contrib.contenttypes.fields import GenericRelation
 
 from utils.mixins import ImageOptimizable
-from utils.models import CeleryTask
-
 
 
 class Student(ImageOptimizable, Updateable, models.Model):
@@ -26,9 +25,10 @@ class Student(ImageOptimizable, Updateable, models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
     city = models.ForeignKey(City, null=True)
-    tasks = GenericRelation(CeleryTask)
     referrer_code = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=100, blank=True)
+    verified_email = models.BooleanField(default=False)
+    wish_list = models.ManyToManyField(Activity, through='WishList')
 
     def __str__(self):
         return self.user.username
@@ -60,7 +60,8 @@ class Student(ImageOptimizable, Updateable, models.Model):
     def generate_referrer_code(self):
         precode = '%(first_name)s%(last_name)s' % {
             'first_name': self.user.first_name.split(' ')[0].lower(),
-            'last_name': self.user.last_name.split(' ')[0][0].lower() if self.user.last_name else '',
+            'last_name': self.user.last_name.split(' ')[0][0].lower()
+            if self.user.last_name else '',
         }
         code_count = Student.objects.filter(referrer_code__startswith=precode).count() + 1
         return '%s%s' % (precode, code_count)
@@ -70,3 +71,14 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
     def get_referral_hash(self):
         return signing.dumps({'referrer_code': self.referrer_code})
+
+    def get_photo_url(self):
+        if self.photo:
+            return self.photo.url
+
+        return None
+
+
+class WishList(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)

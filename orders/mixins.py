@@ -44,7 +44,7 @@ class ProcessPaymentMixin(object):
         return self.call_create(serializer)
 
     def proccess_payment_cc(self, payment, serializer):
-        """ Proccess Credi Card Payments """
+        """ Process Credit Card Payments """
         charge = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':

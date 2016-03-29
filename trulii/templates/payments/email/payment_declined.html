@@ -1,0 +1,227 @@
+{% load l10n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Pago Pendiente</title>
+</head>
+<body style="text-align: center;font-size: 14px;background: #f7f7f7;color: #949494;padding: 0;margin: 0;border: 0;">
+
+    <table width="100%" border="0" cellspacing="0" cellpading="0">
+        <tbody>
+            <tr style="padding: 0;margin: 0;border: 0;">
+                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                    <table id="content" style="width: 600px;margin: 0 auto;padding-top: 10px;">
+                        <tbody>
+                            <tr style="padding: 0;margin: 0;border: 0;">
+                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                                    <table id="inner" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 auto;position: relative;">
+                                        <tbody>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td style="padding: 0;margin: 0;border: 0;">
+                                                    <table style="margin: 0 auto;" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="header" valign="top" align="center" style="padding: 20px !important;margin: 0;border: 0;text-align: center;">
+                                                                    <a href="http://trulii.com/" style="padding: 0;margin: 0;border: 0;">
+                                                                        <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/logo.png" alt="" style="padding: 0;margin: 0;border: 0;width: 150px;">
+                                                                    </a>
+                                                                </td>
+
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+
+                                                <td id="second" style="padding: 0;margin: 0;border: 0;">
+                                                    <table id="description" style="margin: 0 auto; " border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="content-description" style="padding: 20px 40px 20px 40px!important;margin: 0;border: 0;text-align: center;" valign="top" align="center">
+                                                                    <div>
+                                                                        <div style="margin-bottom:30px;">
+                                                                            <h1 style="margin: 0 auto; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;  color: #7B7B7B; margin-bottom:20px;">Hola {{ name }}</h1>
+                                                                           <span style="font-size: 19px; font-weight: 500; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">Lo sentimos, tu pago de la actividad: <strong>{{ activity }}</strong> fue <span style="font-weight: bold;color: #FD4A4A;">declinado</span></span>
+                                                                        </div>
+
+
+
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;border-top: 1px solid #949494;">
+                                                                    <table style="margin: 0 auto;font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; " border="0" cellpadding="0" cellspacing="0" width="520">
+                                                                        <tr style="padding: 0;margin: 0;border: 0;">
+                                                                            <td class="content-description-table" valign="top" align="center" style="padding: 30px !important;margin: 0;border: 0;text-align: left;">
+                                                                                <div style="font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Actividad:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;"> {{ activity }}</span>
+                                                                                </div>
+                                                                                <div style="font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Numero de orden:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;"> #{{ order_number }}</span>
+                                                                                </div>
+                                                                                <div style="font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Pago realizado el día:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;"> {{ payment_date|date:"j b Y" }}</span>
+                                                                                </div>
+                                                                                <div style="font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Cupos:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;"> {{ quantity }} cupos</span>
+                                                                                </div>
+                                                                                {% if card_type %}
+                                                                                    <div style="font-size: 18px;margin-bottom: 15px;">
+                                                                                        <span style="display: block;margin-bottom: 2px;">Tipo:</span>
+                                                                                        <span style="font-weight: bold;margin-bottom: 2px;"> {{ card_type }}</span>
+                                                                                    </div>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td class="content-description-table" valign="top" align="center" style="padding: 30px !important;margin: 0;border: 0;text-align: left;">
+                                                                                <div style="margin-left: 15px;font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Organizador:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;">{{ organizer }}</span>
+                                                                                </div>
+                                                                                <div style="margin-left: 15px;font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Comprador:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;">{{ buyer }}</span>
+                                                                                </div>
+                                                                                <div style="margin-left: 15px;font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Estado:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px; color: #FD4A4A;">{{ status }}</span>
+                                                                                </div>
+                                                                                <div style="margin-left: 15px;font-size: 18px;margin-bottom: 15px;">
+                                                                                    <span style="display: block;margin-bottom: 2px;">Forma de pago:</span>
+                                                                                    <span style="font-weight: bold;margin-bottom: 2px;">{{ payment_type }}</span>
+                                                                                </div>
+                                                                                {% if card_type %}
+                                                                                    <div style="margin-left: 15px;font-size: 18px;margin-bottom: 15px;">
+                                                                                        <span style="display: block;margin-bottom: 2px;">Tarjeta:</span>
+                                                                                        <span style="font-weight: bold;margin-bottom: 2px;"> *******{{ card_number }}</span>
+                                                                                    </div>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;border-top: 1px solid #949494;padding-bottom: 30px;">
+                                                                    <table id="content-table-second" style="margin: 0 auto;font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;  margin-top: 15px;" border="0" cellpadding="0" cellspacing="0" width="520">
+                                                                        {% for assistant in assistants %}
+                                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                                <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;text-align: left;font-size: 16px;margin-top: 10px !important; padding-left: 30px;">
+                                                                                    <div style="margin-top: 10px !important;">
+                                                                                        <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">Asistente:</span>
+                                                                                        <span style="font-weight: bold;margin-bottom: 2px;margin-top: 10px !important;">{{ assistant.name}}</span>
+                                                                                    </div>
+                                                                                </td>
+
+                                                                                <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;text-align: left;font-size: 16px;margin-top: 10px !important; padding-left: 30px;">
+                                                                                    <div style="margin-top: 10px !important;">
+                                                                                        <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">Correo electronico:</span>
+                                                                                        <span style="font-weight: bold;margin-bottom: 2px;margin-top: 10px !important;">{{ assistant.email}}</span>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        {% endfor %}
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;border-top: 1px solid #949494;padding-bottom: 30px;">
+                                                                    <table id="content-table-third" style="margin: 0 auto;font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;  margin-top: 15px;" border="0" cellpadding="0" cellspacing="0" width="520">
+                                                                        <tr style="padding: 0;margin: 0;border: 0;">
+                                                                            <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                <div style="text-align: left;margin-top: 10px !important;">
+                                                                                    <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">Pago:</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                <div style="text-align: right;margin-top: 10px !important;">
+                                                                                    <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">COP {{ subtotal|floatformat:"0" }}</span>
+                                                                                </div>
+                                                                            </td>
+
+                                                                        </tr>
+                                                                        <tr style="padding: 0;margin: 0;border: 0;">
+                                                                            <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                <div style="text-align: left;margin-top: 10px !important;">
+                                                                                    <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">Cupon:</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            {% if coupon_amount %}
+                                                                                <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                    <div style="text-align: right;margin-top: 10px !important;">
+                                                                                        <span style="display: block;margin-bottom: 2px;margin-top: 10px !important;">COP {{ coupon_amount }}</span>
+                                                                                    </div>
+                                                                                </td>
+                                                                            {% endif %}
+                                                                        </tr>
+                                                                        <tr style="padding: 0;margin: 0;border: 0;">
+                                                                            <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                <div style="text-align: left;margin-top: 10px !important;">
+                                                                                    <span style="display: block;font-weight: bold;margin-bottom: 2px;margin-top: 10px !important;">Total:</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td class="" valign="top" align="center" style="padding: 0;margin: 0;border: 0;font-size: 16px;margin-top: 10px !important;">
+                                                                                <div style="text-align: right;margin-top: 10px !important;">
+                                                                                    <span style="display: block;font-weight: bold;margin-bottom: 2px;margin-top: 10px !important;">COP {{ total|floatformat:"0" }}</span>
+                                                                                </div>
+                                                                            </td>
+
+                                                                        </tr>
+
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td id="content-button-action" valign="top" align="center" style="padding: 20px 40px 60px 40px!important;margin: 0;border: 0;border-top: 1px solid #949494;padding-top: 40px !important;text-align: center;">
+                                                                    <a href="{{ detail_url }}" style="padding: 0;margin: 0;border: 0;text-decoration: none;">
+                                                                        <div id="button" style="margin: 0 auto;padding: 15px 60px 15px 60px;border: 0;background: #38dbc8;color: white;text-decoration: none;text-transform: uppercase;text-align: center;font-size: 13px;font-weight: bold;border-radius: 4px;">
+                                                                            <span style="font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: left;">Ver mas detalles</span>
+                                                                        </div>
+                                                                    </a>
+
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                <td id="footer" style="padding: 20px !important;margin: 0 auto !important;border: 0;">
+                                                    <table style="margin: 0 auto;" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tbody>
+                                                            <tr style="padding: 0;margin: 0;border: 0;">
+                                                                <td valign="top" align="center" style="padding: 0;margin: 0;border: 0;">
+                                                                    <div id="contact">
+                                                                        <span style="display: block; margin-bottom:25px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif">
+                                                                            Contáctate con nosotros
+                                                                        </span>
+                                                                        <span title="Facebook"><a  target="_blank" href="https://www.facebook.com/truliilatam/?fref=ts"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/facebook_gray.png" alt="" style="margin-right:2px;"></a></span>
+                                                                        <span title="Twitter"><a  target="_blank" href="https://twitter.com/Trulii_"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/twitter_gray.png" alt="" style="margin-right:2px;"></a></span>
+                                                                        <span title="Email"><a  target="_blank" href="mailto:contacto@trulii.com"> <img src="https://s3-us-west-2.amazonaws.com/trulii-dev/static/img/email_gray.png" alt=""></a></span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

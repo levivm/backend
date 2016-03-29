@@ -10,6 +10,9 @@ class ReferralFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Referral
 
+    def __new__(cls, *args, **kwargs):
+        return super(ReferralFactory, cls).__new__(*args, **kwargs)
+
     referred = factory.SubFactory(StudentFactory)
     referrer = factory.SubFactory(StudentFactory)
     ip_address = factory.Faker('ipv4')
@@ -35,6 +38,8 @@ class RedeemFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Redeem
 
+    def __new__(cls, *args, **kwargs):
+        return super(RedeemFactory, cls).__new__(*args, **kwargs)
+
     student = factory.SubFactory(StudentFactory)
     coupon = factory.SubFactory(CouponFactory)
-    used = factory.Faker('boolean')

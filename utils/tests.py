@@ -212,3 +212,14 @@ class TestMixinUtils(object):
                 key, val = item
                 print('CONTENT %s' % key.upper(), val)
                 print('SERIALIZER %s' % key.upper(), serializer.data[key])
+
+    def diff_between_lists(self, list_a, list_b):
+        """
+        Find the different items between two lists
+        :type list_a: list
+        :type list_b: list
+        """
+
+        diff = (item for item in list_a if item not in list_b)
+        for d in diff:
+            print(d)

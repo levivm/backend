@@ -12,6 +12,9 @@ class OrderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Order
 
+    def __new__(cls, *args, **kwargs):
+        return super(OrderFactory, cls).__new__(*args, **kwargs)
+
     calendar = factory.SubFactory(CalendarFactory)
     student = factory.SubFactory(StudentFactory)
     amount = factory.fuzzy.FuzzyInteger(50000, 1000000)

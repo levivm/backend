@@ -1,5 +1,3 @@
-import os
-
 import dj_database_url
 
 from .base import *
@@ -21,11 +19,22 @@ PG_DB = os.environ.get('POSTGRES_1_ENV_POSTGRES_DB', 'trulii')
 PG_PW = os.environ.get('POSTGRES_1_ENV_POSTGRES_PASSWORD', 'trulii')
 
 DATABASE_URL = "postgis://{user}:{password}@{host}:{port}/{db}".format(host=POSTGRES_HOST,
-                                                                        port=POSTGRES_PORT, db=PG_DB, user=PG_USER,
-                                                                        password=PG_PW)
+                                                                       port=POSTGRES_PORT,
+                                                                       db=PG_DB, user=PG_USER,
+                                                                       password=PG_PW)
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 LOGGING_CONFIG = {}
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#         'LOCATION': 'localhost:11211',
+#     }
+# }
 
 # REDIS CONFIG
 REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR', 'localhost')
@@ -47,5 +56,15 @@ PAYU_URL = 'http://stg.api.payulatam.com/payments-api/4.0/service.cgi'
 PAYU_NOTIFY_URL = "https://api.trulii.com/api/payments/notification"
 PAYU_RESPONSE_URL = "https://api.trulii.com/api/payments/pse/response"
 PAYU_TEST = True
-PAYU_TEST_TOKEN = 'eyJ0b2tlbiI6IjJhMzY2Yzc0LTM3MzMtNGNlMC04Yzg4LWRhYzBmMmQzNjcyYiJ9'
-PAYU_TEST_TOKEN += ':1aPGyp:9dTHd1CYQg3hEOCub4yeaIb2pgc'
+PAYU_TEST_TOKEN = 'eyJ0b2tlbiI6ImEyMDA0NmU3LWZjOTktNDc3OS04ZGQ3LTA'
+PAYU_TEST_TOKEN += 'zMzE1ZjBjY2VhMSJ9:1aJ6Yo:OkyLEE5T'
+PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
+
+# SendGrid
+SENDGRID_API_KEY = "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"
+
+# Social Auth
+SOCIAL_AUTH_FACEBOOK_KEY = '1701354690078591'
+SOCIAL_AUTH_FACEBOOK_SECRET = '50b6017d2f21dc898fad2fc23f23cf44'
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']
+SOCIAL_AUTH_FACEBOOK_REDIRECT_URI = 'http://trulii.com/home'

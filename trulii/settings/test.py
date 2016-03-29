@@ -2,20 +2,6 @@ import logging
 from .base import *
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'HOST': '',
-#         'NAME': ':memory:',
-#         'PASSWORD': '',
-#         'PORT': '',
-#         'USER': '',
-#         'TEST': {
-#             'NAME': 'test_trulii_db'
-#         }
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -64,4 +50,12 @@ PAYU_TEST_TOKEN = 'eyJ0b2tlbiI6ImEyMDA0NmU3LWZjOTktNDc3OS04ZGQ3LTA'
 PAYU_TEST_TOKEN += 'zMzE1ZjBjY2VhMSJ9:1aJ6Yo:OkyLEE5T'
 PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
 
+MANDRILL_API_KEY = 'm4ndr1ll_4p1_k3y'
+
 logging.disable(logging.CRITICAL)
+
+# Social Auth
+SOCIAL_AUTH_FACEBOOK_KEY = '1701354690078591'
+SOCIAL_AUTH_FACEBOOK_SECRET = '50b6017d2f21dc898fad2fc23f23cf44'
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']
+SOCIAL_AUTH_FACEBOOK_REDIRECT_URI = 'http://trulii.com/home'

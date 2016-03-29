@@ -4,6 +4,7 @@ from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from orders.models import Order
+from reviews.tasks import SendCommentToOrganizerEmailTask
 from students.serializer import StudentsSerializer
 from .models import Review
 
@@ -56,4 +57,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.update({'author': self.context['request'].data['author']})
-        return super(ReviewSerializer, self).create(validated_data)
+        review = super(ReviewSerializer, self).create(validated_data)
+
+        if validated_data.get('comment'):
+            task = SendCommentToOrganizerEmailTask()
+            task.delay(review_id=review.id)
+
+        return review

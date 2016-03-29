@@ -14,6 +14,7 @@ from rest_framework.reverse import reverse
 from activities.models import Activity, Calendar
 from orders.models import Order
 from reviews.models import Review
+from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
 
@@ -143,10 +144,16 @@ class ReviewAPITest(BaseAPITestCase):
         response = self.student_client.get(self.list_by_student_url)
         self.assertContains(response, self.post.get('comment'))
 
-    def test_create(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_create(self, send_mail):
         """
         Test to create a review [POST]
         """
+        send_mail.return_value = [{
+            'email': self.review.activity.organizer.user.email,
+            'status': 'sent',
+            'reject_reason': None,
+        }]
 
         # Anonymous should return unauthorized
         response = self.client.post(self.create_url, self.post)
@@ -171,6 +178,9 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(self.activity.reviews.count(), self.activity_reviews + 1)
         self.assertTrue(self.activity.organizer.user.has_perm(perm='reviews.reply_review', obj=review))
         self.assertTrue(self.activity.organizer.user.has_perm(perm='reviews.report_review', obj=review))
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.organizer.user.email,
+            status='sent').exists())
 
     def test_retrieve(self):
         """
@@ -189,10 +199,16 @@ class ReviewAPITest(BaseAPITestCase):
         response = self.student_client.get(self.retrieve_update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_update(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_update(self, send_mail):
         """
         Test to reply a review [PUT]
         """
+        send_mail.return_value = [{
+            'email': self.review.author.user.email,
+            'status': 'sent',
+            'reject_reason': None,
+        }]
 
         # Anonymous should return unauthorized
         response = self.client.put(self.retrieve_update_delete_url, self.put)
@@ -222,6 +238,9 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(review.rating, 4)
         self.assertEqual(review.replied_at, replied_at)
         self.assertTrue(review.read)
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            to=self.review.author.user.email,
+            status='sent').exists())
 
     def test_delete(self):
         """
@@ -243,13 +262,11 @@ class ReviewAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Review.objects.count(), self.review_count)
 
-    def test_report(self):
+    @mock.patch('reviews.tasks.SendReportReviewEmailTask.delay')
+    def test_report(self, delay):
         """
         Test report a review [POST]
         """
-        # Set Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
         # Anonymous should return unauthorized
         response = self.client.post(self.report_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

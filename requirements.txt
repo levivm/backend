@@ -35,11 +35,13 @@ psycopg2==2.6
 pycrypto==2.6.1
 python-openid==2.2.5
 python3-openid==3.0.9
+python-social-auth==0.2.14
 pytz==2015.2
 PyYAML==3.11
 redis==2.10.3
 requests==2.9.1
 requests-oauthlib==0.6.0
+sendgrid==1.6.22
 six==1.10.0
 static3==0.5.1
 yolk==0.4.3

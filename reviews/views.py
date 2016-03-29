@@ -8,7 +8,7 @@ from activities.models import Activity
 from .models import Review
 from organizers.models import Organizer
 from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
-from reviews.tasks import SendReportReviewEmailTask
+from reviews.tasks import SendReportReviewEmailTask, SendReplyToStudentEmailTask
 from .serializers import ReviewSerializer
 from students.models import Student
 from utils.paginations import PaginationBySize
@@ -59,6 +59,8 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(review, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        task = SendReplyToStudentEmailTask()
+        task.delay(review_id=review.id)
         return Response('OK')
 
     def read(self, request, *args, **kwargs):

@@ -124,6 +124,7 @@ class OrganizerSerialiezerTest(TestMixinUtils, APITestCase):
             'instructors': [],
             'locations': LocationsSerializer(self.organizer.locations.all(), many=True).data,
             'rating': self.organizer.rating,
+            'verified_email': self.organizer.verified_email,
         }
 
         serializer = OrganizersSerializer(self.organizer)

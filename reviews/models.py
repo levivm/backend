@@ -1,5 +1,6 @@
 import statistics
 
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.dispatch import receiver
@@ -34,6 +35,12 @@ class Review(AssignPermissionsMixin, models.Model):
 
     def save(self, *args, **kwargs):
         super(Review, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
+
+    def get_organizer_frontend_url(self):
+        return '%sorganizer/dashboard/reviews' % settings.FRONT_SERVER_URL
+
+    def get_student_frontend_url(self):
+        return '%sstudents/dashboard/activities/closed/' % settings.FRONT_SERVER_URL
 
 
 # Signals

@@ -1,87 +1,78 @@
 from django.conf import settings
 
-from utils.tasks import SendEmailTaskMixin
 from orders.models import Order
-from orders.serializers import OrdersSerializer, AssistantsSerializer
-from .serializers import PaymentSerializer
-from activities.serializers import CalendarSerializer, ActivitiesSerializer
+from payments.models import Payment
+from utils.tasks import SendEmailTaskMixin
 
 
 class SendPaymentEmailTask(SendEmailTaskMixin):
-    def run(self, order_id, success_handler=True, **kwargs):
-        self.success_handler = success_handler
-        order = Order.objects.get(id=order_id)
+    def run(self, order_id, *args, **kwargs):
+        self.kwargs = kwargs
+        self.order = Order.objects.get(id=order_id)
 
-        payment_method = kwargs.get('payment_method')
-        if payment_method == settings.CC_METHOD_PAYMENT_ID:
-            if order.status == Order.ORDER_APPROVED_STATUS:
-                template = "payments/email/payment_approved_cc"
-            elif order.status == Order.ORDER_DECLINED_STATUS:
-                template = "payments/email/payment_declined_cc"
-        elif payment_method == settings.PSE_METHOD_PAYMENT_ID:
-            if order.status == Order.ORDER_APPROVED_STATUS:
-                template = "payments/email/payment_approved_pse"
-            elif order.status == Order.ORDER_DECLINED_STATUS:
-                template = "payments/email/payment_declined_pse"
-            elif order.status == Order.ORDER_PENDING_STATUS:
-                template = "payments/email/payment_pending_pse"
+        if self.order.status == Order.ORDER_APPROVED_STATUS:
+            self.template_name = "payments/email/payment_approved.html"
+            self.subject = 'Pago Aprobado'
+        elif self.order.status == Order.ORDER_DECLINED_STATUS:
+            self.template_name = "payments/email/payment_declined.html"
+            self.subject = 'Pago Declinado'
 
-        kwargs['order'] = order
-        return super(SendPaymentEmailTask, self).run(instance=order,
-                                                     template=template, **kwargs)
+        self.emails = [self.order.student.user.email]
+        self.global_context = self.get_context_data()
+        return super(SendPaymentEmailTask, self).run(*args, **kwargs)
 
-    def get_emails_to(self, order):
-        emails = [order.student.user.email]
-        return emails
-
-    def get_context_data(self, data):
-        order = data.get('order')
-        assistants = order.assistants.all()
-        assistants_data = AssistantsSerializer(assistants, many=True,
-                                               context={'show_token': True}).data
-        payment = order.payment
-        calendar = order.calendar
-        activity = calendar.activity
-
-        calendar_data = CalendarSerializer(instance=calendar).data
-        activity_data = ActivitiesSerializer(instance=activity).data
-        payment_data = PaymentSerializer(instance=payment).data
-        order_data = OrdersSerializer(instance=order).data
+    def get_context_data(self):
+        base_url = settings.FRONT_SERVER_URL
+        coupon_amount = self.get_coupon_amount()
+        card_type = self.get_card_type()
 
         context_data = {
-            'order': order_data,
-            'payment': payment_data,
-            'calendar': calendar_data,
-            'activity': activity_data,
-            'assistants': assistants_data,
+            'name': self.order.student.user.first_name,
+            'activity': self.order.calendar.activity.title,
+            'activity_url': base_url + 'activities/%d' % self.order.calendar.activity.id,
+            'organizer': self.order.calendar.activity.organizer.name,
+            'order_number': self.order.id,
+            'buyer': self.order.student.user.get_full_name(),
+            'payment_date': self.order.payment.date,
+            'status': str(dict(Order.STATUS)[self.order.status]),
+            'quantity': self.order.quantity,
+            'payment_type': dict(Payment.PAYMENT_TYPE)[self.order.payment.payment_type],
+            'card_type': card_type,
+            'card_number': self.order.payment.last_four_digits,
+            'assistants': [{
+                'name': assistant.get_full_name(),
+                'email': assistant.email,
+                'token': assistant.token,
+            } for assistant in self.order.assistants.all()],
+            'subtotal': self.order.total_without_coupon,
+            'coupon_amount': coupon_amount,
+            'total': self.order.total,
+            'initial_date': self.order.calendar.initial_date,
+            'address': self.order.calendar.activity.location.address,
+            'city': self.order.calendar.activity.location.city.name,
+            'requirements': self.order.calendar.activity.requirements,
+            'detail_url': base_url + 'students/dashboard/history/orders/%s' % self.order.id,
         }
 
-        if not order.status == Order.ORDER_APPROVED_STATUS:
-            context_data.update({'error': str(data.get('transaction_error'))})
+        if not self.order.status == Order.ORDER_APPROVED_STATUS:
+            context_data.update({'error': str(self.kwargs.get('transaction_error'))})
 
         return context_data
 
+    def get_coupon_amount(self):
+        amount = None
+        if self.order.coupon:
+            amount = self.order.coupon.coupon_type.amount
+
+        return amount
+
+    def get_card_type(self):
+        if self.order.payment.card_type:
+            return dict(Payment.CARD_TYPE)[self.order.payment.card_type]
+
     def on_success(self, retval, task_id, args, kwargs):
-        super(SendPaymentEmailTask, self).on_success(retval,
-                                                     task_id, args, kwargs)
-        order_id = args[0]
-        order = Order.objects.get(id=order_id)
+        super(SendPaymentEmailTask, self).on_success(retval, task_id, args, kwargs)
 
-        if not order.status == Order.ORDER_APPROVED_STATUS and not \
-                order.status == Order.ORDER_PENDING_STATUS:
-            order.delete()
-
-# class SendPaymentDeclainedEmailTask(SendEmailTaskMixin):
-
-#     def run(self, student_id, success_handler=True, **kwargs):
-#         self.success_handler = success_handler
-#         order  = Order.objects.get(id=order_id)
-#         template = "payments/email/payment_declined_cc"
-#         kwargs['order'] = order
-#         return super(SendPaymentDeclainedEmailTask, self).run(instance=order, \
-#                         template=template,**kwargs)
-
-
-#     def get_emails_to(self, order):
-#         emails = [order.student.user.email]
-#         return emails
+        if not self.order.status == Order.ORDER_APPROVED_STATUS and not \
+                        self.order.status == Order.ORDER_PENDING_STATUS:
+            self.order.delete()

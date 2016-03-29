@@ -1,10 +1,11 @@
 import mock
-from django.conf import settings
+
 from django.contrib.auth.models import User
+from django.test import override_settings
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from orders.models import Refund
+from orders.models import Refund, Order
 from orders.tasks import SendEMailStudentRefundTask, SendEmailOrganizerRefundTask
 from utils.models import EmailTaskRecord
 
@@ -15,74 +16,79 @@ class SendEMailStudentRefundTaskTest(APITestCase):
     """
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
         self.user = mommy.make(User, first_name='user', email='user@example.com')
-        self.refund = mommy.make(Refund, user=self.user)
+        self.order = mommy.make(Order, amount=20000)
+        self.refund = mommy.make(Refund, user=self.user, order=self.order)
 
-    def get_context(self):
-        return {
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_send_email_success(self, send_mail):
+        """
+        Test sending email success
+        """
+        send_mail.return_value = [{
+            'email': self.refund.user.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        task = SendEMailStudentRefundTask()
+        task_id = task.delay(self.refund.id)
+
+        context = {
+            'id': self.refund.id,
             'name': self.refund.user.first_name,
             'order': self.refund.order.id,
-            'status': self.refund.status,
+            'activity': self.refund.order.calendar.activity.title,
+            'status': self.refund.get_status_display(),
+            'amount': self.refund.amount,
+            'assistant': self.refund.assistant.get_full_name() if self.refund.assistant else None,
         }
 
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
-    def test_send_email_pending(self, send_mail):
+        refund_type = 'partial' if self.refund.assistant else 'global'
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to=self.user.email,
+            status='sent',
+            data=context,
+            template_name='orders/email/refund_%s.html' % refund_type).exists())
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_send_email_rejected(self, send_mail):
         """
-        Test sending email pending
+        Test sending email rejected
         """
-        context = self.get_context()
+        send_mail.return_value = [{
+            'email': self.refund.user.email,
+            'status': 'rejected',
+            'reject_reason': 'hard-bounce'
+        }]
 
         task = SendEMailStudentRefundTask()
         task_id = task.delay(self.refund.id)
 
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.user.email).exists())
-        send_mail.assert_called_with(
-            'orders/email/refund_%s_cc' % Refund.PENDING_STATUS,
-            self.user.email,
-            context,
-        )
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to=self.user.email,
+            status='rejected',
+            reject_reason='hard-bounce').exists())
 
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
-    def test_send_email_approved(self, send_mail):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=False)
+    def test_send_email_error(self, send_mail):
         """
-        Test sending email approved
+        Test sending email error
         """
-        self.refund.status = Refund.APPROVED_STATUS
-        self.refund.save()
-
-        context = self.get_context()
+        send_mail.side_effect = Exception('Hard bounce')
 
         task = SendEMailStudentRefundTask()
         task_id = task.delay(self.refund.id)
 
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.user.email).exists())
-        send_mail.assert_called_with(
-            'orders/email/refund_%s_cc' % Refund.APPROVED_STATUS,
-            self.user.email,
-            context,
-        )
-
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
-    def test_send_email_declined(self, send_mail):
-        """
-        Test sending email declined
-        """
-        self.refund.status = Refund.DECLINED_STATUS
-        self.refund.save()
-
-        context = self.get_context()
-
-        task = SendEMailStudentRefundTask()
-        task_id = task.delay(self.refund.id)
-
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.user.email).exists())
-        send_mail.assert_called_with(
-            'orders/email/refund_%s_cc' % Refund.DECLINED_STATUS,
-            self.user.email,
-            context,
-        )
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.user.email,
+                status='error',
+                reject_reason='Hard bounce').exists())
 
 
 class SendEMailOrganizerRefundTaskTest(APITestCase):
@@ -91,33 +97,41 @@ class SendEMailOrganizerRefundTaskTest(APITestCase):
     """
 
     def setUp(self):
-        settings.CELERY_ALWAYS_EAGER = True
-
         self.organizer = mommy.make(User, first_name='organizer', email='organizer@example.com')
         self.student = mommy.make(User, first_name='student')
-        self.refund = mommy.make(Refund, user=self.student,
-                                 order__calendar__activity__organizer__user=self.organizer)
+        self.order = mommy.make(Order, calendar__activity__organizer__user=self.organizer,
+                                amount=20000)
+        self.refund = mommy.make(Refund, user=self.student, order=self.order)
 
-    def get_context(self):
-        return {
-            'name': self.organizer.first_name,
-            'activity': self.refund.order.calendar.activity.title,
-            'student': self.refund.user.get_full_name(),
-        }
-
-    @mock.patch('users.allauth_adapter.MyAccountAdapter.send_mail')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
         """
         Test run the task
         """
-        context = self.get_context()
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': self.organizer.email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         task = SendEmailOrganizerRefundTask()
         task_id = task.delay(self.refund.id)
 
-        self.assertTrue(EmailTaskRecord.objects.filter(task_id=task_id, to=self.organizer.email).exists())
-        send_mail.assert_called_with(
-            'orders/email/refund_organizer_cc',
-            self.organizer.email,
-            context,
-        )
+        context = {
+            'id': self.refund.id,
+            'name': self.refund.order.calendar.activity.organizer.user.first_name,
+            'order': self.refund.order.id,
+            'activity': self.refund.order.calendar.activity.title,
+            'status': self.refund.get_status_display(),
+            'amount': self.refund.amount,
+            'assistant': self.refund.assistant.get_full_name() if self.refund.assistant else None,
+        }
+        refund_type = 'partial' if self.refund.assistant else 'global'
+        self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=self.organizer.email,
+                status='sent',
+                data=context,
+                template_name='orders/email/refund_%s.html' % refund_type).exists())

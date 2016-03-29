@@ -1,14 +1,16 @@
 import urllib
 
-from allauth.socialaccount.models import SocialApp
-from django.conf import settings
-from django.contrib.sites.models import Site
+import mock
 from django.core.urlresolvers import reverse
 from model_mommy import mommy
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from social.apps.django_app.default.models import UserSocialAuth
 
 from referrals.models import Referral, CouponType, Coupon, Redeem
+from students.factories import StudentFactory
 from students.models import Student
+from users.factories import UserFactory
 from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
@@ -24,8 +26,9 @@ class InviteAPITest(BaseAPITestCase):
         # URLs
         self.invite_url = reverse('referrals:invite')
         self.referrer_url = self.student.get_referral_url()
-        self.signup_login_url = reverse('users:signup_login')
-        self.facebook_signup_login_url = reverse('facebook_signup_login')
+        self.signup_student_url = reverse('auth:signup_student')
+        self.login_url = reverse('auth:login')
+        self.social_login_signup_url = reverse('auth:social_login_signup', args=('facebook',))
 
         # User
         self.password = '12345678'
@@ -41,17 +44,6 @@ class InviteAPITest(BaseAPITestCase):
         self.referrer_coupon = mommy.make(CouponType, name='referrer')
         self.referred_coupon = mommy.make(CouponType, name='referred')
 
-        # SocialApp
-        mommy.make(SocialApp,
-                   name='trulii',
-                   client_id='1563536137193781',
-                   secret='9fecd238829796fd99109283aca7d4ff',
-                   provider='facebook',
-                   sites=[Site.objects.get(id=settings.SITE_ID)])
-
-        # Celery
-        settings.CELERY_ALWAYS_EAGER = True
-
     def get_new_user_data(self):
         return {
             'email': 'newstudent@example.com',
@@ -59,19 +51,6 @@ class InviteAPITest(BaseAPITestCase):
             'last_name': 'Student',
             'password1': '12345678',
             'user_type': 'S'
-        }
-
-    def get_login_data(self):
-        return {
-            'login': self.student.user.email,
-            'password': self.password,
-        }
-
-    def get_facebook_data(self):
-        return {
-            'auth_token': "CAAWOByANCTUBAOd9x0yTEYdAuuMUG7WvYZAzdAp4otJOi7gIsOWCnuAvNADtYqW7CW9AhF"
-                          "6uUCIQMI975sxnAvZBU8csApZC5RHWoKmHsuqU639wSTLdBkqBpCdkqbVmmZA8"
-                          "Hp4pJAJCCCmyZAvOUColRumTi6z22niA3ZAVzm8s4Qzdjm7BVT9tMLPZAiZCDSMZD"
         }
 
     def test_invite_page(self):
@@ -91,10 +70,18 @@ class InviteAPITest(BaseAPITestCase):
         response = self.student_client.get(self.invite_url)
         self.assertContains(response, self.student.get_referral_url())
 
-    def test_send_invitation_mail(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_send_invitation_mail(self, send_mail):
         """
         Test to send email with invitation
         """
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'friend@example.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
 
         # Anonymous should return unauthorized
         response = self.client.post(self.invite_url)
@@ -107,8 +94,7 @@ class InviteAPITest(BaseAPITestCase):
         response = self.student_client.post(self.invite_url, {'emails': 'friend@example.com'})
         email_task = EmailTaskRecord.objects.latest('pk')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(email_task.send)
-        self.assertEqual(email_task.data['name'], self.student.user.first_name)
+        self.assertEqual(email_task.status, 'sent')
 
     def test_accept_invitation_view(self):
         """
@@ -116,7 +102,8 @@ class InviteAPITest(BaseAPITestCase):
         """
 
         # Unexisting referrer code should return 404
-        response = self.client.get(reverse('referrals:referrer', kwargs={'referrer_code': 'notexist'}))
+        response = self.client.get(
+            reverse('referrals:referrer', kwargs={'referrer_code': 'notexist'}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Anonymous should get the view
@@ -134,7 +121,8 @@ class InviteAPITest(BaseAPITestCase):
         self.assertContains(response, self.student.user.first_name)
         self.assertContains(response, self.student.get_referral_hash())
 
-    def test_accept_invitation_submit(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_accept_invitation_submit(self, send_mail):
         """
         Test to submit accepting the invitation
         """
@@ -149,16 +137,21 @@ class InviteAPITest(BaseAPITestCase):
         # Anonymous should register and get the coupon
         data = self.get_new_user_data()
         params = urllib.parse.urlencode(data, doseq=True)
-        response = self.client.post(self.signup_login_url, data=params, content_type='application/x-www-form-urlencoded')
+        response = self.client.post(self.signup_student_url, data=params,
+                                    content_type='application/x-www-form-urlencoded')
         new_student = Student.objects.latest('pk')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(new_student.user.get_full_name(), '%s %s' % (data['first_name'], data['last_name']))
+        self.assertEqual(new_student.user.get_full_name(),
+                         '%s %s' % (data['first_name'], data['last_name']))
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
         self.assertEqual(Coupon.objects.count(), redeem_counter + 1)
-        self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
+        self.assertTrue(
+            Referral.objects.filter(referrer=self.student, referred=new_student).exists())
         self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
-        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
-        self.assertFalse(Redeem.objects.filter(student=self.student, coupon__coupon_type__name='referrer').exists())
+        self.assertTrue(Redeem.objects.filter(student=new_student,
+                                              coupon__coupon_type__name='referred').exists())
+        self.assertFalse(Redeem.objects.filter(student=self.student,
+                                               coupon__coupon_type__name='referrer').exists())
 
     def test_invitation_blocked_ip(self):
         """
@@ -167,7 +160,7 @@ class InviteAPITest(BaseAPITestCase):
         ip_address = '192.0.1.12'
 
         # Objects
-        mommy.make(Referral, _quantity=3, ip_address=ip_address)
+        mommy.make(Referral, _quantity=15, ip_address=ip_address)
 
         # Counters
         referral_counter = Referral.objects.count()
@@ -177,7 +170,7 @@ class InviteAPITest(BaseAPITestCase):
         self.client.cookies['refhash'] = self.student.get_referral_hash()
 
         data = self.get_new_user_data()
-        response = self.client.post(self.signup_login_url, data, REMOTE_ADDR=ip_address)
+        response = self.client.post(self.signup_student_url, data, REMOTE_ADDR=ip_address)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(Student.objects.filter(user__first_name=data['first_name']).exists())
         self.assertEqual(Referral.objects.count(), referral_counter)
@@ -187,7 +180,10 @@ class InviteAPITest(BaseAPITestCase):
         """
         Test to login user and should not create referrals nor coupons
         """
-        data = self.get_login_data()
+        data = {
+            'email': self.student.user.email,
+            'password': self.password,
+        }
 
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
@@ -196,17 +192,26 @@ class InviteAPITest(BaseAPITestCase):
         referral_counter = Referral.objects.count()
         redeem_counter = Coupon.objects.count()
 
-        response = self.client.post(self.signup_login_url, data, format='json')
+        response = self.client.post(self.login_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)
         self.assertEqual(Coupon.objects.count(), redeem_counter)
 
-    def test_accept_invitation_facebook(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_accept_invitation_facebook(self, get_json, send_mail):
         """
         Test to accept an invitation signing up by facebook
         """
-        data = self.get_facebook_data()
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'name': 'Geralt De Rivia',
+        }
 
         # Counters
         referral_counter = Referral.objects.count()
@@ -215,27 +220,69 @@ class InviteAPITest(BaseAPITestCase):
         # Cookies
         self.client.cookies['refhash'] = self.student.get_referral_hash()
 
-        response = self.client.post(self.facebook_signup_login_url, data)
+        self.client.post(self.social_login_signup_url, {
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
         new_student = Student.objects.latest('pk')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter + 1)
         self.assertEqual(Coupon.objects.count(), redeem_counter + 1)
-        self.assertTrue(Referral.objects.filter(referrer=self.student, referred=new_student).exists())
+        self.assertTrue(
+            Referral.objects.filter(referrer=self.student, referred=new_student).exists())
         self.assertTrue(Coupon.objects.filter(coupon_type__name='referred').exists())
-        self.assertTrue(Redeem.objects.filter(student=new_student, coupon__coupon_type__name='referred').exists())
+        self.assertTrue(Redeem.objects.filter(student=new_student,
+                                              coupon__coupon_type__name='referred').exists())
 
-    def test_facebook_login(self):
-        """
-        Test to login with Facebook and should not create referrals nor coupons
-        """
-        data = self.get_facebook_data()
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_dont_create_referral_if_exists(self, get_json):
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'name': 'Geralt De Rivia',
+        }
+
+        student = StudentFactory()
+        Token.objects.create(user=student.user)
+        UserSocialAuth.objects.create(user=student.user, uid='123456789', provider='facebook')
+        Referral.objects.create(referrer=self.student, referred=student, ip_address='127.0.0.1')
 
         # Counters
         referral_counter = Referral.objects.count()
         redeem_counter = Coupon.objects.count()
 
-        response = self.client.post(self.facebook_signup_login_url, data)
+        # Cookies
+        self.client.cookies['refhash'] = self.student.get_referral_hash()
+
+        self.client.post(self.social_login_signup_url, {
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+        self.assertEqual(Referral.objects.count(), referral_counter)
+        self.assertEqual(Coupon.objects.count(), redeem_counter)
+        self.assertFalse(Redeem.objects.filter(student=student,
+                                              coupon__coupon_type__name='referred').exists())
+
+    @mock.patch('authentication.tasks.SendEmailConfirmEmailTask.delay')
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_facebook_login(self, get_json, delay):
+        """
+        Test to login with Facebook and should not create referrals nor coupons
+        """
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'name': 'Geralt De Rivia',
+        }
+
+        # Counters
+        referral_counter = Referral.objects.count()
+        redeem_counter = Coupon.objects.count()
+
+        response = self.client.post(self.social_login_signup_url, {
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertRegexpMatches(response.content, b'"token":"\w{40,40}"')
         self.assertEqual(Referral.objects.count(), referral_counter)
@@ -252,10 +299,12 @@ class ValidateCouponTest(BaseAPITestCase):
 
         # Coupons
         self.referrer_type = mommy.make(CouponType, name='referrer')
-        self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type=self.referrer_type)
+        self.redeem = mommy.make(Redeem, student=self.student,
+                                 coupon__coupon_type=self.referrer_type)
 
         # URLs
-        self.validate_url = reverse('referrals:validate_coupon', kwargs={'coupon_code': self.redeem.coupon.token})
+        self.validate_url = reverse('referrals:validate_coupon',
+                                    kwargs={'coupon_code': self.redeem.coupon.token})
 
     def test_valid(self):
         """

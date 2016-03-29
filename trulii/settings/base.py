@@ -54,23 +54,22 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'rest_framework_swagger',
     'rest_framework_gis',
+    'social.apps.django_app.default',
     # 'admin_honeypot',
+    'authentication.apps.AuthenticationConfig',
     'landing',
     'activities',
     'locations',
     'users',
     'organizers',
     'students',
-    'allauth',
     'utils',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.facebook',
     'orders',
     'guardian',
     'payments',
     'reviews',
     'referrals',
+    'messages.apps.MessagesConfig',
 )
 
 MIDDLEWARE_CLASSES = [
@@ -97,9 +96,9 @@ TEMPLATE_DIRS = DEFAULT_SETTINGS.TEMPLATE_DIRS + [
 
 
 AUTHENTICATION_BACKENDS = DEFAULT_SETTINGS.AUTHENTICATION_BACKENDS + [
-
-    # `allauth` specific authentication methods, such as login by e-mail
-    "allauth.account.auth_backends.AuthenticationBackend",
+    'authentication.backends.EmailAuthBackend',
+    'social.backends.facebook.FacebookOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',
 ]
 
@@ -113,7 +112,7 @@ WSGI_APPLICATION = 'trulii.wsgi.application'
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'utils.mails.SendGridEmailBackend'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -135,6 +134,12 @@ LANGUAGES = (
     ('es', ugettext('Spanish')),
 )
 LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
+
+FORMAT_MODULE_PATH = [
+    'utils.formats',
+]
+
+USE_THOUSAND_SEPARATOR = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
@@ -166,5 +171,21 @@ STATIC_IMAGES_URL = "%s%s/" % (STATIC_URL, STATIC_IMAGE_LOCATION)
 
 MEDIA_ROOT = os.path.join(PROJECT_PATH, 'media')
 
-from .allauth_settings import *
+SOCIAL_AUTH_PIPELINE = [
+    'social.pipeline.social_auth.social_details',
+    'social.pipeline.social_auth.social_uid',
+    'social.pipeline.social_auth.auth_allowed',
+    'social.pipeline.social_auth.social_user',
+    'utils.pipelines.get_username',
+    'social.pipeline.user.create_user',
+    'utils.pipelines.create_profile',
+    'utils.pipelines.create_token',
+    'utils.pipelines.assign_group',
+    'utils.pipelines.assign_permissions',
+    'utils.pipelines.create_confirm_email_token',
+    'utils.pipelines.send_mail_validation',
+    'social.pipeline.social_auth.associate_user',
+    'social.pipeline.social_auth.load_extra_data',
+]
+
 from .constants import *

@@ -42,14 +42,13 @@ class AssignPermissionsMixin(object):
 
 
 class FileUploadMixin(object):
-
-
     def clean_file(self, file):
         content_type = file.content_type.split('/')[0]
         if content_type in settings.CONTENT_TYPES:
             if file._size > settings.MAX_UPLOAD_PHOTO_SIZE:
                 msg = _('Mantenga el tamaño del archivo por debajo %s. Tamaño actual %s' \
-                        % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE), filesizeformat(file._size)))
+                        % (filesizeformat(settings.MAX_UPLOAD_PHOTO_SIZE),
+                           filesizeformat(file._size)))
                 raise serializers.ValidationError(msg)
         else:
             raise serializers.ValidationError(_('El tipo de archivo no es soportado'))

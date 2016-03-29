@@ -7,12 +7,14 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
+from activities.mixins import WishListSerializerMixin
 from activities.models import Activity, Category, SubCategory, Tags, Calendar, \
     CalendarSession, ActivityPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
+from students.models import Student, WishList
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
@@ -27,8 +29,8 @@ class TagsSerializer(serializers.ModelSerializer):
 
 class SubCategoriesSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
-            queryset=Category.objects.all(),
-            slug_field='id',
+        queryset=Category.objects.all(),
+        slug_field='id',
     )
 
     class Meta:
@@ -61,19 +63,19 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
 
     def get_icon_default(self, obj):
         url = settings.STATIC_IMAGES_URL
-        file_name = ("icon_category_%s_default.png") % obj.name.lower()
-        return ("%s%s") % (url, file_name)
+        file_name = "icon_category_%s_default.png" % obj.name.lower()
+        return "%s%s" % (url, file_name)
 
     def get_icon_active(self, obj):
         url = settings.STATIC_IMAGES_URL
-        file_name = ("icon_category_%s_active.png") % obj.name.lower()
-        return ("%s%s") % (url, file_name)
+        file_name = "icon_category_%s_active.png" % obj.name.lower()
+        return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
-        url = ('%scategories/cover/') % (settings.STATIC_IMAGES_URL)
-        file_name = ("%s.jpg") % obj.name.lower()
+        url = '/css/img/categories/'
+        file_name = "%s.jpg" % obj.name.lower()
         file_name = urllib.parse.quote(file_name)
-        return ("%s%s") % (url, file_name)
+        return "%s%s" % (url, file_name)
 
 
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
@@ -105,7 +107,7 @@ class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
         return self.clean_file(file)
 
     def create(self, validated_data):
-        is_main_photo = activity = validated_data['main_photo']
+        is_main_photo = validated_data['main_photo']
         if is_main_photo:
             activity = validated_data['activity']
             ActivityPhoto.objects.filter(activity=activity, main_photo=True).delete()
@@ -253,7 +255,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
             elif date == n_date:
                 if session['end_time'].time() > n_session['start_time'].time():
-                    msg = _(u'La hora de inicio de su sesión debe ser después de la sesión anterior')
+                    msg = _(
+                        u'La hora de inicio de su sesión debe ser después de la sesión anterior')
                     errors = [{}] * sessions_amount
                     errors[i + 1] = {'start_time_' + str(i + 1): [msg]}
                     raise serializers.ValidationError({'sessions': errors})
@@ -272,7 +275,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         closing_sale = data['closing_sale']
         if initial_date < closing_sale:
             raise serializers.ValidationError(
-                    {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
+                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
                                         a la fecha de inicio.")})
 
         return data
@@ -296,7 +299,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         sessions.delete()
 
         _sessions = [CalendarSession(calendar=instance, **data) for data in sessions_data]
-        sessions = CalendarSession.objects.bulk_create(_sessions)
+        CalendarSession.objects.bulk_create(_sessions)
 
         return instance
 
@@ -309,7 +312,7 @@ class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
         )
 
 
-class ActivitiesCardSerializer(serializers.ModelSerializer):
+class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSerializer):
     closest_calendar = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     pictures = serializers.SerializerMethodField()
@@ -327,6 +330,7 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
             'published',
             'closest_calendar',
             'organizer',
+            'wish_list',
         )
 
     def get_category(self, obj):
@@ -352,13 +356,14 @@ class ActivitiesCardSerializer(serializers.ModelSerializer):
         return ActivityPhotosSerializer(pictures, many=True).data
 
     def get_organizer(self, obj):
-        return OrganizersSerializer(
-            obj.organizer, remove_fields=['bio', 'headline', 'website', 'youtube_video_url',
-                                          'telephone', 'instructors', 'locations', 'user',
-                                          'user_type', 'created_at']).data
+        return OrganizersSerializer(obj.organizer,
+                                    remove_fields=['bio', 'headline', 'website',
+                                                   'youtube_video_url', 'telephone',
+                                                   'instructors', 'locations', 'user', 'user_type',
+                                                   'created_at']).data
 
 
-class ActivitiesSerializer(serializers.ModelSerializer):
+class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
     sub_category = serializers.SlugRelatedField(slug_field='id',
                                                 queryset=SubCategory.objects.all(), required=True)
@@ -409,6 +414,7 @@ class ActivitiesSerializer(serializers.ModelSerializer):
             'instructors',
             'score',
             'rating',
+            'wish_list',
             'reviews'
         )
         depth = 1
@@ -447,10 +453,8 @@ class ActivitiesSerializer(serializers.ModelSerializer):
         return []
 
     def validate(self, data):
-
         request = self.context['request']
         user = request.user
-        organizer = None
         try:
             organizer = Organizer.objects.get(user=user)
         except Organizer.DoesNotExist:
