@@ -13,6 +13,7 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from activities import constants
 from activities.mixins import ActivityMixin, \
     ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
@@ -28,6 +29,7 @@ from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPho
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
+
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -249,11 +251,10 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
     def list(self, request, **kwargs):
         q = request.query_params.get('q')
-        o = request.query_params.get('o')
-
+        order = request.query_params.get('o')
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
-        order = search.get_order(o)
+        order_by = search.get_order(order)
 
         query = search.get_query(q, self.query)
 
@@ -265,11 +266,13 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
         else:
             activities = activities.filter(filters).distinct()
 
-        if 'closest' in order:
-            extra_q = search.extra_query(request.query_params)
+        if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE, \
+                     constants.ORDER_MAX_PRICE]:
+
+            extra_q = search.extra_query(request.query_params, order)
             activities = activities.extra(**extra_q) if extra_q else activities
 
-        activities = activities.order_by(*order)
+        activities = activities.order_by(*order_by)
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
