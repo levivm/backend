@@ -1,19 +1,21 @@
 import calendar
+import datetime
 import hashlib
 import json
+from collections import defaultdict
 
-
-from django.core import signing
+from dateutil.rrule import rrule, DAILY, MONTHLY
 from django.conf import settings
+from django.core import signing
 from django.utils.timezone import now
-from requests.api import post
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import PermissionDenied
+from requests.api import post
 
 from activities.models import Calendar
-from utils.exceptions import ServiceUnavailable
-from payments.serializers import PaymentsPSEDataSerializer
+from orders.models import Order
 from payments.models import Payment as PaymentModel
+from payments.serializers import PaymentsPSEDataSerializer
+from utils.exceptions import ServiceUnavailable
 
 
 class PaymentUtil(object):
@@ -70,10 +72,13 @@ class PaymentUtil(object):
         'ERROR_FIXING_AND_REVERSING': _('Error'),
         'ERROR_FIXING_INCOMPLETE_DATA': _('Error'),
         'ABANDONED_TRANSACTION': _('Transacción abandonada por el pagador'),
-        'ENTITY_DECLINED': _('La transacción fue declinada por el banco o por la red financiera debido a un error.'),
-        'INTERNAL_PAYMENT_PROVIDER_ERROR': _('Ocurrió un error en el sistema intentando procesar el pago.'),
+        'ENTITY_DECLINED': _(
+            'La transacción fue declinada por el banco o por la red financiera debido a un error.'),
+        'INTERNAL_PAYMENT_PROVIDER_ERROR': _(
+            'Ocurrió un error en el sistema intentando procesar el pago.'),
         'INACTIVE_PAYMENT_PROVIDER': _('El proveedor de pagos no se encontraba activo.'),
-        'DIGITAL_CERTIFICATE_NOT_FOUND': _('La red financiera reportó un error en la autenticación.'),
+        'DIGITAL_CERTIFICATE_NOT_FOUND': _(
+            'La red financiera reportó un error en la autenticación.'),
         'INVALID_EXPIRATION_DATE_OR_SECURITY_CODE': _(
             'El código de seguridad o la fecha de expiración estaba inválido.'),
         'INSUFFICIENT_FUNDS': _('La cuenta no tenía fondos suficientes.'),
@@ -85,14 +90,19 @@ class PaymentUtil(object):
         'RESTRICTED_CARD': _('La tarjeta presenta una restricción.'),
         'CONTACT_THE_ENTITY': _('Debe contactar al banco.'),
         'REPEAT_TRANSACTION': _('Se debe repetir la transacción.'),
-        'ENTITY_MESSAGING_ERROR': _('La red financiera reportó un error de comunicaciones con el banco.'),
+        'ENTITY_MESSAGING_ERROR': _(
+            'La red financiera reportó un error de comunicaciones con el banco.'),
         'BANK_UNREACHABLE': _('El banco no se encontraba disponible.'),
         'EXCEEDED_AMOUNT': _('La transacción excede un monto establecido por el banco.'),
-        'NOT_ACCEPTED_TRANSACTION': _('La transacción no fue aceptada por el banco por algún motivo.'),
-        'ERROR_CONVERTING_TRANSACTION_AMOUNTS': _('Ocurrió un error convirtiendo los montos a la moneda de pago.'),
+        'NOT_ACCEPTED_TRANSACTION': _(
+            'La transacción no fue aceptada por el banco por algún motivo.'),
+        'ERROR_CONVERTING_TRANSACTION_AMOUNTS': _(
+            'Ocurrió un error convirtiendo los montos a la moneda de pago.'),
         'EXPIRED_TRANSACTION': _('La transacción expiró.'),
-        'PAYMENT_NETWORK_BAD_RESPONSE': _('El mensaje retornado por la red financiera es inconsistente.'),
-        'PAYMENT_NETWORK_NO_CONNECTION': _('No se pudo realizar la conexión con la red financiera.'),
+        'PAYMENT_NETWORK_BAD_RESPONSE': _(
+            'El mensaje retornado por la red financiera es inconsistente.'),
+        'PAYMENT_NETWORK_NO_CONNECTION': _(
+            'No se pudo realizar la conexión con la red financiera.'),
         'PAYMENT_NETWORK_NO_RESPONSE': _('La red financiera no respondió.'),
     }
 
@@ -117,7 +127,8 @@ class PaymentUtil(object):
             'tx_value': price,
             'currency': 'COP',
         }
-        signature_string = '{apikey}~{merchant_id}~{reference_code}~{tx_value}~{currency}'.format(**signature_data)
+        signature_string = '{apikey}~{merchant_id}~{reference_code}~{tx_value}~{currency}'.format(
+            **signature_data)
         signature.update(bytes(signature_string, 'utf8'))
         return signature.hexdigest()
 
@@ -404,3 +415,95 @@ class PaymentUtil(object):
         result = post(url=settings.PAYU_URL, data=payu_data,
                       headers={'content-type': 'application/json', 'accept': 'application/json'})
         return self.bank_list_response(result)
+
+
+class ActivityStats(object):
+    def __init__(self, activity, year, month=None):
+        self.activity = activity
+        self.year = year
+        self.month = month
+        self.total_points = defaultdict(int)
+
+        if self.month is not None:
+            self.points = self.monthly
+            self.frequency = DAILY
+        else:
+            self.points = self.yearly
+            self.frequency = MONTHLY
+
+    def monthly(self):
+        start_date = datetime.date(self.year, self.month, 1)
+        last_day = calendar.monthrange(self.year, self.month)[1]
+        until = datetime.date(self.year, self.month, last_day)
+        if until > now().date():
+            until = now().date()
+        dates = iter(rrule(DAILY, dtstart=start_date, until=until,
+                           byweekday=range(7)))
+
+        return self._get_monthly_points(dates=dates)
+
+    def yearly(self):
+        start_date = datetime.date(self.year, 1, 1)
+        until = datetime.date(self.year, 12, 31)
+        if until > now().date():
+            until = now().date()
+        dates = list(rrule(MONTHLY, dtstart=start_date, until=until,
+                           bymonth=range(13)))
+        dates.append(now() + datetime.timedelta(days=1))
+
+        return self._get_yearly_points(dates=dates)
+
+    def _get_monthly_points(self, dates):
+        points = []
+        for date in dates:
+
+            orders = Order.objects.filter(
+                status=Order.ORDER_APPROVED_STATUS,
+                calendar__activity=self.activity,
+                created_at__date=date.date())
+
+            data = self._get_data(orders=orders)
+            self._sum_points(data=data)
+            points.append({str(date.date()): data})
+
+        return points
+
+    def _get_yearly_points(self, dates):
+        points = []
+        start_date = dates.pop(0).date()
+        for date in dates:
+            end_date = date.date() - datetime.timedelta(days=1)
+            orders = Order.objects.filter(
+                status=Order.ORDER_APPROVED_STATUS,
+                calendar__activity=self.activity,
+                created_at__range=(start_date, end_date))
+
+            data = self._get_data(orders=orders)
+            self._sum_points(data=data)
+            points.append({str(end_date): data})
+            start_date = date.date()
+
+        return points
+
+    def _get_data(self, orders):
+        gross = 0
+        fee = 0
+        for order in orders:
+            gross += order.amount
+            if order.fee:
+                fee += order.amount * order.fee.amount
+            else:
+                fee += 0
+
+        net = gross - fee
+
+        return {
+            'gross': gross,
+            'fee': fee,
+            'net': net,
+        }
+
+    def _sum_points(self, data):
+        self.total_points['total_gross'] += data['gross']
+        self.total_points['total_fee'] += data['fee']
+        self.total_points['total_net'] += data['net']

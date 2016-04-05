@@ -9,7 +9,8 @@ from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,10 +20,11 @@ from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
     SendEmailShareActivityTask
+from activities.utils import ActivityStats
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
-from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto
 from .permissions import IsActivityOwner
@@ -337,3 +339,27 @@ class AutoCompleteView(APIView):
             if item not in seen:
                 seen.add(item)
                 yield item
+
+
+class ActivityStatsView(RetrieveAPIView):
+    permission_classes = (IsAuthenticated, IsOrganizer, IsActivityOwner)
+    lookup_url_kwarg = 'activity_pk'
+    serializer_class = ActivitiesSerializer
+
+    def get_queryset(self):
+        self.profile = self.request.user.organizer_profile
+        return self.profile.activity_set.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        activity = self.get_object()
+        self.validate_params()
+        year = int(request.query_params.get('year'))
+        month = request.query_params.get('month')
+        month = int(month) if month else month
+        stats = ActivityStats(activity=activity, year=year, month=month)
+        points = stats.points()
+        return Response({'points': points, 'total_points': stats.total_points})
+
+    def validate_params(self):
+        if not self.request.query_params.get('year'):
+            raise ValidationError({'year': _('Este campo es requerido.')})
