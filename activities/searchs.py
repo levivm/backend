@@ -1,9 +1,9 @@
-import datetime
 import json
 import re
-
+from datetime import datetime
 from django.conf import settings
 from django.db.models import Q
+
 
 from activities import constants
 
@@ -70,6 +70,8 @@ class ActivitySearchEngine(object):
 
         cost_end = query_params.get('cost_end')
         cost_start = query_params.get('cost_start')
+        timestamp = query_params.get('date', datetime.now().timestamp())
+        date = datetime.fromtimestamp(int(timestamp) // 1000).replace(second=0).strftime('%Y-%m-%d')
         if cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
@@ -78,54 +80,23 @@ class ActivitySearchEngine(object):
                         'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
-                params = (cost_start,)
+                params = (date, cost_start)
             else:
                 extra = {
                     extra_parameter:
-                        'SELECT "activities_calendar".'+select_parameter++' '
+                        'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
-                params = (cost_start, cost_end)
-
-            return {'select':extra, 'select_params': params}
-
-    def closest_calendar_price_query(self,query_params):
-        cost_end = query_params.get('cost_end')
-        cost_start = query_params.get('cost_start')
-        if cost_start is not None and cost_end is not None:
-            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
-            if without_limit:
-                extra = {
-                    'closest_calendar_min_price':
-                        'SELECT "activities_calendar"."session_price"'
-                        'FROM "activities_calendar" '
-                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
-                        'AND "activities_calendar"."session_price" >= %s '
-                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
-                }
-                params = (cost_start,)
-            else:
-                extra = {
-                    'closest_calendar_min_price':
-                        'SELECT "activities_calendar"."session_price"'
-                        'FROM "activities_calendar" '
-                        'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
-                        'AND "activities_calendar"."session_price" >= %s '
-                        'AND "activities_calendar"."session_price" <= %s '
-                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
-                }
-                params = (cost_start, cost_end)
+                params = (date, cost_start, cost_end)
 
             return {'select':extra, 'select_params': params}
 
@@ -150,7 +121,7 @@ class ActivitySearchEngine(object):
             query = Q(published=True)
 
         if date is not None:
-            date = datetime.datetime.fromtimestamp(int(date) // 1000).replace(second=0)
+            date = datetime.fromtimestamp(int(date) // 1000).replace(second=0)
             query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:

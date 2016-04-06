@@ -273,6 +273,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
             activities = activities.extra(**extra_q) if extra_q else activities
 
         activities = activities.order_by(*order_by)
+
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
