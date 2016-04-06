@@ -10,9 +10,9 @@ from django.test import override_settings
 from activities.factories import CalendarFactory, ActivityFactory, CalendarSessionFactory, \
     ActivityPhotoFactory
 from activities.models import ActivityCeleryTaskEditActivity, \
-    CalendarCeleryTaskEditActivity
+    CalendarCeleryTaskEditActivity, ActivityStats
 from activities.tasks import SendEmailShareActivityTask, SendEmailCalendarTask, \
-    SendEmailLocationTask
+    SendEmailLocationTask, ActivityViewsCounterTask
 from locations.factories import LocationFactory
 from orders.factories import AssistantFactory, OrderFactory
 from orders.models import Order
@@ -283,3 +283,25 @@ class SendEmailLocationTaskTest(APITestCase):
             task_id=task_id,
             state=states.FAILURE,
             activity=self.activity).exists())
+
+
+class ActivityViewsCounterTaskTest(APITestCase):
+    def setUp(self):
+        self.activity = ActivityFactory()
+        self.user = UserFactory()
+
+    def test_run(self):
+        task = ActivityViewsCounterTask()
+        task.delay(activity_id=self.activity.id, user_id=self.user.id)
+
+        self.assertEqual(self.activity.stats.views_counter, 1)
+
+    def test_no_increment(self):
+        """
+        The counter shouldn't increment if the user is the
+        activity's organizer
+        """
+        with self.assertRaises(ActivityStats.DoesNotExist):
+            task = ActivityViewsCounterTask()
+            task.delay(activity_id=self.activity.id, user_id=self.activity.organizer.user.id)
+            self.assertEqual(self.activity.stats.views_counter, 0)

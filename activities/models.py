@@ -364,3 +364,8 @@ class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):
 
 class CalendarCeleryTaskEditActivity(CeleryTaskEditActivity):
     calendar = models.ForeignKey('Calendar', related_name='tasks')
+
+
+class ActivityStats(models.Model):
+    activity = models.OneToOneField(Activity, related_name='stats')
+    views_counter = models.PositiveIntegerField(default=0)

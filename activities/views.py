@@ -9,18 +9,20 @@ from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
+    RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from activities.mixins import ActivityMixin, \
     ActivityCardMixin
+from activities.models import ActivityStats
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
-    SendEmailShareActivityTask
-from activities.utils import ActivityStats
+    SendEmailShareActivityTask, ActivityViewsCounterTask
+from activities.utils import ActivityStatsUtil
 from locations.serializers import LocationsSerializer
 from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
@@ -356,10 +358,27 @@ class ActivityStatsView(RetrieveAPIView):
         year = int(request.query_params.get('year'))
         month = request.query_params.get('month')
         month = int(month) if month else month
-        stats = ActivityStats(activity=activity, year=year, month=month)
+        stats = ActivityStatsUtil(activity=activity, year=year, month=month)
         points = stats.points()
-        return Response({'points': points, 'total_points': stats.total_points})
+
+        return Response({
+            'points': points,
+            'total_points': stats.total_points,
+            'total_views': stats.total_views,
+            'total_seats_sold': stats.total_seats_sold,
+            'next_data': stats.next_data,
+        })
 
     def validate_params(self):
         if not self.request.query_params.get('year'):
             raise ValidationError({'year': _('Este campo es requerido.')})
+
+
+class ActivityViewsCounterView(RetrieveUpdateAPIView):
+    queryset = Activity.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        activity = self.get_object()
+        task = ActivityViewsCounterTask()
+        task.delay(activity_id=activity.id, user_id=request.user.id)
+        return Response('OK')

@@ -25,7 +25,7 @@ from rest_framework import status
 
 from activities import constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
-    ActivityPhotoFactory, CalendarSessionFactory
+    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
@@ -34,7 +34,7 @@ from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
 from activities.tasks import SendEmailCalendarTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory, LocationFactory
-from orders.factories import OrderFactory
+from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Assistant, Order
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
@@ -1122,6 +1122,13 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.fee = FeeFactory(amount=0.08)
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
+        self.calendar = CalendarFactory(activity=self.activity,
+                                        initial_date=datetime.datetime(2016, 4, 6),
+                                        capacity=15)
+        ActivityStatsFactory(activity=self.activity, views_counter=3)
+        AssistantFactory.create_batch(10, order__calendar=self.calendar,
+                                      order__status=Order.ORDER_APPROVED_STATUS, enrolled=True)
+
     def test_monthly(self):
         # Anonymous should get unauthorized
         response = self.client.get(self.url)
@@ -1156,10 +1163,19 @@ class ActivityStatsViewTest(BaseAPITestCase):
             'total_net': 4278000,
         }
 
+        next_data = {
+            'date': '2016-04-06',
+            'sold': 10,
+            'capacity': 15
+        }
+
         response = self.organizer_client.get(self.url, data={'year': 2016, 'month': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['points'], points)
         self.assertEqual(response.data['total_points'], total_points)
+        self.assertEqual(response.data['total_views'], 3)
+        self.assertEqual(response.data['total_seats_sold'], 10)
+        self.assertEqual(response.data['next_data'], next_data)
 
     def test_yearly(self):
         # Anonymous should get unauthorized
@@ -1200,7 +1216,16 @@ class ActivityStatsViewTest(BaseAPITestCase):
             'total_net': len(points) * 138000,
         }
 
+        next_data = {
+            'date': '2016-04-06',
+            'sold': 10,
+            'capacity': 15
+        }
+
         response = self.organizer_client.get(self.url, data={'year': 2016})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['points'], points)
         self.assertEqual(response.data['total_points'], total_points)
+        self.assertEqual(response.data['total_views'], 3)
+        self.assertEqual(response.data['total_seats_sold'], 10)
+        self.assertEqual(response.data['next_data'], next_data)

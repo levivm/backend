@@ -6,7 +6,8 @@ import factory.fuzzy
 from django.utils.timezone import now
 from guardian.shortcuts import assign_perm
 
-from activities.models import Activity, SubCategory, Category, Tags, ActivityPhoto, Calendar, CalendarSession
+from activities.models import Activity, SubCategory, Category, Tags, ActivityPhoto, Calendar, CalendarSession, \
+    ActivityStats
 from locations.factories import LocationFactory
 from organizers.factories import OrganizerFactory
 
@@ -119,3 +120,10 @@ class CalendarSessionFactory(factory.django.DjangoModelFactory):
     start_time = factory.fuzzy.FuzzyDateTime(now() + timedelta(days=30), now() + timedelta(days=365))
     end_time = factory.LazyAttribute(lambda cs: cs.start_time + timedelta(days=60))
     calendar = factory.SubFactory(CalendarFactory)
+
+
+class ActivityStatsFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model  = ActivityStats
+
+    activity = factory.SubFactory(ActivityFactory)

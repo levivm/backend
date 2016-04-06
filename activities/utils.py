@@ -11,7 +11,7 @@ from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from requests.api import post
 
-from activities.models import Calendar
+from activities.models import Calendar, ActivityStats
 from orders.models import Order
 from payments.models import Payment as PaymentModel
 from payments.serializers import PaymentsPSEDataSerializer
@@ -417,12 +417,15 @@ class PaymentUtil(object):
         return self.bank_list_response(result)
 
 
-class ActivityStats(object):
+class ActivityStatsUtil(object):
     def __init__(self, activity, year, month=None):
         self.activity = activity
         self.year = year
         self.month = month
         self.total_points = defaultdict(int)
+        self.total_views = self._get_total_views()
+        self.total_seats_sold = self._get_total_seats_sold()
+        self.next_data = self._get_next_data()
 
         if self.month is not None:
             self.points = self.monthly
@@ -456,7 +459,6 @@ class ActivityStats(object):
     def _get_monthly_points(self, dates):
         points = []
         for date in dates:
-
             orders = Order.objects.filter(
                 status=Order.ORDER_APPROVED_STATUS,
                 calendar__activity=self.activity,
@@ -507,3 +509,22 @@ class ActivityStats(object):
         self.total_points['total_gross'] += data['gross']
         self.total_points['total_fee'] += data['fee']
         self.total_points['total_net'] += data['net']
+
+    def _get_total_views(self):
+        try:
+            total_views = self.activity.stats.views_counter
+        except ActivityStats.DoesNotExist:
+            total_views = 0
+
+        return total_views
+
+    def _get_total_seats_sold(self):
+        return sum([calendar.num_enrolled for calendar in self.activity.calendars.all()])
+
+    def _get_next_data(self):
+        closest_calendar = self.activity.closest_calendar()
+        return {
+            'date': str(closest_calendar.initial_date.date()),
+            'sold': closest_calendar.num_enrolled,
+            'capacity': closest_calendar.capacity,
+        }
