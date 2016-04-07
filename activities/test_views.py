@@ -879,8 +879,14 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_min_price_order(self):
+        data = {
+            'cost_start': self.price,
+            'cost_end': self.price + 100000,
+            'q': self.query_keyword, 
+            'o': 'min_price'
+        }
         self.create_calendars()
-        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'min_price'})
+        response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
             queryset=Activity.objects.filter(title__icontains=self.query_keyword),
             order_by=['calendars__session_price'])
@@ -889,8 +895,14 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_max_price_order(self):
+        data = {
+            'cost_start': self.price,
+            'cost_end': self.price + 100000,
+            'q': self.query_keyword, 
+            'o': 'max_price'
+        }
         self.create_calendars()
-        response = self.client.get(self.url, data={'q': self.query_keyword, 'o': 'max_price'})
+        response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
             queryset=Activity.objects.filter(title__icontains=self.query_keyword),
             order_by=['-calendars__session_price'])
