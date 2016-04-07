@@ -474,15 +474,15 @@ class ActivityStatsUtil(object):
         points = []
         start_date = dates.pop(0).date()
         for date in dates:
-            end_date = date.date() - datetime.timedelta(days=1)
+            end_date = date - datetime.timedelta(days=1)
             orders = Order.objects.filter(
                 status=Order.ORDER_APPROVED_STATUS,
                 calendar__activity=self.activity,
-                created_at__range=(start_date, end_date))
+                created_at__range=(start_date, end_date.replace(hour=23, minute=59)))
 
             data = self._get_data(orders=orders)
             self._sum_points(data=data)
-            points.append({str(end_date): data})
+            points.append({str(end_date.date()): data})
             start_date = date.date()
 
         return points
@@ -523,8 +523,13 @@ class ActivityStatsUtil(object):
 
     def _get_next_data(self):
         closest_calendar = self.activity.closest_calendar()
-        return {
-            'date': str(closest_calendar.initial_date.date()),
-            'sold': closest_calendar.num_enrolled,
-            'capacity': closest_calendar.capacity,
-        }
+        if closest_calendar:
+            data = {
+                'date': str(closest_calendar.initial_date.date()),
+                'sold': closest_calendar.num_enrolled,
+                'capacity': closest_calendar.capacity,
+            }
+        else:
+            data = None
+
+        return data

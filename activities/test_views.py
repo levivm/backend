@@ -1123,11 +1123,9 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=datetime.datetime(2016, 4, 6),
+                                        initial_date=now() + timedelta(days=1),
                                         capacity=15)
         ActivityStatsFactory(activity=self.activity, views_counter=3)
-        AssistantFactory.create_batch(10, order__calendar=self.calendar,
-                                      order__status=Order.ORDER_APPROVED_STATUS, enrolled=True)
 
     def test_monthly(self):
         # Anonymous should get unauthorized
@@ -1147,7 +1145,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
                 mock_now.return_value = date
                 OrderFactory.create_batch(
                     size=2,
-                    calendar__activity=self.activity,
+                    calendar=self.calendar,
                     amount=factory.Iterator([50000, 100000]),
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
@@ -1164,10 +1162,13 @@ class ActivityStatsViewTest(BaseAPITestCase):
         }
 
         next_data = {
-            'date': '2016-04-06',
+            'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
             'capacity': 15
         }
+
+        orders = Order.objects.all()
+        AssistantFactory.create_batch(10, order=factory.Iterator(orders), enrolled=True)
 
         response = self.organizer_client.get(self.url, data={'year': 2016, 'month': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1193,13 +1194,12 @@ class ActivityStatsViewTest(BaseAPITestCase):
                 until = now().date()
             dates = list(rrule(MONTHLY, dtstart=datetime.date(2016, 1, 1),
                                until=until, bymonth=range(13)))
-            dates.append(now() + timedelta(days=1))
 
             for date in dates:
                 mock_now.return_value = date
                 OrderFactory.create_batch(
                     size=2,
-                    calendar__activity=self.activity,
+                    calendar=self.calendar,
                     amount=factory.Iterator([50000, 100000]),
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
@@ -1207,6 +1207,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
         points = []
         data = {'gross': 150000, 'fee': 12000, 'net': 138000}
         dates.pop(0)
+        dates.append(now() + timedelta(days=1))
         for date in dates:
             points.append({str(date.date() - timedelta(days=1)): data})
 
@@ -1217,10 +1218,13 @@ class ActivityStatsViewTest(BaseAPITestCase):
         }
 
         next_data = {
-            'date': '2016-04-06',
+            'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
             'capacity': 15
         }
+
+        orders = Order.objects.all()
+        AssistantFactory.create_batch(10, order=factory.Iterator(orders), enrolled=True)
 
         response = self.organizer_client.get(self.url, data={'year': 2016})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
