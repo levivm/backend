@@ -1,5 +1,6 @@
 from celery import group
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, RetrieveDestroyAPIView
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from messages.models import OrganizerMessageStudentRelation, OrganizerMessage
@@ -19,7 +20,11 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
 
     def get_queryset(self):
         if isinstance(self.profile, Organizer):
-            return self.profile.organizermessage_set.all().order_by('-pk')
+            activity_id = self.request.GET.get('activity_id')
+            if activity_id is None:
+                raise ValidationError({'activity': 'La actividad es requerida.'})
+            return self.profile.organizermessage_set.filter(
+                calendar__activity__id=activity_id).order_by('-pk')
         else:
             return self.profile.organizer_messages.all().order_by('-pk')
 

@@ -22,7 +22,7 @@ class RequestSignupTestView(BaseAPITestCase):
 
     def setUp(self):
         # URL
-        self.create_url = reverse('users:request_signup')
+        self.create_url = reverse('auth:request_signup')
 
         self.city = mommy.make(City, point='POINT(1 2)')
         self.data = {

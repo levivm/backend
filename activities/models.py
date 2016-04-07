@@ -173,7 +173,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.save(update_fields=['published'])
 
     def set_last_date(self,last_session):
-        new_last_date = last_session.get('date')
+        new_last_date = last_session.get('date').date()
         if new_last_date is not None or self.last_date is not None:
             self.last_date = new_last_date if  not self.last_date or \
                              self.last_date < new_last_date else self.last_date
@@ -205,10 +205,11 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         calendars = self.calendars.filter(query)
 
         if calendars:
-            calendars = [c for c in calendars if c.initial_date.date() >= today]
-            if calendars:
-                closest = sorted(calendars, key=lambda c: c.initial_date)[0]
+            open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+            if open_calendars:
+                closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
+
                 calendars = [c for c in calendars if c.initial_date.date() < today]
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
@@ -246,14 +247,16 @@ class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     def save(self, *args, **kwargs):
         if not self.thumbnail:
             filename = os.path.split(self.photo.name)[-1]
-            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
+            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), 
+                                                filename=filename,
                                                 width=400, height=350)
             self.thumbnail.save(
                     'thumbnail_%s' % filename,
                     simple_file,
                     save=False)
 
-        super(ActivityPhoto, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
+        super(ActivityPhoto, self).\
+            save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):

@@ -18,7 +18,8 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         self.calendar = CalendarFactory(activity__organizer=self.organizer)
         self.orders = OrderFactory.create_batch(3, calendar=self.calendar,
                                                 status=Order.ORDER_APPROVED_STATUS)
-        self.organizer_messages = OrganizerMessageFactory.create_batch(3, organizer=self.organizer)
+        self.organizer_messages = OrganizerMessageFactory.create_batch(3, organizer=self.organizer,
+                                                                       calendar=self.calendar)
         self.organizer_message_relation = OrganizerMessageStudentRelationFactory(
             organizer_message=self.organizer_messages[0],
             student=self.student,
@@ -61,7 +62,8 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Organizer should be able to list his messages
-        response = self.organizer_client.get(self.url)
+        response = self.organizer_client.get(self.url,
+                                             data={'activity_id': self.calendar.activity.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'],
                          OrganizerMessageSerializer(

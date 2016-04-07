@@ -282,8 +282,10 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def create(self, validated_data):
         sessions_data = validated_data.get('sessions')
+        last_session = sessions_data[-1]
         del (validated_data['sessions'])
         calendar = Calendar.objects.create(**validated_data)
+        calendar.activity.set_last_date(last_session)
         _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
         CalendarSession.objects.bulk_create(_sessions)
 

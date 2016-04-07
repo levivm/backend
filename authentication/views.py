@@ -1,12 +1,12 @@
 from django.contrib.auth.models import User
-from django.core.validators import validate_email
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
-from django.core.exceptions import ValidationError as DjangoValidationError
 from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, get_object_or_404
 from rest_framework.views import APIView
+from rest_framework import viewsets
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from social.apps.django_app.utils import psa
@@ -23,8 +23,9 @@ from organizers.serializers import OrganizersSerializer
 from referrals.mixins import ReferralMixin
 from students.models import Student
 from students.serializer import StudentsSerializer
-from users.models import RequestSignup
+from users.models import RequestSignup, OrganizerConfirmation
 from users.views import get_user_profile_data
+from users.serializers import RequestSignUpSerializer
 
 
 class LoginView(GenericAPIView):
@@ -86,6 +87,19 @@ class SignUpStudentView(SignUpMixin, ReferralMixin):
         task = SendEmailConfirmEmailTask()
         task.delay(confirm_email_token.id)
 
+class VerifySignupOrganizerToken(APIView):
+
+    def get(self, request, key):
+        oc = get_object_or_404(OrganizerConfirmation, key=key)
+
+        if oc.used:
+            msg = _('Token de confirmacion ha sido usado')
+            raise ValidationError(msg)
+
+        request_signup = oc.requested_signup
+        request_signup_data = RequestSignUpSerializer(request_signup).data
+
+        return Response(request_signup_data, status=status.HTTP_200_OK)
 
 class SignUpOrganizerView(SignUpMixin, GenericAPIView):
     """
@@ -134,6 +148,18 @@ class SignUpOrganizerView(SignUpMixin, GenericAPIView):
             raise ValidationError({'password': ['La contraseña es requerida.']})
 
         return password
+
+    def verify_organizer_pre_signup_key(self, request, key):
+        oc = get_object_or_404(OrganizerConfirmation, key=key)
+
+        if oc.used:
+            msg = _('Token de confirmacion ha sido usado')
+            raise ValidationError(msg)
+
+        request_signup = oc.requested_signup
+        request_signup_data = RequestSignUpSerializer(request_signup).data
+
+        return Response(request_signup_data, status=status.HTTP_200_OK)
 
 
 class SocialAuthView(ReferralMixin, GenericAPIView):
@@ -315,3 +341,8 @@ class VerifyResetPasswordTokenView(ValidateTokenMixin, GenericAPIView):
     def get(self, request, token, *args, **kwargs):
         self.validate_token(token=token)
         return Response({'OK'})
+
+
+class RequestSignupViewSet(viewsets.ModelViewSet):
+    queryset = RequestSignup.objects.all()
+    serializer_class = RequestSignUpSerializer

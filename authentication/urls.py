@@ -2,7 +2,8 @@ from django.conf.urls import url
 
 from authentication.views import LoginView, SignUpStudentView, SignUpOrganizerView, SocialAuthView, \
     ChangePasswordView, ForgotPasswordView, ResetPasswordView, ConfirmEmailView, ChangeEmailView, \
-    VerifyConfirmEmailTokenView, VerifyResetPasswordTokenView
+    VerifyConfirmEmailTokenView, VerifyResetPasswordTokenView, RequestSignupViewSet, \
+    VerifySignupOrganizerToken
 
 urlpatterns = [
     # auth:login - api/auth/login
@@ -81,4 +82,18 @@ urlpatterns = [
         view=VerifyResetPasswordTokenView.as_view(),
         name='verify_password_token',
     ),
+
+    # auth:request_signup - api/auth/request/signup
+    url(
+        regex=r'^request/signup/?$',
+        view=RequestSignupViewSet.as_view({'post':'create'}),
+        name='request_signup',
+    ),
+    # auth:request_signup - api/auth/request/signup/token/<token>
+    url(
+        regex=r'^request/signup/token/(?P<key>\w+)/$',
+        view=VerifySignupOrganizerToken.as_view(),
+        name='request_signup_token',
+    ),
+
 ]
