@@ -217,7 +217,8 @@ class PaymentUtil(object):
         payu_data = json.dumps(self.get_payu_data())
         # result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         # result = result.json()
-        if settings.PAYU_TEST and self.valid_test_user():
+        # if settings.PAYU_TEST and self.valid_test_user():
+        if settings.PAYU_TEST:
             result = self.test_response()
         else:
             result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)

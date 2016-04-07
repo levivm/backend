@@ -24,6 +24,10 @@ BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost/0'
 CELERY_ALWAYS_EAGER = False 
 
+################ SENDGRID #######################
+SENDGRID_API_KEY = "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"
+
+
 
 ################ / REDIS CONFIG #################
 
