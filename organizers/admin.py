@@ -5,8 +5,15 @@ from organizers.models import Organizer, Instructor, OrganizerBankInfo
 
 @admin.register(Organizer)
 class OrganizerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user')
+    list_display = ('name', 'user','get_email')
     raw_id_fields = ('user',)
+
+
+    def get_email(self, obj):
+        return obj.user.email
+
+    get_email.short_description = 'Email'
+
 
 
 @admin.register(Instructor)
