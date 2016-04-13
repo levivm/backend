@@ -25,7 +25,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
         self.coupon_type = mommy.make(CouponType, name='referrer')
-        self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
+        self.calendar = mommy.make(Calendar, activity__published=True, available_capacity=10)
         self.data = self.get_data()
         self.context = self.get_context()
 
@@ -133,7 +133,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         """
 
         # Arrangement
-        calendar = mommy.make(Calendar, activity__published=True, is_free=True, capacity=10)
+        calendar = mommy.make(Calendar, activity__published=True, is_free=True, available_capacity=10)
         self.data['calendar'] = calendar.id
 
         serializer = OrdersSerializer(data=self.data)

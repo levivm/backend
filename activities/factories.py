@@ -108,7 +108,7 @@ class CalendarFactory(factory.django.DjangoModelFactory):
     closing_sale = factory.LazyAttribute(lambda c: c.initial_date + timedelta(days=15))
     number_of_sessions = factory.LazyAttribute(lambda c: random.choice(range(0, 10)))
     session_price = factory.LazyAttribute(lambda c: random.choice(range(100000, 1000000)))
-    capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))
+    available_capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))
 
 
 class CalendarSessionFactory(factory.django.DjangoModelFactory):

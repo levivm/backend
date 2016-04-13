@@ -153,7 +153,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
-            'capacity': 10,
+            'available_capacity': 10,
             'activity': 1,
             'closing_sale': now_unix_timestamp,
             'session_price': 123000,
@@ -224,7 +224,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
-            'capacity': 10,
+            'available_capacity': 10,
             'activity': 1,
             'closing_sale': now_unix_timestamp,
             'session_price': 123000,
@@ -261,11 +261,11 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         data = self._get_data_to_create_a_calendar()
-        data.update({'capacity': 20, 'session_price': calendar.session_price})
+        data.update({'available_capacity': 20, 'session_price': calendar.session_price})
         data = json.dumps(data)
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
-        self.assertIn(b'"capacity":20', response.content)
+        self.assertIn(b'"available_capacity":20', response.content)
 
     def test_organizer_shouldnt_delete_calendar_if_has_students(self):
         organizer = self.get_organizer_client()

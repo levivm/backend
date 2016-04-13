@@ -26,10 +26,10 @@ class OrdersAPITest(BaseAPITestCase):
         self.calendar = mommy.make(Calendar, activity=self.activity)
         self.other_calendar = mommy.make(Calendar, activity=self.other_activity)
         self.free_calendar = mommy.make(Calendar, is_free=True,
-                                        activity=self.active_activity, capacity=10)
+                                        activity=self.active_activity, available_capacity=10)
         self.inactive_calendar = mommy.make(Calendar, activity=self.inactive_activity)
         self.full_calendar = mommy.make(Calendar, activity=self.active_activity,
-                                        capacity=0)
+                                        available_capacity=0)
         self.closed_enroll_calendar = mommy.make(Calendar, activity=self.active_activity,
                                                  enroll_open=False)
 

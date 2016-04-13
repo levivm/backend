@@ -138,7 +138,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
-    available_capacity = serializers.SerializerMethodField()
 
     class Meta:
         model = Calendar
@@ -149,7 +148,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'closing_sale',
             'number_of_sessions',
             'session_price',
-            'capacity',
             'sessions',
             'assistants',
             'is_weekend',
@@ -165,9 +163,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
                                                     remove_fields=['student'])
         return assistants_serialzer.data
 
-    def get_available_capacity(self, obj):
-        return obj.available_capacity()
-
     def validate_activity(self, value):
         return value
 
@@ -182,7 +177,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-    def validate_capacity(self, value):
+    def validate_available_capacity(self, value):
         if value < 1:
             raise serializers.ValidationError(_("La capacidad no puede ser negativa."))
         return value
@@ -350,7 +345,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             instance = obj.closest_calendar(initial_date, cost_start, cost_end)
         return CalendarSerializer(instance,
                                   remove_fields=['sessions', 'assistants', 'activity',
-                                                 'number_of_sessions', 'capacity',
+                                                 'number_of_sessions',
                                                  'available_capacity', 'is_weekend']).data
 
     def get_pictures(self, obj):

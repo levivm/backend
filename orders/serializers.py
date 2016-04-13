@@ -156,8 +156,8 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             msg = str(_("Las inscripciones están cerradas para esta fecha de inicio"))
             raise serializers.ValidationError({'generalError': msg})
 
-        if not calendar.available_capacity() or \
-                        calendar.available_capacity() < len(assistants_data):
+        if not calendar.available_capacity or \
+                        calendar.available_capacity < len(assistants_data):
             msg = str(_("El cupo de asistentes está lleno"))
             raise serializers.ValidationError({'generalError': msg})
 

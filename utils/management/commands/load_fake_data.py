@@ -229,8 +229,8 @@ class Command(BaseCommand):
         fee = self.create_fee()
         for calendar in self.calendars:
             size = self.get_quantity()
-            quantity = calendar.capacity // size
-            if quantity < 1:
+            quantity = size
+            if calendar.available_capacity < 1:
                 continue
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
                                                     student=factory.Iterator(

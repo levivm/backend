@@ -142,7 +142,6 @@ class RefundAdminTemplateView(TemplateView):
     def cancel_order(self, order_id):
         order = Order.objects.get(id=order_id)
         order.change_status(Order.ORDER_CANCELLED_STATUS)
-        order.assistants.all().update(enrolled=False)
         messages.success(self.request, 'Se canceló correctamente la order #{id}'.format(id=order_id))
 
     def cancel_assistants(self, assistant_id):

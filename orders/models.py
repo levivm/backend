@@ -16,6 +16,7 @@ class Order(models.Model):
     ORDER_PENDING_STATUS = 'pending'
     ORDER_CANCELLED_STATUS = 'cancelled'
     ORDER_DECLINED_STATUS = 'declined'
+    ORDER_STATUS_FIELD = 'status'
 
     STATUS = (
         (ORDER_APPROVED_STATUS, _('Aprobada')),
@@ -36,7 +37,28 @@ class Order(models.Model):
 
     objects = OrderQuerySet.as_manager()
 
+    def save(self, *args, **kwargs):
+
+        if self.pk is not None:
+            new_status = self.status
+
+            original_order = Order.objects.get(pk=self.pk)
+            original_status = original_order.status
+            
+            if not original_status == new_status:
+                if new_status in [self.ORDER_APPROVED_STATUS, self.ORDER_PENDING_STATUS]:
+                    self.calendar.decrease_capacity(self.num_enrolled())
+                elif new_status in [self.ORDER_CANCELLED_STATUS, self.ORDER_DECLINED_STATUS]:
+                    self.calendar.increase_capacity(self.num_enrolled())
+
+        super(Order, self).save(*args,**kwargs)
+
+
+    def num_enrolled(self):
+        return len([a for a in self.assistants.all() if a.enrolled])
+
     def change_status(self, status):
+
         self.status = status
         self.save(update_fields=['status'])
 
@@ -70,6 +92,31 @@ class Assistant(Tokenizable):
     enrolled = models.BooleanField(default=True)
 
     objects = AssistantQuerySet.as_manager()
+    
+    def save(self, *args, **kwargs):
+        is_enrolled = self.enrolled
+        order = self.order
+
+        if self.pk is not None:
+
+            was_enrolled = Assistant.objects.get(pk=self.pk).enrolled
+            
+            if not was_enrolled == is_enrolled:
+
+                if is_enrolled and order.status in [order.ORDER_APPROVED_STATUS,
+                                                         order.ORDER_PENDING_STATUS]:
+                    order.calendar.decrease_capacity(1)
+                elif not is_enrolled:
+                    order.calendar.increase_capacity(1)
+        else:
+            if is_enrolled and order.status in [order.ORDER_APPROVED_STATUS,
+                                                     order.ORDER_PENDING_STATUS]:
+                order.calendar.decrease_capacity(1)
+
+
+        super(Assistant, self).save(*args,**kwargs)
+
+
 
     def __str__(self):
         return '%s %s' % (self.first_name, self.last_name)

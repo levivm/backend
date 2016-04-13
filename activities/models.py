@@ -319,10 +319,10 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     closing_sale = models.DateTimeField()
     number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
-    capacity = models.IntegerField()
     enroll_open = models.NullBooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
+    available_capacity = models.IntegerField()
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
@@ -340,17 +340,20 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         duration = reduce(operator.add, timedeltas).total_seconds()
         return duration
 
-    @cached_property
-    def num_enrolled(self):
-        return len(self.get_assistants())
-
-    def available_capacity(self):
-        return self.capacity - self.num_enrolled
 
     def get_assistants(self):
         orders_qs = self.orders.all()
         return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
                 o.assistants.all() if a.enrolled]
+
+    def increase_capacity(self, amount):
+        self.available_capacity = self.available_capacity + amount
+        self.save(update_fields=['available_capacity'])
+
+    def decrease_capacity(self, amount):
+        self.available_capacity = self.available_capacity - amount
+        self.save(update_fields=['available_capacity'])
+
 
 
 class CalendarSession(models.Model):

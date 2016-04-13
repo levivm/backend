@@ -115,7 +115,7 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
 
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
-        self.calendar = mommy.make(Calendar, activity__published=True, capacity=10)
+        self.calendar = mommy.make(Calendar, activity__published=True, available_capacity=10)
         self.coupon_type = mommy.make(CouponType, name='referrer')
         self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
                                 calendar=self.calendar)
