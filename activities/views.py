@@ -362,6 +362,7 @@ class ActivityStatsView(RetrieveAPIView):
         points = stats.points()
 
         return Response({
+            'created_at': activity.created_at.date().isoformat(),
             'points': points,
             'total_points': stats.total_points,
             'total_views': stats.total_views,
