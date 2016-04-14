@@ -178,7 +178,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
     def validate_available_capacity(self, value):
-        if value < 1:
+        if value < 0:
             raise serializers.ValidationError(_("La capacidad no puede ser negativa."))
         return value
 

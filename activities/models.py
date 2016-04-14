@@ -202,6 +202,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
             query = query & Q(initial_date__gte=initial_date)
 
+        query = query & Q(available_capacity__gt=0)
+
         calendars = self.calendars.filter(query)
 
         if calendars:

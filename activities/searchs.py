@@ -82,6 +82,7 @@ class ActivitySearchEngine(object):
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
                         'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
+                        'AND "activities_calendar"."available_capacity" > 0'
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start)
@@ -94,6 +95,7 @@ class ActivitySearchEngine(object):
                         'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
+                        'AND "activities_calendar"."available_capacity" > 0'
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start, cost_end)
