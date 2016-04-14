@@ -14,10 +14,9 @@ from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
-from students.models import Student, WishList
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
-from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -377,6 +376,13 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     steps = serializers.SerializerMethodField()
     closest_calendar = CalendarSerializer(read_only=True)
     reviews = serializers.SerializerMethodField()
+    content = HTMLField()
+    requirements = HTMLField()
+    extra_info = HTMLField()
+    audience = HTMLField()
+    goals = HTMLField()
+    methodology = HTMLField()
+
 
     class Meta:
         model = Activity
