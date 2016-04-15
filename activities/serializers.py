@@ -376,13 +376,13 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     steps = serializers.SerializerMethodField()
     closest_calendar = CalendarSerializer(read_only=True)
     reviews = serializers.SerializerMethodField()
+    wishlist_count = serializers.SerializerMethodField()
     content = HTMLField()
     requirements = HTMLField()
     extra_info = HTMLField()
     audience = HTMLField()
     goals = HTMLField()
     methodology = HTMLField()
-
 
     class Meta:
         model = Activity
@@ -418,7 +418,8 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'score',
             'rating',
             'wish_list',
-            'reviews'
+            'reviews',
+            'wishlist_count'
         )
         depth = 1
 
@@ -447,13 +448,17 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     def get_level_display(self, obj):
         return obj.get_level_display()
 
-    def get_reviews(self,obj):
+    def get_reviews(self, obj):
         show_reviews = self.context.get('show_reviews')
         request = self.context.get('request')
         if show_reviews and request:
             reviews = obj.reviews.filter(author__user=request.user)
             return ReviewSerializer(reviews, many=True).data
         return []
+
+    def get_wishlist_count(self, obj):
+        return obj.wishlist_count
+
 
     def validate(self, data):
         request = self.context['request']

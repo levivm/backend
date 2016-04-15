@@ -154,6 +154,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             })
         return levels
 
+    @cached_property
+    def wishlist_count(self):
+        return self.wishlist_students.count()
+
     def update_tags(self, data):
         self.tags.clear()
         if data:
@@ -172,13 +176,13 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
-    def set_last_date(self,last_session):
+
+    def set_last_date(self, last_session):
         new_last_date = last_session.get('date').date()
         if new_last_date is not None or self.last_date is not None:
-            self.last_date = new_last_date if  not self.last_date or \
+            self.last_date = new_last_date if not self.last_date or \
                              self.last_date < new_last_date else self.last_date
             self.save(update_fields=['last_date'])
-
 
     def last_sale_date(self):
         dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
@@ -249,7 +253,7 @@ class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     def save(self, *args, **kwargs):
         if not self.thumbnail:
             filename = os.path.split(self.photo.name)[-1]
-            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), 
+            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()),
                                                 filename=filename,
                                                 width=400, height=350)
             self.thumbnail.save(
@@ -310,7 +314,6 @@ class ActivityStockPhoto(models.Model):
 
             sub_category_pictures += category_pictures
 
-
         # category_images
         return sub_category_pictures
 
@@ -337,11 +340,10 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         sessions = self.sessions.all()
         if not sessions:
             return None
-        get_datetime = lambda time:datetime.combine(datetime(1,1,1,0,0,0), time)
-        timedeltas = map(lambda s:get_datetime(s.end_time)-get_datetime(s.start_time),sessions)
+        get_datetime = lambda time: datetime.combine(datetime(1,1,1,0,0,0), time)
+        timedeltas = map(lambda s: get_datetime(s.end_time)-get_datetime(s.start_time), sessions)
         duration = reduce(operator.add, timedeltas).total_seconds()
         return duration
-
 
     def get_assistants(self):
         orders_qs = self.orders.all()
