@@ -1,14 +1,15 @@
-import datetime
 import json
 import re
-
+from datetime import datetime
 from django.conf import settings
 from django.db.models import Q
+
 
 from activities import constants
 
 
 class ActivitySearchEngine(object):
+
     BLACKLIST = ('curso', 'cursos', 'taller', 'talleres', 'clase', 'clases', 'seminario', 'seminarios', 'certificacion',
                  'certificación', 'certificaciones', 'de', 'la', 'que', 'el', 'en', 'y', 'a', 'los', 'del', 'se', 'las',
                  'por', 'un', 'para', 'con', 'no', 'una', 'su', 'al', 'es', 'lo', 'como', 'más', 'pero', 'sus', 'le',
@@ -18,6 +19,14 @@ class ActivitySearchEngine(object):
                  'ese', 'eso', 'había', 'ante', 'ellos', 'e', 'esto', 'mí', 'antes', 'algunos', 'qué', 'unos', 'yo',
                  'otro', 'otras', 'otra', 'él', 'tanto', 'esa', 'estos', 'mucho', 'quienes', 'nada', 'muchos', 'cual',
                  'sea', 'poco', 'ella', 'estar', 'haber', 'estas', 'estaba', 'estamos', 'algunas', 'algo', 'nosotros')
+    
+    SEARCH_ORDER_PRICE_ATTRIBUTE = 'closest_calendar_price'
+    SEARCH_ORDER_MIN_PRICE_ATTRIBUTE = 'closest_calendar_price'
+    SEARCH_ORDER_MAX_PRICE_ATTRIBUTE = '-closest_calendar_price'
+    SEARCH_ORDER_SCORE_ATTRIBUTE = '-score'
+    SEARCH_ORDER_CLOSEST_ATTRIBUTE = 'closest'
+    SEARCH_ORDER_PRICE_SELECT = 'session_price'
+    SEARCH_ORDER_CLOSEST_SELECT = 'initial_date'
 
     def normalize_query(self, query_string, findterms=re.compile(r'"([^"]+)"|(\S+)').findall,
                         normspace=re.compile(r'\s{2,}').sub):
@@ -46,38 +55,52 @@ class ActivitySearchEngine(object):
         return query
 
 
-    def extra_query(self,query_params):
+    def extra_query(self, query_params, order):
+
+
+        if order == constants.ORDER_CLOSEST:
+            extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
+            select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
+        elif order == constants.ORDER_MIN_PRICE:
+            extra_parameter = self.SEARCH_ORDER_PRICE_ATTRIBUTE
+            select_parameter = self.SEARCH_ORDER_PRICE_SELECT
+        elif order == constants.ORDER_MAX_PRICE:
+            extra_parameter = self.SEARCH_ORDER_PRICE_ATTRIBUTE
+            select_parameter = self.SEARCH_ORDER_PRICE_SELECT
+
         cost_end = query_params.get('cost_end')
         cost_start = query_params.get('cost_start')
+        timestamp = query_params.get('date', datetime.now().timestamp())
+        date = datetime.fromtimestamp(int(timestamp) // 1000).replace(second=0).strftime('%Y-%m-%d')
         if cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
                 extra = {
-                    'closest':
-                        'SELECT "activities_calendar"."initial_date"'
+                    extra_parameter:
+                        'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
+                        'AND "activities_calendar"."available_capacity" > 0'
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
-                params = (cost_start,)
+                params = (date, cost_start)
             else:
                 extra = {
-                    'closest':
-                        'SELECT "activities_calendar"."initial_date"'
+                    extra_parameter:
+                        'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."initial_date" > now() '
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
+                        'AND "activities_calendar"."available_capacity" > 0'
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
-                params = (cost_start, cost_end)
+                params = (date, cost_start, cost_end)
 
             return {'select':extra, 'select_params': params}
-
-
 
 
     def filter_query(self, query_params):
@@ -100,7 +123,7 @@ class ActivitySearchEngine(object):
             query = Q(published=True)
 
         if date is not None:
-            date = datetime.datetime.fromtimestamp(int(date) // 1000).replace(second=0)
+            date = datetime.fromtimestamp(int(date) // 1000).replace(second=0)
             query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:
@@ -125,15 +148,15 @@ class ActivitySearchEngine(object):
         return query
 
     def get_order(self, order_param):
-        if order_param == 'min_price':
-            order = ['calendars__session_price']
-        elif order_param == 'max_price':
-            order = ['-calendars__session_price']
-        elif order_param == 'score':
-            order = ['-score']
-        elif order_param == 'closest':
-            order = ['closest']
+        if order_param == constants.ORDER_MIN_PRICE:
+            order = [self.SEARCH_ORDER_MIN_PRICE_ATTRIBUTE]
+        elif order_param == constants.ORDER_MAX_PRICE:
+            order = [self.SEARCH_ORDER_MAX_PRICE_ATTRIBUTE]
+        elif order_param == constants.ORDER_SCORE:
+            order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
+        elif order_param == constants.ORDER_CLOSEST:
+            order = [self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
         else:
-            order = ['-score']
+            order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
 
         return order

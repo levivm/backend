@@ -155,6 +155,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             })
         return levels
 
+    @cached_property
+    def wishlist_count(self):
+        return self.wishlist_students.count()
+
     def update_tags(self, data):
         self.tags.clear()
         if data:
@@ -173,13 +177,13 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
-    def set_last_date(self,last_session):
-        new_last_date = last_session.get('date')
+
+    def set_last_date(self, last_session):
+        new_last_date = last_session.get('date').date()
         if new_last_date is not None or self.last_date is not None:
-            self.last_date = new_last_date if  not self.last_date or \
+            self.last_date = new_last_date if not self.last_date or \
                              self.last_date < new_last_date else self.last_date
             self.save(update_fields=['last_date'])
-
 
     def last_sale_date(self):
         dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
@@ -203,13 +207,16 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
             query = query & Q(initial_date__gte=initial_date)
 
+        query = query & Q(available_capacity__gt=0)
+
         calendars = self.calendars.filter(query)
 
         if calendars:
-            calendars = [c for c in calendars if c.initial_date.date() >= today]
-            if calendars:
-                closest = sorted(calendars, key=lambda c: c.initial_date)[0]
+            open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+            if open_calendars:
+                closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
+
                 calendars = [c for c in calendars if c.initial_date.date() < today]
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
@@ -247,14 +254,16 @@ class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
     def save(self, *args, **kwargs):
         if not self.thumbnail:
             filename = os.path.split(self.photo.name)[-1]
-            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()), filename=filename,
+            simple_file = self.create_thumbnail(bytesio=io.BytesIO(self.photo.read()),
+                                                filename=filename,
                                                 width=400, height=350)
             self.thumbnail.save(
                     'thumbnail_%s' % filename,
                     simple_file,
                     save=False)
 
-        super(ActivityPhoto, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
+        super(ActivityPhoto, self).\
+            save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
     def create_from_stock(cls, stock_cover, activity):
@@ -306,7 +315,6 @@ class ActivityStockPhoto(models.Model):
 
             sub_category_pictures += category_pictures
 
-
         # category_images
         return sub_category_pictures
 
@@ -317,10 +325,10 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     closing_sale = models.DateTimeField()
     number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
-    capacity = models.IntegerField()
     enroll_open = models.NullBooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
+    available_capacity = models.IntegerField()
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
@@ -333,22 +341,24 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         sessions = self.sessions.all()
         if not sessions:
             return None
-        get_datetime = lambda time:datetime.combine(datetime(1,1,1,0,0,0), time)
-        timedeltas = map(lambda s:get_datetime(s.end_time)-get_datetime(s.start_time),sessions)
+        get_datetime = lambda time: datetime.combine(datetime(1,1,1,0,0,0), time)
+        timedeltas = map(lambda s: get_datetime(s.end_time)-get_datetime(s.start_time), sessions)
         duration = reduce(operator.add, timedeltas).total_seconds()
         return duration
-
-    @cached_property
-    def num_enrolled(self):
-        return len(self.get_assistants())
-
-    def available_capacity(self):
-        return self.capacity - self.num_enrolled
 
     def get_assistants(self):
         orders_qs = self.orders.all()
         return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
                 o.assistants.all() if a.enrolled]
+
+    def increase_capacity(self, amount):
+        self.available_capacity = self.available_capacity + amount
+        self.save(update_fields=['available_capacity'])
+
+    def decrease_capacity(self, amount):
+        self.available_capacity = self.available_capacity - amount
+        self.save(update_fields=['available_capacity'])
+
 
 
 class CalendarSession(models.Model):

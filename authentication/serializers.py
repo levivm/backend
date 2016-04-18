@@ -47,9 +47,8 @@ class SignUpStudentSerializer(serializers.Serializer):
     def validate(self, data):
         first_name = data['first_name']
         last_name = data['last_name']
-
         username = '%s.%s' % (first_name.lower(), last_name.lower())
-        counter = User.objects.filter(username=username).count()
+        counter = User.objects.filter(first_name=first_name, last_name=last_name).count()
 
         if counter > 0:
             username += '%s' % (counter + 1)

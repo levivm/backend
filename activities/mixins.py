@@ -9,10 +9,8 @@ from students.models import Student, WishList
 class ActivityMixin(object):
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
     prefetch_related_fields = ['pictures', 'calendars__sessions',
-                               'calendars__orders__refunds',
                                'calendars__orders__student__user',
-                               'calendars__orders__assistants__refunds']
-
+                               'calendars__orders__assistants']
 
     def calculate_score(self, activity_id):
         task = ActivityScoreTask()

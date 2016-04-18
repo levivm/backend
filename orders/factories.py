@@ -2,10 +2,9 @@ import factory
 import factory.fuzzy
 
 from activities.factories import CalendarFactory
-from orders.models import Order, Assistant, Refund
+from orders.models import Order, Assistant
 from payments.factories import PaymentFactory
 from students.factories import StudentFactory
-from users.factories import UserFactory
 
 
 class OrderFactory(factory.django.DjangoModelFactory):
@@ -33,13 +32,3 @@ class AssistantFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
     enrolled = True
-
-
-class RefundFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Refund
-
-    user = factory.SubFactory(UserFactory)
-    order = factory.SubFactory(OrderFactory)
-    assistant = factory.SubFactory(AssistantFactory)
-    status = factory.fuzzy.FuzzyChoice([k for k, v in Refund.STATUS])

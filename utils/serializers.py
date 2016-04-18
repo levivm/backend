@@ -1,8 +1,8 @@
-from calendar import timegm
 import time as time_a
+from html import unescape
 from datetime import time, date, datetime
 from rest_framework import serializers
-
+from django.utils.html import escape
 
 class UnixEpochDateField(serializers.DateTimeField):
 
@@ -23,6 +23,21 @@ class UnixEpochDateField(serializers.DateTimeField):
 
     def to_internal_value(self, value):
         return datetime.fromtimestamp(value//1000).replace(second=0)
+
+
+class HTMLField(serializers.CharField):
+
+
+    def to_representation(self, value):
+        """ Return HTML code escaped """
+
+        return unescape(value)
+
+    def to_internal_value(self, value):
+        """ Return HTML code from escaped HTML value """
+
+        return escape(value)
+
 
 
 class RemovableSerializerFieldMixin(object):

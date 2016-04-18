@@ -28,7 +28,8 @@ class Student(ImageOptimizable, Updateable, models.Model):
     referrer_code = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=100, blank=True)
     verified_email = models.BooleanField(default=False)
-    wish_list = models.ManyToManyField(Activity, through='WishList')
+    wish_list = models.ManyToManyField(Activity, through='WishList',
+                                       related_name='wishlist_students')
 
     def __str__(self):
         return self.user.username
