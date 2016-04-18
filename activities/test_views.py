@@ -11,6 +11,8 @@ from itertools import cycle
 import factory
 import mock
 from PIL import Image
+from dateutil.relativedelta import relativedelta
+from dateutil.rrule import rrule, WEEKLY, DAILY, MONTHLY
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
@@ -23,7 +25,7 @@ from rest_framework import status
 
 from activities import constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
-    ActivityPhotoFactory, CalendarSessionFactory
+    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
@@ -32,9 +34,11 @@ from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
 from activities.tasks import SendEmailCalendarTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory, LocationFactory
-from orders.models import Assistant
+from orders.factories import OrderFactory, AssistantFactory
+from orders.models import Assistant, Order
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
+from payments.factories import FeeFactory
 from utils.models import CeleryTaskEditActivity, EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
@@ -1116,3 +1120,128 @@ class AutoCompleteViewTest(BaseAPITestCase):
         activities += mommy.make(Activity, title='Danza', sub_category=self.subcategories[1],
                                  organizer=self.organizers[1], tags=[self.tags[1]], _quantity=1)
         return activities
+
+
+class ActivityStatsViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        super(ActivityStatsViewTest, self).setUp()
+
+        with mock.patch('django.utils.timezone.now') as mock_now:
+            mock_now.return_value = datetime.datetime(2015, 12, 15, tzinfo=utc)
+            self.activity = ActivityFactory(organizer=self.organizer)
+
+        self.fee = FeeFactory(amount=0.08)
+        self.url = reverse('activities:stats', args=(self.activity.id,))
+
+        self.calendar = CalendarFactory(activity=self.activity,
+                                        initial_date=now() + timedelta(days=1),
+                                        capacity=15)
+        ActivityStatsFactory(activity=self.activity, views_counter=3)
+
+    def test_monthly(self):
+        # Anonymous should get unauthorized
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should get forbidden
+        response = self.student_client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should be able to get the data
+        with mock.patch('django.utils.timezone.now') as mock_now:
+            dates = list(rrule(DAILY, dtstart=datetime.date(2016, 1, 1),
+                               until=datetime.date(2016, 1, 31), byweekday=range(7)))
+
+            for date in dates:
+                mock_now.return_value = date
+                OrderFactory.create_batch(
+                    size=2,
+                    calendar=self.calendar,
+                    amount=factory.Iterator([50000, 100000]),
+                    fee=self.fee,
+                    status=Order.ORDER_APPROVED_STATUS)
+
+        points = []
+        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        for date in dates:
+            points.append({str(date.date()): data})
+
+        total_points = {
+            'total_gross': 4650000,
+            'total_fee': 372000,
+            'total_net': 4278000,
+        }
+
+        next_data = {
+            'date': str(now().date() + timedelta(days=1)),
+            'sold': 10,
+            'capacity': 15
+        }
+
+        orders = Order.objects.all()
+        AssistantFactory.create_batch(10, order=factory.Iterator(orders), enrolled=True)
+
+        response = self.organizer_client.get(self.url, data={'year': 2016, 'month': 1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['points'], points)
+        self.assertEqual(response.data['total_points'], total_points)
+        self.assertEqual(response.data['total_views'], 3)
+        self.assertEqual(response.data['total_seats_sold'], 10)
+        self.assertEqual(response.data['next_data'], next_data)
+
+    def test_yearly(self):
+        # Anonymous should get unauthorized
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should get forbidden
+        response = self.student_client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Organizer should be able to get the data
+        with mock.patch('django.utils.timezone.now') as mock_now:
+            until = datetime.date(2016, 12, 31)
+            if until > now().date():
+                until = now().date()
+            dates = list(rrule(MONTHLY, dtstart=datetime.date(2016, 1, 1),
+                               until=until, bymonth=range(13)))
+
+            for date in dates:
+                mock_now.return_value = date
+                OrderFactory.create_batch(
+                    size=2,
+                    calendar=self.calendar,
+                    amount=factory.Iterator([50000, 100000]),
+                    fee=self.fee,
+                    status=Order.ORDER_APPROVED_STATUS)
+
+        points = []
+        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        dates.pop(0)
+        dates.append(now() + timedelta(days=1))
+        for date in dates:
+            points.append({str(date.date() - timedelta(days=1)): data})
+
+        total_points = {
+            'total_gross': len(points) * 150000,
+            'total_fee': len(points) * 12000,
+            'total_net': len(points) * 138000,
+        }
+
+        next_data = {
+            'date': str(now().date() + timedelta(days=1)),
+            'sold': 10,
+            'capacity': 15
+        }
+
+        orders = Order.objects.all()
+        AssistantFactory.create_batch(10, order=factory.Iterator(orders), enrolled=True)
+
+        response = self.organizer_client.get(self.url, data={'year': 2016})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['points'], points)
+        self.assertEqual(response.data['total_points'], total_points)
+        self.assertEqual(response.data['total_views'], 3)
+        self.assertEqual(response.data['total_seats_sold'], 10)
+        self.assertEqual(response.data['next_data'], next_data)

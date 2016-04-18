@@ -103,6 +103,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
     last_date = models.DateField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     objects = ActivityQuerySet.as_manager()
 
@@ -373,3 +374,8 @@ class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):
 
 class CalendarCeleryTaskEditActivity(CeleryTaskEditActivity):
     calendar = models.ForeignKey('Calendar', related_name='tasks')
+
+
+class ActivityStats(models.Model):
+    activity = models.OneToOneField(Activity, related_name='stats')
+    views_counter = models.PositiveIntegerField(default=0)

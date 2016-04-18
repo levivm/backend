@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from activities.models import Calendar, Activity, CalendarCeleryTaskEditActivity, \
-    ActivityCeleryTaskEditActivity
+    ActivityCeleryTaskEditActivity, ActivityStats
 from utils.tasks import SendEmailTaskMixin
 
 
@@ -203,3 +203,13 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
             'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }
+
+
+class ActivityViewsCounterTask(Task):
+
+    def run(self, activity_id, user_id, *args, **kwargs):
+        activity = Activity.objects.get(id=activity_id)
+        if user_id != activity.organizer.user_id:
+            stats, _ = ActivityStats.objects.get_or_create(activity=activity)
+            stats.views_counter += 1
+            stats.save(update_fields=['views_counter'])
