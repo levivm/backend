@@ -528,7 +528,7 @@ class ActivityStatsUtil(object):
             data = {
                 'date': str(closest_calendar.initial_date.date()),
                 'sold': closest_calendar.num_enrolled,
-                'capacity': closest_calendar.capacity,
+                'available_capacity': closest_calendar.available_capacity,
             }
         else:
             data = None

@@ -71,7 +71,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
-        url = '/css/img/categories/'
+        url = 'static/img/categories/cover/'
         file_name = "%s.jpg" % obj.name.lower()
         file_name = urllib.parse.quote(file_name)
         return "%s%s" % (url, file_name)
@@ -299,6 +299,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
         return instance
 
+
 class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Activity
@@ -377,12 +378,12 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     closest_calendar = CalendarSerializer(read_only=True)
     reviews = serializers.SerializerMethodField()
     wishlist_count = serializers.SerializerMethodField()
-    content = HTMLField()
-    requirements = HTMLField()
-    extra_info = HTMLField()
-    audience = HTMLField()
-    goals = HTMLField()
-    methodology = HTMLField()
+    content = HTMLField(required=False)
+    requirements = HTMLField(required=False)
+    extra_info = HTMLField(required=False)
+    audience = HTMLField(required=False)
+    goals = HTMLField(required=False)
+    methodology = HTMLField(required=False)
 
     class Meta:
         model = Activity
@@ -458,7 +459,6 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
 
     def get_wishlist_count(self, obj):
         return obj.wishlist_count
-
 
     def validate(self, data):
         request = self.context['request']

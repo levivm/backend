@@ -53,7 +53,6 @@ class Order(models.Model):
 
         super(Order, self).save(*args,**kwargs)
 
-
     def num_enrolled(self):
         return len([a for a in self.assistants.all() if a.enrolled])
 

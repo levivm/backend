@@ -336,6 +336,11 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         super(Calendar, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @cached_property
+    def num_enrolled(self):
+        return len([o.num_enrolled() for o in self.orders.all()])
+
+
+    @cached_property
     def duration(self):
         """Returns calendar duration in ms"""
         sessions = self.sessions.all()
