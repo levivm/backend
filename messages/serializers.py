@@ -3,12 +3,14 @@ from rest_framework import serializers
 from django.utils.translation import ugettext as _
 
 from messages.models import OrganizerMessage, OrganizerMessageStudentRelation
+from students.models import Student
 
 
 class OrganizerMessageSerializer(serializers.ModelSerializer):
     organizer = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
     initial_date = serializers.SerializerMethodField()
+    is_read = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizerMessage
@@ -21,6 +23,7 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
             'calendar',
             'activity',
             'initial_date',
+            'is_read'
         )
 
     def validate(self, data):
@@ -36,6 +39,16 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
 
         data['organizer'] = organizer
         return data
+
+    def get_is_read(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            profile = request.user.get_profile()
+            if isinstance(profile, Student):    
+                instance = obj.organizermessagestudentrelation_set.get(
+                               student=profile)
+                return instance.read
+
 
     def get_organizer(self, obj):
         try:
