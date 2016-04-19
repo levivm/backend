@@ -130,3 +130,38 @@ class RetrieveDestroyOrganizerMessageViewTest(BaseAPITestCase):
             id=self.organizer_message.id).exists())
         self.assertFalse(OrganizerMessageStudentRelation.objects.filter(
             id=self.organizer_message_relation.id).exists())
+
+class UpdateOrganizerMessageViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        super(UpdateOrganizerMessageViewTest, self).setUp()
+        self.organizer_message = OrganizerMessageFactory(organizer=self.organizer)
+        self.organizer_message_relation = OrganizerMessageStudentRelationFactory(
+            organizer_message=self.organizer_message,
+            student=self.student)
+        self.url = reverse('messages:mark_as_read', args=[self.organizer_message.id])
+
+    def test_read(self):
+        # Anonymous shouldn't be able to update an organizer message
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Student should be allowed to mark as read an organizer message
+        response = self.student_client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Another student shouldn't be allowed to update the data
+        response = self.another_student_client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # Organizer shouldn't be allowed to ge the data
+        response = self.organizer_client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+
+

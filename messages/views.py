@@ -1,12 +1,18 @@
 from celery import group
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView, UpdateAPIView
+
 from rest_framework.permissions import IsAuthenticated
 
+
+
 from messages.models import OrganizerMessageStudentRelation, OrganizerMessage
-from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage, \
-    CanDeleteOrganizerMessageRelation
-from messages.serializers import OrganizerMessageSerializer
+from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage,\
+                                 CanDeleteOrganizerMessageRelation, \
+                                 CanUpdateOrganizerMessageRelation
+from messages.serializers import OrganizerMessageSerializer,\
+                                 OrganizerMessageStudentRelationSerializer
 from messages.tasks import SendEmailMessageNotificationTask, \
     SendEmailOrganizerMessageAssistantsTask
 from organizers.models import Organizer
@@ -76,3 +82,29 @@ class RetrieveDestroyOrganizerMessageView(RetrieveDestroyAPIView):
             pass
         else:
             relation.delete()
+
+
+class ReadOrganizerMessageView(UpdateAPIView):
+
+    serializer_class = OrganizerMessageStudentRelationSerializer
+    permission_classes = (IsAuthenticated, CanRetrieveOrganizerMessage,
+                          CanUpdateOrganizerMessageRelation)
+    lookup_field = 'organizer_message'
+    queryset = OrganizerMessageStudentRelation.objects.all()
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filters = {}
+        filters.update({
+            'student':self.request.user.get_profile().id,
+            'organizer_message':self.kwargs[self.lookup_field]
+        })
+        obj = get_object_or_404(queryset, **filters)
+        self.check_object_permissions(self.request, obj.organizer_message)
+        return obj
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        instance.read = True
+        instance.save()
+

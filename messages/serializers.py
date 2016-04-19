@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from django.utils.translation import ugettext as _
 
-from messages.models import OrganizerMessage
+from messages.models import OrganizerMessage, OrganizerMessageStudentRelation
 
 
 class OrganizerMessageSerializer(serializers.ModelSerializer):
@@ -54,3 +54,10 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
 
     def get_initial_date(self, obj):
         return obj.calendar.initial_date.isoformat()[:-6] + 'Z'
+
+
+class OrganizerMessageStudentRelationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrganizerMessageStudentRelation
+
