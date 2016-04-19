@@ -57,6 +57,11 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         message_subtask.assert_called_with(organizer_message_id=organizer_message.id)
 
     def test_list(self):
+
+        
+        request = mock.MagicMock()
+        request.user = self.student.user
+
         # Anonymous shouldn't be able to create a message
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -74,7 +79,8 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         response = self.student_client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'],
-                         OrganizerMessageSerializer([self.organizer_messages[0]], many=True).data)
+                         OrganizerMessageSerializer([self.organizer_messages[0]], many=True,
+                            context={'request':request}).data)
 
 
 class RetrieveDestroyOrganizerMessageViewTest(BaseAPITestCase):
@@ -88,6 +94,10 @@ class RetrieveDestroyOrganizerMessageViewTest(BaseAPITestCase):
         self.url = reverse('messages:retrieve_and_destroy', args=[self.organizer_message.id])
 
     def test_retrieve(self):
+
+        request = mock.MagicMock()
+        request.user = self.student.user
+
         # Anonymous shouldn't be able to retrieve an organizer message
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -95,7 +105,9 @@ class RetrieveDestroyOrganizerMessageViewTest(BaseAPITestCase):
         # Student should be allowed to retrieve an organizer message
         response = self.student_client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, OrganizerMessageSerializer(self.organizer_message).data)
+        self.assertEqual(response.data, 
+                         OrganizerMessageSerializer(self.organizer_message,
+                                                    context={'request':request}).data)
 
         # Another student shouldn't be allowed to get the data
         response = self.another_student_client.get(self.url)

@@ -45,9 +45,13 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
         if request and request.user:
             profile = request.user.get_profile()
             if isinstance(profile, Student):    
-                instance = obj.organizermessagestudentrelation_set.get(
+                try:
+                    instance = obj.organizermessagestudentrelation_set.get(
                                student=profile)
-                return instance.read
+                except OrganizerMessageStudentRelation.DoesNotExist:
+                    return None
+                else:
+                    return instance.read
 
 
     def get_organizer(self, obj):
