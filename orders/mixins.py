@@ -3,9 +3,10 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from django.conf import settings
+from celery import group
 
 from payments.models import Payment
-from payments.tasks import SendPaymentEmailTask
+from payments.tasks import SendPaymentEmailTask, SendNewEnrollmentEmailTask
 from activities.models import Calendar
 from referrals.models import Redeem
 from .models import Order
@@ -55,11 +56,17 @@ class ProcessPaymentMixin(object):
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
                 self.redeem_coupon(self.request.user.student_profile)
-                task = SendPaymentEmailTask()
+                payment_task = SendPaymentEmailTask()
+                new_enrollment_task = SendNewEnrollmentEmailTask()
+
                 task_data = {
                     'payment_method': settings.CC_METHOD_PAYMENT_ID
                 }
-                task.apply_async((response.data['id'],), task_data, countdown=2)
+
+                group(
+                    payment_task.s(response.data['id'], task_data),
+                    new_enrollment_task.s(response.data['id'], task_data)
+                )()
 
             return response
         else:

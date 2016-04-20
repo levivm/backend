@@ -7,11 +7,122 @@ from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Order
 from payments.factories import PaymentFactory
 from payments.models import Payment
-from payments.tasks import SendPaymentEmailTask
+from payments.tasks import SendPaymentEmailTask, SendNewEnrollmentEmailTask
 from referrals.factories import RedeemFactory
 from students.factories import StudentFactory
 from utils.models import EmailTaskRecord
 from utils.tests import TestMixinUtils
+
+
+
+
+class SendNewEnrollmentEmailTaskTest(TestMixinUtils, APITestCase):
+    """
+    Class for test SendNewEnrollmentEmailTask task
+    """
+
+    def setUp(self):
+        self.base_url = settings.FRONT_SERVER_URL
+
+    def get_context_data(self, order, assistants):
+        payment = order.payment
+        return {
+            'name': order.student.user.first_name,
+            'activity': order.calendar.activity.title,
+            'activity_url': self.base_url + 'activities/%d' % order.calendar.activity.id,
+            'organizer': order.calendar.activity.organizer.name,
+            'order_number': order.id,
+            'buyer': order.student.user.get_full_name(),
+            'payment_date': order.payment.date.isoformat(),
+            'quantity': order.quantity,
+            'card_number': str(payment.last_four_digits),
+            'assistants': [{
+                'name': assistant.get_full_name(),
+                'email': assistant.email,
+                'token': assistant.token,
+            } for assistant in assistants],
+            'subtotal': order.total_without_coupon,
+            'total': order.total,
+            'initial_date': order.calendar.initial_date.isoformat(),
+            'address': order.calendar.activity.location.address,
+            'city': order.calendar.activity.location.city.name,
+            'requirements': order.calendar.activity.requirements,
+            'detail_url': self.base_url + 'students/dashboard/history/orders/%s' % order.id,
+        }
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_send_creditcard_order_approved(self, send_mail):
+        """
+        Test task send the email successfully when:
+        - the order is approved
+        - the payment method is credit card
+        """
+
+        payment = PaymentFactory(payment_type='CC', card_type='visa')
+        order = OrderFactory(status=Order.ORDER_APPROVED_STATUS, payment=payment)
+        email = order.calendar.activity.organizer.user.email
+        assistants = AssistantFactory.create_batch(1, order=order)
+
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        task = SendNewEnrollmentEmailTask()
+        task_id = task.delay(order.id)
+
+        context = {
+            **self.get_context_data(order, assistants),
+            'status': 'Aprobada',
+            'payment_type': 'Crédito',
+            'card_type': 'VISA',
+            'coupon_amount': None,
+        }
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to=email,
+            status='sent',
+            data=context,
+            template_name='payments/email/new_enrollment.html').exists())
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_send_pse_order_approved(self, send_mail):
+        """
+        Test task send the email successfully when:
+        - the order is approved
+        - the payment method is pse
+        """
+
+        payment = PaymentFactory(payment_type='PSE')
+        order = OrderFactory(status=Order.ORDER_APPROVED_STATUS, payment=payment)
+        email = order.calendar.activity.organizer.user.email
+        assistants = AssistantFactory.create_batch(1, order=order)
+
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        task = SendNewEnrollmentEmailTask()
+        task_id = task.delay(order.id)
+
+        context = {
+            **self.get_context_data(order, assistants),
+            'status': 'Aprobada',
+            'payment_type': 'PSE',
+            'card_type': dict(Payment.CARD_TYPE)[payment.card_type],
+            'coupon_amount': None,
+        }
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to=email,
+            status='sent',
+            data=context,
+            template_name='payments/email/new_enrollment.html').exists())
 
 
 class SendPaymentEmailTaskTest(TestMixinUtils, APITestCase):
