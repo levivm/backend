@@ -1,0 +1,7 @@
+# apt-get install cron
+# touch /var/logs/cron.log
+# chmod a+x crontab
+# cp crontab /etc/cron.d/cronjobs
+# cron (este es el comando)
+
+30 10 * * 3 root python manage.py balance >> /var/logs/cron.log
