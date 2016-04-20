@@ -20,11 +20,7 @@ DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 ################ REDIS CONFIG ##################
 
-<<<<<<< Updated upstream
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost/0'
-CELERY_ALWAYS_EAGER = False 
-=======
+
 REDIS_HOST_ADDR = os.environ.get('REDIS_1_PORT_6379_TCP_ADDR','localhost')
 REDIS_PORT = os.environ.get('REDIS_1_PORT_6379_TCP_PORT','6379')
 
@@ -34,15 +30,18 @@ CELERY_ALWAYS_EAGER = False
 
 
 ################  RAVEN CONFIG #################
+
+INSTALLED_APPS += (
+    'raven.contrib.django.raven_compat',
+)
+
 RAVEN_CONFIG = {
     'dsn': os.environ.get('SENTRY_DSN')
     # If you are using git, you can also automatically configure the
     # release based on the git info.
 }
-################  / RAVEN CONFIG #################
 
 
->>>>>>> Stashed changes
 
 ################ SENDGRID #######################
 SENDGRID_API_KEY = "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"
