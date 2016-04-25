@@ -1,7 +1,7 @@
 import factory
 
 from activities.factories import CalendarFactory
-from balances.models import Balance, BalanceLog
+from balances.models import Balance, BalanceLog, Withdraw
 from organizers.factories import OrganizerFactory
 
 
@@ -18,3 +18,22 @@ class BalanceLogFactory(factory.django.DjangoModelFactory):
 
     organizer = factory.SubFactory(OrganizerFactory)
     calendar = factory.SubFactory(CalendarFactory)
+
+
+class WithdrawFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Withdraw
+
+    organizer = factory.SubFactory(OrganizerFactory)
+    amount = factory.Faker('random_int', min=100000, max=999999)
+
+    @factory.post_generation
+    def logs(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for log in extracted:
+                self.logs.add(log)

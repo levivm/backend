@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import ugettext as _
 
 from activities.models import Calendar
+from balances.querysets import BalanceLogQuerySet
 from organizers.models import Organizer
 
 
@@ -21,6 +22,8 @@ class BalanceLog(models.Model):
     organizer = models.ForeignKey(Organizer, related_name='balance_logs')
     calendar = models.ForeignKey(Calendar, related_name='balance_logs')
     status = models.CharField(choices=STATUS, max_length=15, default='unavailable')
+
+    objects = BalanceLogQuerySet.as_manager()
 
 
 class Withdraw(models.Model):

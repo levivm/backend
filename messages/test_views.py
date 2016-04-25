@@ -47,7 +47,7 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         organizer_message = OrganizerMessage.objects.get(id=response.json()['id'])
-        self.assertEqual(list(organizer_message.students.all()), students)
+        self.assertTrue(all(student in organizer_message.students.all() for student in students))
         self.assertTrue(self.organizer.user.has_perm('retrieve_message', organizer_message))
         self.assertFalse(self.organizer.user.has_perm('delete_message', organizer_message))
         for student in students:

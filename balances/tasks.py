@@ -11,8 +11,7 @@ class BalanceLogToAvailableTask(Task):
     def run(self, *args, **kwargs):
         last_monday = now() + relativedelta(weekday=MO(-1), hour=0, minute=0)
         last_week_monday = last_monday - relativedelta(weeks=1)
-        balance_logs = BalanceLog.objects.filter(
-            status='unavailable',
+        balance_logs = BalanceLog.objects.unavailable(
             calendar__initial_date__range=(last_week_monday, last_monday))
 
         result = []
