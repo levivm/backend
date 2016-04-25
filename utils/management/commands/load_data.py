@@ -3,6 +3,7 @@ from activities.management.commands import load_categories_and_subs, load_stock_
 from locations.management.commands import load_cities
 from payments.management.commands import load_fee
 from users.management.commands import set_permissions
+from referrals.management.commands import load_coupons
 
 
 class Command(BaseCommand):
@@ -14,3 +15,4 @@ class Command(BaseCommand):
         set_permissions.Command().set_permissions()
         load_fee.Command().handle()
         load_stock_covers.Command().handle()
+        load_coupons.handle()
