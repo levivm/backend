@@ -42,7 +42,7 @@ ORGANIZER_PERMISSIONS = (
     {
         'app': 'activities',
         'model': 'activity',
-        'codenames': ('add', 'change'),
+        'codenames': ('add', 'change', 'delete'),
     },
     {
         'app': 'activities',

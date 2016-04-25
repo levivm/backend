@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
+from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
@@ -14,6 +15,7 @@ from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIV
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 
 from activities import constants
 from activities.mixins import ActivityMixin, \
@@ -85,6 +87,16 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
+
+
+    def destroy(self, request, *args, **kwargs):
+        activity = self.get_object()
+        if not activity.calendars.values("orders").annotate(Count("id")).exists():
+            return super().destroy(request, *args, **kwargs)
+
+        return Response({'detail': _('No puede eliminar esta actividad, \
+                            tiene estudiantes inscritos, contactanos.')},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()

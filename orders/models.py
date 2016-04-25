@@ -38,10 +38,8 @@ class Order(models.Model):
     objects = OrderQuerySet.as_manager()
 
     def save(self, *args, **kwargs):
-
         if self.pk is not None:
             new_status = self.status
-
             original_order = Order.objects.get(pk=self.pk)
             original_status = original_order.status
             
@@ -54,7 +52,7 @@ class Order(models.Model):
         super(Order, self).save(*args,**kwargs)
 
     def num_enrolled(self):
-        return len([a for a in self.assistants.all() if a.enrolled])
+        return self.assistants.enrolled().count()
 
     def change_status(self, status):
 
@@ -95,13 +93,11 @@ class Assistant(Tokenizable):
     def save(self, *args, **kwargs):
         is_enrolled = self.enrolled
         order = self.order
-
         if self.pk is not None:
 
             was_enrolled = Assistant.objects.get(pk=self.pk).enrolled
             
             if not was_enrolled == is_enrolled:
-
                 if is_enrolled and order.status in [order.ORDER_APPROVED_STATUS,
                                                          order.ORDER_PENDING_STATUS]:
                     order.calendar.decrease_capacity(1)
@@ -110,6 +106,7 @@ class Assistant(Tokenizable):
         else:
             if is_enrolled and order.status in [order.ORDER_APPROVED_STATUS,
                                                      order.ORDER_PENDING_STATUS]:
+
                 order.calendar.decrease_capacity(1)
 
 

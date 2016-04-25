@@ -76,7 +76,6 @@ class ActivitiesListViewTest(BaseViewTest):
         self.method_get_should_return_data(clients=organizer)
         self.method_should_be(clients=organizer, method='put',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_create_an_activity(self):
         organizer = self.get_organizer_client()
@@ -99,16 +98,18 @@ class ActivitiesListViewTest(BaseViewTest):
         activity = serializer.create(validated_data=serializer.validated_data)
         self.assertTrue(user.has_perm('activities.add_activity'))
         self.assertTrue(user.has_perm('activities.change_activity', activity))
-        self.assertFalse(user.has_perm('activities.delete_activity', activity))
+        self.assertTrue(user.has_perm('activities.delete_activity', activity))
 
 
 class GetActivityViewTest(BaseViewTest):
     view = ActivitiesViewSet
     ACTIVITY_ID = 1
+    ANOTHER_ACTIVITY_ID = 2
 
     def __init__(self, methodName='runTest'):
         super(GetActivityViewTest, self).__init__(methodName)
         self.url = '/api/activities/%s' % self.ACTIVITY_ID
+        self.another_url = '/api/activities/%s' % self.ANOTHER_ACTIVITY_ID
 
     def test_url_should_resolve_correctly(self):
         self.url_resolve_to_view_correctly()
@@ -129,7 +130,14 @@ class GetActivityViewTest(BaseViewTest):
         self.method_get_should_return_data(clients=organizer)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+
+    def test_organizer_should_delete_the_activity(self):
+        organizer = self.get_organizer_client()
+        # activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        response = organizer.delete(self.another_url, content_type='application/json')
+        # activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Activity.objects.filter(id=self.ANOTHER_ACTIVITY_ID).exists())
 
     def test_organizer_should_update_the_activity(self):
         organizer = self.get_organizer_client()
@@ -258,7 +266,6 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.method_get_should_return_data(clients=organizer)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        # self.method_should_be(clients=organizer, method='delete', status=status.HTTP_204_NO_CONTENT)
 
     @mock.patch('activities.tasks.SendEmailCalendarTask.apply_async')
     def test_organizer_should_update_the_calendar(self, apply_async):
@@ -327,7 +334,7 @@ class PublishActivityViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_publish_the_activity(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
@@ -375,7 +382,6 @@ class UnpublishActivityViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     def test_organizer_should_unpublish_the_activity(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
@@ -615,7 +621,7 @@ class ActivityInfoViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='put',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
+        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ActivityTagsViewTest(BaseViewTest):
@@ -695,7 +701,6 @@ class UpdateActivityLocationViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_403_FORBIDDEN)
 
     @mock.patch('activities.tasks.SendEmailLocationTask.apply_async')
     def test_organizer_should_update_location(self, apply_async):
@@ -1136,7 +1141,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
 
         self.calendar = CalendarFactory(activity=self.activity,
                                         initial_date=now() + timedelta(days=1),
-                                        capacity=15)
+                                        available_capacity=15)
         ActivityStatsFactory(activity=self.activity, views_counter=3)
 
     def test_monthly(self):
@@ -1161,7 +1166,6 @@ class ActivityStatsViewTest(BaseAPITestCase):
                     amount=factory.Iterator([50000, 100000]),
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
-
         points = []
         data = {'gross': 150000, 'fee': 12000, 'net': 138000}
         for date in dates:
@@ -1176,7 +1180,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
-            'capacity': 15
+            'available_capacity': 5
         }
 
         orders = Order.objects.all()
@@ -1232,11 +1236,10 @@ class ActivityStatsViewTest(BaseAPITestCase):
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
-            'capacity': 15
+            'available_capacity': 5
         }
-
         orders = Order.objects.all()
-        AssistantFactory.create_batch(10, order=factory.Iterator(orders), enrolled=True)
+        AssistantFactory.create_batch(10, order=orders[0], enrolled=True)
 
         response = self.organizer_client.get(self.url, data={'year': 2016})
         self.assertEqual(response.status_code, status.HTTP_200_OK)

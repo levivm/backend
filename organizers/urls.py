@@ -1,11 +1,11 @@
 from django.conf.urls import url
 
 from organizers.views import InstructorViewSet, ActivityInstructorViewSet, OrganizerBankInfoViewSet
-from .views import signup, OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, \
+from .views import OrganizerSignupView, OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, \
     OrganizerBankInfoChoicesViewSet
 
 urlpatterns = [
-    url(r'^organizers/signup/$', signup),
+    url(r'^organizers/signup/$', OrganizerSignupView.as_view()),
     url(r'^organizers/(?P<organizer_pk>\d+)/?$',
         OrganizerViewSet.as_view({'put': 'partial_update', 'get': 'retrieve'})),
     url(r'^organizers/(?P<organizer_pk>\d+)/activities/?$', OrganizerViewSet.as_view({'get': 'activities'}),

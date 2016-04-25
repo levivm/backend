@@ -79,8 +79,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         ('5', _('Viernes')),
     )
 
-    # permissions = ('organizers.delete_instructor',)
-    permissions = ('activities.change_activity',)
+    permissions = ('activities.change_activity', 'organizers.delete_activity')
 
     sub_category = models.ForeignKey(SubCategory)
     organizer = models.ForeignKey(Organizer)
@@ -337,7 +336,7 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
 
     @cached_property
     def num_enrolled(self):
-        return len([o.num_enrolled() for o in self.orders.all()])
+        return sum([o.num_enrolled() for o in self.orders.available()])
 
 
     @cached_property

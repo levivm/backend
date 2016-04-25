@@ -9,7 +9,7 @@ from .views import ActivitiesViewSet, CategoriesViewSet, \
 urlpatterns = [
     url(r'^$', ActivitiesViewSet.as_view({'get': 'list', 'post': 'create'})),
 
-    url(r'^(?P<activity_pk>\d+)/?$', ActivitiesViewSet.as_view({'get': 'retrieve', 'put': 'partial_update'})),
+    url(r'^(?P<activity_pk>\d+)/?$', ActivitiesViewSet.as_view({'get': 'retrieve', 'put': 'partial_update', 'delete':'destroy'})),
     url(r'^(?P<activity_pk>\d+)/calendars/?$', CalendarViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^(?P<activity_pk>\d+)/calendars/(?P<calendar_pk>\d+)/?$', CalendarViewSet.as_view({
        'put': 'update', 'get': 'retrieve', 'delete': 'destroy'})),
