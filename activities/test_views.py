@@ -133,11 +133,22 @@ class GetActivityViewTest(BaseViewTest):
 
     def test_organizer_should_delete_the_activity(self):
         organizer = self.get_organizer_client()
-        # activity = Activity.objects.get(id=self.ACTIVITY_ID)
         response = organizer.delete(self.another_url, content_type='application/json')
-        # activity = Activity.objects.get(id=self.ACTIVITY_ID)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Activity.objects.filter(id=self.ANOTHER_ACTIVITY_ID).exists())
+
+    def test_organizer_should_not_delete_the_activity_if_has_orders(self):
+        activity = Activity.objects.get(id=self.ANOTHER_ACTIVITY_ID)
+        calendar = activity.calendars.all()[0]
+        OrderFactory.create_batch(
+            size=2,
+            calendar=calendar,
+            amount=factory.Iterator([50000, 100000]),
+            status=Order.ORDER_APPROVED_STATUS)
+        organizer = self.get_organizer_client()
+        response = organizer.delete(self.another_url, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Activity.objects.filter(id=self.ANOTHER_ACTIVITY_ID).exists())
 
     def test_organizer_should_update_the_activity(self):
         organizer = self.get_organizer_client()

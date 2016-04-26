@@ -91,12 +91,12 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         activity = self.get_object()
-        if not activity.calendars.values("orders").annotate(Count("id")).exists():
-            return super().destroy(request, *args, **kwargs)
-
-        return Response({'detail': _('No puede eliminar esta actividad, \
+        if activity.calendars.filter(orders__isnull=False).exists():
+            return Response({'detail': _('No puede eliminar esta actividad, \
                             tiene estudiantes inscritos, contactanos.')},
                         status=status.HTTP_400_BAD_REQUEST)
+
+        return super().destroy(request, *args, **kwargs)
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
