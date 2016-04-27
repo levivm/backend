@@ -34,6 +34,24 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
         else:
             return self.profile.organizer_messages.all().order_by('-pk')
 
+    def get_paginated_response(self, data):
+
+        paginated_response = super(ListAndCreateOrganizerMessageView, self).\
+            get_paginated_response(data)
+
+        if isinstance(self.profile, Organizer):
+            return paginated_response
+
+        unread_messages = self.get_queryset().\
+                                filter(organizermessagestudentrelation__read=False,
+                                       organizermessagestudentrelation__student=self.profile).\
+                                count()
+
+        paginated_response.data.update({
+            'unread_messages': unread_messages
+        })
+        return paginated_response
+
     def create(self, request, *args, **kwargs):
         self.profile = request.user.get_profile()
         return super(ListAndCreateOrganizerMessageView, self).create(request, *args, **kwargs)

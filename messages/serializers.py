@@ -48,6 +48,7 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
                 try:
                     instance = obj.organizermessagestudentrelation_set.get(
                                student=profile)
+                    return instance.read
                 except OrganizerMessageStudentRelation.DoesNotExist:
                     return None
                 else:

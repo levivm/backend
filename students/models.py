@@ -25,7 +25,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
     city = models.ForeignKey(City, null=True)
-    referrer_code = models.CharField(max_length=20, unique=True)
+    referrer_code = models.CharField(max_length=100, unique=True)
     telephone = models.CharField(max_length=100, blank=True)
     verified_email = models.BooleanField(default=False)
     wish_list = models.ManyToManyField(Activity, through='WishList',

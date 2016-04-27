@@ -57,7 +57,6 @@ class ListAndCreateOrganizerMessageViewTest(BaseAPITestCase):
         message_subtask.assert_called_with(organizer_message_id=organizer_message.id)
 
     def test_list(self):
-
         
         request = mock.MagicMock()
         request.user = self.student.user

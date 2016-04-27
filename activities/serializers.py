@@ -378,12 +378,12 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     closest_calendar = CalendarSerializer(read_only=True)
     reviews = serializers.SerializerMethodField()
     wishlist_count = serializers.SerializerMethodField()
-    content = HTMLField(required=False)
-    requirements = HTMLField(required=False)
-    extra_info = HTMLField(required=False)
-    audience = HTMLField(required=False)
-    goals = HTMLField(required=False)
-    methodology = HTMLField(required=False)
+    content = HTMLField(allow_blank=True)
+    requirements = HTMLField(allow_blank=True)
+    extra_info = HTMLField(allow_blank=True)
+    audience = HTMLField(allow_blank=True)
+    goals = HTMLField(allow_blank=True)
+    methodology = HTMLField(allow_blank=True)
 
     class Meta:
         model = Activity
