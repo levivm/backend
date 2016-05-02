@@ -80,10 +80,12 @@ class AssociateStudentToMessagesTask(Task):
         
         student_messages = []
         for message in messages:
-            student_message = OrganizerMessageStudentRelation(student=student, 
-                                                              organizer_message=message)
-            student_messages.append(student_message)
-        return OrganizerMessageStudentRelation.objects.bulk_create(student_messages)
+            student_message, created = OrganizerMessageStudentRelation.\
+                objects.get_or_create(student=student,
+                    organizer_message=message)
+            if created:
+                student_messages.append(student_message)
+        return student_messages
         
 
 

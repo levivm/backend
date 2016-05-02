@@ -145,8 +145,8 @@ USE_THOUSAND_SEPARATOR = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 AWS_STORAGE_BUCKET_NAME = 'trulii-dev'
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID','AKIAIECZ3HDIG5JZX2HA')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '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')
 AWS_S3_USE_SSL = False
 # Tell django-storages that when coming up with the URL for an item in S3 storage, keep
 # it simple - just use this domain plus the path. (If this isn't set, things get complicated).

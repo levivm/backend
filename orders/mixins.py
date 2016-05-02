@@ -34,7 +34,7 @@ class ProcessPaymentMixin(object):
             response = self.proccess_payment_cc(payment, serializer)
 
             # Asociate activities sent messages to the new student
-            student_messages_task.s(calendar_id, student_id)
+            student_messages_task.delay(calendar_id, student_id)
 
             return response
 
@@ -42,7 +42,7 @@ class ProcessPaymentMixin(object):
             response = self.proccess_payment_pse(payment, serializer)
             
             # Asociate activities sent messages to the new student
-            student_messages_task.s(calendar_id, student_id)
+            student_messages_task.delay(calendar_id, student_id)
 
             return response
         else:
