@@ -15,4 +15,4 @@ class Command(BaseCommand):
         set_permissions.Command().set_permissions()
         load_fee.Command().handle()
         load_stock_covers.Command().handle()
-        load_coupons.handle()
+        load_coupons.Command().handle()
