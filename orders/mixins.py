@@ -7,6 +7,7 @@ from celery import group
 
 from payments.models import Payment
 from payments.tasks import SendPaymentEmailTask, SendNewEnrollmentEmailTask
+from messages.tasks import AssociateStudentToMessagesTask
 from activities.models import Calendar
 from referrals.models import Redeem
 from .models import Order
@@ -22,10 +23,28 @@ class ProcessPaymentMixin(object):
         payment_method = request.data.get('payment_method')
         payment = PaymentUtil(request, activity, self.coupon)
 
+        # Create task to asociate student with calendar sent messages
+        student_messages_task = AssociateStudentToMessagesTask()
+        calendar_id = request.data.get('calendar')
+        student_id = request.user.get_profile().id
+
+
         if payment_method == Payment.CC_PAYMENT_TYPE:
-            return self.proccess_payment_cc(payment, serializer)
+
+            response = self.proccess_payment_cc(payment, serializer)
+
+            # Asociate activities sent messages to the new student
+            student_messages_task.s(calendar_id, student_id)
+
+            return response
+
         elif payment_method == Payment.PSE_PAYMENT_TYPE:
-            return self.proccess_payment_pse(payment, serializer)
+            response = self.proccess_payment_pse(payment, serializer)
+            
+            # Asociate activities sent messages to the new student
+            student_messages_task.s(calendar_id, student_id)
+
+            return response
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -42,7 +61,27 @@ class ProcessPaymentMixin(object):
 
     def free_enrollment(self, serializer):
         serializer.context['status'] = Order.ORDER_APPROVED_STATUS
-        return self.call_create(serializer)
+
+        # New enrollment task 
+        new_enrollment_task = SendNewEnrollmentEmailTask()
+
+        # Create task to asociate student with calendar sent messages
+        student_messages_task = AssociateStudentToMessagesTask()
+        calendar_id = self.request.data.get('calendar')
+        student_id = self.request.user.get_profile().id
+
+        # Create order
+        response = self.call_create(serializer)
+
+
+        # Asociate activities sent messages to the new student
+        group(
+            student_messages_task.s(calendar_id, student_id), 
+            new_enrollment_task.s(response.data['id'])
+        )()
+
+
+        return response
 
     def proccess_payment_cc(self, payment, serializer):
         """ Process Credit Card Payments """

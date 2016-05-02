@@ -5,7 +5,9 @@ from rest_framework.test import APITestCase
 from activities.factories import CalendarFactory
 from messages.factories import OrganizerMessageStudentRelationFactory, OrganizerMessageFactory
 from messages.tasks import SendEmailMessageNotificationTask, \
-    SendEmailOrganizerMessageAssistantsTask
+    SendEmailOrganizerMessageAssistantsTask, AssociateStudentToMessagesTask
+from messages.models import OrganizerMessageStudentRelation
+from students.factories import StudentFactory
 from orders.factories import AssistantFactory
 from orders.models import Order
 from organizers.factories import OrganizerFactory
@@ -89,3 +91,28 @@ class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
                 template_name='messages/email/assistant_message.html',
                 data=data
             ).exists())
+
+
+class AssociateStudentToMessagesTaskTest(APITestCase):
+    def setUp(self):
+        self.organizer = OrganizerFactory()
+        self.student = StudentFactory()
+        self.calendar = CalendarFactory(activity__organizer=self.organizer)
+        self.organizer_message = OrganizerMessageFactory(calendar=self.calendar)
+        self.assistants = AssistantFactory.create_batch(
+            size=3,
+            order__calendar=self.calendar,
+            order__student=self.student,
+            order__status=Order.ORDER_APPROVED_STATUS,
+            enrolled=True)
+
+    def test_run(self):
+        task = AssociateStudentToMessagesTask()
+        task_id = task.delay(self.calendar.id, self.student.id)
+        self.assertTrue(OrganizerMessageStudentRelation.objects.\
+            filter(student=self.student.id, organizer_message__calendar=self.calendar).exists())
+
+
+
+
+
