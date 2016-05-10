@@ -18,6 +18,7 @@ from authentication.serializers import AuthTokenSerializer, SignUpStudentSeriali
     ChangePasswordSerializer, ForgotPasswordSerializer, ChangeEmailSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
     SendEmailConfirmEmailTask, SendEmailHasChangedTask
+from balances.models import Balance
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
 from referrals.mixins import ReferralMixin
@@ -119,6 +120,7 @@ class SignUpOrganizerView(SignUpMixin, GenericAPIView):
         self.assign_group(user=user)
         self.assign_permissions(user, profile)
         token = self.create_token(user)
+        self.create_balance(profile=profile)
 
         return Response({'user': profile_data, 'token': token.key})
 
@@ -160,6 +162,9 @@ class SignUpOrganizerView(SignUpMixin, GenericAPIView):
         request_signup_data = RequestSignUpSerializer(request_signup).data
 
         return Response(request_signup_data, status=status.HTTP_200_OK)
+
+    def create_balance(self, profile):
+        Balance.objects.create(organizer=profile)
 
 
 class SocialAuthView(ReferralMixin, GenericAPIView):

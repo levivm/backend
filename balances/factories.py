@@ -1,7 +1,7 @@
 import factory
 
 from activities.factories import CalendarFactory
-from balances.models import Balance, BalanceLog, Withdraw
+from balances.models import Balance, BalanceLog, Withdrawal
 from organizers.factories import OrganizerFactory
 
 
@@ -20,9 +20,9 @@ class BalanceLogFactory(factory.django.DjangoModelFactory):
     calendar = factory.SubFactory(CalendarFactory)
 
 
-class WithdrawFactory(factory.django.DjangoModelFactory):
+class WithdrawalFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Withdraw
+        model = Withdrawal
 
     organizer = factory.SubFactory(OrganizerFactory)
     amount = factory.Faker('random_int', min=100000, max=999999)

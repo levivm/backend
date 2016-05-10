@@ -2,8 +2,9 @@ from celery.task import Task
 from dateutil.relativedelta import relativedelta, MO
 from django.utils.timezone import now
 
-from balances.models import BalanceLog, Balance
+from balances.models import BalanceLog, Withdrawal
 from organizers.models import Organizer
+from utils.tasks import SendEmailTaskMixin
 
 
 class BalanceLogToAvailableTask(Task):
@@ -35,3 +36,27 @@ class CalculateOrganizerBalanceTask(Task):
     def calculate_amount(self, organizer, status):
         balance_logs = organizer.balance_logs.filter(status=status)
         return sum([o.total_net for log in balance_logs for o in log.calendar.orders.available()])
+
+
+class UpdateWithdrawalLogsStatusTask(Task):
+
+    def run(self, withdrawal_ids, *args, **kwargs):
+        self.withdrawals = Withdrawal.objects.filter(id__in=withdrawal_ids)
+
+        for withdrawal in self.withdrawals:
+            BalanceLog.objects.filter(id__in=withdrawal.logs.values_list('id', flat=True))\
+                .update(status='withdrawn')
+
+
+class NotifyWithdrawalOrganizerTask(SendEmailTaskMixin):
+
+    def run(self, withdrawal_id, status, *args, **kwargs):
+        self.withdrawal = Withdrawal.objects.get(id=withdrawal_id)
+        self.template_name = 'balances/email/notify_withdraw.html'
+        self.emails = [self.withdrawal.organizer.user.email]
+        self.subject = 'Notificación acerca de tu retiro'
+        self.global_context = self.get_context_data()
+        return super(NotifyWithdrawalOrganizerTask, self).run(*args, **kwargs)
+
+    def get_context_data(self):
+        return {}

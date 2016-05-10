@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from balances.views import BalanceRetrieveView, WithdrawListCreateView
+from balances.views import BalanceRetrieveView, WithdrawalListCreateView
 
 urlpatterns = [
 
@@ -14,7 +14,7 @@ urlpatterns = [
     # balances:withdraw - api/balances/withdraw
     url(
         regex=r'^withdraw/?$',
-        view=WithdrawListCreateView.as_view(),
+        view=WithdrawalListCreateView.as_view(),
         name='withdraw',
     ),
 ]

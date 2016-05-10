@@ -26,13 +26,13 @@ class BalanceLog(models.Model):
     objects = BalanceLogQuerySet.as_manager()
 
 
-class Withdraw(models.Model):
+class Withdrawal(models.Model):
     STATUS = (
         ('pending', _('Pendiente')),
         ('approved', _('Aprobado')),
         ('declined', _('Rechazado')),
     )
-    organizer = models.ForeignKey(Organizer, related_name='withdraws')
+    organizer = models.ForeignKey(Organizer, related_name='withdrawals')
     date = models.DateTimeField(auto_now_add=True)
     amount = models.FloatField(default=0)
     status = models.CharField(choices=STATUS, max_length=10, default='pending')

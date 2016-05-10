@@ -21,13 +21,13 @@ class BalanceRetrieveView(APIView):
         return Response(data)
 
 
-class WithdrawListCreateView(ListCreateAPIView):
+class WithdrawalListCreateView(ListCreateAPIView):
     permission_classes = (IsAuthenticated, IsOrganizer)
     serializer_class = WithdrawSerializer
     pagination_class = SmallResultsSetPagination
 
     def get_queryset(self):
-        return self.request.user.organizer_profile.withdraws.all()
+        return self.request.user.organizer_profile.withdrawals.order_by('-date')
 
     def create(self, request, *args, **kwargs):
         organizer = request.user.organizer_profile
