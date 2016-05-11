@@ -4,4 +4,4 @@
 # cp crontab /etc/cron.d/cronjobs
 # cron (este es el comando)
 
-30 10 * * 3 root python manage.py balance >> /var/logs/cron.log
+30 10 * * 4 root python manage.py balance >> /var/logs/cron.log
