@@ -148,8 +148,11 @@
             }
 
             function submit_form() {
-                var $form = $(this).parents('form');
-                $form.submit();
+                var response = confirm('¿Está seguro de querer cancelar?');
+                if(response) {
+                    var $form = $(this).parents('form');
+                    $form.submit();
+                }
             }
 
             $('tr input#action-toggle').on('click', toggle);
