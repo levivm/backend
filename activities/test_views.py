@@ -225,6 +225,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
 
     def _get_data_to_create_a_calendar(self):
         now_unix_timestamp = int(now().timestamp()) * 1000
+        self.now =  now_unix_timestamp
         return {
             'initial_date': now_unix_timestamp,
             'number_of_sessions': 1,
@@ -264,12 +265,24 @@ class GetCalendarByActivityViewTest(BaseViewTest):
     def test_organizer_should_update_the_calendar(self, apply_async):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
+        calendar.orders.all().delete()
         data = self._get_data_to_create_a_calendar()
         data.update({'capacity': 20, 'session_price': calendar.session_price})
         data = json.dumps(data)
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertIn(b'"capacity":20', response.content)
+
+    def test_organizer_shouldnt_update_calendar_session_with_orders(self):
+        calendar = Calendar.objects.get(id=self.CALENDAR_ID)
+        OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
+        organizer = self.get_organizer_client()
+        data = self._get_data_to_create_a_calendar()
+        data.update({'sessions': [{'date': self.now + 15000, 'start_time': self.now,
+                                   'end_time': self.now + 100000}]})
+        data = json.dumps(data)
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_organizer_shouldnt_delete_calendar_if_has_students(self):
         organizer = self.get_organizer_client()
@@ -704,6 +717,14 @@ class UpdateActivityLocationViewTest(BaseViewTest):
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'Calle falsa 123', response.content)
+
+    def test_organizer_shouldnt_update_location_activity_with_orders(self):
+        activity = Activity.objects.get(id=self.ACTIVITY_ID)
+        OrderFactory(calendar__activity=activity, status='approved')
+        organizer = self.get_organizer_client()
+        data = json.dumps(self.get_data_to_update())
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_another_organizer_shouldnt_update_location(self):
         organizer = self.get_organizer_client(user_id=self.ANOTHER_ORGANIZER_ID)

@@ -17,13 +17,13 @@ from rest_framework.views import APIView
 
 from activities.mixins import ActivityMixin, \
     ActivityCardMixin
-from activities.models import ActivityStats
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
     SendEmailShareActivityTask, ActivityViewsCounterTask
 from activities.utils import ActivityStatsUtil
 from locations.serializers import LocationsSerializer
+from orders.models import Order
 from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
@@ -76,8 +76,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     lookup_url_kwarg = 'activity_pk'
 
     def get_queryset(self):
-        return Activity.objects.prefetch_related(*self.prefetch_related_fields)\
-                               .select_related(*self.select_related_fields).all()
+        return Activity.objects.prefetch_related(*self.prefetch_related_fields) \
+            .select_related(*self.select_related_fields).all()
 
     def partial_update(self, request, *args, **kwargs):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
@@ -86,6 +86,12 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
+
+        if activity.publish and activity.calendars.filter(
+                orders__status=Order.ORDER_APPROVED_STATUS).count() > 0:
+            raise ValidationError({'location': ['No se puede cambiar la ubicación con personas'
+                                               'inscritas.']})
+
         location_data = request.data.copy()
         location_serializer = LocationsSerializer(data=location_data)
 
@@ -152,9 +158,9 @@ class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
         activity_serializer = self.get_activity_serializer(instance=activity,
                                                            context={'request': request})
         return Response(
-                data={'activity': activity_serializer.data, 'picture': serializer.data},
-                status=status.HTTP_201_CREATED,
-                headers=headers)
+            data={'activity': activity_serializer.data, 'picture': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
 
     def set_cover_from_stock(self, request, *args, **kwargs):
         activity = self.get_activity_object(**kwargs)
@@ -169,9 +175,9 @@ class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
         activity_serializer = self.get_activity_serializer(instance=activity,
                                                            context={'request': request})
         return Response(
-                data={'activity': activity_serializer.data, 'picture': serializer.data},
-                status=status.HTTP_201_CREATED,
-                headers=headers)
+            data={'activity': activity_serializer.data, 'picture': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         gallery_pk = kwargs.get('gallery_pk')
@@ -185,8 +191,8 @@ class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
         self.perform_destroy(instance)
         self.calculate_score(activity_id=activity.id)
         return Response(
-                data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
-                status=status.HTTP_200_OK)
+            data={'activity': activity_serializer.data, 'photo_id': gallery_pk},
+            status=status.HTTP_200_OK)
 
     def get_activity_object(self, **kwargs):
         activity_pk = kwargs.get('activity_pk')
@@ -214,8 +220,8 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
         serializer = ActivityPhotosSerializer(pictures, many=True)
 
         return Response(
-                data={'pictures': serializer.data},
-                status=status.HTTP_200_OK)
+            data={'pictures': serializer.data},
+            status=status.HTTP_200_OK)
 
 
 class TagsViewSet(viewsets.ModelViewSet):
@@ -261,7 +267,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
         query = search.get_query(q, self.query)
 
-        activities = Activity.objects.select_related(*self.select_related_fields)\
+        activities = Activity.objects.select_related(*self.select_related_fields) \
             .prefetch_related(*self.prefetch_related_fields)
 
         if query:

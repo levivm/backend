@@ -178,6 +178,10 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         return value
 
     def validate_sessions(self, value):
+        if self.instance and self.instance.orders.available().count() > 0:
+            raise serializers.ValidationError(_("No se puede cambiar la sessión con estudiantes "
+                                                "inscritos."))
+
         if len(value) > 0:
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
