@@ -282,7 +282,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
         else:
             activities = activities.filter(filters).distinct()
 
-        if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE, \
+        if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE,
                      constants.ORDER_MAX_PRICE]:
 
             extra_q = search.extra_query(request.query_params, order)

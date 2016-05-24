@@ -19,7 +19,7 @@ class ActivitySearchEngine(object):
                  'ese', 'eso', 'había', 'ante', 'ellos', 'e', 'esto', 'mí', 'antes', 'algunos', 'qué', 'unos', 'yo',
                  'otro', 'otras', 'otra', 'él', 'tanto', 'esa', 'estos', 'mucho', 'quienes', 'nada', 'muchos', 'cual',
                  'sea', 'poco', 'ella', 'estar', 'haber', 'estas', 'estaba', 'estamos', 'algunas', 'algo', 'nosotros')
-    
+
     SEARCH_ORDER_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MIN_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MAX_PRICE_ATTRIBUTE = '-closest_calendar_price'
@@ -56,8 +56,6 @@ class ActivitySearchEngine(object):
 
 
     def extra_query(self, query_params, order):
-
-
         if order == constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
@@ -68,11 +66,26 @@ class ActivitySearchEngine(object):
             extra_parameter = self.SEARCH_ORDER_PRICE_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_PRICE_SELECT
 
+        is_free = query_params.get('is_free', False)
         cost_end = query_params.get('cost_end')
         cost_start = query_params.get('cost_start')
         timestamp = query_params.get('date', datetime.now().timestamp())
         date = datetime.fromtimestamp(int(timestamp) // 1000).replace(second=0).strftime('%Y-%m-%d')
-        if cost_start is not None and cost_end is not None:
+        if is_free:
+            extra = {
+                extra_parameter:
+                    'SELECT "activities_calendar".' + select_parameter + ' '
+                    'FROM "activities_calendar" '
+                    'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                    'AND "activities_calendar"."initial_date" >= %s '
+                    'AND "activities_calendar"."is_free" = true '
+                    'AND "activities_calendar"."available_capacity" > 0 '
+                    'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
+            }
+            params = (date, cost_start)
+            return {'select': extra, 'select_params': params}
+
+        elif cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
                 extra = {
@@ -113,6 +126,7 @@ class ActivitySearchEngine(object):
         level = query_params.get('level')
         certification = query_params.get('certification')
         weekends = query_params.get('weekends')
+        is_free = query_params.get('is_free')
 
         query = Q(sub_category=subcategory) if subcategory else None
         if query is None:
@@ -144,6 +158,9 @@ class ActivitySearchEngine(object):
 
         if bool(weekends) and json.loads(weekends):
             query &= Q(calendars__is_weekend=True)
+
+        if bool(is_free):
+            query &= Q(calendars__is_free=True)
 
         return query
 

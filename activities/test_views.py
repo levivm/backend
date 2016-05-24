@@ -767,6 +767,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         activities.append(
             ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
                             certification=True, published=True))
+
         CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10),
                         session_price=self.price,
                         is_weekend=True)
@@ -960,6 +961,14 @@ class SearchActivitiesViewTest(BaseAPITestCase):
                 'cost_end': self.price + 100000,
             }
         serializer = ActivitiesCardSerializer(activities, many=True,context={'request':request})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], serializer.data)
+
+    def test_search_is_free(self):
+        activity = ActivityFactory(organizer=self.organizer, published=True)
+        CalendarFactory(activity=activity, is_free=True)
+        response = self.client.get(self.url, data={'is_free': True, 'o': 'closest'})
+        serializer = ActivitiesCardSerializer([activity], many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
