@@ -31,7 +31,8 @@ class ActivityPhotoAdmin(admin.ModelAdmin):
 
 @admin.register(Calendar)
 class CalendarAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('initial_date', 'activity', 'session_price', 'available_capacity')
+    list_filter = ('enroll_open', 'is_weekend', 'is_free', 'initial_date')
 
 
 @admin.register(CalendarSession)
