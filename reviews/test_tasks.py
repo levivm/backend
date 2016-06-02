@@ -3,7 +3,7 @@ from django.utils.timezone import now, timedelta
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.factories import CalendarFactory
+from activities.factories import CalendarFactory, CalendarSessionFactory
 from orders.factories import OrderFactory
 from reviews.factories import ReviewFactory
 from reviews.models import Review
@@ -131,8 +131,9 @@ class SendReminderReviewEmailTaskTest(APITestCase):
     """
 
     def setUp(self):
-        self.calendar = CalendarFactory(initial_date=now() - timedelta(days=5))
+        self.calendar = CalendarFactory()
         self.order = OrderFactory(calendar=self.calendar, status='approved')
+        CalendarSessionFactory(calendar=self.calendar, date=now() - timedelta(days=5))
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
