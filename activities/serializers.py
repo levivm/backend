@@ -153,6 +153,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'duration',
             'is_free',
             'available_capacity',
+            'note',
         )
         depth = 1
 

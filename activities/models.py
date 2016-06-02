@@ -328,6 +328,7 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
     available_capacity = models.IntegerField()
+    note = models.CharField(max_length=200, blank=True)
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 

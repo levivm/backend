@@ -184,7 +184,8 @@ class CalendarsByActivityViewTest(BaseViewTest):
                 'date': now_unix_timestamp,
                 'start_time': now_unix_timestamp,
                 'end_time': now_unix_timestamp + 100000,
-            }]
+            }],
+            'note': 'This is a note for the calendar!'
         }
 
     def test_url_should_resolve_correctly(self):
