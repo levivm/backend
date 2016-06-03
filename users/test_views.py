@@ -1,53 +1,15 @@
 import mock
-
-from django.core.urlresolvers import reverse
 from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from locations.factories import CityFactory
-from locations.models import City
 from users.models import OrganizerConfirmation
 from utils.models import EmailTaskRecord
-from utils.tests import BaseViewTest, BaseAPITestCase
+from utils.tests import BaseViewTest
 from .models import RequestSignup
 from .tasks import SendEmailOrganizerConfirmationTask
-
-
-class RequestSignupTestView(BaseAPITestCase):
-    """
-    Testing cases for RequestSignup
-    """
-
-    def setUp(self):
-        # URL
-        self.create_url = reverse('auth:request_signup')
-
-        self.city = mommy.make(City, point='POINT(1 2)')
-        self.data = {
-            'name': 'Organizador',
-            'email': 'organizer@testing.com',
-            'telephone': '987654321',
-            'city': self.city.id,
-            'document_type': 'cc',
-            'document': '123456789',
-            'approved': True,
-        }
-
-    def test_create(self):
-        """
-        Create an instance request_signup
-        """
-
-        request_counter = RequestSignup.objects.count()
-
-        # Anonymous should create the request
-        response = self.client.post(self.create_url, self.data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(RequestSignup.objects.count(), request_counter + 1)
-        self.assertTrue(RequestSignup.objects.filter(**{
-            **self.data, 'city': self.city, 'approved': False}).exists())
 
 
 class SendEmailOrganizerConfirmationAdminActionTest(BaseViewTest):

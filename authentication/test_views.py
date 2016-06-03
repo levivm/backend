@@ -5,6 +5,7 @@ import mock
 from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse
 from django.utils.timezone import now
+from model_mommy import mommy
 from requests.exceptions import HTTPError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -12,6 +13,7 @@ from rest_framework.test import APITestCase
 from social.apps.django_app.default.models import UserSocialAuth
 
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
+from locations.models import City
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -19,6 +21,7 @@ from students.factories import StudentFactory
 from students.models import Student
 from students.serializer import StudentsSerializer
 from users.factories import RequestSignUpFactory, UserFactory
+from users.models import RequestSignup
 from utils.models import EmailTaskRecord
 from utils.tests import BaseAPITestCase
 
@@ -664,3 +667,48 @@ class VerifyResetPasswordTokenViewTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, ['This token is not valid.'])
+
+
+class RequestSignupTestView(BaseAPITestCase):
+    """
+    Testing cases for RequestSignup
+    """
+
+    def setUp(self):
+        # URL
+        self.create_url = reverse('auth:request_signup')
+
+        self.city = mommy.make(City, point='POINT(1 2)')
+        self.data = {
+            'name': 'Organizador',
+            'email': 'organizer@testing.com',
+            'telephone': '987654321',
+            'city': self.city.id,
+            'document_type': 'cc',
+            'document': '123456789',
+            'approved': True,
+        }
+
+    def test_create(self):
+        """
+        Create an instance request_signup
+        """
+
+        request_counter = RequestSignup.objects.count()
+
+        # Anonymous should create the request
+        response = self.client.post(self.create_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(RequestSignup.objects.count(), request_counter + 1)
+        self.assertTrue(RequestSignup.objects.filter(**{
+            **self.data, 'city': self.city, 'approved': False}).exists())
+
+    def test_validate_if_email_exists(self):
+        """
+        Validate if an organizer has that email
+        If it has then raise a ValidationError
+        """
+
+        OrganizerFactory(user__email='organizer@testing.com')
+        response = self.client.post(self.create_url, self.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
