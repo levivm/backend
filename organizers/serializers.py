@@ -20,7 +20,6 @@ class InstructorsSerializer(serializers.ModelSerializer):
             'id',
             'bio',
             'organizer',
-            'photo',
             'website',
         )
 
