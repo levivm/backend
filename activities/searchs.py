@@ -72,7 +72,7 @@ class ActivitySearchEngine(object):
         cost_start = query_params.get('cost_start')
         js_timestamp = query_params.get('date')
         timestamp = int(js_timestamp) // 1000 if js_timestamp else datetime.now().timestamp()
-        
+
         date = datetime.fromtimestamp(timestamp).replace(second=0).strftime('%Y-%m-%d')
         if cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
