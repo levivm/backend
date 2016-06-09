@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from utils.mixins import OperativeModelAdminMixin
 from .models import RequestSignup, OrganizerConfirmation
 from .tasks import SendEmailOrganizerConfirmationTask
 
@@ -20,9 +21,12 @@ send_verification_email.short_description = "Send organizer verification email"
 
 
 @admin.register(RequestSignup)
-class RequestSignupAdmin(admin.ModelAdmin):
+class RequestSignupAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ['email', 'name', 'telephone', 'document_type', 'document', 'city', 'approved']
     actions = [send_verification_email]
+    operative_readonly_fields = {'email', 'name', 'telephone', 'city', 'document', 'document_type'}
 
 
-admin.site.register(OrganizerConfirmation)
+@admin.register(OrganizerConfirmation)
+class OrganizerConfirmationAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
+    operative_readonly_fields = {'requested_signup', 'created', 'key', 'sent', 'used'}

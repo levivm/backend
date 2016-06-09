@@ -101,7 +101,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
-    last_date = models.DateField(null=True)
+    last_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = ActivityQuerySet.as_manager()
@@ -331,6 +331,9 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     note = models.CharField(max_length=200, blank=True)
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
+
+    def __str__(self):
+        return '%s - id: %s' % (self.initial_date.strftime('%d de %B de %Y'), self.id)
 
     def save(self, *args, **kwargs):
         super(Calendar, self).save(user=self.activity.organizer.user, obj=self, *args, **kwargs)

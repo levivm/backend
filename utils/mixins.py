@@ -4,6 +4,7 @@ import io
 
 from PIL import Image
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
@@ -106,3 +107,19 @@ class ImageOptimizable(object):
         image_file = io.BytesIO()
         image.save(image_file, self.FORMAT, quality=self.QUALITY)
         return image_file
+
+
+class OperativeModelAdminMixin(object):
+    readonly_fields = ()
+    operative_readonly_fields = set()
+
+    def __init__(self, *args, **kwargs):
+        super(OperativeModelAdminMixin, self).__init__(*args, **kwargs)
+        operative_group = Group.objects.get(name='Operatives')
+        self.operatives = operative_group.user_set.all()
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = tuple()
+        if request.user in self.operatives and obj:
+            readonly_fields = tuple(set(self.readonly_fields) | self.operative_readonly_fields)
+        return self.readonly_fields + readonly_fields
