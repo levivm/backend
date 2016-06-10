@@ -288,7 +288,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
             extra_q = search.extra_query(request.query_params, order)
             activities = activities.extra(**extra_q) if extra_q else activities
 
-        activities = activities.extra(where=["%s IS NOT NULL"],params=["closest_calendar_price"]).order_by(*order_by)
+        activities = activities.order_by(*order_by)
 
         page = self.paginate_queryset(activities)
         if page is not None:
