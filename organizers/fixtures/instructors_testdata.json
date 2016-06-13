@@ -3,7 +3,6 @@
     "model": "organizers.instructor",
     "pk": 1,
     "fields": {
-        "photo": null,
         "organizer": 1,
         "full_name": "Instructor",
         "bio": "Instructor Biodegradable",

@@ -115,8 +115,11 @@ class OperativeModelAdminMixin(object):
 
     def __init__(self, *args, **kwargs):
         super(OperativeModelAdminMixin, self).__init__(*args, **kwargs)
-        operative_group, _created = Group.objects.get_or_create(name='Operatives')
-        self.operatives = operative_group.user_set.all()
+        try:
+            operative_group, _created = Group.objects.get_or_create(name='Operatives')
+            self.operatives = operative_group.user_set.all()
+        except:
+            self.operatives = []
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = tuple()
