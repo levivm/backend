@@ -1,15 +1,15 @@
 import mock
-
-from django.conf import settings
-from django.template import loader
+from django.utils.timezone import now, timedelta
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from activities.factories import CalendarFactory, CalendarSessionFactory
+from orders.factories import OrderFactory
 from reviews.factories import ReviewFactory
 from reviews.models import Review
-from reviews.serializers import ReviewSerializer
 from reviews.tasks import SendReportReviewEmailTask, SendCommentToOrganizerEmailTask, \
-    SendReplyToStudentEmailTask
+    SendReplyToStudentEmailTask, SendReminderReviewEmailTask
+from students.factories import StudentFactory
 from utils.models import EmailTaskRecord
 
 
@@ -123,3 +123,31 @@ class SendReplyToStudentEmailTaskTest(APITestCase):
             status='sent',
             data=context,
             template_name='reviews/email/send_reply_to_student.html').exists())
+
+
+class SendReminderReviewEmailTaskTest(APITestCase):
+    """
+    Test the task to send reminder for review an activity
+    """
+
+    def setUp(self):
+        self.calendar = CalendarFactory()
+        self.order = OrderFactory(calendar=self.calendar, status='approved')
+        CalendarSessionFactory(calendar=self.calendar, date=now() - timedelta(days=5))
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_run(self, send_mail):
+        send_mail.return_value = [{
+            'email': self.order.student.user.email,
+            'status': 'sent',
+            'reject_reason': None,
+        }]
+
+        task = SendReminderReviewEmailTask()
+        task_id = task.delay()
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to=self.order.student.user.email,
+            status='sent',
+            template_name='reviews/email/send_reminder_review.html').exists())
