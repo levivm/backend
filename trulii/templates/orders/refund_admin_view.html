@@ -1,0 +1,164 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls admin_static admin_list %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css" %}"/>
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script type="text/javascript" src="{% static "admin/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{%  static "admin/js/jquery.init.js" %}"></script>
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        a.cancel {
+            background: #ba2121;
+            border-radius: 4px;
+            color: white;
+            float: right;
+            padding: 5px;
+        }
+        a.cancel:hover {
+            background-color: #a41515;
+        }
+    </style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} change-list{% endblock %}
+
+{% block content %}
+    <h1>Refunds</h1>
+
+    <div id="changelist" class="module filtered">
+        <div id="toolbar">
+            <form action="" method="GET">
+                <label>
+                    Order ID:
+                    <input type="text" name="q">
+                    <input type="submit" value="Buscar">
+                </label>
+            </form>
+        </div>
+        <br>
+        {% if order %}
+            <form id="cancel_order" action="" method="POST">
+                {% csrf_token %}
+                <table>
+                    <caption>
+                        Orden
+                        <a href="#" class="cancel">Cancelar</a>
+                    </caption>
+                    <thead>
+                    <tr>
+                        <th>
+                            <div class="text"><span>ID</span></div>
+                        </th>
+                        <th>
+                            <div class="text"><span>ESTUDIANTE</span></div>
+                        </th>
+                        <th>
+                            <div class="text"><span>ACTIVIDAD</span></div>
+                        </th>
+                        <th>
+                            <div class="text"><span>ESTADO</span></div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <input type="hidden"
+                                   name="order_id" value="{{ order.id }}">{{ order.id }}
+                        </td>
+                        <td>{{ order.student.user.get_full_name }}</td>
+                        <td>{{ order.calendar.activity.title }}</td>
+                        <td>{{ order.status }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </form>
+        {% endif %}
+
+        <br>
+
+        {% if assistants %}
+            <form action="" id="cancel_assistants" method="POST">
+            {% csrf_token %}
+                <table>
+                    <caption>
+                        Asistentes
+                        <a href="#" class="cancel">Cancelar</a>
+                    </caption>
+                    <thead>
+                    <tr>
+                        <th class="action-checkbox-column">
+                            <div class="text">
+                                <span>
+                                    <input type="checkbox" id="action-toggle">
+                                </span>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="text"><span>NOMBRE</span></div>
+                        </th>
+                        <th>
+                            <div class="text"><span>EMAIL</span></div>
+                        </th>
+                        <th>
+                            <div class="text"><span>INSCRITO</span></div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for assistant in assistants %}
+                        <tr class="{% cycle 'row1' 'row2' %}">
+                            <td class="action-checkbox">
+                                <input class="action-select" name="assistant_id" type="checkbox" value="{{ assistant.id }}">
+                            </td>
+                            <td>{{ assistant.first_name }}</td>
+                            <td>{{ assistant.email }}</td>
+                            <td>
+                                {% if assistant.enrolled %}
+                                    <img src="{% static "admin/img/icon-yes.svg" %}" alt="True">
+                                {% else %}
+                                    <img src="{% static "admin/img/icon-no.svg" %}" alt="False">
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        {% elif order and not assistants %}
+            <p>Esta orden no tiene asistentes.</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+    <script type="text/javascript">
+    (function($) {
+        $(document).ready(function($) {
+            function toggle(){
+                var $checkboxes = $('tr input.action-select');
+                var checked = $checkboxes.prop('checked');
+                $checkboxes.prop('checked', !checked);
+            }
+
+            function submit_form() {
+                var response = confirm('¿Está seguro de querer cancelar?');
+                if(response) {
+                    var $form = $(this).parents('form');
+                    $form.submit();
+                }
+            }
+
+            $('tr input#action-toggle').on('click', toggle);
+            $('form a.cancel').on('click', submit_form)
+
+        });
+    })(django.jQuery);
+    </script>
+{% endblock %}

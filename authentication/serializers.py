@@ -37,6 +37,12 @@ class SignUpStudentSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=100)
     password1 = serializers.CharField()
 
+    def validate_last_name(self, value):
+        return '{:.20}'.format(value)
+
+    def validate_first_name(self, value):
+        return '{:.20}'.format(value)
+
     def validate_email(self, data):
         if User.objects.filter(email=data).exists():
             msg = _("Ya existe un usuario registrado con este correo electrónico.")
@@ -47,10 +53,9 @@ class SignUpStudentSerializer(serializers.Serializer):
     def validate(self, data):
         first_name = data['first_name']
         last_name = data['last_name']
-
         username = '%s.%s' % (first_name.lower(), last_name.lower())
-        counter = User.objects.filter(username=username).count()
-
+        username = '{:.29}'.format(username)
+        counter = User.objects.filter(first_name=first_name,last_name=last_name).count()
         if counter > 0:
             username += '%s' % (counter + 1)
         data['username'] = username

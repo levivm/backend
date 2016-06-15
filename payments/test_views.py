@@ -466,7 +466,7 @@ class PaymentCreditCardWithCouponTest(BaseAPITestCase):
         super(PaymentCreditCardWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = CalendarFactory(session_price=100000.0, capacity=20,
+        self.calendar = CalendarFactory(session_price=100000.0, available_capacity=20,
                                         activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment)
@@ -679,7 +679,7 @@ class PaymentPSEWithCouponTest(BaseAPITestCase):
         super(PaymentPSEWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = mommy.make(Calendar, session_price=100000.0, capacity=20,
+        self.calendar = mommy.make(Calendar, session_price=100000.0, available_capacity=20,
                                    activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment)
@@ -811,7 +811,7 @@ class PaymentWebHookWithCouponTest(BaseAPITestCase):
         super(PaymentWebHookWithCouponTest, self).setUp()
 
         # Objects
-        self.calendar = CalendarFactory(session_price=100000.0, capacity=20,
+        self.calendar = CalendarFactory(session_price=100000.0, available_capacity=20,
                                         activity__published=True)
         self.redeem = mommy.make(Redeem, student=self.student, coupon__coupon_type__amount=50000)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
@@ -1014,7 +1014,7 @@ class PaymentWebHookTest(BaseAPITestCase):
         super(PaymentWebHookTest, self).setUp()
 
         # Arrangement
-        self.calendar = CalendarFactory(activity__published=True, capacity=10)
+        self.calendar = CalendarFactory(activity__published=True, available_capacity=10)
         self.payment = mommy.make(Payment, payment_type=Payment.CC_PAYMENT_TYPE)
         self.order = mommy.make(Order, calendar=self.calendar, student=self.another_student,
                                 payment=self.payment)

@@ -228,7 +228,8 @@ class PaymentUtil(object):
         payu_data = json.dumps(self.get_payu_data())
         # result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         # result = result.json()
-        if settings.PAYU_TEST and self.valid_test_user():
+        # if settings.PAYU_TEST and self.valid_test_user():
+        if settings.PAYU_TEST:
             result = self.test_response()
         else:
             result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
@@ -527,7 +528,7 @@ class ActivityStatsUtil(object):
             data = {
                 'date': str(closest_calendar.initial_date.date()),
                 'sold': closest_calendar.num_enrolled,
-                'capacity': closest_calendar.capacity,
+                'available_capacity': closest_calendar.available_capacity,
             }
         else:
             data = None

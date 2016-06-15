@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.parsers import FileUploadParser
+from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -59,7 +59,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 class PhotoUploadView(APIView):
-    parser_classes = (FileUploadParser,)
+    parser_classes = (FileUploadParser, MultiPartParser)
 
     def post(self, request):
         user = self.request.user

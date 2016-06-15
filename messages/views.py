@@ -1,12 +1,18 @@
 from celery import group
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView, UpdateAPIView
+
 from rest_framework.permissions import IsAuthenticated
 
+
+
 from messages.models import OrganizerMessageStudentRelation, OrganizerMessage
-from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage, \
-    CanDeleteOrganizerMessageRelation
-from messages.serializers import OrganizerMessageSerializer
+from messages.permissions import IsOrganizerOrReadOnly, CanRetrieveOrganizerMessage,\
+                                 CanDeleteOrganizerMessageRelation, \
+                                 CanUpdateOrganizerMessageRelation
+from messages.serializers import OrganizerMessageSerializer,\
+                                 OrganizerMessageStudentRelationSerializer
 from messages.tasks import SendEmailMessageNotificationTask, \
     SendEmailOrganizerMessageAssistantsTask
 from organizers.models import Organizer
@@ -27,6 +33,24 @@ class ListAndCreateOrganizerMessageView(ListCreateAPIView):
                 calendar__activity__id=activity_id).order_by('-pk')
         else:
             return self.profile.organizer_messages.all().order_by('-pk')
+
+    def get_paginated_response(self, data):
+
+        paginated_response = super(ListAndCreateOrganizerMessageView, self).\
+            get_paginated_response(data)
+
+        if isinstance(self.profile, Organizer):
+            return paginated_response
+
+        unread_messages = self.get_queryset().\
+                                filter(organizermessagestudentrelation__read=False,
+                                       organizermessagestudentrelation__student=self.profile).\
+                                count()
+
+        paginated_response.data.update({
+            'unread_messages': unread_messages
+        })
+        return paginated_response
 
     def create(self, request, *args, **kwargs):
         self.profile = request.user.get_profile()
@@ -76,3 +100,29 @@ class RetrieveDestroyOrganizerMessageView(RetrieveDestroyAPIView):
             pass
         else:
             relation.delete()
+
+
+class ReadOrganizerMessageView(UpdateAPIView):
+
+    serializer_class = OrganizerMessageStudentRelationSerializer
+    permission_classes = (IsAuthenticated, CanRetrieveOrganizerMessage,
+                          CanUpdateOrganizerMessageRelation)
+    lookup_field = 'organizer_message'
+    queryset = OrganizerMessageStudentRelation.objects.all()
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filters = {}
+        filters.update({
+            'student':self.request.user.get_profile().id,
+            'organizer_message':self.kwargs[self.lookup_field]
+        })
+        obj = get_object_or_404(queryset, **filters)
+        self.check_object_permissions(self.request, obj.organizer_message)
+        return obj
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        instance.read = True
+        instance.save()
+

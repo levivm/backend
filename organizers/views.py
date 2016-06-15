@@ -4,8 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
-
+from django.views.generic import TemplateView
 
 from activities.mixins import ActivityCardMixin
 from activities.models import Activity
@@ -28,6 +27,10 @@ from .permissions import IsCurrentUserSameOrganizer
 
 def signup(request):
     return render(request, 'organizers/signup.html', {})
+
+
+class OrganizerSignupView(TemplateView):
+    template_name = 'organizers/signup.html'
 
 
 class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
