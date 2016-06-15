@@ -1,22 +1,21 @@
+from django.contrib import messages
 from django.http import Http404
+from django.views.generic.base import TemplateView
 from rest_framework import viewsets
-from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions, DjangoModelPermissions
+from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
 
-from orders.models import Refund
-from orders.serializers import RefundSerializer
+from activities.models import Activity
+from orders.models import Assistant
 from referrals.models import Coupon
 from users.mixins import UserTypeMixin
-from activities.models import Activity
-from .models import Order
+from utils.paginations import MediumResultsSetPagination
 from .mixins import ProcessPaymentMixin
-from .serializers import OrdersSerializer
+from .models import Order
 from .searchs import OrderSearchEngine
-from utils.paginations import SmallResultsSetPagination, MediumResultsSetPagination
-from utils.permissions import IsOrganizer
+from .serializers import OrdersSerializer
 
 
 class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
@@ -85,9 +84,9 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def list_by_student(self, request, *args, **kwargs):
         student = self.get_student(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
-                                    'quantity', 'activity_id', 'lastest_refund']}
+                                    'quantity', 'activity_id']}
         search = OrderSearchEngine()
-        filter_query = search.filter_query(request.query_params)        
+        filter_query = search.filter_query(request.query_params)
         orders = search.get_by_student(student, filter_query)
         page = self.paginate_queryset(orders)
         if page is not None:
@@ -100,7 +99,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     def list_by_organizer(self, request, *args, **kwargs):
         organizer = self.get_organizer(user=request.user, exception=PermissionDenied)
         params = {'remove_fields': ['calendar', 'assistants', 'payment', 'coupon',
-                                    'quantity', 'activity_id', 'lastest_refund']}
+                                    'quantity', 'activity_id']}
         search = OrderSearchEngine()
         filter_query = search.filter_query(request.query_params)
         orders = search.get_by_organizer(organizer, filter_query)
@@ -114,23 +113,42 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class RefundCreateReadView(ListCreateAPIView):
-    serializer_class = RefundSerializer
-    permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    pagination_class = SmallResultsSetPagination
+class RefundAdminTemplateView(TemplateView):
+    template_name = 'orders/refund_admin_view.html'
 
-    def get_queryset(self):
-        return self.request.user.refunds.all()
+    def get_context_data(self, **kwargs):
+        context = super(RefundAdminTemplateView, self).get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q:
+            order = get_object_or_404(Order, id=q)
+            assistants = order.assistants.all()
+            context = {
+                **context,
+                'order': order,
+                'assistants': assistants,
+            }
+        return context
 
-    def create(self, request, *args, **kwargs):
-        request.data['user'] = request.user.id
-        return super(RefundCreateReadView, self).create(request, *args, **kwargs)
+    def post(self, request, *args, **kwargs):
+        order_id = request.POST.get('order_id')
+        assistant_id = request.POST.getlist('assistant_id')
+        if order_id:
+            self.cancel_order(order_id=order_id)
+        elif assistant_id:
+            self.cancel_assistants(assistant_id=assistant_id)
+        context = self.get_context_data()
+        return self.render_to_response(context)
 
+    def cancel_order(self, order_id):
+        order = Order.objects.get(id=order_id)
+        order.change_status(Order.ORDER_CANCELLED_STATUS)
+        messages.success(self.request, 'Se canceló correctamente la order #{id}'.format(id=order_id))
 
-class RefundReadOrganizerView(ListAPIView):
-    serializer_class = RefundSerializer
-    permission_classes = [IsAuthenticated, IsOrganizer]
-    pagination_class = SmallResultsSetPagination
-
-    def get_queryset(self):
-        return Refund.objects.filter(order__calendar__activity__organizer=self.request.user.get_profile())
+    def cancel_assistants(self, assistant_id):
+        assistants = Assistant.objects.filter(id__in=assistant_id)
+        assistants.update(enrolled=False)
+        assistant = assistants[0]
+        if assistant.order.assistants.enrolled().count() == 0:
+            assistant.order.change_status(Order.ORDER_CANCELLED_STATUS)
+        messages.success(self.request, 'Se cancelaron correctamente los asistentes #{ids}'.format(
+            ids=','.join(assistant_id)))

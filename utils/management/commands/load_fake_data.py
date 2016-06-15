@@ -2,7 +2,6 @@ import random
 from typing import Optional, Any, List
 
 import factory
-from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from rest_framework.authtoken.models import Token
 
@@ -13,8 +12,8 @@ from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Ta
     Calendar, CalendarSession
 from locations.factories import CityFactory, LocationFactory
 from locations.models import City, Location
-from orders.factories import OrderFactory, AssistantFactory, RefundFactory
-from orders.models import Order, Assistant, Refund
+from orders.factories import OrderFactory, AssistantFactory
+from orders.models import Order, Assistant
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
 from organizers.models import Organizer, Instructor, OrganizerBankInfo
 from payments.factories import FeeFactory
@@ -70,7 +69,6 @@ class Command(BaseCommand):
         # Orders
         self.orders = self.create_orders()
         self.assistants = self.create_assistants()
-        self.refunds = self.create_refunds()
 
         # Referrals
         self.referral = self.create_referrals()
@@ -231,8 +229,8 @@ class Command(BaseCommand):
         fee = self.create_fee()
         for calendar in self.calendars:
             size = self.get_quantity()
-            quantity = calendar.capacity // size
-            if quantity < 1:
+            quantity = size
+            if calendar.available_capacity < 1:
                 continue
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
                                                     student=factory.Iterator(
@@ -249,17 +247,6 @@ class Command(BaseCommand):
             assistants.append(AssistantFactory.create_batch(quantity, order=order))
 
         return self.flat_list(assistants)
-
-    def create_refunds(self) -> List[Refund]:
-        self.stdout.write('Creando refunds')
-        quantity = self.get_quantity()
-        users = self.get_sample(list(User.objects.all()), quantity)
-        orders = self.get_sample(self.orders, quantity)
-        assistants = [*self.get_sample(self.assistants, quantity - 1), None]
-
-        return RefundFactory.create_batch(quantity, user=factory.Iterator(users, cycle=True),
-                                          order=factory.Iterator(orders, cycle=True),
-                                          assistant=factory.Iterator(assistants, cycle=True))
 
     def create_bank_info(self) -> List[OrganizerBankInfo]:
         self.stdout.write('Creando bank infos')

@@ -18,26 +18,20 @@ class CalendarTestCase(APITestCase):
     """
 
     def setUp(self):
-        self.calendar = mommy.make(Calendar, capacity=10)
+        self.calendar = mommy.make(Calendar, available_capacity=10)
         self.orders = self.create_orders()
         self.assistants = self.create_assistants()
 
     def create_orders(self):
         statuses = [Order.ORDER_APPROVED_STATUS, Order.ORDER_PENDING_STATUS,
                     Order.ORDER_DECLINED_STATUS, Order.ORDER_CANCELLED_STATUS]
-
-        return mommy.make(Order, calendar=self.calendar, status=cycle(statuses), quantity=4, _quantity=4)
+        orders = mommy.make(Order, calendar=self.calendar, status=cycle(statuses), quantity=4, _quantity=4)
+        return orders
+        # return mommy.make(Order, calendar=self.calendar, status=cycle(statuses), quantity=4, _quantity=4)
 
     def create_assistants(self):
         enrolled = [True, False]
         return mommy.make(Assistant, order=cycle(self.orders), enrolled=cycle(enrolled), _quantity=16)
-
-    def test_num_enrolled(self):
-        """
-        Test num_enrolled property
-        """
-
-        self.assertEqual(self.calendar.num_enrolled, 4)
 
     def test_available_capacity(self):
         """
@@ -48,7 +42,53 @@ class CalendarTestCase(APITestCase):
         # Num enrolled assistants  = 4
         # Available capacity = 10 - 4 = 6
 
-        self.assertEqual(self.calendar.available_capacity(), 6)
+        self.assertEqual(self.calendar.available_capacity, 6)
+
+        # Capacity = 10
+        # Num enrolled assistants  = 4
+        # Available capacity = 10 - 4 = 6
+        # Cancel assistant
+        # Num enrolled assistants  = 4 - 1 = 3
+        # Available capacity = 10 - 3  = 7
+
+        approved_order = self.orders[0]
+        assistants = approved_order.assistants.all()
+        first_assistant = assistants[0]
+        first_assistant.enrolled = False
+        first_assistant.save()
+
+        self.assertEqual(self.calendar.available_capacity, 7)
+
+        # Capacity = 10
+        # Num enrolled assistants  = 4
+        # Available capacity = 10 - 4 = 6
+        # Cancel assistant
+        # Num enrolled assistants  = 4 - 1 = 3
+        # Available capacity = 10 - 3  = 7
+        # Cancel order
+        # Num enrolled assistants  = 3 - 3 = 0
+        # Available capacity = 10 - 0  = 10
+
+        approved_order.change_status(Order.ORDER_CANCELLED_STATUS)
+        
+        self.assertEqual(self.calendar.available_capacity, 10)
+
+        # Capacity = 10
+        # Num enrolled assistants  = 4
+        # Available capacity = 10 - 4 = 6
+        # Cancel assistant
+        # Num enrolled assistants  = 4 - 1 = 3
+        # Available capacity = 10 - 3  = 7
+        # Cancel order
+        # Num enrolled assistants  = 3 - 3 = 0
+        # Available capacity = 10 - 0  = 10
+        # Approve order
+        # Num enrolled assistants  = 0 + 3 = 0
+        # Available capacity = 10 - 3  = 7
+        approved_order.change_status(Order.ORDER_APPROVED_STATUS)
+
+        self.assertEqual(self.calendar.available_capacity, 7)
+
 
     def test_permissions(self):
         """

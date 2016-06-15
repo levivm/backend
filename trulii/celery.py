@@ -12,3 +12,4 @@ from django.conf import settings
 app = Celery('trulii')
 app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+app.conf.update(CELERY_ACCEPT_CONTENT = ['pickle', 'json'])

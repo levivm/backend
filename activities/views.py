@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
+from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
@@ -15,6 +16,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+
+from activities import constants
 from activities.mixins import ActivityMixin, \
     ActivityCardMixin
 from activities.models import ActivityStats
@@ -32,6 +35,7 @@ from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPho
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
+
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -83,6 +87,16 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         response = super(ActivitiesViewSet, self).partial_update(request, *args, **kwargs)
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
+
+
+    def destroy(self, request, *args, **kwargs):
+        activity = self.get_object()
+        if activity.calendars.filter(orders__isnull=False).exists():
+            return Response({'detail': _('No puede eliminar esta actividad, \
+                            tiene estudiantes inscritos, contactanos.')},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+        return super().destroy(request, *args, **kwargs)
 
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
@@ -253,11 +267,10 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
     def list(self, request, **kwargs):
         q = request.query_params.get('q')
-        o = request.query_params.get('o')
-
+        order = request.query_params.get('o')
         search = ActivitySearchEngine()
         filters = search.filter_query(request.query_params)
-        order = search.get_order(o)
+        order_by = search.get_order(order)
 
         query = search.get_query(q, self.query)
 
@@ -269,11 +282,14 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
         else:
             activities = activities.filter(filters).distinct()
 
-        if 'closest' in order:
-            extra_q = search.extra_query(request.query_params)
+        if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE, \
+                     constants.ORDER_MAX_PRICE]:
+
+            extra_q = search.extra_query(request.query_params, order)
             activities = activities.extra(**extra_q) if extra_q else activities
 
-        activities = activities.order_by(*order)
+        activities = activities.order_by(*order_by)
+
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -362,6 +378,7 @@ class ActivityStatsView(RetrieveAPIView):
         points = stats.points()
 
         return Response({
+            'created_at': activity.created_at.date().isoformat(),
             'points': points,
             'total_points': stats.total_points,
             'total_views': stats.total_views,

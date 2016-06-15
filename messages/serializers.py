@@ -2,13 +2,15 @@ from rest_framework import serializers
 
 from django.utils.translation import ugettext as _
 
-from messages.models import OrganizerMessage
+from messages.models import OrganizerMessage, OrganizerMessageStudentRelation
+from students.models import Student
 
 
 class OrganizerMessageSerializer(serializers.ModelSerializer):
     organizer = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
     initial_date = serializers.SerializerMethodField()
+    is_read = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizerMessage
@@ -21,6 +23,7 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
             'calendar',
             'activity',
             'initial_date',
+            'is_read'
         )
 
     def validate(self, data):
@@ -36,6 +39,21 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
 
         data['organizer'] = organizer
         return data
+
+    def get_is_read(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            profile = request.user.get_profile()
+            if isinstance(profile, Student):    
+                try:
+                    instance = obj.organizermessagestudentrelation_set.get(
+                               student=profile)
+                    return instance.read
+                except OrganizerMessageStudentRelation.DoesNotExist:
+                    return None
+                else:
+                    return instance.read
+
 
     def get_organizer(self, obj):
         try:
@@ -54,3 +72,10 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
 
     def get_initial_date(self, obj):
         return obj.calendar.initial_date.isoformat()[:-6] + 'Z'
+
+
+class OrganizerMessageStudentRelationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrganizerMessageStudentRelation
+

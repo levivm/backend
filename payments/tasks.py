@@ -5,21 +5,7 @@ from payments.models import Payment
 from utils.tasks import SendEmailTaskMixin
 
 
-class SendPaymentEmailTask(SendEmailTaskMixin):
-    def run(self, order_id, *args, **kwargs):
-        self.kwargs = kwargs
-        self.order = Order.objects.get(id=order_id)
-
-        if self.order.status == Order.ORDER_APPROVED_STATUS:
-            self.template_name = "payments/email/payment_approved.html"
-            self.subject = 'Pago Aprobado'
-        elif self.order.status == Order.ORDER_DECLINED_STATUS:
-            self.template_name = "payments/email/payment_declined.html"
-            self.subject = 'Pago Declinado'
-
-        self.emails = [self.order.student.user.email]
-        self.global_context = self.get_context_data()
-        return super(SendPaymentEmailTask, self).run(*args, **kwargs)
+class SendPaymentEmailTaskMixin(SendEmailTaskMixin):
 
     def get_context_data(self):
         base_url = settings.FRONT_SERVER_URL
@@ -71,8 +57,39 @@ class SendPaymentEmailTask(SendEmailTaskMixin):
             return dict(Payment.CARD_TYPE)[self.order.payment.card_type]
 
     def on_success(self, retval, task_id, args, kwargs):
-        super(SendPaymentEmailTask, self).on_success(retval, task_id, args, kwargs)
+        super(SendPaymentEmailTaskMixin, self).on_success(retval, task_id, args, kwargs)
 
         if not self.order.status == Order.ORDER_APPROVED_STATUS and not \
                         self.order.status == Order.ORDER_PENDING_STATUS:
             self.order.delete()
+
+
+class SendPaymentEmailTask(SendPaymentEmailTaskMixin, SendEmailTaskMixin):
+    def run(self, order_id, *args, **kwargs):
+        self.kwargs = kwargs
+        self.order = Order.objects.get(id=order_id)
+
+        if self.order.status == Order.ORDER_APPROVED_STATUS:
+            self.template_name = "payments/email/payment_approved.html"
+            self.subject = 'Pago Aprobado'
+        elif self.order.status == Order.ORDER_DECLINED_STATUS:
+            self.template_name = "payments/email/payment_declined.html"
+            self.subject = 'Pago Declinado'
+
+        self.emails = [self.order.student.user.email]
+        self.global_context = self.get_context_data()
+        return super(SendPaymentEmailTask, self).run(*args, **kwargs)
+
+
+class SendNewEnrollmentEmailTask(SendPaymentEmailTaskMixin, SendEmailTaskMixin):
+    def run(self, order_id, *args, **kwargs):
+        self.kwargs = kwargs
+        self.order = Order.objects.get(id=order_id)
+
+        self.template_name = "payments/email/new_enrollment.html"
+        self.subject = 'Nueva Inscripción'
+
+        self.emails = [self.order.calendar.activity.organizer.user.email]
+        self.global_context = self.get_context_data()
+        return super(SendNewEnrollmentEmailTask, self).run(*args, **kwargs)
+

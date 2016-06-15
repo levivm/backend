@@ -16,3 +16,9 @@ UNPUBLISHED = 'unpublished'
 CURRENT = 'current'
 PAST = 'past'
 NEXT = 'next'
+
+#ACTIVITY SEARCH CONSTANTS
+ORDER_MIN_PRICE = 'min_price'
+ORDER_MAX_PRICE = 'max_price'
+ORDER_SCORE = 'score'
+ORDER_CLOSEST = 'closest'

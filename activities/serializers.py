@@ -14,10 +14,9 @@ from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
-from students.models import Student, WishList
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
-from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,7 +71,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
-        url = '/css/img/categories/'
+        url = 'static/img/categories/cover/'
         file_name = "%s.jpg" % obj.name.lower()
         file_name = urllib.parse.quote(file_name)
         return "%s%s" % (url, file_name)
@@ -138,7 +137,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     initial_date = UnixEpochDateField()
     closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
-    available_capacity = serializers.SerializerMethodField()
 
     class Meta:
         model = Calendar
@@ -149,24 +147,21 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'closing_sale',
             'number_of_sessions',
             'session_price',
-            'capacity',
             'sessions',
             'assistants',
             'is_weekend',
             'duration',
             'is_free',
             'available_capacity',
+            'note',
         )
         depth = 1
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
         assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context,
-                                                    remove_fields=['lastest_refund', 'student'])
+                                                    remove_fields=['student'])
         return assistants_serialzer.data
-
-    def get_available_capacity(self, obj):
-        return obj.available_capacity()
 
     def validate_activity(self, value):
         return value
@@ -182,8 +177,8 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             return value
         raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
 
-    def validate_capacity(self, value):
-        if value < 1:
+    def validate_available_capacity(self, value):
+        if value < 0:
             raise serializers.ValidationError(_("La capacidad no puede ser negativa."))
         return value
 
@@ -282,8 +277,10 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def create(self, validated_data):
         sessions_data = validated_data.get('sessions')
+        last_session = sessions_data[-1]
         del (validated_data['sessions'])
         calendar = Calendar.objects.create(**validated_data)
+        calendar.activity.set_last_date(last_session)
         _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
         CalendarSession.objects.bulk_create(_sessions)
 
@@ -302,6 +299,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         CalendarSession.objects.bulk_create(_sessions)
 
         return instance
+
 
 class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -348,7 +346,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             instance = obj.closest_calendar(initial_date, cost_start, cost_end)
         return CalendarSerializer(instance,
                                   remove_fields=['sessions', 'assistants', 'activity',
-                                                 'number_of_sessions', 'capacity',
+                                                 'number_of_sessions',
                                                  'available_capacity', 'is_weekend']).data
 
     def get_pictures(self, obj):
@@ -380,6 +378,13 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     steps = serializers.SerializerMethodField()
     closest_calendar = CalendarSerializer(read_only=True)
     reviews = serializers.SerializerMethodField()
+    wishlist_count = serializers.SerializerMethodField()
+    content = HTMLField(allow_blank=True, required=False)
+    requirements = HTMLField(allow_blank=True, required=False)
+    extra_info = HTMLField(allow_blank=True, required=False)
+    audience = HTMLField(allow_blank=True, required=False)
+    goals = HTMLField(allow_blank=True, required=False)
+    methodology = HTMLField(allow_blank=True, required=False)
 
     class Meta:
         model = Activity
@@ -415,7 +420,8 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'score',
             'rating',
             'wish_list',
-            'reviews'
+            'reviews',
+            'wishlist_count'
         )
         depth = 1
 
@@ -444,13 +450,16 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     def get_level_display(self, obj):
         return obj.get_level_display()
 
-    def get_reviews(self,obj):
+    def get_reviews(self, obj):
         show_reviews = self.context.get('show_reviews')
         request = self.context.get('request')
         if show_reviews and request:
             reviews = obj.reviews.filter(author__user=request.user)
             return ReviewSerializer(reviews, many=True).data
         return []
+
+    def get_wishlist_count(self, obj):
+        return obj.wishlist_count
 
     def validate(self, data):
         request = self.context['request']

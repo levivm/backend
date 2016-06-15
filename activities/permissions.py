@@ -13,8 +13,9 @@ class IsActivityOwner(permissions.BasePermission):
         if not activity_pk:
             return True
         activity = get_object_or_404(Activity, pk=activity_pk)
+        return activity.organizer.user == request.user
 
-        return request.user.has_perm('activities.change_activity', activity)
+        # return request.user.has_perm('activities.change_activity', activity)
 
 
 class IsActivityOwnerOrReadOnly(IsActivityOwner):

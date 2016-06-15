@@ -1,8 +1,12 @@
 from django.conf import settings
+from celery import Task
+
 
 from activities.models import Calendar
+from students.models import Student
 from messages.models import OrganizerMessage
 from utils.tasks import SendEmailTaskMixin
+from .models import OrganizerMessageStudentRelation
 
 
 class SendEmailMessageNotificationTask(SendEmailTaskMixin):
@@ -62,3 +66,27 @@ class SendEmailOrganizerMessageAssistantsTask(SendEmailTaskMixin):
             }
             for a in self.assistants
         }
+
+
+class AssociateStudentToMessagesTask(Task):
+
+    def run(self, calendar_id, student_id, *args, **kwargs):
+
+        student = Student.objects.get(id=student_id)
+        calendar = Calendar.objects.get(id=calendar_id)
+        messages = OrganizerMessage.objects.filter(calendar=calendar)
+        if not messages:
+            return
+        
+        student_messages = []
+        for message in messages:
+            student_message, created = OrganizerMessageStudentRelation.\
+                objects.get_or_create(student=student,
+                    organizer_message=message)
+            if created:
+                student_messages.append(student_message)
+        return student_messages
+        
+
+
+

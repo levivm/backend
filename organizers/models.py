@@ -6,9 +6,10 @@ from django.utils.translation import ugettext_lazy as _
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
 from utils.models import CeleryTaskEditActivity
+from utils.mixins import AssignPermissionsMixin
 
 
-class Organizer(ImageOptimizable, models.Model):
+class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     user = models.OneToOneField(User, related_name='organizer_profile')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,6 +22,9 @@ class Organizer(ImageOptimizable, models.Model):
     rating = models.FloatField(default=0)
     verified_email = models.BooleanField(default=True)
 
+    permissions = ('organizers.change_organizer',)
+
+
     def __str__(self):
         return '%s' % self.name
 
@@ -29,7 +33,7 @@ class Organizer(ImageOptimizable, models.Model):
             self.photo.file.file = self.optimize(bytesio=self.photo.file.file, width=self.photo.width,
                                                  height=self.photo.height)
 
-        super(Organizer, self).save(*args, **kwargs)
+        super(Organizer, self).save(user=self.user, obj=self, *args, **kwargs)
 
     def get_activities_by_status(self, status=activities_constants.OPENED):
         activities = None
@@ -49,11 +53,13 @@ class Organizer(ImageOptimizable, models.Model):
 class Instructor(AssignPermissionsMixin, models.Model):
     full_name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, null=True)
-    photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
     organizer = models.ForeignKey(Organizer, related_name="instructors", null=True)
     website = models.CharField(max_length=200, null=True, blank=True)
 
     permissions = ('organizers.change_instructor', 'organizers.delete_instructor')
+
+    def __str__(self):
+        return self.full_name
 
     def save(self, *args, **kwargs):
         super(Instructor, self).save(user=self.organizer.user, obj=self, *args, **kwargs)

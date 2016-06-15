@@ -17,6 +17,12 @@ class CanRetrieveOrganizerMessage(permissions.BasePermission):
         return request.user.has_perm('trulii_messages.retrieve_message', obj)
 
 
+class CanUpdateOrganizerMessageRelation(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method == 'PATCH':
+            return request.user.has_perm('trulii_messages.update_message', obj)
+        return True
+
 class CanDeleteOrganizerMessageRelation(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method == 'DELETE':

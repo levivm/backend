@@ -151,5 +151,22 @@
       ],
       "object_pk": "1"
   }
+},
+{
+  "pk": 10,
+  "model": "guardian.userobjectpermission",
+  "fields": {
+      "user": 1,
+      "permission": [
+          "delete_activity",
+          "activities",
+          "activity"
+      ],
+      "content_type": [
+          "activities",
+          "activity"
+      ],
+      "object_pk": "2"
+  }
 }
 ]
