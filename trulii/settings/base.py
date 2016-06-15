@@ -69,6 +69,7 @@ INSTALLED_APPS = (
     'payments',
     'reviews',
     'referrals',
+    'balances',
     'messages.apps.MessagesConfig',
 )
 

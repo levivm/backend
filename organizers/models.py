@@ -53,11 +53,13 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
 class Instructor(AssignPermissionsMixin, models.Model):
     full_name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, null=True)
-    photo = models.CharField(max_length=1000, verbose_name=_("Foto"), null=True, blank=True)
     organizer = models.ForeignKey(Organizer, related_name="instructors", null=True)
     website = models.CharField(max_length=200, null=True, blank=True)
 
     permissions = ('organizers.change_instructor', 'organizers.delete_instructor')
+
+    def __str__(self):
+        return self.full_name
 
     def save(self, *args, **kwargs):
         super(Instructor, self).save(user=self.organizer.user, obj=self, *args, **kwargs)

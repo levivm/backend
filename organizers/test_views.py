@@ -608,13 +608,15 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         response = self.student_client.put(self.bank_info_api_url, post_data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        # Organizer should update
+        # Organizer shouldn't update
         response = self.organizer_client.put(self.bank_info_api_url, post_data)
-        bank_info = OrganizerBankInfo.objects.get(id=bank_info.id)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(bank_info.beneficiary == post_data['beneficiary'])
-        self.assertTrue(bank_info.account_type == post_data['account_type'])
-        self.assertTrue(all(item in bank_info.__dict__.items() for item in updated_data.items()))
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        # response = self.organizer_client.put(self.bank_info_api_url, post_data)
+        # bank_info = OrganizerBankInfo.objects.get(id=bank_info.id)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # self.assertTrue(bank_info.beneficiary == post_data['beneficiary'])
+        # self.assertTrue(bank_info.account_type == post_data['account_type'])
+        # self.assertTrue(all(item in bank_info.__dict__.items() for item in updated_data.items()))
 
     def test_delete(self):
         """
