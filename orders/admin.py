@@ -9,8 +9,8 @@ from utils.mixins import OperativeModelAdminMixin
 @admin.register(Order)
 class OrderAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     search_fields = ('id',)
-    list_display = ('name', 'activity_title', 'status')
-    list_filter = ('status',)
+    list_display = ('id', 'activity_title', 'status', 'created_at')
+    list_filter = ('status', 'created_at', 'calendar__activity__title')
     raw_id_fields = ('calendar', 'student', 'payment')
     operative_readonly_fields = {'calendar', 'student', 'payment'}
 
@@ -33,6 +33,20 @@ class OrderAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(Assistant)
 class AssistantAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    search_fields = ('first_name', 'last_name')
+    list_display = ('name', 'order_num', 'activity_title', 'student')
+    list_filter = ('order__calendar__activity__title',)
+    search_fields = ('order__id',)
     raw_id_fields = ('order',)
     operative_readonly_fields = {'order'}
+
+    def name(self, obj):
+        return '%s %s' % (obj.first_name, obj.last_name)
+
+    def order_num(self, obj):
+        return obj.order.id
+
+    def activity_title(self, obj):
+        return obj.order.calendar.activity.title
+
+    def student(self, obj):
+        return obj.order.student.user.get_full_name()

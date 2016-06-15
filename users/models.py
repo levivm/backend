@@ -9,7 +9,6 @@ from locations.models import City
 from organizers.models import Organizer
 from students.models import Student
 from users.tasks import SendEmailOrganizerConfirmationTask
-from utils.models import CeleryTaskEditActivity
 
 
 class RequestSignup(models.Model):
