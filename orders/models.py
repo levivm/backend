@@ -65,6 +65,12 @@ class Order(models.Model):
         return _amount if _amount > 0 else 0
 
     @cached_property
+    def total_net(self):
+        if self.fee:
+            return self.amount - (self.amount * self.fee.amount)
+        return self.amount
+
+    @cached_property
     def total_without_coupon(self):
         return self.amount
 

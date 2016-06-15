@@ -5,3 +5,6 @@ trulii/*.pyc
 .idea
 .DS_Store
 *.rdb
+celerybeat-schedule
+*/.cache
+*.swp

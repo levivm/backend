@@ -13,6 +13,7 @@ from rest_framework.test import APITestCase
 from social.apps.django_app.default.models import UserSocialAuth
 
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
+from balances.models import Balance
 from locations.models import City
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
@@ -165,6 +166,10 @@ class SignUpOrganizerViewTest(APITestCase):
         }
 
         self.assertEqual(response.data, content)
+        self.assertTrue(Balance.objects.filter(
+            organizer=organizer,
+            available=0,
+            unavailable=0).exists())
 
     def test_validate_password(self):
         """
