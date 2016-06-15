@@ -91,6 +91,139 @@ ORGANIZER_PERMISSIONS = (
     }
 )
 
+OPERATIVE_PERMISSIONS = (
+    {
+        'app': 'activities',
+        'model': 'activityphoto',
+        'codenames': ['add', 'change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'activitystockphoto',
+        'codenames': ['add', 'change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'activity',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'calendarsession',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'calendar',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'category',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'subcategory',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'activities',
+        'model': 'tags',
+        'codenames': ['add','change', 'delete'],
+    },
+    {
+        'app': 'locations',
+        'model': 'city',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'locations',
+        'model': 'location',
+        'codenames': ['add', 'change'],
+    },
+    {
+        'app': 'orders',
+        'model': 'assistant',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'orders',
+        'model': 'order',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'organizers',
+        'model': 'instructor',
+        'codenames': ['add','change', 'delete'],
+    },
+    {
+        'app': 'organizers',
+        'model': 'organizerbankinfo',
+        'codenames': ['add', 'change'],
+    },
+    {
+        'app': 'organizers',
+        'model': 'organizer',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'payments',
+        'model': 'fee',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'payments',
+        'model': 'payment',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'referrals',
+        'model': 'coupontype',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'referrals',
+        'model': 'coupon',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'referrals',
+        'model': 'referral',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'referrals',
+        'model': 'redeem',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'reviews',
+        'model': 'review',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'students',
+        'model': 'student',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'users',
+        'model': 'organizerconfirmation',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'users',
+        'model': 'requestsignup',
+        'codenames': ['change'],
+    },
+    {
+        'app': 'utils',
+        'model': 'emailtaskrecord',
+        'codenames': ['change'],
+    },
+)
+
 
 #UTILS CONSTANTS
 

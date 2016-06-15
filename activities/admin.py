@@ -2,21 +2,25 @@ from django.contrib import admin
 
 from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession, \
     ActivityStockPhoto, ActivityStats
+from utils.mixins import OperativeModelAdminMixin
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    pass
+class CategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
+    operative_readonly_fields = {'name', 'color'}
 
 
 @admin.register(SubCategory)
-class SubCategoryAdmin(admin.ModelAdmin):
+class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     search_fields = ['name', 'category__name']
+    operative_readonly_fields = {'name', 'category'}
 
 
 @admin.register(Activity)
-class ActivityAdmin(admin.ModelAdmin):
+class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     search_fields = ('title',)
+    raw_id_fields = ('organizer', 'location')
+    operative_readonly_fields = {'score', 'rating', 'last_date'}
 
 
 @admin.register(Tags)
@@ -25,19 +29,19 @@ class TagsAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActivityPhoto)
-class ActivityPhotoAdmin(admin.ModelAdmin):
-    pass
+class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
+    operative_readonly_fields = {'activity'}
 
 
 @admin.register(Calendar)
-class CalendarAdmin(admin.ModelAdmin):
-    list_display = ('initial_date', 'activity', 'session_price', 'available_capacity')
-    list_filter = ('enroll_open', 'is_weekend', 'is_free', 'initial_date')
+class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
+    operative_readonly_fields = {'number_of_sessions', 'initial_date'}
 
 
 @admin.register(CalendarSession)
-class CalendarSessionAdmin(admin.ModelAdmin):
-    pass
+class CalendarSessionAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
+    raw_id_fields = ('calendar',)
+    operative_readonly_fields = {'date', 'calendar'}
 
 
 @admin.register(ActivityStockPhoto)

@@ -47,3 +47,4 @@ six==1.10.0
 static3==0.5.1
 yolk==0.4.3
 flower==0.9.1
+raven==5.20.0

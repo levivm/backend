@@ -69,8 +69,9 @@ class ActivitySearchEngine(object):
         is_free = query_params.get('is_free', False)
         cost_end = query_params.get('cost_end')
         cost_start = query_params.get('cost_start')
-        timestamp = query_params.get('date', datetime.now().timestamp())
-        date = datetime.fromtimestamp(int(timestamp) // 1000).replace(second=0).strftime('%Y-%m-%d')
+        js_timestamp = query_params.get('date')
+        timestamp = int(js_timestamp) // 1000 if js_timestamp else datetime.now().timestamp()
+        date = datetime.fromtimestamp(timestamp).replace(second=0).strftime('%Y-%m-%d')
         if is_free:
             extra = {
                 extra_parameter:

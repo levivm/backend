@@ -6,3 +6,5 @@ trulii/*.pyc
 .DS_Store
 *.rdb
 celerybeat-schedule
+*/.cache
+*.swp

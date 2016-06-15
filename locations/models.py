@@ -22,7 +22,7 @@ class Location(AssignPermissionsMixin, models.Model):
     address = models.TextField()
     city = models.ForeignKey(City)
     point = models.PointField(help_text="Represented as (longitude, latitude)")
-    organizer = models.ForeignKey(Organizer, null=True, related_name="locations")
+    organizer = models.ForeignKey(Organizer, blank=True, null=True, related_name="locations")
 
     permissions = ('locations.change_location', 'locations.add_location',
                    'locations.delete_location')

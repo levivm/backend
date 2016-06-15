@@ -3,14 +3,16 @@ from django.contrib import admin
 
 from orders.models import Order, Assistant
 from orders.views import RefundAdminTemplateView
+from utils.mixins import OperativeModelAdminMixin
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     search_fields = ('id',)
     list_display = ('name', 'activity_title', 'status')
     list_filter = ('status',)
     raw_id_fields = ('calendar', 'student', 'payment')
+    operative_readonly_fields = {'calendar', 'student', 'payment'}
 
     def get_urls(self):
         urls = super(OrderAdmin, self).get_urls()
@@ -30,6 +32,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(Assistant)
-class AssistantAdmin(admin.ModelAdmin):
+class AssistantAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     search_fields = ('first_name', 'last_name')
     raw_id_fields = ('order',)
+    operative_readonly_fields = {'order'}
