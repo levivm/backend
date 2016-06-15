@@ -41,7 +41,7 @@ class ActivitySearchEngine(object):
         for term in terms:
             or_query = None
             for field in search_fields:
-                q = Q(**{'%s__icontains' % field: term})
+                q = Q(**{'%s__unaccent__icontains' % field: term})
                 if or_query is None:
                     or_query = q
                 else:
