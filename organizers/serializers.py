@@ -2,7 +2,8 @@ from rest_framework import serializers
 from organizers.models import OrganizerBankInfo
 from users.serializers import UsersSerializer
 from users.forms import UserCreateForm
-from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin,\
+                              BankField
 from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
@@ -70,5 +71,11 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
 
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
+
+    # bank = serializers.SerializerMethodField()
+    bank = BankField(choices=OrganizerBankInfo.BANKS)
+    # bank_code = serializers.get_
+    # bank_
+
     class Meta:
         model = OrganizerBankInfo

@@ -13,10 +13,17 @@ class Balance(models.Model):
 
 
 class BalanceLog(models.Model):
+
+    STATUS_AVAILABLE = 'available'
+    STATUS_UNAVAILABLE = 'unavailable'
+    STATUS_WITHDRAWN = 'withdrawn'
+    STATUS_REQUESTED = 'requested'
+
     STATUS = (
-        ('available', _('Disponible')),
-        ('unavailable', _('No Disponible')),
-        ('withdrawn', _('Retirado')),
+        (STATUS_AVAILABLE, _('Disponible')),
+        (STATUS_UNAVAILABLE, _('No Disponible')),
+        (STATUS_WITHDRAWN, _('Retirado')),
+        (STATUS_REQUESTED, _('Solicitado')),
     )
 
     organizer = models.ForeignKey(Organizer, related_name='balance_logs')
@@ -24,6 +31,12 @@ class BalanceLog(models.Model):
     status = models.CharField(choices=STATUS, max_length=15, default='unavailable')
 
     objects = BalanceLogQuerySet.as_manager()
+
+    @classmethod
+    def create(cls, organizer=None, calendar=None):
+        instance, created = cls.objects.get_or_create(organizer=organizer, calendar=calendar)
+        return instance
+
 
 
 class Withdrawal(models.Model):

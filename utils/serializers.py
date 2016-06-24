@@ -4,8 +4,21 @@ from datetime import time, date, datetime
 from rest_framework import serializers
 from django.utils.html import escape
 
-class UnixEpochDateField(serializers.DateTimeField):
 
+
+class BankField(serializers.Field):
+    def __init__(self, choices, **kwargs):
+        self._choices = choices
+        super(BankField, self).__init__(**kwargs)
+
+    def to_representation(self, obj):
+        return dict(self._choices).get(obj)
+
+    def to_internal_value(self, data):
+        return data
+
+
+class UnixEpochDateField(serializers.DateTimeField):
 
     def to_representation(self, value):
 

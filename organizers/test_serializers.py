@@ -36,7 +36,6 @@ class OrganizerBankInfoSerializerTest(APITestCase):
         """
         Test create an OrganizerBankInfo
         """
-
         serializer = OrganizerBankInfoSerializer(data=self.data)
         serializer.is_valid(raise_exception=True)
         bank_info = serializer.save()
@@ -56,7 +55,9 @@ class OrganizerBankInfoSerializerTest(APITestCase):
 
         bank_info = OrganizerBankInfo.objects.create(**self.data)
         serializer = OrganizerBankInfoSerializer(bank_info)
-
+        self.content.update({
+            'bank': 'BANCOLOMBIA'
+        })
         self.assertTrue(all(item in serializer.data.items() for item in self.content.items()))
 
     def test_update(self):

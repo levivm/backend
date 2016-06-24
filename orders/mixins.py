@@ -10,6 +10,8 @@ from payments.tasks import SendPaymentEmailTask, SendNewEnrollmentEmailTask
 from messages.tasks import AssociateStudentToMessagesTask
 from activities.models import Calendar
 from referrals.models import Redeem
+from balances.tasks import CalculateOrganizerBalanceTask
+from balances.models import BalanceLog
 from .models import Order
 from activities.utils import PaymentUtil
 from django.core.exceptions import ObjectDoesNotExist
@@ -23,27 +25,13 @@ class ProcessPaymentMixin(object):
         payment_method = request.data.get('payment_method')
         payment = PaymentUtil(request, activity, self.coupon)
 
-        # Create task to asociate student with calendar sent messages
-        student_messages_task = AssociateStudentToMessagesTask()
-        calendar_id = request.data.get('calendar')
-        student_id = request.user.get_profile().id
-
-
         if payment_method == Payment.CC_PAYMENT_TYPE:
 
             response = self.proccess_payment_cc(payment, serializer)
-
-            # Asociate activities sent messages to the new student
-            student_messages_task.delay(calendar_id, student_id)
-
             return response
 
         elif payment_method == Payment.PSE_PAYMENT_TYPE:
             response = self.proccess_payment_pse(payment, serializer)
-            
-            # Asociate activities sent messages to the new student
-            student_messages_task.delay(calendar_id, student_id)
-
             return response
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -53,6 +41,13 @@ class ProcessPaymentMixin(object):
         calendar_id = request.data.get('calendar')
         calendar = Calendar.objects.get(id=calendar_id)
         return calendar
+
+    @classmethod
+    def get_organizer(cls, request):
+        calendar = cls.get_calendar(request)
+        return calendar.activity.organizer
+
+
 
     def call_create(self, serializer):
         super(ProcessPaymentMixin, self).perform_create(serializer)
@@ -94,6 +89,22 @@ class ProcessPaymentMixin(object):
             serializer.context['coupon'] = self.coupon
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
+
+                # Create task to asociate student with calendar sent messages
+                student_messages_task = AssociateStudentToMessagesTask()
+                calendar_id = self.request.data.get('calendar')
+                student_id = self.request.user.get_profile().id
+
+
+                # Crete task to recalculate organizer unavailable amount
+                balance_task = CalculateOrganizerBalanceTask()
+                organizer = ProcessPaymentMixin.get_organizer(self.request)
+
+                # Create Balance log to organizer
+                calendar =  ProcessPaymentMixin.get_calendar(self.request)
+                BalanceLog.create(organizer=organizer, calendar=calendar)
+                
+
                 self.redeem_coupon(self.request.user.student_profile)
                 payment_task = SendPaymentEmailTask()
                 new_enrollment_task = SendNewEnrollmentEmailTask()
@@ -104,7 +115,9 @@ class ProcessPaymentMixin(object):
 
                 group(
                     payment_task.s(response.data['id'], task_data),
-                    new_enrollment_task.s(response.data['id'], task_data)
+                    new_enrollment_task.s(response.data['id'], task_data),
+                    student_messages_task.s(calendar_id, student_id),
+                    balance_task.s([organizer.id]),
                 )()
 
             return response

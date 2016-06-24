@@ -85,7 +85,8 @@ class UpdateWithdrawalLogsStatusTaskTest(APITestCase):
 
         withdrawals = Withdrawal.objects.values_list('id', flat=True)
         task = UpdateWithdrawalLogsStatusTask()
-        task.delay(withdrawal_ids=withdrawals)
+        status = 'withdrawn'
+        task.delay(withdrawal_ids=withdrawals, status=status)
 
         self.assertEqual(list(BalanceLog.objects.values_list('status', flat=True)),
                          ['withdrawn' for _ in range(6)])

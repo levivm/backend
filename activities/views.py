@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
-from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
