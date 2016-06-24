@@ -44,8 +44,7 @@ RAVEN_CONFIG = {
 
 
 ################ SENDGRID #######################
-SENDGRID_API_KEY = "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"
-
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 
 
 ################ / REDIS CONFIG #################
