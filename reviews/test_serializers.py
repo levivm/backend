@@ -91,7 +91,7 @@ class ReviewSerializerTest(APITestCase):
 
     def test_validate_rating(self):
         """
-        Test to validate that rating should be in range of 0-5
+        Test to validate that rating should be in range of 1-5
         """
 
         self.data['rating'] = 6
@@ -143,3 +143,14 @@ class ReviewSerializerTest(APITestCase):
 
         review = Review.objects.get(id=review.id)
         self.assertEqual(review.replied_at, replied_at)
+
+    def test_without_rating(self):
+        """
+        Test trying to create a review without rating
+        """
+
+        del self.data['rating']
+
+        with self.assertRaises(ValidationError):
+            serializer = ReviewSerializer(data=self.data)
+            serializer.is_valid(raise_exception=True)

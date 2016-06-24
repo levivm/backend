@@ -50,7 +50,7 @@ class OrderSearchEngine(object):
         else:
             orders = orders_q.filter(calendar__activity__organizer=organizer)
         
-        return orders
+        return orders.filter(status=Order.ORDER_APPROVED_STATUS)
 
     def get_by_student(self, student, filter_query=None):
 

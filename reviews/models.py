@@ -12,7 +12,7 @@ from .queryset import ReviewQuerySet
 
 
 class Review(AssignPermissionsMixin, models.Model):
-    rating = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])
+    rating = models.FloatField(validators=[MinValueValidator(1.0), MaxValueValidator(5.0)])
     comment = models.CharField(blank=True, max_length=480)
     reply = models.CharField(blank=True, max_length=480)
     activity = models.ForeignKey(Activity, related_name='reviews')
