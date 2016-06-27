@@ -219,7 +219,7 @@ class PaymentUtil(object):
                 'cookie': self.get_cookie()
 
             },
-            'test': settings.PAYU_TEST
+            'test': 'true' if settings.PAYU_TEST else 'false'
         }
 
     def creditcard(self):
@@ -370,7 +370,7 @@ class PaymentUtil(object):
                 "cookie": self.get_cookie(),
                 "userAgent": self.get_user_agent(),
             },
-            "test": settings.PAYU_TEST
+            "test": 'true' if settings.PAYU_TEST else 'false'
         }
 
     def validate_pse_payment_data(self):
@@ -399,7 +399,7 @@ class PaymentUtil(object):
                 "paymentMethod": "PSE",
                 "paymentCountry": "CO"
             },
-            "test": settings.PAYU_TEST,
+            "test": 'true' if settings.PAYU_TEST else 'false',
 
         }
 
