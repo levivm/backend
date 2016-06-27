@@ -51,5 +51,5 @@ class RequestSignUpSerializerTest(APITestCase):
         }
 
         serializer = RequestSignUpSerializer(data=data)
-        with self.assertRaisesMessage(ValidationError, 'This email already exists.'):
+        with self.assertRaisesMessage(ValidationError, 'Este correo ya existe.'):
             serializer.is_valid(raise_exception=True)
