@@ -49,7 +49,7 @@ SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 
 ################ / REDIS CONFIG #################
 
-FRONT_SERVER_URL = "https://dev.trulii.com/"
+FRONT_SERVER_URL = "https://dockerf.trulii.com/"
 PAYU_API_KEY = '6RK49XdJYozqO05lnIJQonnbEx'
 PAYU_MERCHANT_ID = '537033'
 PAYU_ACCOUNT_ID = '539061'
