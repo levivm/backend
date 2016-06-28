@@ -1,0 +1,156 @@
+{% load staticfiles %}
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Métricas</title>
+</head>
+
+<body>
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <span class="mdl-layout__title">Trulii Métricas</span>
+      </div>
+      <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
+        <a href="#tab-range" class="mdl-layout__tab is-active">Rango</a>
+        <a href="#tab-total" class="mdl-layout__tab">Total</a>
+      </div>
+    </header>
+
+    <main class="mdl-layout__content">
+      <div class="main-content mdl-grid">
+
+        {# Rango #}
+        <section class="mdl-layout__tab-panel mdl-cell mdl-cell--12-col is-active" id="tab-range">
+
+          <!-- Fechas -->
+          <div class="mdl-grid">
+            <div class="mdl-card mdl-shadow--4dp mdl-cell mdl-cell--12-col">
+              <div class="mdl-card__title">
+                <h2 class="mdl-card__title-text">Rango de fechas</h2>
+              </div>
+              <div class="mdl-card__media">
+                <form id="filter_date_form" class="mdl-grid" action="{% url 'metrics:general' %}" method="get">
+                  <div class="mdl-cell mdl-cell--6-col mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <label class="mdl-textfield__label" for="fecha_desde">Fecha Desde</label>
+                    <input class="mdl-textfield__input" type="text" id="fecha_desde" name="start_date" value="{{ start_date|date:'Y-m-j' }}">
+                  </div>
+                  <div class="mdl-cell mdl-cell--6-col mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <label class="mdl-textfield__label" for="fecha_hasta">Fecha Hasta</label>
+                    <input class="mdl-textfield__input" type="text" id="fecha_hasta" name="end_date" value="{{ end_date|date:'Y-m-j' }}">
+                  </div>
+                </form>
+              </div>
+              <div class="mdl-card__actions">
+                <button id="filter_date" class="filter-button mdl-button mdl-js-button mdl-button--accent mdl-js-ripple-effect">
+                  <i class="material-icons">search</i> Filtrar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RangeDonuts -->
+          <div class="mdl-grid">
+            <div class="mdl-card mdl-cell mdl-cell--6-col-desktop mdl-cell--12-col-tablet mdl-shadow--2dp">
+              <div class="mdl-card__title">
+                <h2 class="mdl-card__title-text">Estudiantes</h2>
+              </div>
+              <div class="mdl-card__media">
+                <div id="students_div"></div>
+              </div>
+              <div class="mdl-card__actions mdl-card--border">
+                <div class="mdl-layout-spacer"></div>
+                <a href="{% url 'metrics:general' %}?start_date={{ start_date|date:'Y-m-j' }}&end_date={{ end_date|date:'Y-m-j' }}&export_student=true"
+                   target="_blank" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
+                   <i class="material-icons">file_download</i>Exportar
+                 </a>
+              </div>
+            </div>
+
+            <div class="mdl-card mdl-cell mdl-cell--6-col mdl-cell--12-col-tablet mdl-shadow--2dp">
+              <div class="mdl-card__title">
+                <h2 class="mdl-card__title-text">Organizers</h2>
+              </div>
+              <div class="mdl-card__media">
+                <div id="organizers_div"></div>
+              </div>
+              <div class="mdl-card__actions mdl-card--border">
+                <a href="{% url 'metrics:general' %}?start_date={{ start_date|date:'Y-m-j' }}&end_date={{ end_date|date:'Y-m-j' }}&export_student=true"
+                   target="_blank" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
+                   <i class="material-icons">file_download</i>Exportar
+                 </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- RangeBar -->
+          <div class="mdl-grid">
+            <div class="mdl-card mdl-cell mdl-cell--12-col mdl-shadow--2dp">
+              <div class="mdl-card__title">
+                <h2 class="mdl-card__title-text">Categorías</h2>
+              </div>
+              <div class="mdl-card__media">
+                <div id="categories_by_range"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {# Total #}
+        <section class="mdl-layout__tab-panel mdl-cell mdl-cell--12-col" id="tab-total">
+          <div class="mdl-grid">
+            <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="mdl-cell mdl-cell--4-col mdl-shadow--4dp">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#piechart" mask="url(#piemask)"></use>
+              <text x="0.5" y="0.4" font-size="0.3" fill="#888" dy="0.1">{{ general_metrics.total_metrics.total_students }}</text>
+              <text x="0.5" y="0.6" font-size="0.1" fill="#888" dy="0.1">Estudiantes</text>
+            </svg>
+            <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="mdl-cell mdl-cell--4-col mdl-shadow--4dp">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#piechart" mask="url(#piemask)"></use>
+              <text x="0.5" y="0.4" font-size="0.3" fill="#888" dy="0.1">{{ general_metrics.total_metrics.total_organizers }}</text>
+              <text x="0.5" y="0.6" font-size="0.1" fill="#888" dy="0.1">Organizadores</text>
+            </svg>
+            <svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="mdl-cell mdl-cell--4-col mdl-shadow--4dp">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#piechart" mask="url(#piemask)"></use>
+              <text x="0.5" y="0.4" font-size="0.3" fill="#888" dy="0.1">{{ general_metrics.total_metrics.total_orders }}</text>
+              <text x="0.5" y="0.6" font-size="0.1" fill="#888" dy="0.1">Inscripciones</text>
+            </svg>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" style="position: fixed; left: -1000px; height: -1000px;">
+    <defs>
+      <mask id="piemask" maskContentUnits="objectBoundingBox">
+        <circle cx="0.5" cy="0.5" r="0.49" fill="white"></circle>
+        <circle cx="0.5" cy="0.5" r="0.40" fill="black"></circle>
+      </mask>
+      <g id="piechart">
+        <circle cx="0.5" cy="0.5" r="0.5"></circle>
+        <path d="M 0.5 0.5 0.5 0 A 0.5 0.5 0 0 1 0.95 0.28 z" stroke="none" fill="rgba(255, 255, 255, 0.75)"></path>
+      </g>
+    </defs>
+  </svg>
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+    window.data = {
+      'general': {
+        'range': {
+          'students': {{ general_metrics.range_metrics.students|safe }},
+          'organizers': {{ general_metrics.range_metrics.organizers|safe }},
+          'categories': {{ general_metrics.range_metrics.numbers_by_category|safe }}
+        }
+      }
+    };
+
+  </script>
+  <script src="{% static "bundle.js" %}"></script>
+</body>
+</html>

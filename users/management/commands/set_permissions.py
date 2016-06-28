@@ -15,6 +15,7 @@ class Command(BaseCommand):
         self.set_organizer_permissions()
         self.set_student_permissions()
         self.set_operative_permissions()
+        self.set_marketing()
 
     def set_organizer_permissions(self):
         self.stdout.write("Organizer permissions...", ending="")
@@ -36,6 +37,11 @@ class Command(BaseCommand):
         permissions = self.get_permissions_list(OPERATIVE_PERMISSIONS)
         self.add_permissions(operatives, permissions)
         self.stdout.write(self.style.SUCCESS(" DONE"))
+
+    def set_marketing(self):
+        self.stdout.write('Creating marketing group...', ending='')
+        Group.objects.get_or_create(name='Marketing')
+        self.stdout.write(self.style.SUCCESS(' DONE'))
 
     def add_permissions(self, group, permissions):
         group.permissions.add(*permissions)

@@ -1,6 +1,7 @@
 *.pyc
 trulii/media/*
 trulii/staticfiles/*
+trulii/static/*
 trulii/*.pyc
 .idea
 .DS_Store
@@ -8,3 +9,4 @@ trulii/*.pyc
 celerybeat-schedule
 */.cache
 *.swp
+node_modules

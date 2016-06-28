@@ -29,6 +29,8 @@ DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 LOGGING_CONFIG = {}
 
+STATIC_URL = '/static/'
+
 # CACHES = {
 #     'default': {
 #         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
