@@ -427,6 +427,7 @@ class ActivityStatsUtil(object):
         self.total_views = self._get_total_views()
         self.total_seats_sold = self._get_total_seats_sold()
         self.next_data = self._get_next_data()
+        self.last_point = None
 
         if self.month is not None:
             self.points = self.monthly
@@ -436,6 +437,7 @@ class ActivityStatsUtil(object):
             self.frequency = MONTHLY
 
     def monthly(self):
+        self.last_point = None
         start_date = datetime.date(self.year, self.month, 1)
         last_day = calendar.monthrange(self.year, self.month)[1]
         until = datetime.date(self.year, self.month, last_day)
@@ -447,6 +449,7 @@ class ActivityStatsUtil(object):
         return self._get_monthly_points(dates=dates)
 
     def yearly(self):
+        self.last_point = None
         start_date = datetime.date(self.year, 1, 1)
         until = datetime.date(self.year, 12, 31)
         if until > now().date():
@@ -459,6 +462,7 @@ class ActivityStatsUtil(object):
 
     def _get_monthly_points(self, dates):
         points = []
+        last_point = {}
         for date in dates:
             orders = Order.objects.filter(
                 status=Order.ORDER_APPROVED_STATUS,
@@ -500,11 +504,22 @@ class ActivityStatsUtil(object):
 
         net = gross - fee
 
-        return {
-            'gross': gross,
-            'fee': fee,
-            'net': net,
-        }
+        if self.last_point:
+            point = {
+                'gross': gross + self.last_point['gross'],
+                'fee': fee + self.last_point['fee'],
+                'net': net + self.last_point['net'],
+            }
+        else:
+            point = {
+                'gross': gross,
+                'fee': fee,
+                'net': net,
+            }
+
+        self.last_point = point
+
+        return point
 
     def _sum_points(self, data):
         self.total_points['total_gross'] += data['gross']
