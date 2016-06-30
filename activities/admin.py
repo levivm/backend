@@ -70,8 +70,7 @@ class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     operative_readonly_fields = {'activity'}
 
     def file_name(self, obj):
-        return obj.photo.file.name
-
+        return obj.photo.name
 
 @admin.register(Calendar)
 class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
