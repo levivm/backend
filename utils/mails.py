@@ -1,6 +1,7 @@
 import sendgrid
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
+from django.utils.timezone import now
 
 
 class SendGridEmailBackend(BaseEmailBackend):
@@ -28,3 +29,26 @@ class SendGridEmailBackend(BaseEmailBackend):
                     'status': 'sent',
                     'reject_reason': None,
                 }
+
+
+class ConsoleSendGridEmailBackend(SendGridEmailBackend):
+
+    def send_messages(self, email_messages):
+        email_message = email_messages[0]
+        data = {
+            'subject': email_message.subject,
+            'from': email_message.from_email,
+            'to': email_message.to,
+            'date': now().isoformat(),
+            'html': email_message.alternatives[0][0]
+        }
+        print("\
+        \n==============================\
+        \nSubject: {subject}\
+        \nFrom: {from}\
+        \nTo: {to}\
+        \nDate: {date}\
+        \n==============================\
+        \n{html}".format(**data))
+
+        return super(ConsoleSendGridEmailBackend, self).send_messages(email_messages)

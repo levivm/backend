@@ -1,3 +1,5 @@
+from html import unescape
+
 from django.conf import settings
 
 from orders.models import Order
@@ -36,7 +38,7 @@ class SendPaymentEmailTaskMixin(SendEmailTaskMixin):
             'initial_date': self.order.calendar.initial_date,
             'address': self.order.calendar.activity.location.address,
             'city': self.order.calendar.activity.location.city.name,
-            'requirements': self.order.calendar.activity.requirements,
+            'requirements': unescape(self.order.calendar.activity.requirements),
             'detail_url': base_url + 'students/dashboard/history/orders/%s' % self.order.id,
         }
 

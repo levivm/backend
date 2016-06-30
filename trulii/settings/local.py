@@ -23,7 +23,7 @@ DATABASE_URL = "postgis://{user}:{password}@{host}:{port}/{db}".format(host=POST
                                                                        db=PG_DB, user=PG_USER,
                                                                        password=PG_PW)
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'utils.mails.ConsoleSendGridEmailBackend'
 
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
@@ -61,7 +61,7 @@ PAYU_TEST_TOKEN += 'zMzE1ZjBjY2VhMSJ9:1aJ6Yo:OkyLEE5T'
 PAYU_TEST_TOKEN += '-ZaaPxl7fSAVuH9YVog'
 
 # SendGrid
-SENDGRID_API_KEY = "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"
+SENDGRID_API_KEY = "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"
 
 # Social Auth
 SOCIAL_AUTH_FACEBOOK_KEY = '1701354690078591'
