@@ -131,10 +131,11 @@ class SendEmailShareActivityTaskTest(APITestCase):
         } for e in emails]
 
         task = SendEmailShareActivityTask()
-        task_id = task.delay(self.user.id, self.activity.id, emails=emails, message=message)
+        task_id = task.delay(user_id=self.user.id, activity_id=self.activity.id, emails=emails,
+                             message=message)
 
         context = {
-            'name': self.user.get_full_name(),
+            'name': self.user.first_name,
             'activity': {
                 'cover_url': self.cover.photo.url,
                 'title': self.activity.title,
@@ -179,7 +180,8 @@ class SendEmailShareActivityTaskTest(APITestCase):
         } for e in emails]
 
         task = SendEmailShareActivityTask()
-        task_id = task.delay(self.user.id, self.activity.id, emails=emails, message=message)
+        task_id = task.delay(user_id=self.user.id, activity_id=self.activity.id, emails=emails,
+                             message=message)
 
         for email in emails:
             self.assertTrue(EmailTaskRecord.objects.filter(
@@ -200,7 +202,8 @@ class SendEmailShareActivityTaskTest(APITestCase):
         send_mail.side_effect = Exception('No subaccount exists with the id customer-123')
 
         task = SendEmailShareActivityTask()
-        task_id = task.delay(self.user.id, self.activity.id, emails=emails, message=message)
+        task_id = task.delay(user_id=self.user.id, activity_id=self.activity.id, emails=emails,
+                             message=message)
 
         for email in emails:
             self.assertTrue(EmailTaskRecord.objects.filter(
@@ -208,6 +211,32 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 to=email,
                 status='error',
                 reject_reason='No subaccount exists with the id customer-123').exists())
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_anonymous_user(self, send_mail):
+        """
+        Test the task if the user is anonymous
+        """
+        emails = [mommy.generators.gen_email() for _ in range(0, 3)]
+        message = 'Hey checa esto!'
+
+        send_mail.return_value = [{
+            'email': e,
+            'status': 'sent',
+            'reject_reason': None
+        } for e in emails]
+
+        task = SendEmailShareActivityTask()
+        task_id = task.delay(activity_id=self.activity.id, user_name='Harvey', emails=emails,
+                             message=message)
+
+        for email in emails:
+            self.assertTrue(EmailTaskRecord.objects.filter(
+                task_id=task_id,
+                to=email,
+                status='sent',
+                data__name='Harvey',
+                template_name='activities/email/share_activity.html').exists())
 
 
 class SendEmailLocationTaskTest(APITestCase):

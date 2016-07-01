@@ -156,13 +156,18 @@ class ActivityScoreTask(Task):
 
 
 class SendEmailShareActivityTask(SendEmailTaskMixin):
-    def run(self, user_id, activity_id, *args, **kwargs):
-        self.user = User.objects.get(id=user_id)
+    def run(self, activity_id, user_id=None, user_name=None, *args, **kwargs):
+        if user_id:
+            self.user = User.objects.get(id=user_id)
+            self.user_name = self.user.first_name
+        else:
+            self.user_name = user_name
+
         self.activity = Activity.objects.get(id=activity_id)
         self.template_name = 'activities/email/share_activity.html'
         self.emails = kwargs.get('emails')
         self.message = kwargs.get('message')
-        self.subject = '%s ha compartido contigo algo en Trulii' % self.user.first_name
+        self.subject = '%s ha compartido contigo algo en Trulii' % self.user_name
         self.global_context = self.get_context_data()
 
         return super(SendEmailShareActivityTask, self).run(*args, **kwargs)
@@ -183,7 +188,7 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
             rating = None
 
         return {
-            'name': self.user.get_full_name(),
+            'name': self.user_name,
             'activity': {
                 'cover_url': cover.photo.url,
                 'title': self.activity.title,
