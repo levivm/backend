@@ -49,12 +49,20 @@ SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 
 ################ / REDIS CONFIG #################
 
-FRONT_SERVER_URL = "https://dockerf.trulii.com/"
-PAYU_API_KEY = '6RK49XdJYozqO05lnIJQonnbEx'
-PAYU_MERCHANT_ID = '537033'
-PAYU_ACCOUNT_ID = '539061'
-PAYU_API_LOGIN = 'xvoZMctc645I2Nc'
-PAYU_URL = 'https://api.payulatam.com/payments-api/4.0/service.cgi'
+FRONT_SERVER_URL = os.environ.get('FRONT_SERVER_URL')
+
+# Pay U configuration
+PAYU_API_KEY = os.environ.get('PAYU_API_KEY')
+PAYU_MERCHANT_ID = os.environ.get('PAYU_MERCHANT_ID')
+PAYU_ACCOUNT_ID = os.environ.get('PAYU_ACCOUNT_ID')
+PAYU_API_LOGIN = os.environ.get('PAYU_API_LOGIN')
+PAYU_URL = os.environ.get('PAYU_URL')
 PAYU_TEST = os.environ.get('PAYU_TEST', False)
-PAYU_NOTIFY_URL = "https://api.trulii.com/api/payments/notification"
-PAYU_RESPONSE_URL = "https://dev.trulii.com/payments/pse/response"
+PAYU_NOTIFY_URL = os.environ.get('PAYU_NOTIFY_URL')
+PAYU_RESPONSE_URL = os.environ.get('PAYU_RESPONSE_URL')
+
+# Social Auth
+SOCIAL_AUTH_FACEBOOK_KEY = os.environ.get('SOCIAL_AUTH_FACEBOOK_KEY')
+SOCIAL_AUTH_FACEBOOK_SECRET = os.environ.get('SOCIAL_AUTH_FACEBOOK_SECRET')
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']
+SOCIAL_AUTH_FACEBOOK_REDIRECT_URI = os.environ.get('SOCIAL_AUTH_FACEBOOK_REDIRECT_URI')
