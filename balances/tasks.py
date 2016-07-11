@@ -24,7 +24,7 @@ class BalanceLogToAvailableTask(Task):
 
 class CalculateOrganizerBalanceTask(Task):
 
-    def run(self, organizer_ids, *args, **kwargs):
+    def run(self, organizer_ids=[], *args, **kwargs):
         organizers = Organizer.objects.filter(id__in=organizer_ids)
         for organizer in organizers:
             organizer.balance.available = self.calculate_amount(organizer=organizer,
@@ -40,14 +40,13 @@ class CalculateOrganizerBalanceTask(Task):
 
 class UpdateWithdrawalLogsStatusTask(Task):
 
-    def run(self, withdrawal_ids, *args, **kwargs):
+    def run(self, withdrawal_ids=None, status=None, *args, **kwargs):
         self.withdrawals = Withdrawal.objects.filter(id__in=withdrawal_ids)
 
         for withdrawal in self.withdrawals:
             BalanceLog.objects.filter(id__in=withdrawal.logs.values_list('id', flat=True))\
-                .update(status='withdrawn')
-
-
+                .update(status=status)
+ 
 class NotifyWithdrawalOrganizerTask(SendEmailTaskMixin):
 
     def run(self, withdrawal_id, status, *args, **kwargs):

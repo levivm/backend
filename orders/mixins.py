@@ -10,6 +10,9 @@ from payments.tasks import SendPaymentEmailTask, SendNewEnrollmentEmailTask
 from messages.tasks import AssociateStudentToMessagesTask
 from activities.models import Calendar
 from referrals.models import Redeem
+from balances.tasks import CalculateOrganizerBalanceTask
+from balances.models import BalanceLog
+from referrals.tasks import ReferrerCouponTask
 from .models import Order
 from activities.utils import PaymentUtil
 from django.core.exceptions import ObjectDoesNotExist
@@ -23,27 +26,13 @@ class ProcessPaymentMixin(object):
         payment_method = request.data.get('payment_method')
         payment = PaymentUtil(request, activity, self.coupon)
 
-        # Create task to asociate student with calendar sent messages
-        student_messages_task = AssociateStudentToMessagesTask()
-        calendar_id = request.data.get('calendar')
-        student_id = request.user.get_profile().id
-
-
         if payment_method == Payment.CC_PAYMENT_TYPE:
 
             response = self.proccess_payment_cc(payment, serializer)
-
-            # Asociate activities sent messages to the new student
-            student_messages_task.delay(calendar_id, student_id)
-
             return response
 
         elif payment_method == Payment.PSE_PAYMENT_TYPE:
             response = self.proccess_payment_pse(payment, serializer)
-            
-            # Asociate activities sent messages to the new student
-            student_messages_task.delay(calendar_id, student_id)
-
             return response
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -53,6 +42,13 @@ class ProcessPaymentMixin(object):
         calendar_id = request.data.get('calendar')
         calendar = Calendar.objects.get(id=calendar_id)
         return calendar
+
+    @classmethod
+    def get_organizer(cls, request):
+        calendar = cls.get_calendar(request)
+        return calendar.activity.organizer
+
+
 
     def call_create(self, serializer):
         super(ProcessPaymentMixin, self).perform_create(serializer)
@@ -95,17 +91,13 @@ class ProcessPaymentMixin(object):
             response = self.call_create(serializer=serializer)
             if charge['status'] == 'APPROVED':
                 self.redeem_coupon(self.request.user.student_profile)
-                payment_task = SendPaymentEmailTask()
-                new_enrollment_task = SendNewEnrollmentEmailTask()
-
                 task_data = {
                     'payment_method': settings.CC_METHOD_PAYMENT_ID
                 }
-
-                group(
-                    payment_task.s(response.data['id'], task_data),
-                    new_enrollment_task.s(response.data['id'], task_data)
-                )()
+                order = charge['payment'].order
+                process_payment_task_mixin = ProcessPaymentTaskMixin(order=order,
+                                                                     task_data=task_data)
+                process_payment_task_mixin.trigger_approved_tasks()
 
             return response
         else:
@@ -140,3 +132,44 @@ class ProcessPaymentMixin(object):
                     used=True,
                     redeem_at=now()
                 )
+
+
+class ProcessPaymentTaskMixin(object):
+    """
+    Mixin to handle the tasks after a payment was processed
+    """
+
+    def __init__(self, order, task_data):
+        super(ProcessPaymentTaskMixin, self).__init__()
+        self.order = order
+        self.task_data = task_data
+        self.calendar = order.calendar
+        self.student_id = order.student_id
+        self.organizer = order.calendar.activity.organizer
+
+    def trigger_approved_tasks(self):
+        #  Create task to asociate student with calendar sent messages
+        associate_student_to_messages_task = AssociateStudentToMessagesTask()
+
+        # Create Balance log to organizer
+        BalanceLog.create(organizer=self.organizer, calendar=self.calendar)
+
+        # Crete task to recalculate organizer unavailable amount
+        calculate_organizer_balance_task = CalculateOrganizerBalanceTask()
+
+        # Send email about the payment (invoice)
+        send_payment_email_task = SendPaymentEmailTask()
+
+        # Send email to the organizer about the activity enrolled
+        send_new_enrollment_email_task = SendNewEnrollmentEmailTask()
+
+        # Referral coupon task
+        referral_coupon_task = ReferrerCouponTask()
+
+        group(
+            associate_student_to_messages_task.s(self.calendar.id, self.student_id),
+            calculate_organizer_balance_task.s([self.organizer.id]),
+            send_payment_email_task.s(self.order.id, self.task_data),
+            send_new_enrollment_email_task.s(self.order.id, self.task_data),
+            referral_coupon_task.s(self.student_id, self.order.id),
+        )()

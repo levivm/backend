@@ -190,6 +190,7 @@ SOCIAL_AUTH_PIPELINE = [
     'utils.pipelines.send_mail_validation',
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
+    'social.pipeline.user.user_details',
 ]
 
 from .constants import *

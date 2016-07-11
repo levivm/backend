@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from rest_framework import status
 
+from organizers.models import Organizer
 from balances.factories import BalanceFactory, BalanceLogFactory, WithdrawalFactory
 from utils.tests import BaseAPITestCase
 
@@ -56,6 +57,10 @@ class WithdrawalListCreateViewTest(BaseAPITestCase):
             'organizer': self.organizer.id,
             'status': 'pending',
         }
+
+        updated_organizer = Organizer.objects.get(id=self.organizer.id)
+
+        self.assertEqual(updated_organizer.balance.available, 0)
         self.assertTrue(all(item in response.data.items() for item in data.items()))
 
     def test_list(self):

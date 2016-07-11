@@ -46,6 +46,6 @@ class RequestSignUpSerializer(serializers.ModelSerializer):
 
     def validate_email(self, data):
         if User.objects.filter(email=data).exists():
-            raise exceptions.ValidationError(_('This email already exists.'))
+            raise exceptions.ValidationError(_('Este correo ya existe.'))
 
         return data

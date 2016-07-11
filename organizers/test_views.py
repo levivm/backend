@@ -555,6 +555,10 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         # Organizer should create the bank info
         response = self.organizer_client.post(self.bank_info_api_url, self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.data.update({
+            'bank': 'BANCOLOMBIA'
+        })
         self.assertTrue(all(item in response.data.items() for item in self.data.items()))
         self.assertTrue(
             OrganizerBankInfo.objects.filter(organizer=self.organizer,
@@ -577,6 +581,9 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should get data
+        self.data.update({
+            'bank': 'BANCOLOMBIA'
+        })
         response = self.organizer_client.get(self.bank_info_api_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item in response.data.items() for item in self.data.items()))

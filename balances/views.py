@@ -4,9 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from balances.serializers import WithdrawSerializer
 from utils.paginations import SmallResultsSetPagination
 from utils.permissions import IsOrganizer
+from .models import BalanceLog
+from .serializers import WithdrawSerializer
+from .tasks import CalculateOrganizerBalanceTask
 
 
 class BalanceRetrieveView(APIView):
@@ -34,10 +36,20 @@ class WithdrawalListCreateView(ListCreateAPIView):
         data = {
             'organizer': organizer.id,
             'logs': organizer.balance_logs.available().values_list('id', flat=True),
-            'amount': organizer.balance.available,
+            'amount': organizer.balance.available
         }
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+
+        organizer.balance_logs.available().update(status=BalanceLog.STATUS_REQUESTED)
+        calculate_organizer_balance_task = CalculateOrganizerBalanceTask()
+        calculate_organizer_balance_task.delay([organizer.id])
+
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        data_response = serializer.data
+        data_response.update({
+            'new_available_amount': 0
+            })
+        return Response(data_response, status=status.HTTP_201_CREATED, headers=headers)

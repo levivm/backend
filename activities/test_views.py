@@ -1101,6 +1101,22 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, 'Introduzca una dirección de correo electrónico válida')
 
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_validation_user_name(self, send_mail):
+        emails = ['email@example.com']
+
+        send_mail.return_value = [{
+            'email': email,
+            'status': 'sent',
+            'reject_reason': None
+        } for email in emails]
+
+        data = {'emails': ', '.join(emails)}
+        response = self.client.post(self.share_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, ['Se necesita autenticarse o enviar el nombre.'])
+
 
 class AutoCompleteViewTest(BaseAPITestCase):
     """

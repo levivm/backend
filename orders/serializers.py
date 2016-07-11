@@ -188,6 +188,4 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             instance = Assistant(order=order, **assistant)
             instance.save()
 
-        task = ReferrerCouponTask()
-        task.delay(student_id=student.id, order_id=order.id)
         return order

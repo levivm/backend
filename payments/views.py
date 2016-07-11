@@ -3,14 +3,12 @@ import json
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from django.conf import settings
-from rest_framework import viewsets
 from rest_framework import status
 from django.utils.translation import ugettext_lazy as _
 
+from orders.mixins import ProcessPaymentTaskMixin
 from .models import Payment
-from referrals.tasks import ReferrerCouponTask
 from .tasks import SendPaymentEmailTask
 from orders.models import Order
 from activities.utils import PaymentUtil
@@ -34,11 +32,11 @@ class PayUNotificationPayment(APIView):
         order.change_status(Order.ORDER_APPROVED_STATUS)
         if order.coupon:
             order.coupon.set_used(student=order.student)
-        send_payment_email_task = SendPaymentEmailTask()
         task_data = {'payment_method': data.get('payment_method_type')}
-        referral_coupon_task = ReferrerCouponTask()
-        send_payment_email_task.apply_async((order.id,), task_data, countdown=4),
-        referral_coupon_task.delay(order.student.id, order.id)
+
+        process_payment_task_mixin = ProcessPaymentTaskMixin(order=order,
+                                                             task_data=task_data)
+        process_payment_task_mixin.trigger_approved_tasks()
 
     def _run_transaction_declined_task(self, order, data, msg='Error',
                                        status=Order.ORDER_DECLINED_STATUS):
@@ -109,7 +107,7 @@ class PayUNotificationPayment(APIView):
 
         # The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
 
-        data = request.POST
+        data = request.data
 
         transaction_id = data.get('transaction_id')
 

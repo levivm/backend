@@ -167,11 +167,10 @@ class Command(BaseCommand):
             try:
                 stock_photo = random.choice(
                     ActivityStockPhoto.objects.filter(sub_category=activity.sub_category))
-                ActivityPhoto.objects.create(photo=stock_photo.photo,
-                                             thumbnail=stock_photo.thumbnail,
-                                             activity=activity, main_photo=True)
-            except:
-                pass
+                ActivityPhotoFactory(photo=stock_photo.photo.name, activity=activity,
+                                     main_photo=True)
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(str(e)))
 
     def create_tags(self, activities: List[Activity]) -> None:
         for activity in activities:

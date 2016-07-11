@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
-from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
@@ -330,9 +329,22 @@ class ShareActivityEmailView(APIView):
                 return Response(_('Introduzca una dirección de correo electrónico válida'),
                                 status=status.HTTP_400_BAD_REQUEST)
 
+        params = {
+            'activity_id': activity.id,
+            'emails': emails,
+            'message': request.data.get('message')
+        }
+
+        if not request.user.is_authenticated():
+            if request.data.get('user_name') is None:
+                raise ValidationError('Se necesita autenticarse o enviar el nombre.')
+            else:
+                params['user_name'] = request.data.get('user_name')
+        else:
+            params['user_id'] = request.user.id
+
         task = SendEmailShareActivityTask()
-        task.delay(request.user.id, activity.id, emails=emails,
-                   message=request.data.get('message'))
+        task.delay(**params)
 
         return Response('OK')
 
