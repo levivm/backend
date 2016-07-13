@@ -65,8 +65,7 @@
               </div>
               <div class="mdl-card__actions mdl-card--border">
                 <div class="mdl-layout-spacer"></div>
-                <a href="{% url 'metrics:general' %}?start_date={{ start_date|date:'Y-m-j' }}&end_date={{ end_date|date:'Y-m-j' }}&export_student=true"
-                   target="_blank" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
+                <a href="#" id="export-students" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
                    <i class="material-icons">file_download</i>Exportar
                  </a>
               </div>
@@ -80,8 +79,7 @@
                 <div id="organizers_div"></div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-                <a href="{% url 'metrics:general' %}?start_date={{ start_date|date:'Y-m-j' }}&end_date={{ end_date|date:'Y-m-j' }}&export_student=true"
-                   target="_blank" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
+                <a href="#" id="export-organizers" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
                    <i class="material-icons">file_download</i>Exportar
                  </a>
               </div>
@@ -125,6 +123,16 @@
     </main>
   </div>
 
+  <dialog class="mdl-dialog">
+    <h4 class="mdl-dialog__title">CSV</h4>
+    <div class="mdl-dialog__content">
+      <p></p>
+    </div>
+    <div class="mdl-dialog__actions">
+      <button type="button" class="mdl-button close">OK</button>
+    </div>
+  </dialog>
+
   <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" style="position: fixed; left: -1000px; height: -1000px;">
     <defs>
       <mask id="piemask" maskContentUnits="objectBoundingBox">
@@ -147,7 +155,10 @@
           'organizers': {{ general_metrics.range_metrics.organizers|safe }},
           'categories': {{ general_metrics.range_metrics.numbers_by_category|safe }}
         }
-      }
+      },
+      'export_url': "{% url 'metrics:export' %}",
+      'start_date': "{{ start_date|date:'Y-m-j' }}",
+      'end_date': "{{ end_date|date:'Y-m-j' }}"
     };
 
   </script>

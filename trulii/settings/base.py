@@ -72,7 +72,7 @@ INSTALLED_APPS = (
     'referrals',
     'balances',
     'messages.apps.MessagesConfig',
-    'metrics.apps.MetricsConfig',
+    'metrics',
 )
 
 MIDDLEWARE_CLASSES = [

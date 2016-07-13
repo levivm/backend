@@ -4,6 +4,8 @@ require("material-design-lite");
 
 var MetricsCharts = require('./metricsCharts.js');
 var DatePickers = require('./datePickers.js');
+var ExportCSV = require('./ExportCSV.js');
 
 MetricsCharts();
 DatePickers();
+ExportCSV();
