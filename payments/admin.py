@@ -8,6 +8,7 @@ from utils.mixins import OperativeModelAdminMixin
 class PaymentAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('order_num', 'order_email', 'date')
     list_filter = ('date',)
+    search_fields = ['transaction_id']
     operative_readonly_fields = {'payment_type', 'card_type', 'transaction_id', 'last_four_digits',
                                  'response'}
 
