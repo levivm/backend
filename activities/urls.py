@@ -62,7 +62,7 @@ urlpatterns = [
     # activities:views_counter - api/activities/<id>/views_counter
     url(
         regex=r'^(?P<pk>\d+)/views_counter/?$',
-        view=ActivityViewsCounterView.as_view(),
+        view=ActivityViewsCounterView.as_view({'put': 'put'}),
         name='views_counter',
     ),
 

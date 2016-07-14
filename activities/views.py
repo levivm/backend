@@ -7,14 +7,14 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
+from django.views.generic import View
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, \
-    RetrieveUpdateAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.viewsets import GenericViewSet
 
 from activities import constants
 from activities.mixins import ActivityMixin, \
@@ -409,8 +409,9 @@ class ActivityStatsView(RetrieveAPIView):
             raise ValidationError({'year': _('Este campo es requerido.')})
 
 
-class ActivityViewsCounterView(RetrieveUpdateAPIView):
+class ActivityViewsCounterView(GenericViewSet):
     queryset = Activity.objects.all()
+    serializer_class = ActivitiesSerializer
 
     def put(self, request, *args, **kwargs):
         activity = self.get_object()
