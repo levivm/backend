@@ -42,18 +42,23 @@ class SendEmailConfirmEmailTask(SendEmailTaskMixin):
     Task to send the confirmation email
     """
 
-    def run(self, confirm_email_id, *args, **kwargs):
+    def run(self, confirm_email_id, url_params=None, *args, **kwargs):
         self.confirm_email = ConfirmEmailToken.objects.get(id=confirm_email_id)
         self.template_name = 'authentication/email/confirm_email.html'
         self.emails = [self.confirm_email.email]
         self.subject = 'Confirmación de correo'
+        self.url_params = url_params
         self.global_context = self.get_context_data()
         return super(SendEmailConfirmEmailTask, self).run(*args, **kwargs)
 
     def get_context_data(self):
+        url = self.confirm_email.get_token_url()
+
+        if self.url_params:
+            url += '?%s' % self.url_params
         return {
             'name': self.confirm_email.user.first_name,
-            'url': self.confirm_email.get_token_url(),
+            'url': url,
         }
 
 

@@ -285,8 +285,9 @@ class ConfirmEmailView(ValidateTokenMixin, GenericAPIView):
         confirm_email.used = True
         confirm_email.save(update_fields=['used'])
 
-        task = SendEmailHasChangedTask()
-        task.delay(confirm_email_id=confirm_email.id)
+        if request.data.get('change_email'):
+            task = SendEmailHasChangedTask()
+            task.delay(confirm_email_id=confirm_email.id)
 
         profile_data = self.get_profile_data(profile)
 
@@ -319,7 +320,7 @@ class ChangeEmailView(InvalidateTokenMixin, GenericAPIView):
             email=email)
 
         task = SendEmailConfirmEmailTask()
-        task.delay(confirm_email.id)
+        task.delay(confirm_email.id, url_params='change_email=true')
 
         profile = confirm_email.user.get_profile()
         profile.verified_email = False
