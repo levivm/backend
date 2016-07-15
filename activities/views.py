@@ -288,8 +288,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
             activities = activities.filter(filters).distinct()
 
         if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE,
-                     constants.ORDER_MAX_PRICE]:
-
+                     constants.ORDER_MAX_PRICE] or request.query_params.get('is_free') is not None:
             extra_q = search.extra_query(request.query_params, order)
             activities = activities.extra(**extra_q) if extra_q else activities
 

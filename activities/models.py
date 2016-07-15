@@ -191,11 +191,14 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         return sorted(dates, reverse=True)[0]
 
-    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None):
+    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
         closest = None
         query = Q()
-        if cost_start is not None and cost_end is not None:
+        if is_free:
+            query &= Q(is_free=True)
+
+        elif cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
                 query &= Q(session_price__gte=(cost_start))

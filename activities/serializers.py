@@ -347,7 +347,8 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             cost_start = request.query_params.get('cost_start')
             cost_end = request.query_params.get('cost_end')
             initial_date = request.query_params.get('date')
-            instance = obj.closest_calendar(initial_date, cost_start, cost_end)
+            is_free = request.query_params.get('is_free')
+            instance = obj.closest_calendar(initial_date, cost_start, cost_end, is_free)
         return CalendarSerializer(instance,
                                   remove_fields=['sessions', 'assistants', 'activity',
                                                  'number_of_sessions',

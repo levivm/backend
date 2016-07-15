@@ -24,9 +24,11 @@ class ActivitySearchEngine(object):
     SEARCH_ORDER_MIN_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MAX_PRICE_ATTRIBUTE = '-closest_calendar_price'
     SEARCH_ORDER_SCORE_ATTRIBUTE = '-score'
+    SEARCH_ORDER_SCORE_FREE_ATTRIBUTE = '-score_free'
     SEARCH_ORDER_CLOSEST_ATTRIBUTE = 'closest'
     SEARCH_ORDER_PRICE_SELECT = 'session_price'
     SEARCH_ORDER_CLOSEST_SELECT = 'initial_date'
+    SEARCH_ORDER_SCORE_SELECT = 'score'
 
     def normalize_query(self, query_string, findterms=re.compile(r'"([^"]+)"|(\S+)').findall,
                         normspace=re.compile(r'\s{2,}').sub):
@@ -54,7 +56,6 @@ class ActivitySearchEngine(object):
 
         return query
 
-
     def extra_query(self, query_params, order):
         if order == constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
@@ -73,13 +74,19 @@ class ActivitySearchEngine(object):
         timestamp = int(js_timestamp) // 1000 if js_timestamp else datetime.now().timestamp()
         date = datetime.fromtimestamp(timestamp).replace(second=0).strftime('%Y-%m-%d')
         if is_free:
+            if order == self.SEARCH_ORDER_SCORE_SELECT:
+                extra_parameter = self.SEARCH_ORDER_SCORE_FREE_ATTRIBUTE
+                select_parameter = self.SEARCH_ORDER_SCORE_SELECT
+            else:
+                extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
+                select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
             extra = {
                 extra_parameter:
                     'SELECT "activities_calendar".' + select_parameter + ' '
                     'FROM "activities_calendar" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
                     'AND "activities_calendar"."initial_date" >= %s '
-                    'AND "activities_calendar"."is_free" = true '
+                    'AND "activities_calendar"."is_free" = TRUE '
                     'AND "activities_calendar"."available_capacity" > 0 '
                     'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
             }
@@ -144,7 +151,7 @@ class ActivitySearchEngine(object):
         if city is not None:
             query &= Q(location__city=city)
 
-        if cost_start is not None and cost_end is not None:
+        if cost_start is not None and cost_end is not None and is_free is None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
                 query &= Q(calendars__session_price__gte=(cost_start))
