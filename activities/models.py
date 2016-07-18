@@ -214,12 +214,20 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         calendars = self.calendars.filter(query)
 
         if calendars:
-            open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+            if is_free: 
+                open_calendars = [c for c in calendars if c.initial_date.date() >= today and c.is_free]
+            else:
+                open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+
             if open_calendars:
                 closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
 
-                calendars = [c for c in calendars if c.initial_date.date() < today]
+                if is_free:
+                    calendars = [c for c in calendars if c.initial_date.date() < today and c.is_free]
+                else:
+                    calendars = [c for c in calendars if c.initial_date.date() < today]
+
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
 

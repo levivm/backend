@@ -77,12 +77,14 @@ class ActivitySearchEngine(object):
             if order == self.SEARCH_ORDER_SCORE_SELECT:
                 extra_parameter = self.SEARCH_ORDER_SCORE_FREE_ATTRIBUTE
                 select_parameter = self.SEARCH_ORDER_SCORE_SELECT
+                table_parameter = 'activities_activity'
             else:
                 extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
                 select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
+                table_parameter = 'activities_calendar'
             extra = {
                 extra_parameter:
-                    'SELECT "activities_calendar".' + select_parameter + ' '
+                    'SELECT "'+table_parameter+'".' + select_parameter + ' '
                     'FROM "activities_calendar" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
                     'AND "activities_calendar"."initial_date" >= %s '
