@@ -2,6 +2,7 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
+from collections import OrderedDict
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -173,9 +174,28 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         return value
 
     def validate_sessions(self, value):
-        if self.instance and self.instance.orders.available().count() > 0:
-            raise serializers.ValidationError(_("No se puede cambiar la sessión con estudiantes "
-                                                "inscritos."))
+        def get_time(item):
+            return {
+            'date': item['date'],
+            'start_time': item['start_time'].time(),
+            'end_time': item['end_time'].time()}
+
+        values = map(get_time, value)
+
+        sessions = [{
+            'date': s.date.replace(tzinfo=None, second=0, microsecond=0),
+            'start_time': s.start_time.replace(second=0, microsecond=0),
+            'end_time': s.end_time.replace(second=0, microsecond=0)}
+            for s in self.instance.sessions.all()]
+
+        for item in values:
+            if item in sessions:
+                continue
+            else:
+                if self.instance and self.instance.orders.available().count() > 0:
+                    raise serializers.ValidationError(_("No se puede cambiar la sessión con estudiantes "
+                                                        "inscritos."))
+                break
 
         if len(value) > 0:
             return value
