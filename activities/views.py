@@ -100,7 +100,7 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
 
-        if activity.publish and activity.calendars.filter(
+        if activity.calendars.filter(
                 orders__status=Order.ORDER_APPROVED_STATUS).count() > 0:
             raise ValidationError({'location': ['No se puede cambiar la ubicación con personas'
                                                'inscritas.']})
@@ -111,8 +111,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         if location_serializer.is_valid(raise_exception=True):
             location = location_serializer.save()
             activity.set_location(location)
-            task = SendEmailLocationTask()
-            task.apply_async((activity.id,), countdown=1800)
+            # task = SendEmailLocationTask()
+            # task.apply_async((activity.id,), countdown=1800)
 
         return Response(location_serializer.data)
 
