@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from activities.views import ActivitiesSearchView, ShareActivityEmailView, AutoCompleteView, \
-    ActivityStatsView, ActivityViewsCounterView
+    ActivityStatsView, ActivityViewsCounterView, CategoryRetrieveAPIView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
     SubCategoriesViewSet, TagsViewSet, CalendarViewSet, \
     ActivityPhotosViewSet
@@ -31,6 +31,11 @@ urlpatterns = [
     url(r'^categories/?$', CategoriesViewSet.as_view({'get': 'list'})),
     url(r'^subcategories/?$', SubCategoriesViewSet.as_view({'get': 'list'})),
     url(r'^subcategories/(?P<subcategory_id>\d+)/covers/?$', SubCategoriesViewSet.as_view({'get': 'get_pool_from_stock'}),name='get_covers_photos'),
+
+    # {% url activities:category_detail %}
+    url(regex=r'^categories/(?P<slug>\w+)/?$',
+        view=CategoryRetrieveAPIView.as_view(),
+        name='category_detail'),
 
     # {% url activities:search %}
     url(regex=r'^search/?$',

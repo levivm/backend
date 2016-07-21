@@ -34,6 +34,7 @@ class CategoryFactory(factory.django.DjangoModelFactory):
 
     name = factory.LazyAttribute(lambda n: random.choice(CATEGORIES))
     color = factory.Faker('hex_color')
+    description = factory.Faker('paragraph')
 
 
 class SubCategoryFactory(factory.django.DjangoModelFactory):

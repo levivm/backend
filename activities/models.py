@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 
 from locations.models import Location
@@ -25,9 +26,19 @@ from .queryset import ActivityQuerySet
 class Category(models.Model):
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
+    slug = models.SlugField(blank=True)
+    description = models.TextField()
+    cover_photo = models.ImageField(upload_to='categories/', blank=True)
+    content_photo = models.ImageField(upload_to='categories/', blank=True)
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+        super(Category, self).save(*args, **kwargs)
 
 
 class SubCategory(models.Model):

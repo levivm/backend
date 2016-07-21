@@ -222,6 +222,16 @@ class CategoriesViewSet(viewsets.ModelViewSet):
         return Category.objects.all().order_by('name')
 
 
+class CategoryRetrieveAPIView(RetrieveAPIView):
+    serializer_class = CategoriesSerializer
+    queryset = Category.objects.all()
+    lookup_field = 'slug'
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['remove_fields'] = ['subcategories', 'icon_default', 'icon_active']
+        return super(CategoryRetrieveAPIView, self).get_serializer(*args, **kwargs)
+
+
 class SubCategoriesViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategoriesSerializer
