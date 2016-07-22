@@ -44,7 +44,7 @@ class ValidateTokenMixin(object):
                 valid_until__gt=now(),
                 used=False)
         except self.model.DoesNotExist:
-            raise ValidationError(_('This token is not valid.'))
+            raise ValidationError(_('Este token no es válido.'))
 
 
 class InvalidateTokenMixin(object):

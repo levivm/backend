@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^api/referrals/', include('referrals.urls', namespace='referrals')),
     url(r'^api/messages/', include('messages.urls', namespace='messages')),
     url(r'^api/balances/', include('balances.urls', namespace='balances')),
+    url(r'^metrics/', include('metrics.urls', namespace='metrics')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 
     #    url(r'^organizers/', include('organizers.urls')),

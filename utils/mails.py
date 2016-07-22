@@ -13,10 +13,15 @@ class SendGridEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
         email_message = email_messages[0]
         message = sendgrid.Mail(
-                to=email_message.to,
-                subject=email_message.subject,
-                html=email_message.alternatives[0][0],
-                from_email=email_message.from_email)
+            to=email_message.to,
+            subject=email_message.subject,
+            html=email_message.alternatives[0][0],
+            from_email=email_message.from_email,
+        )
+
+        for attachment in email_message.attachments:
+            message.add_attachment_stream(attachment[0], attachment[1])
+
         try:
             status, msg = self.sg.send(message)
         except sendgrid.SendGridError:
@@ -42,7 +47,7 @@ class ConsoleSendGridEmailBackend(SendGridEmailBackend):
             'date': now().isoformat(),
             'html': email_message.alternatives[0][0]
         }
-        print("\
+        print("\n\
         \n==============================\
         \nSubject: {subject}\
         \nFrom: {from}\

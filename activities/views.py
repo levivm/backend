@@ -100,7 +100,7 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     def set_location(self, request, *args, **kwargs):
         activity = self.get_object()
 
-        if activity.publish and activity.calendars.filter(
+        if activity.calendars.filter(
                 orders__status=Order.ORDER_APPROVED_STATUS).count() > 0:
             raise ValidationError({'location': ['No se puede cambiar la ubicación con personas'
                                                'inscritas.']})
@@ -111,8 +111,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         if location_serializer.is_valid(raise_exception=True):
             location = location_serializer.save()
             activity.set_location(location)
-            task = SendEmailLocationTask()
-            task.apply_async((activity.id,), countdown=1800)
+            # task = SendEmailLocationTask()
+            # task.apply_async((activity.id,), countdown=1800)
 
         return Response(location_serializer.data)
 
@@ -220,6 +220,16 @@ class CategoriesViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Category.objects.all().order_by('name')
+
+
+class CategoryRetrieveAPIView(RetrieveAPIView):
+    serializer_class = CategoriesSerializer
+    queryset = Category.objects.all()
+    lookup_field = 'slug'
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['remove_fields'] = ['subcategories', 'icon_default', 'icon_active']
+        return super(CategoryRetrieveAPIView, self).get_serializer(*args, **kwargs)
 
 
 class SubCategoriesViewSet(viewsets.ModelViewSet):

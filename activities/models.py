@@ -2,14 +2,15 @@
 import io
 import operator
 import os
-from datetime import datetime,date
+from datetime import datetime, date
 from functools import reduce
 from random import Random
 
-from django.db.models import Q
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.functional import cached_property
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 
 from locations.models import Location
@@ -25,9 +26,19 @@ from .queryset import ActivityQuerySet
 class Category(models.Model):
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
+    slug = models.SlugField(blank=True)
+    description = models.TextField()
+    cover_photo = models.ImageField(upload_to='categories/', blank=True)
+    content_photo = models.ImageField(upload_to='categories/', blank=True)
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+        super(Category, self).save(*args, **kwargs)
 
 
 class SubCategory(models.Model):
@@ -63,7 +74,6 @@ class Tags(models.Model):
 
 
 class Activity(Updateable, AssignPermissionsMixin, models.Model):
-
     LEVEL_CHOICES = (
         (constants.LEVEL_P, _('Principiante')),
         (constants.LEVEL_I, _('Intermedio')),
@@ -105,7 +115,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = ActivityQuerySet.as_manager()
-
 
     def __str__(self):
         return self.title
@@ -176,12 +185,11 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
-
     def set_last_date(self, last_session):
         new_last_date = last_session.get('date').date()
         if new_last_date is not None or self.last_date is not None:
             self.last_date = new_last_date if not self.last_date or \
-                             self.last_date < new_last_date else self.last_date
+                                              self.last_date < new_last_date else self.last_date
             self.save(update_fields=['last_date'])
 
     def last_sale_date(self):
@@ -249,6 +257,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         orders = [order for sublist in orders for order in sublist]
         return orders
 
+    def get_assistants(self):
+        return [assistant for order in self.get_orders() for assistant in
+                      order.assistants.all()]
+
     def get_frontend_url(self):
         return '%sactivity/%s' % (settings.FRONT_SERVER_URL, self.id)
 
@@ -268,11 +280,11 @@ class ActivityPhoto(AssignPermissionsMixin, ImageOptimizable, models.Model):
                                                 filename=filename,
                                                 width=400, height=350)
             self.thumbnail.save(
-                    'thumbnail_%s' % filename,
-                    simple_file,
-                    save=False)
+                'thumbnail_%s' % filename,
+                simple_file,
+                save=False)
 
-        super(ActivityPhoto, self).\
+        super(ActivityPhoto, self). \
             save(user=self.activity.organizer.user, obj=self, *args, **kwargs)
 
     @classmethod
@@ -353,15 +365,14 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     def num_enrolled(self):
         return sum([o.num_enrolled() for o in self.orders.available()])
 
-
     @cached_property
     def duration(self):
         """Returns calendar duration in ms"""
         sessions = self.sessions.all()
         if not sessions:
             return None
-        get_datetime = lambda time: datetime.combine(datetime(1,1,1,0,0,0), time)
-        timedeltas = map(lambda s: get_datetime(s.end_time)-get_datetime(s.start_time), sessions)
+        get_datetime = lambda time: datetime.combine(datetime(1, 1, 1, 0, 0, 0), time)
+        timedeltas = map(lambda s: get_datetime(s.end_time) - get_datetime(s.start_time), sessions)
         duration = reduce(operator.add, timedeltas).total_seconds()
         return duration
 
@@ -377,7 +388,6 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     def decrease_capacity(self, amount):
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
-
 
 
 class CalendarSession(models.Model):
