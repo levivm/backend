@@ -16,6 +16,7 @@ DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 ################ / DATABASE CONFIG #############
 
 
+STATICFILES_STORAGE = 'trulii.custom_storages.StaticRootS3BotoStorage'
 
 
 ################ REDIS CONFIG ##################
