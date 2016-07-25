@@ -38,11 +38,11 @@ class AuthVerifyToken(models.Model):
 class ResetPasswordToken(AuthVerifyToken):
 
     def get_token_url(self):
-        return '%spassword/reset/key/%s' % (settings.FRONT_SERVER_URL, self.token)
+        return '%spassword/restablecer/key/%s' % (settings.FRONT_SERVER_URL, self.token)
 
 
 class ConfirmEmailToken(AuthVerifyToken):
     email = models.EmailField()
 
     def get_token_url(self):
-        return '%semail/confirm/%s' % (settings.FRONT_SERVER_URL, self.token)
+        return '%semail/confirmar/%s' % (settings.FRONT_SERVER_URL, self.token)

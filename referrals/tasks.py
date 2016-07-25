@@ -29,7 +29,7 @@ class SendReferralEmailTask(SendEmailTaskMixin):
                 'avatar': self.student.get_photo_url(),
             },
             'amount': amount,
-            'url': '%sreferrals/invitation/%s' % (settings.FRONT_SERVER_URL,
+            'url': '%sreferir/invitacion/%s' % (settings.FRONT_SERVER_URL,
                                         self.student.referrer_code)
         }
 
