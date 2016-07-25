@@ -72,6 +72,7 @@ class Redeem(models.Model):
     coupon = models.ForeignKey(Coupon)
     used = models.BooleanField(default=False)
     redeem_at = models.DateTimeField(blank=True, null=True)
+    referral = models.ForeignKey(Referral, related_name='redeems', null=True, blank=True)
 
     def set_used(self):
         self.used = True

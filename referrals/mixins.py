@@ -1,5 +1,5 @@
 from requests import utils as requests_utils
-from celery import group
+from celery import chain
 from django.core import signing
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import status
@@ -7,7 +7,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
 from referrals.models import Referral
-from referrals.tasks import CreateCouponTask, CreateReferralTask
+from referrals.tasks import CreateCouponTask, CreateReferralTask, SendCouponEmailTask
 from students.models import Student
 
 
@@ -40,9 +40,15 @@ class ReferralMixin(GenericAPIView):
             if self.referrer and (self.referrer.id != referred_id):
                 create_referral_task = CreateReferralTask()
                 create_coupons_task = CreateCouponTask()
-                group(
+                send_coupon_email_task = SendCouponEmailTask()
+                # group(
+                #     create_referral_task.s(self.referrer.id, referred_id, self.ip_address),
+                #     (create_coupons_task.s((referred_id, 'referred')) | send_coupon_email_task.s()),
+                # )()
+                chain(
                     create_referral_task.s(self.referrer.id, referred_id, self.ip_address),
-                    create_coupons_task.s(referred_id, 'referred')
+                    create_coupons_task.s(),
+                    send_coupon_email_task.s()
                 )()
 
     @staticmethod

@@ -1,5 +1,0 @@
-Hola {{name}},
-
-Tienes un nuevo cupón en Trulii.
-Cuando hagas una compra puedes redimirlo usando este código:
-{{ coupon_code }}

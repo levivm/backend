@@ -12,7 +12,7 @@ from activities.models import Calendar
 from referrals.models import Redeem
 from balances.tasks import CalculateOrganizerBalanceTask
 from balances.models import BalanceLog
-from referrals.tasks import ReferrerCouponTask
+from referrals.tasks import ReferrerCouponTask, CreateCouponTask, SendCouponEmailTask
 from .models import Order
 from activities.utils import PaymentUtil
 from django.core.exceptions import ObjectDoesNotExist
@@ -148,7 +148,7 @@ class ProcessPaymentTaskMixin(object):
         self.organizer = order.calendar.activity.organizer
 
     def trigger_approved_tasks(self):
-        #  Create task to asociate student with calendar sent messages
+        #  Create task to associate student with calendar sent messages
         associate_student_to_messages_task = AssociateStudentToMessagesTask()
 
         # Create Balance log to organizer
@@ -165,11 +165,17 @@ class ProcessPaymentTaskMixin(object):
 
         # Referral coupon task
         referral_coupon_task = ReferrerCouponTask()
+        create_coupon_task = CreateCouponTask()
+        send_coupon_email_task = SendCouponEmailTask()
 
         group(
             associate_student_to_messages_task.s(self.calendar.id, self.student_id),
             calculate_organizer_balance_task.s([self.organizer.id]),
             send_payment_email_task.s(self.order.id, self.task_data),
             send_new_enrollment_email_task.s(self.order.id, self.task_data),
-            referral_coupon_task.s(self.student_id, self.order.id),
+            (
+                referral_coupon_task.s(self.student_id, self.order.id) |
+                create_coupon_task.s() |
+                send_coupon_email_task.s()
+            ),
         )()
