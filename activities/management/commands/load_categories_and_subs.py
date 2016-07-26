@@ -22,13 +22,13 @@ class Command(BaseCommand):
     def get_data():
         return {
 
-            "Arte": {'color': '#46416D',
+            "Arte y Manualidades": {'color': '#46416D',
                      'subcategories': ['Actuación', 'Cinematografía', 'Costura', 'Dibujo y Pintura', 'Diseño',
                                        'Fotografía', 'Manualidades', 'Moda', 'Otros']},
             "Danza": {'color': '#38DBC7',
                       'subcategories': ['Bailes de Salón', 'Ballet', 'Contemporáneo', 'Exótico', 'Folklórico',
                                         'Latinas', 'Oriental', 'Step', 'Urbano', 'Otros']},
-            "Estilo de vida": {'color': '#00AAD1',
+            "Vida Cotidiana": {'color': '#00AAD1',
                                'subcategories': ['Amor y Sexo', 'Belleza', 'Paternidad', 'Espiritual', 'Habilidades',
                                                  'Manejo',
                                                  'Mascotas', 'Relaciones Sociales', 'Yoga', 'Otros']},
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                        'subcategories': ['Acordeón', 'Armónica', 'Audio y Producción', 'Bajo', 'Batería', 'Canto', 'DJ',
                                          'Guitarra', 'Piano', 'Saxofón', 'Teclado', 'Teoría', 'Trompeta', 'Violín',
                                          'Violonchelo', 'Otros']},
-            "Niños": {'color': '#0084B4 ',
+            "Infantiles": {'color': '#0084B4 ',
                       'subcategories': ['Académico', 'Actuación', 'Arte', 'Bailes', 'Campamentos', 'Cocina', 'Deportes',
                                         'Habilidades', 'Idiomas', 'Tecnología', 'Otros']},
             "Profesional": {'color': '#FFC971',
@@ -55,4 +55,5 @@ class Command(BaseCommand):
             "Tecnología": {'color': '#EB9F61',
                            'subcategories': ['Animación', 'Desarrollo Web y Móvil', 'Diseño Web y Móvil', 'Juegos',
                                              'Microsoft', 'Modelado', 'Programación', 'Otros']},
+            "Fitness": {'color': '#222222'},
         }

@@ -53,7 +53,7 @@ class CreateReferralTask(Task):
 
         # return referral
         return {
-            'student_id': referrer.id,
+            'student_id': referred.id,
             'coupon_type_name': 'referred',
             'referral_id': referral.id
         }
