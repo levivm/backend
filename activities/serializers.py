@@ -178,6 +178,12 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         return value
 
     def validate_sessions(self, value):
+        if len(value) <= 0:
+            raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
+
+        if not self.instance:
+            return value
+
         def get_time(item):
             return {
             'date': item['date'],
@@ -201,9 +207,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
                                                         "inscritos."))
                 break
 
-        if len(value) > 0:
-            return value
-        raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
+        return value
 
     def validate_available_capacity(self, value):
         if value < 0:
