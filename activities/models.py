@@ -199,7 +199,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         return sorted(dates, reverse=True)[0]
 
-    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
+    def closest_calendar(self, closing_sale=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
         closest = None
         query = Q()
@@ -213,9 +213,9 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             else:
                 query &= Q(session_price__range=(cost_start, cost_end))
 
-        if initial_date is not None:
-            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
-            query = query & Q(initial_date__gte=initial_date)
+        if closing_sale is not None:
+            closing_sale = datetime.fromtimestamp(int(closing_sale) // 1000).replace(second=0)
+            query = query & Q(closing_sale__gte=closing_sale)
 
         query = query & Q(available_capacity__gt=0)
 
@@ -223,21 +223,21 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         if calendars:
             if is_free: 
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today and c.is_free]
+                open_calendars = [c for c in calendars if c.closing_sale.date() >= today and c.is_free]
             else:
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+                open_calendars = [c for c in calendars if c.closing_sale.date() >= today]
 
             if open_calendars:
-                closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
+                closest = sorted(open_calendars, key=lambda c: c.closing_sale)[0]
             else:
 
                 if is_free:
-                    calendars = [c for c in calendars if c.initial_date.date() < today and c.is_free]
+                    calendars = [c for c in calendars if c.closing_sale.date() < today and c.is_free]
                 else:
-                    calendars = [c for c in calendars if c.initial_date.date() < today]
+                    calendars = [c for c in calendars if c.closing_sale.date() < today]
 
                 if calendars:
-                    closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
+                    closest = sorted(calendars, key=lambda c: c.closing_sale, reverse=True)[0]
 
         return closest
 

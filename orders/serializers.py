@@ -3,10 +3,8 @@ from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from orders.models import Order, Assistant
-from organizers.models import Organizer
 from payments.models import Fee
 from payments.serializers import PaymentSerializer
-from referrals.tasks import ReferrerCouponTask
 from students.models import Student
 from students.serializer import StudentsSerializer
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin
