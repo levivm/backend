@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import EmailValidator
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
-from django.views.generic import View
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView
@@ -16,12 +15,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
-from activities import constants
+from activities import constants as activities_constants
 from activities.mixins import ActivityMixin, \
     ActivityCardMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
-from activities.tasks import SendEmailCalendarTask, SendEmailLocationTask, \
+from activities.tasks import SendEmailCalendarTask, \
     SendEmailShareActivityTask, ActivityViewsCounterTask
 from activities.utils import ActivityStatsUtil
 from locations.serializers import LocationsSerializer
@@ -58,12 +57,21 @@ class CalendarViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         calendar = self.get_object()
-        if calendar.orders.count() == 0:
-            return super().destroy(request, *args, **kwargs)
 
-        return Response({'detail': _('No puede eliminar este calendario, \
+        if not calendar.orders.count() == 0:
+            return Response({'detail': _('No puede eliminar este calendario, \
                             tiene estudiantes inscritos, contactanos.')},
-                        status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if calendar.activity.published and calendar.activity.calendars.count() < 2:
+            return Response({'detail': _('No puede eliminar este calendario, \
+                            primero debe desactivar la actividad.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+        return super().destroy(request, *args, **kwargs)
+
+        
 
     def update(self, request, *args, **kwargs):
         result = super().update(request, *args, **kwargs)
@@ -111,8 +119,6 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         if location_serializer.is_valid(raise_exception=True):
             location = location_serializer.save()
             activity.set_location(location)
-            # task = SendEmailLocationTask()
-            # task.apply_async((activity.id,), countdown=1800)
 
         return Response(location_serializer.data)
 
@@ -159,7 +165,6 @@ class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         activity = self.get_activity_object(**kwargs)
-        # is_stock_image = request.data.get('is_stock_image',False)
 
         serializer = ActivityPhotosSerializer(data=request.data,
                                               context={'activity': activity,
@@ -183,7 +188,6 @@ class ActivityPhotosViewSet(ActivityMixin, viewsets.ModelViewSet):
 
         serializer = ActivityPhotosSerializer(instance=photo)
 
-        # self.calculate_score(activity_id=activity.id)
         headers = self.get_success_headers(serializer.data)
         activity_serializer = self.get_activity_serializer(instance=activity,
                                                            context={'request': request})
@@ -297,8 +301,8 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
         else:
             activities = activities.filter(filters).distinct()
 
-        if order in [constants.ORDER_CLOSEST, constants.ORDER_MIN_PRICE,
-                     constants.ORDER_MAX_PRICE] or request.query_params.get('is_free') is not None:
+        if order in [activities_constants.ORDER_CLOSEST, activities_constants.ORDER_MIN_PRICE,
+                     activities_constants.ORDER_MAX_PRICE] or request.query_params.get('is_free') is not None:
             extra_q = search.extra_query(request.query_params, order)
             activities = activities.extra(**extra_q) if extra_q else activities
 

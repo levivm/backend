@@ -12,6 +12,7 @@ from orders.models import Assistant, Order
 from orders.serializers import AssistantsSerializer
 from organizers.serializers import OrganizersSerializer
 from utils.serializers import UnixEpochDateField
+from . import constants as activities_constants
 
 
 class CalendarSerializerTest(APITestCase):
@@ -97,7 +98,7 @@ class ActivitySerializerTest(APITestCase):
             'calendars': [],
             # 'closest_calendar',
             # 'required_steps': ,
-            'steps': settings.ACTIVITY_STEPS,
+            'steps': activities_constants.ACTIVITY_STEPS,
             'organizer': organizer_data,
             'instructors': [],
             'score': self.activity.score,

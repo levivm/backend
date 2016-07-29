@@ -2,7 +2,6 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
-from collections import OrderedDict
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -18,6 +17,7 @@ from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
+from . import constants as activities_constants
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -95,7 +95,7 @@ class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
         activity = self.context['activity']
         photos_count = activity.pictures.count()
 
-        if photos_count >= settings.MAX_ACTIVITY_PHOTOS:
+        if photos_count >= activities_constants.MAX_ACTIVITY_PHOTOS:
             msg = _(u'Ya excedió el número máximo de imágenes por actividad.')
             raise serializers.ValidationError(msg)
 
@@ -459,13 +459,10 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
         depth = 1
 
     def get_required_steps(self, obj):
-        if not obj.pictures.count():
-            return settings.PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS
-
-        return settings.REQUIRED_STEPS
+        return activities_constants.REQUIRED_STEPS
 
     def get_steps(self, obj):
-        return settings.ACTIVITY_STEPS
+        return activities_constants.ACTIVITY_STEPS
 
     def get_last_date(self, obj):
         return UnixEpochDateField().to_representation(obj.last_date)

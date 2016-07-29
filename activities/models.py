@@ -15,11 +15,10 @@ from django.utils.translation import ugettext_lazy as _
 
 from locations.models import Location
 from organizers.models import Organizer, Instructor
-from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.behaviors import Updateable
 from utils.mixins import AssignPermissionsMixin, ImageOptimizable
 from utils.models import CeleryTaskEditActivity
-from . import constants
+from . import constants as activities_constants
 from .queryset import ActivityQuerySet
 
 
@@ -70,15 +69,15 @@ class Tags(models.Model):
 
     @classmethod
     def ready_to_use(cls):
-        return cls.objects.filter(occurrences__gte=settings.TAGS_MIN_OCCOURRENCE)
+        return cls.objects.filter(occurrences__gte=activities_constants.TAGS_MIN_OCCOURRENCE)
 
 
 class Activity(Updateable, AssignPermissionsMixin, models.Model):
     LEVEL_CHOICES = (
-        (constants.LEVEL_P, _('Principiante')),
-        (constants.LEVEL_I, _('Intermedio')),
-        (constants.LEVEL_A, _('Avanzado')),
-        (constants.LEVEL_N, _('No Aplica'))
+        (activities_constants.LEVEL_P, _('Principiante')),
+        (activities_constants.LEVEL_I, _('Intermedio')),
+        (activities_constants.LEVEL_A, _('Avanzado')),
+        (activities_constants.LEVEL_N, _('No Aplica'))
     )
 
     DAY_CHOICES = (
@@ -123,7 +122,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         super(Activity, self).save(user=self.organizer.user, obj=self, *args, **kwargs)
 
     def steps_completed(self):
-        steps_requirements = settings.REQUIRED_STEPS
+        steps_requirements = activities_constants.REQUIRED_STEPS
         steps = steps_requirements.keys()
         related_fields = [rel.get_accessor_name() for rel in self._meta.get_all_related_objects()]
         related_fields += [rel.name for rel in self._meta.many_to_many]
@@ -246,7 +245,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.save()
 
     def can_associate_instructor(self):
-        if self.instructors.count() < MAX_ACTIVITY_INSTRUCTORS:
+        if self.instructors.count() < activities_constants.MAX_ACTIVITY_INSTRUCTORS:
             return True
 
         return False
@@ -322,15 +321,15 @@ class ActivityStockPhoto(models.Model):
     def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         sub_category_pictures = cls.get_random_pictures(queryset,
-                                                        settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                                                        activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         sub_category_pictures_amount = len(sub_category_pictures)
         enough_pictures = False if sub_category_pictures_amount < \
-                                   settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS else True
+                                   activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS else True
 
         if not enough_pictures:
             needed_pictures_amount = abs(sub_category_pictures_amount - \
-                                         settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                                         activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
             category_pictures = cls.get_random_category_pictures(sub_category,
                                                                  needed_pictures_amount)

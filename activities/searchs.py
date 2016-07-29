@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models import Q
 
 
-from activities import constants
+from activities import constants as activities_constants
 
 
 class ActivitySearchEngine(object):
@@ -57,13 +57,13 @@ class ActivitySearchEngine(object):
         return query
 
     def extra_query(self, query_params, order):
-        if order == constants.ORDER_CLOSEST:
+        if order == activities_constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
-        elif order == constants.ORDER_MIN_PRICE:
+        elif order == activities_constants.ORDER_MIN_PRICE:
             extra_parameter = self.SEARCH_ORDER_PRICE_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_PRICE_SELECT
-        elif order == constants.ORDER_MAX_PRICE:
+        elif order == activities_constants.ORDER_MAX_PRICE:
             extra_parameter = self.SEARCH_ORDER_PRICE_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_PRICE_SELECT
 
@@ -160,7 +160,7 @@ class ActivitySearchEngine(object):
             else:
                 query &= Q(calendars__session_price__range=(cost_start, cost_end))
 
-        if level is not None and not level == constants.LEVEL_N:
+        if level is not None and not level == activities_constants.LEVEL_N:
             query &= Q(level=level)
 
         if bool(certification):
@@ -175,13 +175,13 @@ class ActivitySearchEngine(object):
         return query
 
     def get_order(self, order_param):
-        if order_param == constants.ORDER_MIN_PRICE:
+        if order_param == activities_constants.ORDER_MIN_PRICE:
             order = [self.SEARCH_ORDER_MIN_PRICE_ATTRIBUTE]
-        elif order_param == constants.ORDER_MAX_PRICE:
+        elif order_param == activities_constants.ORDER_MAX_PRICE:
             order = [self.SEARCH_ORDER_MAX_PRICE_ATTRIBUTE]
-        elif order_param == constants.ORDER_SCORE:
+        elif order_param == activities_constants.ORDER_SCORE:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
-        elif order_param == constants.ORDER_CLOSEST:
+        elif order_param == activities_constants.ORDER_CLOSEST:
             order = [self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
         else:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]

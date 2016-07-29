@@ -18,7 +18,6 @@ from organizers.models import Instructor, Organizer, OrganizerBankInfo
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, \
     OrganizerLocationViewSet, InstructorViewSet, \
     ActivityInstructorViewSet
-from trulii.settings.constants import MAX_ACTIVITY_INSTRUCTORS
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -416,11 +415,11 @@ class ActivityInstructorsGetAndPostViewTest(BaseViewTest):
     def test_organizer_shouldnt_create_an_instructor_if_activity_has_max(self):
         organizer = self.get_organizer_client()
         data = self.get_data()
-        for i in range(1, MAX_ACTIVITY_INSTRUCTORS):
+        for i in range(1, activities_constants.MAX_ACTIVITY_INSTRUCTORS):
             organizer.post(self.url, data=json.dumps(data), **self.headers)
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
         response = organizer.post(self.url, data=json.dumps(data), **self.headers)
-        self.assertEqual(activity.instructors.count(), MAX_ACTIVITY_INSTRUCTORS)
+        self.assertEqual(activity.instructors.count(), activities_constants.MAX_ACTIVITY_INSTRUCTORS)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -496,14 +495,14 @@ class ActivityInstructorsUpdateAndDeleteViewTest(BaseViewTest):
         assign_perm(perm='organizers.change_instructor', user_or_group=organizer.user,
                     obj=instructor)
         data_post.update({'organizer': 2})
-        for i in range(1, MAX_ACTIVITY_INSTRUCTORS):
+        for i in range(1, activities_constants.MAX_ACTIVITY_INSTRUCTORS):
             client.post('/api/activities/%s/instructors' % self.ACTIVITY_ID,
                         data=json.dumps(data_post), **self.headers)
         data = self.get_data(name='Destructor')
         url = '/api/activities/%s/instructors/%s' % (self.ACTIVITY_ID, instructor.id)
         response = client.put(url, data=json.dumps(data), **self.headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(activity.instructors.count(), MAX_ACTIVITY_INSTRUCTORS)
+        self.assertEqual(activity.instructors.count(), activities_constants.MAX_ACTIVITY_INSTRUCTORS)
         self.assertFalse(activity.instructors.filter(id=instructor.id).exists())
 
 

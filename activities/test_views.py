@@ -23,7 +23,7 @@ from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 
-from activities import constants
+from activities import constants as activities_constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
     ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
@@ -782,12 +782,12 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         titles = ['%s de %s' % (t, self.query_keyword.capitalize()) for t in ['Clases', 'Curso']]
         activities = ActivityFactory.create_batch(2, title=factory.Iterator(titles),
                                                   location__city=self.city,
-                                                  level=constants.LEVEL_P, published=True)
+                                                  level=activities_constants.LEVEL_P, published=True)
         activities.append(ActivityFactory(title='Curso de Cocina', organizer=self.organizer,
-                                          level=constants.LEVEL_I,
+                                          level=activities_constants.LEVEL_I,
                                           published=True))
         activities.append(
-            ActivityFactory(sub_category=self.subcategory, tags=[tag], level=constants.LEVEL_A,
+            ActivityFactory(sub_category=self.subcategory, tags=[tag], level=activities_constants.LEVEL_A,
                             certification=True, published=True))
 
         CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10),
@@ -885,7 +885,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def test_search_level(self):
         response = self.client.get(self.url, data={'level': 'I'})
         activities = self._get_activities_ordered(
-            queryset=Activity.objects.filter(level=constants.LEVEL_I))
+            queryset=Activity.objects.filter(level=activities_constants.LEVEL_I))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -1006,12 +1006,12 @@ class SubCategoriesViewTest(BaseAPITestCase):
         # sub_category stock photos
         mommy.make(ActivityStockPhoto,
                    sub_category=self.sub_category,
-                   _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                   _quantity=activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         # another_sub_category stock photos
         mommy.make(ActivityStockPhoto,
                    sub_category=self.another_sub_category,
-                   _quantity=settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS - 1)
+                   _quantity=activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS - 1)
 
         # URLs
         self.get_covers_url = reverse('activities:get_covers_photos',
@@ -1026,12 +1026,12 @@ class SubCategoriesViewTest(BaseAPITestCase):
         Test get covers photos by given SubCategory even when that SubCategory has not
         enough photos 
         """
-        # Stock photo should returns settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
+        # Stock photo should returns activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
         # from stock even when given sub_category has not required amount of pictures
         response = self.client.get(self.get_covers_url_another_subcategory)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'pictures', response.content)
-        self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
+        self.assertEqual(activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
                          len(response.data.get('pictures')))
 
     def test_get_covers_photos_from_subcategory(self):
@@ -1039,13 +1039,13 @@ class SubCategoriesViewTest(BaseAPITestCase):
         Test get covers photos by given SubCategory
         """
 
-        # Stock photo should returns settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
+        # Stock photo should returns activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
         # photos from stock
         response = self.client.get(self.get_covers_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'pictures', response.content)
-        self.assertEqual(settings.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
+        self.assertEqual(activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS,
                          len(response.data.get('pictures')))
 
 

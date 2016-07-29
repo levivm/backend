@@ -247,53 +247,6 @@ PRICE_RANGE = {
 }
 
 
-#ACTIVITIES APP CONSTANT
-
-TAGS_MIN_OCCOURRENCE = 15
-
-MAX_ACTIVITY_POOL_STOCK_PHOTOS = 5
-
-MAX_ACTIVITY_PHOTOS  = 6
-
-MAX_ACTIVITY_INSTRUCTORS = 4
-
-PREVIOUS_FIST_PUBLISH_REQUIRED_STEPS = {
-    
-    'general':['title','short_description','sub_category','level'],
-    'calendars':['calendars'],
-    'gallery':['pictures'],
-    'location':['location'],
-
-}
-
-REQUIRED_STEPS = {
-    
-    'general':['title','short_description','sub_category','level'],
-    'location':['location'],
-
-}
-
-ACTIVITY_STEPS = {
-    
-  'general':['title','short_description','sub_category','level'],
-  'detail':['content', 'audience', 'goals', 'methodology', 'requirements', 'extra_info'],
-  'calendars':['calendars'],
-  'instructors':['instructors'],
-  'location':['location'],''
-  'gallery':['pictures'],
-  'return_policy':['return_policy']
-}
-
-RELATED_FIELD_REQUIREMETS = {
-    
-    'gallery':['pictures'],
-
-}
-
-
-
-REQUIRED_DETAILS_STEP = ['content']
-
 ################### PAY U CONSTANTS ###################
 TRANSACTION_APPROVED_CODE = '4'
 TRANSACTION_DECLINED_CODE = '6'
