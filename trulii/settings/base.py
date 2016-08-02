@@ -116,6 +116,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
 EMAIL_BACKEND = 'utils.mails.SendGridEmailBackend'
+CSRF_COOKIE_DOMAIN = '.trulii.com'
+SESSION_COOKIE_DOMAIN = '.trulii.com'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
