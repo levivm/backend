@@ -6,7 +6,7 @@ class Command(BaseCommand):
     help = "Create categories and subcategories covers photo"
 
     MAPPING = {
-        "Arte": {
+        "Arte y Manualidades": {
             "Actuación": 5,
             "Cinematografía": 5,
             "Costura": 5,
@@ -90,7 +90,7 @@ class Command(BaseCommand):
             "Violín": 5,
             "Violonchelo": 5,
         },
-        "Niños": {
+        "Infantiles": {
             "Académico": 5,
             "Actuación": 5,
             "Arte": 5,
@@ -129,6 +129,22 @@ class Command(BaseCommand):
             "Modelado": 5,
             "Otros": 5,
             "Programación": 5
+        },
+        "Fitness":{
+            "Zumba": 5,
+            "Yoga": 5,
+        },
+        "Vida Cotidiana":{
+            'Amor y Sexo': 5,
+            'Belleza': 5,
+            'Paternidad': 5,
+            'Espiritual': 5,
+            'Habilidades': 5,
+            'Manejo': 5,
+            'Mascotas': 5,
+            'Relaciones Sociales': 5,
+            'Yoga': 5, 
+            'Otros': 5,
         }
     }
 
