@@ -21,7 +21,6 @@ class Command(BaseCommand):
     @staticmethod
     def get_data():
         return {
-
             "Arte y Manualidades": {'color': '#46416D',
                      'subcategories': ['Actuación', 'Cinematografía', 'Costura', 'Dibujo y Pintura', 'Diseño',
                                        'Fotografía', 'Manualidades', 'Moda', 'Otros']},
@@ -55,5 +54,6 @@ class Command(BaseCommand):
             "Tecnología": {'color': '#EB9F61',
                            'subcategories': ['Animación', 'Desarrollo Web y Móvil', 'Diseño Web y Móvil', 'Juegos',
                                              'Microsoft', 'Modelado', 'Programación', 'Otros']},
-            "Fitness": {'color': '#222222'},
+            "Fitness": {'color': '#222222',
+                         'subcategories': ['Zumba', 'Yoga']},
         }
