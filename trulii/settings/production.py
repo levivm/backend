@@ -43,6 +43,11 @@ RAVEN_CONFIG = {
 }
 
 
+# SET DOMAINS
+CSRF_COOKIE_DOMAIN = '.trulii.com'
+SESSION_COOKIE_DOMAIN = '.trulii.com'
+
+
 
 ################ SENDGRID #######################
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
