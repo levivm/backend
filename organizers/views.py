@@ -25,10 +25,6 @@ from .serializers import OrganizersSerializer, InstructorsSerializer
 from .permissions import IsCurrentUserSameOrganizer
 
 
-def signup(request):
-    return render(request, 'organizers/signup.html', {})
-
-
 class OrganizerSignupView(TemplateView):
     template_name = 'organizers/signup.html'
 

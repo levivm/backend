@@ -14,7 +14,7 @@ class CategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(SubCategory)
 class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name','featured')
     search_fields = ['name', 'category__name']
     operative_readonly_fields = {'name', 'category'}
 

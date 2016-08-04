@@ -38,7 +38,8 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
         fields = (
             'name',
             'id',
-            'category'
+            'category',
+            'featured'
         )
         depth = 1
 
