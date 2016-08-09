@@ -1,5 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.filters import DateFieldListFilter
+from django.core.urlresolvers import reverse
+from django.shortcuts import redirect
 
 from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession, \
     ActivityStockPhoto, ActivityStats
@@ -17,7 +19,29 @@ class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('name','featured')
     search_fields = ['name', 'category__name']
     operative_readonly_fields = {'name', 'category'}
+    actions = ['delete_selected']
 
+    def delete_selected(self, request, queryset):
+        for subcategory in queryset:
+            subcategory_name = subcategory.name
+            if subcategory.activity_set.count() > 0:
+                self.message_user(request, 'La subcategoría %s no se puede eliminar porque tiene'
+                                'actividades asociadas.' % subcategory_name, level=messages.ERROR)
+            else:
+                subcategory.delete()
+                self.message_user(request, 'La subcategoría %s ha sido eliminada correctamente.' %
+                                  subcategory_name)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        if request.POST:
+            if Activity.objects.filter(sub_category_id=object_id).exists():
+                self.message_user(request, 'La subcategoría no se puede eliminar porque tiene'
+                                'actividades asociadas.', level=messages.ERROR)
+                return redirect(reverse('admin:activities_subcategory_change', args=(object_id,)))
+
+        return super(SubCategoryAdmin, self).delete_view(request, object_id, extra_context)
+
+    delete_selected.short_description = 'Eliminar subcategory seleccionada/s'
 
 @admin.register(Activity)
 class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
