@@ -70,9 +70,9 @@ class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'organizer_name', 'next_calendar_initial_date',
                     'next_calendar_closing_sale', 'last_date', 'next_calendar_price',
-                    'next_calendar_available_capacity')
+                    'next_calendar_available_capacity', 'id')
     list_filter = ['published', 'organizer']
-    search_fields = ('title', 'organizer__name')
+    search_fields = ('id', 'title', 'organizer__name')
     raw_id_fields = ('organizer', 'location')
     operative_readonly_fields = {'score', 'rating', 'last_date'}
 
