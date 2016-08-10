@@ -122,7 +122,8 @@ class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 @admin.register(Calendar)
 class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('initial_date', 'closing_sale', 'activity_linkable', 'session_price', 'num_enrolled')
-    list_filter = ('initial_date', 'activity')
+    list_filter = ('initial_date',)
+    search_fields = ('activity__title',)
     operative_readonly_fields = {'number_of_sessions', 'initial_date'}
 
     def num_enrolled(self, obj):
