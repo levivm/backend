@@ -121,12 +121,19 @@ class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(Calendar)
 class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('initial_date', 'closing_sale', 'activity', 'session_price', 'num_enrolled')
+    list_display = ('initial_date', 'closing_sale', 'activity_linkable', 'session_price', 'num_enrolled')
     list_filter = ('initial_date', 'activity')
     operative_readonly_fields = {'number_of_sessions', 'initial_date'}
 
     def num_enrolled(self, obj):
         return obj.num_enrolled
+
+    def activity_linkable(self, obj):
+        url = reverse('admin:activities_activity_change', args=(obj.activity_id,))
+        return '<a href="%s">%s</a>' % (url, obj.activity.title)
+
+    activity_linkable.allow_tags = True
+    activity_linkable.short_description = 'Activity'
 
 
 @admin.register(CalendarSession)
