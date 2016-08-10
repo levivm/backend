@@ -12,6 +12,29 @@ from utils.mixins import OperativeModelAdminMixin
 class CategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('name',)
     operative_readonly_fields = {'name', 'color'}
+    actions = ['delete_selected']
+
+    def delete_selected(self, request, queryset):
+        for category in queryset:
+            category_name = category.name
+            if Activity.objects.filter(sub_category__category=category).exists():
+                self.message_user(request, 'La categoría %s no se puede eliminar porque tiene'
+                                'actividades asociadas.' % category_name, level=messages.ERROR)
+            else:
+                category.delete()
+                self.message_user(request, 'La categoría %s ha sido eliminada correctamente.' %
+                                  category_name)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        if request.POST:
+            if Activity.objects.filter(sub_category__category__id=object_id).exists():
+                self.message_user(request, 'La categoría no se puede eliminar porque tiene'
+                                'actividades asociadas.', level=messages.ERROR)
+                return redirect(reverse('admin:activities_category_change', args=(object_id,)))
+
+        return super(CategoryAdmin, self).delete_view(request, object_id, extra_context)
+
+    delete_selected.short_description = 'Eliminar category seleccionada/s'
 
 
 @admin.register(SubCategory)
