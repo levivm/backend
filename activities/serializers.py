@@ -49,6 +49,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
     icon_default = serializers.SerializerMethodField()
     icon_active = serializers.SerializerMethodField()
     cover = serializers.SerializerMethodField()
+    description = HTMLField()
 
     class Meta:
         model = Category
