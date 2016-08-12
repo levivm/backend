@@ -19,6 +19,7 @@ from utils.mixins import FileUploadMixin
 from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
 from . import constants as activities_constants
 
+
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tags

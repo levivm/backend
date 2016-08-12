@@ -91,7 +91,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
     permissions = ('activities.change_activity', 'organizers.delete_activity')
 
-    sub_category = models.ForeignKey(SubCategory)
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.DO_NOTHING)
     organizer = models.ForeignKey(Organizer)
     tags = models.ManyToManyField(Tags)
     title = models.CharField(max_length=100)
@@ -222,7 +222,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         calendars = self.calendars.filter(query)
 
         if calendars:
-            if is_free: 
+            if is_free:
                 open_calendars = [c for c in calendars if c.closing_sale.date() >= today and c.is_free]
             else:
                 open_calendars = [c for c in calendars if c.closing_sale.date() >= today]
@@ -408,3 +408,20 @@ class CalendarCeleryTaskEditActivity(CeleryTaskEditActivity):
 class ActivityStats(models.Model):
     activity = models.OneToOneField(Activity, related_name='stats')
     views_counter = models.PositiveIntegerField(default=0)
+
+
+# Signals
+
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+@receiver(pre_delete, sender=SubCategory)
+def move_activities_to_other(sender, instance, **kwargs):
+    other = SubCategory.objects.get(name='Otros', category=instance.category)
+    instance.activity_set.all().update(sub_category=other)
+
+@receiver(pre_delete, sender=Category)
+def move_activities_to_category_other(sender, instance, **kwargs):
+    other = SubCategory.objects.get(name='Otros', category__name='Otros')
+    Activity.objects.filter(sub_category__category=instance) \
+        .update(sub_category=other)
