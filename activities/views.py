@@ -282,16 +282,17 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = SmallResultsSetPagination
     queryset = Activity.objects.all()
-    query = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
+    search_fields = ['title', 'short_description', 'content', 'tags__name', 'organizer__name']
 
     def list(self, request, **kwargs):
-        q = request.query_params.get('q')
+        query_string = request.query_params.get('q')
         order = request.query_params.get('o')
-        search = ActivitySearchEngine()
-        filters = search.filter_query(request.query_params)
-        order_by = search.get_order(order)
-
-        query = search.get_query(q, self.query)
+        search = ActivitySearchEngine(query_params=request.query_params, 
+                                      query_string=query_string, 
+                                      search_fields=self.search_fields)
+        filters = search.filter_query()
+        order_by = search.get_order()
+        query = search.get_query()
 
         activities = Activity.objects.select_related(*self.select_related_fields) \
             .prefetch_related(*self.prefetch_related_fields)
@@ -303,7 +304,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
 
         if order in [activities_constants.ORDER_CLOSEST, activities_constants.ORDER_MIN_PRICE,
                      activities_constants.ORDER_MAX_PRICE] or request.query_params.get('is_free') is not None:
-            extra_q = search.extra_query(request.query_params, order)
+            extra_q = search.extra_query()
             activities = activities.extra(**extra_q) if extra_q else activities
 
         activities = activities.order_by(*order_by)
