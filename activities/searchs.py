@@ -26,9 +26,20 @@ class ActivitySearchEngine(object):
     SEARCH_ORDER_SCORE_ATTRIBUTE = '-score'
     SEARCH_ORDER_SCORE_FREE_ATTRIBUTE = '-score_free'
     SEARCH_ORDER_CLOSEST_ATTRIBUTE = 'closest'
+    SEARCH_ORDER_SCORE_FREE_SELECT = 'score_free'
     SEARCH_ORDER_PRICE_SELECT = 'session_price'
     SEARCH_ORDER_CLOSEST_SELECT = 'closing_sale'
     SEARCH_ORDER_SCORE_SELECT = 'score'
+
+    query_params = None
+    order = None
+
+    def __init__(self, *args, **kwargs):
+        self.query_params = kwargs.get('query_params')
+        self.order = self.query_params.get('o')
+        self.query_string = kwargs.get('query_string')
+        self.search_fields = kwargs.get('search_fields')
+
 
     def normalize_query(self, query_string, findterms=re.compile(r'"([^"]+)"|(\S+)').findall,
                         normspace=re.compile(r'\s{2,}').sub):
@@ -37,7 +48,9 @@ class ActivitySearchEngine(object):
             return list(set(query) - set(self.BLACKLIST))
         return list()
 
-    def get_query(self, query_string, search_fields):
+    def get_query(self):
+        query_string = self.query_string
+        search_fields = self.search_fields
         query = None
         terms = self.normalize_query(query_string=query_string)
         for term in terms:
@@ -56,7 +69,9 @@ class ActivitySearchEngine(object):
 
         return query
 
-    def extra_query(self, query_params, order):
+    def extra_query(self):
+        order = self.order
+        query_params = self.query_params
         if order == activities_constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
@@ -75,7 +90,7 @@ class ActivitySearchEngine(object):
         date = datetime.fromtimestamp(timestamp).replace(second=0).strftime('%Y-%m-%d')
         if is_free:
             if order == self.SEARCH_ORDER_SCORE_SELECT:
-                extra_parameter = self.SEARCH_ORDER_SCORE_FREE_ATTRIBUTE
+                extra_parameter = self.SEARCH_ORDER_SCORE_FREE_SELECT
                 select_parameter = self.SEARCH_ORDER_SCORE_SELECT
                 table_parameter = 'activities_activity'
             else:
@@ -126,7 +141,8 @@ class ActivitySearchEngine(object):
             return {'select':extra, 'select_params': params}
 
 
-    def filter_query(self, query_params):
+    def filter_query(self):
+        query_params = self.query_params
         subcategory = query_params.get('subcategory')
         category = query_params.get('category')
         date = query_params.get('date')
@@ -174,11 +190,17 @@ class ActivitySearchEngine(object):
 
         return query
 
-    def get_order(self, order_param):
+    def get_order(self):
+
+        is_free = self.query_params.get('is_free')
+        order_param = self.order
+
         if order_param == activities_constants.ORDER_MIN_PRICE:
             order = [self.SEARCH_ORDER_MIN_PRICE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_MAX_PRICE:
             order = [self.SEARCH_ORDER_MAX_PRICE_ATTRIBUTE]
+        elif order_param == activities_constants.ORDER_SCORE and is_free:
+            order = [self.SEARCH_ORDER_SCORE_FREE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_SCORE:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_CLOSEST:
