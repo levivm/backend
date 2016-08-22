@@ -4,6 +4,7 @@ from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
+from activities.factories import CalendarFactory, ActivityFactory
 from activities.models import Calendar, Activity
 from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivityPhotosSerializer, \
     ActivitiesSerializer
@@ -21,7 +22,7 @@ class CalendarSerializerTest(APITestCase):
     """
 
     def setUp(self):
-        self.calendar = mommy.make(Calendar, session_price=100000)
+        self.calendar = CalendarFactory(session_price=100000)
         self.order = mommy.make(Order, status=Order.ORDER_APPROVED_STATUS, calendar=self.calendar, quantity=3)
         self.assistants = mommy.make(Assistant, order=self.order, _quantity=2)
 
@@ -59,7 +60,7 @@ class ActivitySerializerTest(APITestCase):
     """
 
     def setUp(self):
-        self.activity = mommy.make(Activity)
+        self.activity = ActivityFactory()
 
     def test_read(self):
         """

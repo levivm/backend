@@ -43,3 +43,4 @@ class RedeemFactory(factory.django.DjangoModelFactory):
 
     student = factory.SubFactory(StudentFactory)
     coupon = factory.SubFactory(CouponFactory)
+    referral = factory.SubFactory(ReferralFactory)

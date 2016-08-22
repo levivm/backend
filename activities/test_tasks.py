@@ -5,6 +5,7 @@ from django.conf import settings
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from django.utils.timezone import now, timedelta
 from django.test import override_settings
 
 from activities.factories import CalendarFactory, ActivityFactory, CalendarSessionFactory, \
@@ -112,8 +113,10 @@ class SendEmailShareActivityTaskTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
         self.activity = ActivityFactory(rating=4)
+        self.calendar = CalendarFactory(activity=self.activity,
+                                        initial_date=now() + timedelta(days=5))
         self.cover = ActivityPhotoFactory(activity=self.activity, main_photo=True)
-        self.session = CalendarSessionFactory(calendar__activity=self.activity)
+        self.session = CalendarSessionFactory(calendar=self.calendar)
         self.location = LocationFactory(organizer=self.activity.organizer)
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')

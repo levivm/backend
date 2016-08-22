@@ -25,7 +25,7 @@ from rest_framework import status
 
 from activities import constants as activities_constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
-    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory
+    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory, CategoryFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
@@ -314,6 +314,9 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         organizer = self.get_organizer_client()
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         calendar.orders.all().delete()
+
+        # The activity needs two or more calendars to be able to delete one
+        CalendarFactory(activity=calendar.activity)
         self.assertTrue(calendar.orders.count() == 0)
         self.method_should_be(clients=organizer, method='delete',
                               status=status.HTTP_204_NO_CONTENT)
@@ -449,12 +452,12 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         super(ActivityGalleryAPITest, self).setUp()
 
         # Objects
-        self.another_activity = mommy.make(Activity, organizer=self.organizer,
+        self.another_activity = ActivityFactory(organizer=self.organizer,
                                            published=True, score=4.8)
-        self.activity = mommy.make(Activity, organizer=self.organizer,
+        self.activity = ActivityFactory(organizer=self.organizer,
                                    published=True)
 
-        self.sub_category = mommy.make(SubCategory)
+        self.sub_category = SubCategoryFactory()
         self.activity_stock_photo = mommy.make(ActivityStockPhoto,
                                                sub_category=self.sub_category)
         self.activity_photo = mommy.make(ActivityPhoto, activity=self.another_activity)
@@ -516,8 +519,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         # Organizer should create a photo from existing stock
         # and activity score should be updated
 
-        self.assertEqual(self.activity.score, 0)
-
         with open(self.tmp_file.name, 'rb') as fp:
             response = organizer.post(self.upload_activity_photo_url,
                                       {'photo': fp, 'main_photo': False})
@@ -533,7 +534,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertIn(expected_filename, response.content)
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count + 1)
-        self.assertEqual(Activity.objects.latest('pk').score, 4.8)
+        self.assertEqual(Activity.objects.latest('pk').score, 65.8)
         self.assertTrue(self.organizer.user.has_perm(
                 perm='activities.delete_activityphoto', obj=activity_photo))
 
@@ -617,8 +618,6 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count - 1)
-        self.assertEqual(Activity.objects.get(
-                id=self.another_activity.id).score, 0.0)
 
 
 class ActivityInfoViewTest(BaseViewTest):
@@ -799,10 +798,15 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         calendars = list()
         for i, activity in enumerate(self.activities):
             dates = [now() - timedelta(days=1), now(), now() + timedelta(days=2),
-                     now() - timedelta(days=4)]
+                     now() + timedelta(days=4)]
             price = (i + 1) * 100000
-            calendars.append(mommy.make(Calendar, _quantity=4, activity=activity,
-                                        session_price=price, initial_date=cycle(dates)))
+            calendars.append(
+                CalendarFactory.create_batch(
+                    size=4,
+                    activity=activity,
+                    session_price=price,
+                    initial_date=factory.Iterator(dates)
+                ))
 
         return [item for sublist in calendars for item in sublist]
 
@@ -925,7 +929,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         data = {
             'cost_start': self.price,
             'cost_end': self.price + 100000,
-            'q': self.query_keyword, 
+            'q': self.query_keyword,
             'o': 'min_price'
         }
         self.create_calendars()
@@ -939,16 +943,16 @@ class SearchActivitiesViewTest(BaseAPITestCase):
 
     def test_max_price_order(self):
         data = {
-            'cost_start': self.price,
-            'cost_end': self.price + 100000,
-            'q': self.query_keyword, 
+            'cost_start': 0,
+            'cost_end': 10000000000,
+            'q': self.query_keyword,
             'o': 'max_price'
         }
         self.create_calendars()
         response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
             queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-            order_by=['-calendars__session_price'])
+            order_by=['calendars__initial_date', '-calendars__session_price'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -965,8 +969,8 @@ class SearchActivitiesViewTest(BaseAPITestCase):
 
     def test_closest_order(self):
         data = {
-            'cost_start': self.price,
-            'cost_end': self.price + 100000,
+            'cost_start': 0,
+            'cost_end': 10000000000,
             'q': self.query_keyword,
             'o': 'closest'
         }
@@ -1000,9 +1004,9 @@ class SubCategoriesViewTest(BaseAPITestCase):
         super(SubCategoriesViewTest, self).setUp()
 
         # Objects
-        self.category = mommy.make(Category)
-        self.sub_category = mommy.make(SubCategory, name='Yoga', category=self.category)
-        self.another_sub_category = mommy.make(SubCategory, category=self.category)
+        self.category = CategoryFactory()
+        self.sub_category = SubCategoryFactory(name='Yoga', category=self.category)
+        self.another_sub_category = SubCategoryFactory(category=self.category)
         # sub_category stock photos
         mommy.make(ActivityStockPhoto,
                    sub_category=self.sub_category,
@@ -1024,7 +1028,7 @@ class SubCategoriesViewTest(BaseAPITestCase):
     def test_get_covers_photos_from_subcategory_with_not_enough_pictures(self):
         """
         Test get covers photos by given SubCategory even when that SubCategory has not
-        enough photos 
+        enough photos
         """
         # Stock photo should returns activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS(number)
         # from stock even when given sub_category has not required amount of pictures
@@ -1056,9 +1060,11 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
 
     def setUp(self):
         super(ShareActivityEmailViewTest, self).setUp()
-        self.activity = mommy.make(Activity)
+        self.activity = ActivityFactory()
+        self.calendar = CalendarFactory(activity=self.activity,
+                                        initial_date=now() + timedelta(days=20))
         ActivityPhotoFactory(activity=self.activity, main_photo=True)
-        CalendarSessionFactory(calendar__activity=self.activity)
+        CalendarSessionFactory(calendar=self.calendar)
 
         # URLs
         self.share_url = reverse('activities:share_email_activity',
@@ -1226,13 +1232,13 @@ class ActivityStatsViewTest(BaseAPITestCase):
                     status=Order.ORDER_APPROVED_STATUS)
         points = []
         data = {'gross': 150000, 'fee': 12000, 'net': 138000}
-        for date in dates:
-            points.append({str(date.date()): data})
+        for i, date in enumerate(dates):
+            points.append({str(date.date()): {key: data[key] * (i+1) for key in data}})
 
         total_points = {
-            'total_gross': 4650000,
-            'total_fee': 372000,
-            'total_net': 4278000,
+            'total_gross': 74400000,
+            'total_net': 68448000,
+            'total_fee': 5952000
         }
 
         next_data = {
@@ -1282,13 +1288,13 @@ class ActivityStatsViewTest(BaseAPITestCase):
         data = {'gross': 150000, 'fee': 12000, 'net': 138000}
         dates.pop(0)
         dates.append(now() + timedelta(days=1))
-        for date in dates:
-            points.append({str(date.date() - timedelta(days=1)): data})
+        for i, date in enumerate(dates):
+            points.append({str(date.date() - timedelta(days=1)): {key: data[key] * (i+1) for key in data}})
 
         total_points = {
-            'total_gross': len(points) * 150000,
-            'total_fee': len(points) * 12000,
-            'total_net': len(points) * 138000,
+            'total_gross': 5400000.0,
+            'total_fee': 432000.0,
+            'total_net': 4968000.0
         }
 
         next_data = {

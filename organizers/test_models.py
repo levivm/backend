@@ -4,6 +4,7 @@ from itertools import cycle
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from activities.factories import ActivityFactory
 from activities.models import Activity
 from organizers.factories import OrganizerFactory, InstructorFactory
 from organizers.models import OrganizerBankInfo, Organizer
@@ -38,8 +39,8 @@ class OrganizerModelTest(APITestCase):
     """
 
     def setUp(self):
-        self.organizer = mommy.make(Organizer)
-        self.activities = mommy.make(Activity, organizer=self.organizer, _quantity=2)
+        self.organizer = OrganizerFactory()
+        self.activities = ActivityFactory.create_batch(organizer=self.organizer, size=2)
 
     def test_update_rating(self):
         """

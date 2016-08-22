@@ -83,7 +83,7 @@ class SendPaymentEmailTask(SendPaymentEmailTaskMixin, SendEmailTaskMixin):
         return super(SendPaymentEmailTask, self).run(*args, **kwargs)
 
 
-class SendNewEnrollmentEmailTask(SendPaymentEmailTaskMixin, SendEmailTaskMixin):
+class SendNewEnrollmentEmailTask(SendEmailTaskMixin):
     def run(self, order_id, *args, **kwargs):
         self.kwargs = kwargs
         self.order = Order.objects.get(id=order_id)
@@ -95,3 +95,29 @@ class SendNewEnrollmentEmailTask(SendPaymentEmailTaskMixin, SendEmailTaskMixin):
         self.global_context = self.get_context_data()
         return super(SendNewEnrollmentEmailTask, self).run(*args, **kwargs)
 
+    def get_context_data(self):
+        context = {
+            'activity': self.order.calendar.activity.title,
+            'order': {
+                'number': self.order.id,
+                'date': self.order.created_at,
+                'quantity': self.order.quantity,
+                'amount': self.order.amount,
+                'url': '%sactividades/gestionar/%s/ordenes/%s' % (settings.FRONT_SERVER_URL,
+                                                                  self.order.calendar.activity_id,
+                                                                  self.order.id),
+            },
+            'student': self.order.student.user.get_full_name(),
+            'assistants': [{
+                'name': assistant.get_full_name(),
+                'email': assistant.email,
+                'token': assistant.token,
+            } for assistant in self.order.assistants.enrolled()],
+        }
+
+        if not self.order.calendar.is_free:
+            context.update({
+                'payment_method': dict(Payment.CARD_TYPE)[self.order.payment.card_type]
+            })
+
+        return context

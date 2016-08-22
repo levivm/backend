@@ -230,7 +230,8 @@ class SocialAuthViewTest(APITestCase):
         Test social login for student
         """
 
-        student = StudentFactory()
+        student = StudentFactory(user__first_name='Geralt', user__last_name='De Rivia',
+                                 user__email='derivia@witcher.com')
         token = Token.objects.create(user=student.user)
         UserSocialAuth.objects.create(user=student.user, uid='123456789', provider='facebook')
         user_counter = User.objects.count()
@@ -492,7 +493,7 @@ class ResetPasswordViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
     def test_validate_token_date(self):
         reset_password = ResetPasswordToken.objects.create(user=self.user, valid_until=now())
@@ -503,7 +504,7 @@ class ResetPasswordViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
     def test_validate_token_used(self):
         reset_password = ResetPasswordToken.objects.create(user=self.user, used=True)
@@ -514,7 +515,7 @@ class ResetPasswordViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
     def test_validate_password(self):
         data = {
@@ -555,9 +556,6 @@ class ConfirmEmailViewTest(APITestCase):
         self.assertEqual(student.user.email, 'drake.nathan@uncharted.com')
         self.assertTrue(student.verified_email)
         self.assertTrue(confirm_email.used)
-        self.assertTrue(EmailTaskRecord.objects.filter(
-            to='drake.nathan@uncharted.com',
-            status='sent').exists())
 
     def test_validate_token_key(self):
         data = {
@@ -567,7 +565,7 @@ class ConfirmEmailViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
     def test_validate_token_date(self):
         confirm_email = ConfirmEmailToken.objects.create(
@@ -579,7 +577,7 @@ class ConfirmEmailViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
     def test_validate_token_used(self):
         confirm_email = ConfirmEmailToken.objects.create(user=self.student.user, used=True)
@@ -590,7 +588,7 @@ class ConfirmEmailViewTest(APITestCase):
         }
         response = self.client.post(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
 
 class ChangeEmailViewTest(BaseAPITestCase):
@@ -656,7 +654,7 @@ class VerifyConfirmEmailTokenViewTest(APITestCase):
         url = reverse('auth:verify_email_token', args=('1nv4l1dt0k3n',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
 
 class VerifyResetPasswordTokenViewTest(APITestCase):
@@ -671,7 +669,7 @@ class VerifyResetPasswordTokenViewTest(APITestCase):
         url = reverse('auth:verify_password_token', args=('1nv4l1dt0k3n',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, ['This token is not valid.'])
+        self.assertEqual(response.data, ['Este token no es válido.'])
 
 
 class RequestSignupTestView(BaseAPITestCase):

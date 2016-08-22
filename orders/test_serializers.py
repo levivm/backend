@@ -4,6 +4,7 @@ from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 
 from activities.models import Calendar
+from activities.factories import CalendarFactory
 from orders.models import Order, Assistant
 from orders.serializers import OrdersSerializer, AssistantsSerializer
 from payments.models import Fee, Payment
@@ -25,7 +26,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
         self.coupon_type = mommy.make(CouponType, name='referrer')
-        self.calendar = mommy.make(Calendar, activity__published=True, available_capacity=10)
+        self.calendar = CalendarFactory(activity__published=True, available_capacity=10)
         self.data = self.get_data()
         self.context = self.get_context()
 
@@ -103,9 +104,6 @@ class OrdersSerializerTest(BaseAPITestCase):
 
         self.assertEqual(Order.objects.count(), order_counter + 1)
         self.assertTrue(Order.objects.filter(student=self.another_student).exists())
-        self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
-        self.assertTrue(Redeem.objects.filter(student=self.student,
-                                              coupon__coupon_type=self.coupon_type).exists())
 
     @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
     def test_validate_quantity(self, delay):
@@ -133,7 +131,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         """
 
         # Arrangement
-        calendar = mommy.make(Calendar, activity__published=True, is_free=True, available_capacity=10)
+        calendar = CalendarFactory(activity__published=True, is_free=True, available_capacity=10)
         self.data['calendar'] = calendar.id
 
         serializer = OrdersSerializer(data=self.data)

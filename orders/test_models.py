@@ -1,6 +1,7 @@
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from orders.factories import OrderFactory
 from orders.models import Order, Assistant
 from referrals.models import Redeem, CouponType
 from students.factories import StudentFactory
@@ -14,7 +15,7 @@ class OrderModelTest(APITestCase):
     def setUp(self):
         # Arrangement
         self.student = StudentFactory()
-        self.order = mommy.make(Order, amount=500, student=self.student)
+        self.order = OrderFactory(amount=500, student=self.student)
 
     def test_get_total(self):
         """
@@ -66,7 +67,7 @@ class AssistantModelTest(APITestCase):
     """
 
     def setUp(self):
-        self.order = mommy.make(Order, amount=500, status=Order.ORDER_APPROVED_STATUS)
+        self.order = OrderFactory(amount=500, status=Order.ORDER_APPROVED_STATUS)
         self.assistants = mommy.make(Assistant, order=self.order, _quantity=2)
 
     def test_dismiss(self):

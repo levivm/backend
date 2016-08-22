@@ -37,6 +37,7 @@ BROKER_BACKEND = 'memory'
 BROKER_URL = 'memory://localhost'
 
 FRONT_SERVER_URL = "http://localhost:8080/"
+EMAIL_BACKEND = 'utils.mails.ConsoleSendGridEmailBackend'
 
 PAYU_API_KEY = '6u39nqhq8ftd0hlvnjfs66eh8c'
 PAYU_MERCHANT_ID = '500238'

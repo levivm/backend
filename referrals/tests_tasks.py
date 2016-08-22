@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 
 from activities.models import Calendar
 from orders.models import Order
+from referrals.factories import ReferralFactory, RedeemFactory
 from referrals.models import Referral, Coupon, CouponType, Redeem
 from referrals.tasks import CreateReferralTask, CreateCouponTask, ReferrerCouponTask, SendCouponEmailTask, \
     SendReferralEmailTask
@@ -68,6 +69,7 @@ class CreateCouponTaskTest(BaseAPITestCase):
         # Coupons
         self.referrer_type = mommy.make(CouponType, name='referrer')
         self.referred_type = mommy.make(CouponType, name='referred')
+        self.referral = ReferralFactory(referrer=self.student)
 
     @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
     def test_create(self, delay):
@@ -79,27 +81,38 @@ class CreateCouponTaskTest(BaseAPITestCase):
         redeem_counter = Coupon.objects.count()
 
         # Call the task
+        params = {
+            'student_id': self.student.id,
+            'coupon_type_name': 'referrer',
+            'referral_id': self.referral.id
+        }
         task = CreateCouponTask()
-        task.delay(student_id=self.student.id, coupon_type_name='referrer')
+        task.delay(params=params)
 
         self.assertEqual(Coupon.objects.count(), coupon_counter + 1)
         self.assertEqual(Redeem.objects.count(), redeem_counter + 1)
-        self.assertTrue(Redeem.objects.filter(student=self.student, coupon__coupon_type=self.referrer_type).exists())
+        self.assertTrue(Redeem.objects.filter(student=self.student,
+                                              coupon__coupon_type=self.referrer_type).exists())
 
     def test_duplicate(self):
         """
         Test should not duplicate the coupons
         """
 
-        mommy.make(Redeem, student=self.student, coupon__coupon_type=self.referred_type)
+        mommy.make(Redeem, student=self.student, referral=self.referral, coupon__coupon_type=self.referred_type)
 
         # Counter
         coupon_counter = Coupon.objects.count()
         redeem_counter = Redeem.objects.count()
 
         # Call the task
+        params = {
+            'student_id': self.student.id,
+            'coupon_type_name': 'referred',
+            'referral_id': self.referral.id
+        }
         task = CreateCouponTask()
-        task.delay(student_id=self.student.id, coupon_type_name=self.referred_type.name)
+        task.delay(params=params)
 
         self.assertEqual(Coupon.objects.count(), coupon_counter)
         self.assertEqual(Redeem.objects.count(), redeem_counter)
@@ -274,7 +287,7 @@ class SendCouponEmailTaskTest(APITestCase):
 
     def setUp(self):
         # Arrangement
-        self.redeem = mommy.make(Redeem)
+        self.redeem = RedeemFactory(coupon__coupon_type__name='referrer')
         self.email = self.redeem.student.user.email
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
@@ -292,17 +305,11 @@ class SendCouponEmailTaskTest(APITestCase):
         task = SendCouponEmailTask()
         task_id = task.delay(redeem_id=self.redeem.id)
 
-        context = {
-            'name': self.redeem.student.user.first_name,
-            'coupon_code': self.redeem.coupon.token,
-        }
-
         self.assertTrue(EmailTaskRecord.objects.filter(
-                task_id=task_id,
-                to=self.email,
-                status='sent',
-                data=context,
-                template_name='referrals/email/coupon_cc_message.txt').exists())
+            task_id=task_id,
+            to=self.email,
+            status='sent',
+            template_name='referrals/email/referrer_coupon.html').exists())
 
 
 class SendReferralEmailTaskTest(APITestCase):
@@ -336,7 +343,7 @@ class SendReferralEmailTaskTest(APITestCase):
                 'avatar': self.student.get_photo_url(),
             },
             'amount': 20000,
-            'url': '%sreferrals/invitation/%s' % (settings.FRONT_SERVER_URL,
+            'url': '%sreferir/invitacion/%s' % (settings.FRONT_SERVER_URL,
                                         self.student.referrer_code)
         }
 

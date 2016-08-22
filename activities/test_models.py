@@ -5,7 +5,8 @@ from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.factories import ActivityFactory, ActivityPhotoFactory
+from activities.factories import ActivityFactory, ActivityPhotoFactory, \
+    CalendarFactory
 from activities.models import Calendar, Activity, CalendarSession
 from orders.models import Order, Assistant
 from reviews.models import Review
@@ -18,7 +19,7 @@ class CalendarTestCase(APITestCase):
     """
 
     def setUp(self):
-        self.calendar = mommy.make(Calendar, available_capacity=10)
+        self.calendar = CalendarFactory(available_capacity=10)
         self.orders = self.create_orders()
         self.assistants = self.create_assistants()
 
@@ -70,7 +71,7 @@ class CalendarTestCase(APITestCase):
         # Available capacity = 10 - 0  = 10
 
         approved_order.change_status(Order.ORDER_CANCELLED_STATUS)
-        
+
         self.assertEqual(self.calendar.available_capacity, 10)
 
         # Capacity = 10
@@ -117,7 +118,7 @@ class ActivityTestCase(APITestCase):
     """
 
     def setUp(self):
-        self.activity = mommy.make(Activity)
+        self.activity = ActivityFactory()
 
     def test_calculate_rating(self):
         """

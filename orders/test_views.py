@@ -1,9 +1,13 @@
+import mock
+
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from model_mommy import mommy
 from rest_framework import status
 
+from activities.factories import ActivityFactory
 from activities.models import Activity, Calendar
+from orders.factories import OrderFactory
 from orders.models import Order
 from utils.tests import BaseAPITestCase
 
@@ -15,12 +19,12 @@ class OrdersAPITest(BaseAPITestCase):
         super(OrdersAPITest, self).setUp()
 
         # Create Activities objects
-        self.activity = mommy.make(Activity, organizer=self.organizer,
+        self.activity = ActivityFactory(organizer=self.organizer,
                                    published=True)
-        self.other_activity = mommy.make(Activity, organizer=self.organizer,
+        self.other_activity = ActivityFactory(organizer=self.organizer,
                                          published=True)
-        self.active_activity = mommy.make(Activity, published=True)
-        self.inactive_activity = mommy.make(Activity)
+        self.active_activity = ActivityFactory(published=True)
+        self.inactive_activity = ActivityFactory()
 
         # Create Calendards objects
         self.calendar = mommy.make(Calendar, activity=self.activity)
@@ -34,11 +38,11 @@ class OrdersAPITest(BaseAPITestCase):
                                                  enroll_open=False)
 
         # Create Orders objects
-        mommy.make(Order, student=self.student, _quantity=2)
-        mommy.make(Order, calendar=self.calendar, _quantity=2)
-        mommy.make(Order, calendar=self.other_calendar, _quantity=2)
-        self.order = mommy.make(Order, student=self.student)
-        self.another_other = mommy.make(Order)
+        OrderFactory.create_batch(student=self.student, size=2)
+        OrderFactory.create_batch(calendar=self.calendar, size=2)
+        OrderFactory.create_batch(calendar=self.other_calendar, size=2)
+        self.order = OrderFactory(student=self.student)
+        self.another_other = OrderFactory()
 
         # URLs
         self.orders_by_activity_url = reverse('orders:create_or_list_by_activity',
@@ -89,8 +93,8 @@ class OrdersAPITest(BaseAPITestCase):
         }
 
     def test_list_by_activity(self):
-        """ 
-        Test to list orders by activities owned by an organizer 
+        """
+        Test to list orders by activities owned by an organizer
         """
 
         # Anonymous should return unauthorized
@@ -107,7 +111,7 @@ class OrdersAPITest(BaseAPITestCase):
         self.assertEqual(len(response.data), self.activity_orders_count)
 
     def test_list_by_student(self):
-        """ 
+        """
         Test to list orders by student
         """
 
@@ -127,7 +131,7 @@ class OrdersAPITest(BaseAPITestCase):
         self.assertEqual(orders_owner, self.student.id)
 
     def test_list_by_organizer(self):
-        """ 
+        """
         Test to list orders by organizer
         """
 
@@ -135,11 +139,13 @@ class OrdersAPITest(BaseAPITestCase):
         response = self.client.get(self.orders_by_organizer_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # A Student should not list student oders
+        # A Student should not list student orders
         response = self.student_client.get(self.orders_by_organizer_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # List order owned by an organizer
+        Order.objects.filter(calendar__activity__organizer=self.organizer).\
+            update(status=Order.ORDER_APPROVED_STATUS)
         response = self.organizer_client.get(self.orders_by_organizer_url)
         order_id = response.data['results'][0].get('id')
         orders_owner = Order.objects.get(id=order_id).calendar. \
@@ -149,7 +155,7 @@ class OrdersAPITest(BaseAPITestCase):
         self.assertEqual(orders_owner, self.organizer.id)
 
     def test_retrieve(self):
-        """ 
+        """
         Test to retrieve an order by pk
         """
 
@@ -210,8 +216,11 @@ class OrdersAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Order.objects.count(), self.orders_count)
 
-    def test_create_free_order(self):
-        """ 
+    @mock.patch('referrals.tasks.SendCouponEmailTask.s')
+    @mock.patch('payments.tasks.SendPaymentEmailTask.s')
+    @mock.patch('payments.tasks.SendNewEnrollmentEmailTask.s')
+    def test_create_free_order(self, new_enrollment, payment_email, coupon_email):
+        """
         Test to create a order over a free calendar
         """
 
