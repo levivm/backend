@@ -7,6 +7,18 @@ from balances.tasks import UpdateWithdrawalLogsStatusTask, NotifyWithdrawalOrgan
                             CalculateOrganizerBalanceTask
 
 
+@admin.register(BalanceLog)
+class BalanceLogAdmin(admin.ModelAdmin):
+    list_display = ['organizer', 'calendar_initial_date', 'activity_title', 'status']
+    search_fields = ['calendar__id', 'organizer__name']
+
+    def calendar_initial_date(self, obj):
+        return obj.calendar.initial_date
+
+    def activity_title(self, obj):
+        return obj.calendar.activity.title
+
+
 @admin.register(Withdrawal)
 class WithdrawalAdmin(admin.ModelAdmin):
     actions = ['mark_as_approved', 'mark_as_declined']
