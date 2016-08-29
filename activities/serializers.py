@@ -79,8 +79,12 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
+        import unicodedata
+        import pdb
+        pdb.set_trace()
+        file = unicodedata.normalize('NFD', obj.name.lower())
         url = 'static/img/categories/cover/'
-        file_name = "%s.jpg" % obj.name.lower()
+        file_name = "%s.jpg" % file
         file_name = urllib.parse.quote(file_name)
         return "%s%s" % (url, file_name)
 
