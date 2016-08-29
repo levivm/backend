@@ -178,7 +178,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
-            'closing_sale': now_unix_timestamp,
+            'enroll_open': True,
             'session_price': 123000,
             'sessions': [{
                 'date': now_unix_timestamp,
@@ -251,7 +251,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
-            'closing_sale': now_unix_timestamp,
+            'enroll_open': True,
             'session_price': 123000,
             'sessions': [{
                 'date': now_unix_timestamp,
@@ -952,7 +952,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
             queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-            order_by=['calendars__initial_date', '-calendars__session_price'])
+            order_by=['-calendars__session_price'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)

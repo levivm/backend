@@ -71,7 +71,7 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
         return {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
-            'closing_sales_date': self.calendar.closing_sale,
+            'initial_date': self.calendar.initial_date,
             'sessions': [{
                              'date': session.date,
                              'start_time': session.start_time,

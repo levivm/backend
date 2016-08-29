@@ -28,7 +28,7 @@ class ActivitySearchEngine(object):
     SEARCH_ORDER_CLOSEST_ATTRIBUTE = 'closest'
     SEARCH_ORDER_SCORE_FREE_SELECT = 'score_free'
     SEARCH_ORDER_PRICE_SELECT = 'session_price'
-    SEARCH_ORDER_CLOSEST_SELECT = 'closing_sale'
+    SEARCH_ORDER_CLOSEST_SELECT = 'initial_date'
     SEARCH_ORDER_SCORE_SELECT = 'score'
 
     query_params = None
@@ -102,10 +102,10 @@ class ActivitySearchEngine(object):
                     'SELECT "'+table_parameter+'".' + select_parameter + ' '
                     'FROM "activities_calendar" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                    'AND "activities_calendar"."closing_sale" >= %s '
+                    'AND "activities_calendar"."initial_date" >= %s '
                     'AND "activities_calendar"."is_free" = TRUE '
                     'AND "activities_calendar"."available_capacity" > 0 '
-                    'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                    'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
             }
             params = (date, cost_start)
             return {'select': extra, 'select_params': params}
@@ -118,10 +118,10 @@ class ActivitySearchEngine(object):
                         'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."closing_sale" >= %s'
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
-                        'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start)
             else:
@@ -130,11 +130,11 @@ class ActivitySearchEngine(object):
                         'SELECT "activities_calendar".'+select_parameter+' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."closing_sale" >= %s'
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
-                        'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start, cost_end)
 
@@ -164,7 +164,7 @@ class ActivitySearchEngine(object):
 
         if date is not None:
             date = datetime.fromtimestamp(int(date) // 1000).replace(second=0)
-            query = query & Q(calendars__closing_sale__gte=date)
+            query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:
             query &= Q(location__city=city)

@@ -4,7 +4,9 @@ from django.template import loader
 from model_mommy import mommy
 from rest_framework.test import APITestCase
 
+from activities.factories import CalendarFactory
 from activities.models import Calendar
+from orders.factories import OrderFactory
 from orders.models import Order
 from referrals.factories import ReferralFactory, RedeemFactory
 from referrals.models import Referral, Coupon, CouponType, Redeem
@@ -128,7 +130,7 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
 
         # Arrangement
         self.referral = mommy.make(Referral, referrer=self.student, referred=self.another_student)
-        self.calendar = mommy.make(Calendar, activity__published=True, available_capacity=10)
+        self.calendar = CalendarFactory(activity__published=True, available_capacity=10)
         self.coupon_type = mommy.make(CouponType, name='referrer')
         self.order = mommy.make(Order, student=self.another_student, status=Order.ORDER_APPROVED_STATUS,
                                 calendar=self.calendar)
@@ -158,7 +160,7 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         """
 
         # Arrangement
-        mommy.make(Order, student=self.another_student)
+        OrderFactory(student=self.another_student)
 
         # Counter
         coupon_counter = Coupon.objects.count()
@@ -180,7 +182,7 @@ class ReferrerCouponTaskTest(BaseAPITestCase):
         """
 
         # Arrangement
-        mommy.make(Order, student=self.another_student, calendar__is_free=True)
+        OrderFactory(student=self.another_student, calendar__is_free=True)
 
         # Counter
         coupon_counter = Coupon.objects.count()

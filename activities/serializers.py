@@ -147,7 +147,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
-    closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
 
     class Meta:
@@ -156,7 +155,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'id',
             'activity',
             'initial_date',
-            'closing_sale',
+            'enroll_open',
             'number_of_sessions',
             'session_price',
             'sessions',
@@ -305,12 +304,6 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
         data = self._set_initial_date(data)
         data = self._proccess_sessions(data)
-        initial_date = data['initial_date']
-        closing_sale = data['closing_sale']
-        if initial_date < closing_sale:
-            raise serializers.ValidationError(
-                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
-                                        a la fecha de inicio.")})
 
         return data
 
@@ -381,9 +374,9 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         else:
             cost_start = request.query_params.get('cost_start')
             cost_end = request.query_params.get('cost_end')
-            closing_sale = request.query_params.get('date')
+            initial_date = request.query_params.get('date')
             is_free = request.query_params.get('is_free')
-            instance = obj.closest_calendar(closing_sale, cost_start, cost_end, is_free)
+            instance = obj.closest_calendar(initial_date, cost_start, cost_end, is_free)
         return CalendarSerializer(instance,
                                   remove_fields=['sessions', 'assistants', 'activity',
                                                  'number_of_sessions',

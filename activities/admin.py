@@ -69,7 +69,7 @@ class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 @admin.register(Activity)
 class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'organizer_name', 'next_calendar_initial_date',
-                    'next_calendar_closing_sale', 'last_date', 'next_calendar_price',
+                    'last_date', 'next_calendar_price',
                     'next_calendar_available_capacity', 'id')
     list_filter = ['published', 'organizer']
     search_fields = ('id', 'title', 'organizer__name')
@@ -82,12 +82,6 @@ class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     def next_calendar_initial_date(self, obj):
         try:
             return obj.closest_calendar().initial_date
-        except:
-            return '-'
-
-    def next_calendar_closing_sale(self, obj):
-        try:
-            return obj.closest_calendar().closing_sale
         except:
             return '-'
 
@@ -121,7 +115,7 @@ class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(Calendar)
 class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('initial_date', 'closing_sale', 'activity_linkable', 'session_price', 'num_enrolled')
+    list_display = ('initial_date', 'enroll_open', 'activity_linkable', 'session_price', 'num_enrolled')
     list_filter = ('initial_date',)
     search_fields = ('activity__title',)
     operative_readonly_fields = {'number_of_sessions', 'initial_date'}

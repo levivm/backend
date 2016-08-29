@@ -46,7 +46,7 @@ class SendEmailCalendarTaskTest(APITestCase):
         context = {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
-            'closing_sales_date': self.calendar.closing_sale.isoformat(),
+            'initial_date': self.calendar.initial_date.isoformat(),
             'sessions': [{
                 'date': session.date.isoformat(),
                 'start_time': session.start_time.isoformat(),

@@ -107,7 +107,7 @@ class CalendarFactory(factory.django.DjangoModelFactory):
 
     activity = factory.SubFactory(ActivityFactory)
     initial_date = factory.fuzzy.FuzzyDateTime(now(), now() + timedelta(days=30))
-    closing_sale = factory.LazyAttribute(lambda c: c.initial_date - timedelta(days=15))
+    enroll_open = True
     number_of_sessions = factory.LazyAttribute(lambda c: random.choice(range(0, 10)))
     session_price = factory.LazyAttribute(lambda c: random.choice(range(100000, 1000000)))
     available_capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))

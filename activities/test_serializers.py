@@ -1,14 +1,8 @@
-from django.conf import settings
-from django.utils.timezone import now
 from model_mommy import mommy
-from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from activities.factories import CalendarFactory, ActivityFactory
-from activities.models import Calendar, Activity
-from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivityPhotosSerializer, \
-    ActivitiesSerializer
-from locations.serializers import LocationsSerializer
+from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivitiesSerializer
 from orders.models import Assistant, Order
 from orders.serializers import AssistantsSerializer
 from organizers.serializers import OrganizersSerializer
@@ -39,7 +33,7 @@ class CalendarSerializerTest(APITestCase):
             'id': self.calendar.id,
             'activity': self.calendar.activity.id,
             'initial_date': epoch.to_representation(self.calendar.initial_date),
-            'closing_sale': epoch.to_representation(self.calendar.closing_sale),
+            'enroll_open': True,
             'number_of_sessions': self.calendar.number_of_sessions,
             'session_price': self.calendar.session_price,
             'sessions': [],
