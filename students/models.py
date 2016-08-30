@@ -20,7 +20,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     )
 
     user = models.OneToOneField(User, related_name='student_profile')
-    gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
+    gender = models.PositiveIntegerField(choices=GENDER_CHOICES, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
