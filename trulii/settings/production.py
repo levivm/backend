@@ -72,3 +72,29 @@ SOCIAL_AUTH_FACEBOOK_KEY = os.environ.get('SOCIAL_AUTH_FACEBOOK_KEY')
 SOCIAL_AUTH_FACEBOOK_SECRET = os.environ.get('SOCIAL_AUTH_FACEBOOK_SECRET')
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'publish_stream']
 SOCIAL_AUTH_FACEBOOK_REDIRECT_URI = os.environ.get('SOCIAL_AUTH_FACEBOOK_REDIRECT_URI')
+
+#################### LOGGIN ########################
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s '
+                      '%(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'INFO', # To capture more than ERROR, change to WARNING, INFO, etc.
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            'tags': {'custom-tag': 'x'},
+        },
+    },
+    'loggers': {
+        'payment': {
+            'level': 'INFO',
+            'handlers': ['sentry'],
+            'propagate': False
+        },
+    },
+}
