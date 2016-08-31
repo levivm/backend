@@ -83,21 +83,28 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
     def activities(self, status=None):
         # Proximas
+        select_related_fields = ['calendar__activity__sub_category__category',
+                                 'calendar__activity__organizer',
+                                 'student__user'
+                                 ]
+        prefetch_related_fields = ['calendar__activity__pictures']
         if status == activities_constants.NEXT:
             return [o.calendar.activity for o in
-                    self.orders.select_related('calendar__activity').filter(
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
                         calendar__initial_date__gte=now())]
         # Iniciadas
         elif status == activities_constants.CURRENT:
             return [o.calendar.activity for o in
-                    self.orders.select_related('calendar__activity').filter(
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
                         calendar__initial_date__lt=now())]
         # Por evaluar
         elif status == activities_constants.PAST:
             return [o.calendar.activity for o in
-                    self.orders.select_related('calendar__activity').filter(
-                        calendar__initial_date__lt=now() - timedelta(days=30)).order_by(
-                        'calendar__initial_date')]
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
+                        calendar__initial_date__lt=now() - timedelta(days=30))]
         else:
             return self.orders.select_related('calendar__activity').all()
 

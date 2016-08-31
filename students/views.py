@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from activities.models import Activity
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesCardSerializer,\
+    ActivitiesAutocompleteSerializer
 from students.models import Student, WishList
 from students.permissions import IsOwner
 from students.serializer import StudentsSerializer
@@ -24,8 +25,8 @@ class StudentActivitiesViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, IsOwner)
 
     def get_serializer_context(self):
-        context = super(StudentActivitiesViewSet,self).get_serializer_context()
-        context.update({'show_reviews':True})
+        context = super(StudentActivitiesViewSet, self).get_serializer_context()
+        context.update({'show_reviews': True})
         return context
 
     def autocomplete(self, request, *args, **kwargs):
@@ -36,7 +37,6 @@ class StudentActivitiesViewSet(ModelViewSet):
         # return Response(result)
         return Response([])
 
-
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
         status = request.query_params.get('status')
@@ -44,12 +44,12 @@ class StudentActivitiesViewSet(ModelViewSet):
         activities = student.activities(status=status)
         page = self.paginate_queryset(activities)
         if page is not None:
-            serializer = ActivitiesSerializer(page, many=True,
-                                              context=self.get_serializer_context())
+            serializer = ActivitiesCardSerializer(page, many=True,
+                                                  context=self.get_serializer_context())
             return self.get_paginated_response(serializer.data)
 
-        serializer = ActivitiesSerializer(activities, many=True,
-                                          context=self.get_serializer_context())
+        serializer = ActivitiesCardSerializer(activities, many=True,
+                                              context=self.get_serializer_context())
         result = serializer.data
         return Response(result)
 
