@@ -6,10 +6,9 @@ from django.core.management.base import BaseCommand
 from rest_framework.authtoken.models import Token
 
 
-from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory, \
-    CalendarSessionFactory
+from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory
 from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Tags, Activity, \
-    Calendar, CalendarSession
+    Calendar
 from locations.factories import CityFactory, LocationFactory
 from locations.models import City, Location
 from orders.factories import OrderFactory, AssistantFactory
@@ -64,7 +63,6 @@ class Command(BaseCommand):
         self.activities = self.create_activities(options.get('num_activities'))
         self.activity_photos = self.create_activity_photos()
         self.calendars = self.create_calendars()
-        self.calendar_sessions = self.create_calendar_sessions()
 
         # Orders
         self.orders = self.create_orders()
@@ -204,23 +202,6 @@ class Command(BaseCommand):
                                                                    chance_of_getting_true=20)))
 
         return self.flat_list(calendars)
-
-    def create_calendar_sessions(self) -> List[CalendarSession]:
-        self.stdout.write('Creando calendar sessions')
-        sessions = list()
-        for calendar in self.calendars:
-
-
-            quantity = self.get_quantity()
-            sessions.append(CalendarSessionFactory.create_batch(quantity, calendar=calendar))
-            activity = calendar.activity
-            sessions_data = [s for s in calendar.sessions.all()]
-            if sessions_data:
-                last_session = sorted(sessions_data, key=lambda s: s.date, reverse=True)[0]
-                last_session = {'date':last_session.date} 
-                activity.set_last_date(last_session)
-
-        return self.flat_list(sessions)
 
     def create_orders(self) -> List[Order]:
         self.stdout.write('Creando orders')

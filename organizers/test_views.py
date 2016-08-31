@@ -79,11 +79,11 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
         self.opened_activities = \
             ActivityFactory.create_batch(2, published=True,
-                                         organizer=organizer, last_date=today)
+                                         organizer=organizer)
 
         self.closed_activities = \
             ActivityFactory.create_batch(2, published=True,
-                                         organizer=organizer, last_date=yesterday)
+                                         organizer=organizer)
 
         self.activities = self.organizer.activity_set.all()
 

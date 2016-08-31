@@ -71,10 +71,8 @@ class CalendarViewSet(viewsets.ModelViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
-
-
     def update(self, request, *args, **kwargs):
-        result = super().update(request, *args, **kwargs)
+        result = super().update(request, partial=True, *args, **kwargs)
         calendar = self.get_object()
         task = SendEmailCalendarTask()
         task.apply_async((calendar.id,), countdown=1800)

@@ -4,16 +4,12 @@ import datetime
 import json
 import tempfile
 import time
-import mock
 from datetime import timedelta
-from itertools import cycle
 
 import factory
 import mock
 from PIL import Image
-from dateutil.relativedelta import relativedelta
-from dateutil.rrule import rrule, WEEKLY, DAILY, MONTHLY
-from django.conf import settings
+from dateutil.rrule import rrule, DAILY, MONTHLY
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -25,13 +21,12 @@ from rest_framework import status
 
 from activities import constants as activities_constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
-    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory, CategoryFactory
+    ActivityPhotoFactory, ActivityStatsFactory, CategoryFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
 from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
     ActivitiesCardSerializer
-from activities.tasks import SendEmailCalendarTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory, LocationFactory
 from orders.factories import OrderFactory, AssistantFactory
@@ -39,7 +34,7 @@ from orders.models import Assistant, Order
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from payments.factories import FeeFactory
-from utils.models import CeleryTaskEditActivity, EmailTaskRecord
+from utils.models import EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -175,16 +170,16 @@ class CalendarsByActivityViewTest(BaseViewTest):
         now_unix_timestamp = int(now().timestamp()) * 1000
         return {
             'initial_date': now_unix_timestamp,
-            'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            'sessions': [{
-                'date': now_unix_timestamp,
-                'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100000,
-            }],
+            # TODO agregar schedule
+            # 'sessions': [{
+            #     'date': now_unix_timestamp,
+            #     'start_time': now_unix_timestamp,
+            #     'end_time': now_unix_timestamp + 100000,
+            # }],
             'note': 'This is a note for the calendar!'
         }
 
@@ -248,16 +243,16 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.now =  now_unix_timestamp
         return {
             'initial_date': now_unix_timestamp,
-            'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            'sessions': [{
-                'date': now_unix_timestamp,
-                'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100000,
-            }]
+            # TODO agregar schedule
+            # 'sessions': [{
+            #     'date': now_unix_timestamp,
+            #     'start_time': now_unix_timestamp,
+            #     'end_time': now_unix_timestamp + 100000,
+            # }]
         }
 
     def test_url_should_resolve_correctly(self):
@@ -292,16 +287,17 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertIn(b'"available_capacity":20', response.content)
 
-    def test_organizer_shouldnt_update_calendar_session_with_orders(self):
-        calendar = Calendar.objects.get(id=self.CALENDAR_ID)
-        OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
-        organizer = self.get_organizer_client()
-        data = self._get_data_to_create_a_calendar()
-        data.update({'sessions': [{'date': self.now + 15000, 'start_time': self.now,
-                                   'end_time': self.now + 100000}]})
-        data = json.dumps(data)
-        response = organizer.put(self.url, data=data, content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # TODO agregar test schedule
+    # def test_organizer_shouldnt_update_calendar_session_with_orders(self):
+    #     calendar = Calendar.objects.get(id=self.CALENDAR_ID)
+    #     OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
+    #     organizer = self.get_organizer_client()
+    #     data = self._get_data_to_create_a_calendar()
+    #     data.update({'sessions': [{'date': self.now + 15000, 'start_time': self.now,
+    #                                'end_time': self.now + 100000}]})
+    #     data = json.dumps(data)
+    #     response = organizer.put(self.url, data=data, content_type='application/json')
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_organizer_shouldnt_delete_calendar_if_has_students(self):
         organizer = self.get_organizer_client()
@@ -1064,7 +1060,6 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         self.calendar = CalendarFactory(activity=self.activity,
                                         initial_date=now() + timedelta(days=20))
         ActivityPhotoFactory(activity=self.activity, main_photo=True)
-        CalendarSessionFactory(calendar=self.calendar)
 
         # URLs
         self.share_url = reverse('activities:share_email_activity',

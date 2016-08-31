@@ -8,7 +8,7 @@ from students.models import Student, WishList
 
 class ActivityMixin(object):
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
-    prefetch_related_fields = ['pictures', 'calendars__sessions',
+    prefetch_related_fields = ['pictures',
                                'calendars__orders__student__user',
                                'calendars__orders__assistants']
 
@@ -39,7 +39,7 @@ class ListUniqueOrderedElementsMixin(object):
 
 class ActivityCardMixin(object):
     select_related_fields = ['organizer', 'sub_category__category']
-    prefetch_related_fields = ['pictures', 'calendars__sessions']
+    prefetch_related_fields = ['pictures']
 
 
 class WishListSerializerMixin(serializers.Serializer):

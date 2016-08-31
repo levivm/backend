@@ -1,4 +1,7 @@
 import datetime
+
+from datetime import timedelta
+
 import activities.constants as activities_constants
 from django.db import connections, models
 from django.db.models.sql.compiler import SQLCompiler
@@ -28,7 +31,7 @@ class NullsLastQuery(models.sql.query.Query):
 class ActivityQuerySet(models.QuerySet):
 
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
-    prefetch_related_fields = ['pictures', 'calendars__sessions', 'reviews__author__user',
+    prefetch_related_fields = ['pictures', 'reviews__author__user',
                                'calendars__orders__student__user',
                                'calendars__orders__assistants']
 
@@ -39,16 +42,17 @@ class ActivityQuerySet(models.QuerySet):
 
 
     def opened(self, *args, **kwargs):
+        # TODO hacer prueba de esto
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
-            filter(last_date__gte=today, published=True, *args, **kwargs)
+            filter(calendars__initial_date__gte=today, published=True, *args, **kwargs)
 
     def closed(self, *args, **kwargs):
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
-            filter(last_date__lt=today, published=True, *args, **kwargs)
+            filter(calendars__initial_date__lt=today, published=True, *args, **kwargs)
 
     def unpublished(self, *args, **kwargs):
         return self.select_related(*self.select_related_fields).\
@@ -61,13 +65,12 @@ class ActivityQuerySet(models.QuerySet):
             filter(calendars__orders__student=student).distinct()
 
         today = datetime.datetime.today().date()
-        if status == activities_constants.CURRENT:
-            activities = activities_q.filter(calendars__initial_date__lte=today,
-                                            last_date__gt=today)
+        if status == activities_constants.NEXT:
+            activities = activities_q.filter(calendars__initial_date__lt=today)
+        elif status == activities_constants.CURRENT:
+            activities = activities_q.filter(calendars__initial_date__gte=today)
         elif status == activities_constants.PAST:
-            activities = activities_q.filter(last_date__lt=today)
-        elif status == activities_constants.NEXT:
-            activities = activities_q.filter(calendars__initial_date__gt=today)
+            activities = activities_q.filter(calendars__initial_date__lt=today - timedelta(days=30))
         else:
             activities = activities_q.all()
 

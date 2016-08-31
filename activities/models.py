@@ -111,7 +111,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
-    last_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = ActivityQuerySet.as_manager()
@@ -184,20 +183,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     def unpublish(self):
         self.published = False
         self.save(update_fields=['published'])
-
-    def set_last_date(self, last_session):
-        new_last_date = last_session.get('date').date()
-        if new_last_date is not None or self.last_date is not None:
-            self.last_date = new_last_date if not self.last_date or \
-                                              self.last_date < new_last_date else self.last_date
-            self.save(update_fields=['last_date'])
-
-    def last_sale_date(self):
-        dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
-        if not dates:
-            return None
-
-        return sorted(dates, reverse=True)[0]
 
     def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
@@ -344,13 +329,13 @@ class ActivityStockPhoto(models.Model):
 class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
     initial_date = models.DateTimeField()
-    number_of_sessions = models.IntegerField()
     session_price = models.FloatField()
     enroll_open = models.BooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
     available_capacity = models.IntegerField()
     note = models.CharField(max_length=200, blank=True)
+    schedules = models.TextField()
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
@@ -364,17 +349,6 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     def num_enrolled(self):
         return sum([o.num_enrolled() for o in self.orders.available()])
 
-    @cached_property
-    def duration(self):
-        """Returns calendar duration in ms"""
-        sessions = self.sessions.all()
-        if not sessions:
-            return None
-        get_datetime = lambda time: datetime.combine(datetime(1, 1, 1, 0, 0, 0), time)
-        timedeltas = map(lambda s: get_datetime(s.end_time) - get_datetime(s.start_time), sessions)
-        duration = reduce(operator.add, timedeltas).total_seconds()
-        return duration
-
     def get_assistants(self):
         orders_qs = self.orders.all()
         return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
@@ -387,13 +361,6 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     def decrease_capacity(self, amount):
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
-
-
-class CalendarSession(models.Model):
-    date = models.DateTimeField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    calendar = models.ForeignKey(Calendar, related_name="sessions")
 
 
 class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):

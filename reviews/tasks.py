@@ -91,8 +91,10 @@ class SendReminderReviewEmailTask(SendEmailTaskMixin):
     def get_data(self):
         last_monday = now() + relativedelta(weekday=MO(-1), hour=0, minute=0)
         last_week_monday = last_monday - relativedelta(weeks=1)
-        calendars = Calendar.objects.all().annotate(last_date=Max('sessions__date'))\
-            .filter(last_date__isnull=False, last_date__range=(last_week_monday, last_monday))
+        # calendars = Calendar.objects.all().annotate(last_date=Max('sessions__date'))\
+        #     .filter(last_date__isnull=False, last_date__range=(last_week_monday, last_monday))
+        # TODO cambiar este filtro
+        calendars = []
         data = defaultdict(list)
         for calendar in calendars:
             students = [o.student for o in calendar.orders.available()

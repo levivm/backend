@@ -29,17 +29,19 @@ class StudentActivitiesViewSet(ModelViewSet):
         return context
 
     def autocomplete(self, request, *args, **kwargs):
-        student = self.get_object()
-        activities = Activity.objects.by_student(student)
-        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
-        result = serializer.data
-        return Response(result)
+        # student = self.get_object()
+        # activities = Activity.objects.by_student(student)
+        # serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+        # result = serializer.data
+        # return Response(result)
+        return Response([])
 
 
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
         status = request.query_params.get('status')
-        activities = Activity.objects.by_student(student, status)
+        # activities = Activity.objects.by_student(student, status)
+        activities = student.activities(status=status)
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = ActivitiesSerializer(page, many=True,

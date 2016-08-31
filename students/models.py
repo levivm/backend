@@ -2,8 +2,10 @@ from django.core import signing
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.timezone import now, timedelta
 from django.utils.translation import ugettext_lazy as _
 
+import activities.constants as activities_constants
 from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
@@ -78,6 +80,26 @@ class Student(ImageOptimizable, Updateable, models.Model):
             return self.photo.url
 
         return None
+
+    def activities(self, status=None):
+        # Proximas
+        if status == activities_constants.NEXT:
+            return [o.calendar.activity for o in
+                    self.orders.select_related('calendar__activity').filter(
+                        calendar__initial_date__gte=now())]
+        # Iniciadas
+        elif status == activities_constants.CURRENT:
+            return [o.calendar.activity for o in
+                    self.orders.select_related('calendar__activity').filter(
+                        calendar__initial_date__lt=now())]
+        # Por evaluar
+        elif status == activities_constants.PAST:
+            return [o.calendar.activity for o in
+                    self.orders.select_related('calendar__activity').filter(
+                        calendar__initial_date__lt=now() - timedelta(days=30)).order_by(
+                        'calendar__initial_date')]
+        else:
+            return self.orders.select_related('calendar__activity').all()
 
 
 class WishList(models.Model):

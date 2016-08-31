@@ -18,7 +18,7 @@ class OrderFactory(factory.django.DjangoModelFactory):
     student = factory.SubFactory(StudentFactory)
     amount = factory.fuzzy.FuzzyInteger(50000, 1000000)
     quantity = factory.fuzzy.FuzzyInteger(1, 5)
-    status = factory.fuzzy.FuzzyChoice([k for k, v in Order.STATUS])
+    status = Order.ORDER_APPROVED_STATUS
     payment = factory.SubFactory(PaymentFactory)
     is_free = factory.Faker('boolean', chance_of_getting_true=20)
 

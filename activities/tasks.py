@@ -72,11 +72,12 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
             'initial_date': self.calendar.initial_date,
-            'sessions': [{
-                             'date': session.date,
-                             'start_time': session.start_time,
-                             'end_time': session.end_time,
-                         } for session in self.calendar.sessions.all()],
+            # TODO agregar schedule
+            # 'sessions': [{
+            #                  'date': session.date,
+            #                  'start_time': session.start_time,
+            #                  'end_time': session.end_time,
+            #              } for session in self.calendar.sessions.all()],
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)
@@ -204,7 +205,8 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
                 'city': organizer_city,
             },
             'rating': rating,
-            'duration': self.activity.closest_calendar().duration // 3600,
+            # TODO quitar duration del template
+            # 'duration': self.activity.closest_calendar().duration // 3600,
             'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }
