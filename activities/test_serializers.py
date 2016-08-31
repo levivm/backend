@@ -1,13 +1,16 @@
+import mock
 from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from activities.factories import CalendarFactory, ActivityFactory
-from activities.models import Calendar
+from activities.factories import CalendarFactory, ActivityFactory, SubCategoryFactory
+from activities.models import Calendar, Activity
 from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivitiesSerializer
+from locations.factories import LocationFactory
 from orders.models import Assistant, Order
 from orders.serializers import AssistantsSerializer
+from organizers.factories import OrganizerFactory
 from organizers.serializers import OrganizersSerializer
 from utils.serializers import UnixEpochDateField
 from . import constants as activities_constants
@@ -128,7 +131,56 @@ class ActivitySerializerTest(APITestCase):
             'instructors': [],
             'score': self.activity.score,
             'rating': self.activity.rating,
+            'is_open': False,
         }
 
         serializer = ActivitiesSerializer(self.activity)
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
+
+    def test_create(self):
+        """
+        Test the creation of the instance with the serializer
+        """
+        organizer = OrganizerFactory()
+
+        data = {
+            'sub_category': SubCategoryFactory().id,
+            'organizer': organizer.id,
+            'title': 'Clase de conducción',
+            'short_description': 'Clase de conducción',
+            'level': 'P',
+            'goals': 'Conducir',
+            'methodology': 'Por la derecha',
+            'content': 'Poco la verdad',
+            'audience': 'Ciegos y ancianos',
+            'requirements': 'No saber conducir',
+            'return_policy': 'Ninguna',
+            'location': LocationFactory().id,
+        }
+
+        request = mock.MagicMock()
+        request.user = organizer.user
+
+        activities_counter = Activity.objects.count()
+        serializer = ActivitiesSerializer(data=data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(Activity.objects.count(), activities_counter + 1)
+
+    def test_should_not_update_is_open_if_there_are_calendars(self):
+        """
+        The serializer should not allow update is_open if there is any calendar
+        """
+        activity = ActivityFactory()
+        CalendarFactory(activity=activity)
+        data = {'is_open': True}
+
+        request = mock.MagicMock()
+        request.user = activity.organizer.user
+
+        serializer = ActivitiesSerializer(activity, data=data, partial=True,
+                                          context={'request': request})
+        msg = 'No se puede cambiar el tipo de horario porque existen calendarios relacionados.'
+        with self.assertRaisesMessage(ValidationError, "{'is_open': ['%s']}" % msg):
+            serializer.is_valid(raise_exception=True)

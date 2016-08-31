@@ -112,6 +112,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_open = models.BooleanField(default=False)
 
     objects = ActivityQuerySet.as_manager()
 
