@@ -2,6 +2,8 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
+import unicodedata
+
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -79,9 +81,6 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
-        import unicodedata
-        import pdb
-        pdb.set_trace()
         file = unicodedata.normalize('NFD', obj.name.lower())
         url = 'static/img/categories/cover/'
         file_name = "%s.jpg" % file

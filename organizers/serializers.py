@@ -35,7 +35,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, read_only=True)
-    locations = LocationsSerializer(many=True, read_only=True)
+    locations = serializers.SerializerMethodField()
     verified_email = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -68,6 +68,13 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
 
     def get_created_at(self, obj):
         return UnixEpochDateField().to_representation(obj.created_at)
+
+    def get_locations(self, obj):
+        locations = obj.locations.all()
+        if not locations:
+            activity = obj.activity_set.last()
+            locations = [activity.location] if activity else []
+        return LocationsSerializer(locations, many=True).data
 
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
