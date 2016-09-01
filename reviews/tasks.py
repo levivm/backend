@@ -93,7 +93,8 @@ class SendReminderReviewEmailTask(SendEmailTaskMixin):
         last_week_monday = last_monday - relativedelta(weeks=1)
         # calendars = Calendar.objects.all().annotate(last_date=Max('sessions__date'))\
         #     .filter(last_date__isnull=False, last_date__range=(last_week_monday, last_monday))
-        # TODO cambiar este filtro
+        # TODO cambiar este filtro si es calendario abierto: se usa la fecha de la orden más un mes
+        # - si es cerrado: se usa el intial date del calendario
         calendars = []
         data = defaultdict(list)
         for calendar in calendars:

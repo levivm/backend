@@ -44,21 +44,6 @@
                 "calendar"
             ],
             [
-                "add_calendarsession",
-                "activities",
-                "calendarsession"
-            ],
-            [
-                "change_calendarsession",
-                "activities",
-                "calendarsession"
-            ],
-            [
-                "delete_calendarsession",
-                "activities",
-                "calendarsession"
-            ],
-            [
                 "add_tags",
                 "activities",
                 "tags"

@@ -42,7 +42,10 @@ class StudentActivitiesViewSet(ModelViewSet):
         status = request.query_params.get('status')
         # activities = Activity.objects.by_student(student, status)
         activities = student.activities(status=status)
+
+        #TODO arreglar test para esto - FIXED
         page = self.paginate_queryset(activities)
+
         if page is not None:
             serializer = ActivitiesCardSerializer(page, many=True,
                                                   context=self.get_serializer_context())

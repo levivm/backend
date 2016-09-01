@@ -35,7 +35,6 @@ from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategori
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
 
 
-
 class CalendarViewSet(viewsets.ModelViewSet):
     serializer_class = CalendarSerializer
     lookup_url_kwarg = 'calendar_pk'
@@ -68,12 +67,13 @@ class CalendarViewSet(viewsets.ModelViewSet):
                             primero debe desactivar la actividad.')},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         result = super().update(request, partial=True, *args, **kwargs)
         calendar = self.get_object()
+        import pdb
+        pdb.set_trace()
         task = SendEmailCalendarTask()
         task.apply_async((calendar.id,), countdown=1800)
         return result

@@ -10,7 +10,7 @@ from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
 
-from utils.mixins import ImageOptimizable
+from utils.mixins import ImageOptimizable, ListUniqueOrderedElementsMixin
 
 
 class Student(ImageOptimizable, Updateable, models.Model):
@@ -82,12 +82,14 @@ class Student(ImageOptimizable, Updateable, models.Model):
         return None
 
     def activities(self, status=None):
-        # Proximas
+
         select_related_fields = ['calendar__activity__sub_category__category',
                                  'calendar__activity__organizer',
                                  'student__user'
                                  ]
         prefetch_related_fields = ['calendar__activity__pictures']
+
+        # Proximas
         if status == activities_constants.NEXT:
             return [o.calendar.activity for o in
                     self.orders.select_related(*select_related_fields)

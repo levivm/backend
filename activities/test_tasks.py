@@ -45,17 +45,14 @@ class SendEmailCalendarTaskTest(APITestCase):
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
             'initial_date': self.calendar.initial_date.isoformat(),
-            # TODO agregar schedule
-            # 'sessions': [{
-            #     'date': session.date.isoformat(),
-            #     'start_time': session.start_time.isoformat(),
-            #     'end_time': session.end_time.isoformat(),
-            # } for session in self.calendar.sessions.all()],
+            'schedules': self.calendar.schedules,
+            # TODO PROBAR SCHEDULE - FIXED
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)
         }
-
+        import pdb
+        pdb.set_trace()
         for assistant in self.assistants:
             data = {**context, 'name': assistant.first_name}
             self.assertTrue(EmailTaskRecord.objects.filter(
@@ -152,7 +149,7 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 'city': self.location.city.name,
             },
             'rating': self.activity.rating,
-            # TODO quitar duration del template
+            # TODO quitar duration del template - FIXED
             # 'duration': self.activity.closest_calendar().duration // 3600,
             'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),

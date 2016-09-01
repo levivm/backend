@@ -174,7 +174,9 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            # TODO agregar schedule
+            'schedule': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+            # TODO agregar schedule - FIXED
             # 'sessions': [{
             #     'date': now_unix_timestamp,
             #     'start_time': now_unix_timestamp,
@@ -247,7 +249,9 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            # TODO agregar schedule
+            'schedule': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+            # TODO agregar schedule - FIXED
             # 'sessions': [{
             #     'date': now_unix_timestamp,
             #     'start_time': now_unix_timestamp,
@@ -287,17 +291,17 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertIn(b'"available_capacity":20', response.content)
 
-    # TODO agregar test schedule
-    # def test_organizer_shouldnt_update_calendar_session_with_orders(self):
-    #     calendar = Calendar.objects.get(id=self.CALENDAR_ID)
-    #     OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
-    #     organizer = self.get_organizer_client()
-    #     data = self._get_data_to_create_a_calendar()
-    #     data.update({'sessions': [{'date': self.now + 15000, 'start_time': self.now,
-    #                                'end_time': self.now + 100000}]})
-    #     data = json.dumps(data)
-    #     response = organizer.put(self.url, data=data, content_type='application/json')
-    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # TODO agregar test schedule - FIXED
+    def test_organizer_shouldnt_update_calendar_schedules_with_orders(self):
+        calendar = Calendar.objects.get(id=self.CALENDAR_ID)
+        OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
+        organizer = self.get_organizer_client()
+        data = self._get_data_to_create_a_calendar()
+        data.update({'schedules': "&lt;p&gt;&lt;strong&gt;Lunes -"
+                                  "Viernes&lt;/strong&gt;&lt;/p&gt;"})
+        data = json.dumps(data)
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_organizer_shouldnt_delete_calendar_if_has_students(self):
         organizer = self.get_organizer_client()
