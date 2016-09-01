@@ -83,7 +83,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         today = datetime.today().date()
         yesterday = today - timedelta(1)
         tomorrow = today + timedelta(1)
-        month_ago = today - timedelta(days=30)
+        month_ago = today - timedelta(days=31)
 
         # create current activities
         self.current_activities = \
@@ -123,13 +123,10 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
     #     self.assertEqual(response.data, serializer.data)
 
-    # TODO por el momento, las actuales están también en las pasadas, esto hay que
-    # ver si lo debemos cambiar o no
     def test_student_current_activities(self):
         data = {'status': activities_constants.CURRENT}
 
-        current_activities = self._order_activities(self.current_activities +
-                                                    self.past_activities)
+        current_activities = self._order_activities(self.current_activities)
         serializer = ActivitiesCardSerializer(current_activities, many=True)
 
         # Anonymous should return forbbiden

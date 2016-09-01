@@ -95,18 +95,18 @@ class Student(ImageOptimizable, Updateable, models.Model):
                     self.orders.select_related(*select_related_fields)
                         .prefetch_related(*prefetch_related_fields).filter(
                         calendar__initial_date__gte=now())]
-        # Iniciadas
-        elif status == activities_constants.CURRENT:
-            return [o.calendar.activity for o in
-                    self.orders.select_related(*select_related_fields)
-                        .prefetch_related(*prefetch_related_fields).filter(
-                        calendar__initial_date__lt=now())]
         # Por evaluar
         elif status == activities_constants.PAST:
             return [o.calendar.activity for o in
                     self.orders.select_related(*select_related_fields)
                         .prefetch_related(*prefetch_related_fields).filter(
                         calendar__initial_date__lt=now() - timedelta(days=30))]
+        # Iniciadas
+        elif status == activities_constants.CURRENT:
+            return [o.calendar.activity for o in
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
+                        calendar__initial_date__lt=now(), calendar__initial_date__gte=now() - timedelta(days=30))]
         else:
             return self.orders.select_related('calendar__activity').all()
 
