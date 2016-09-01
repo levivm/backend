@@ -161,6 +161,25 @@ class GetActivityViewTest(BaseViewTest):
         response = organizer.put(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_organizer_should_not_update_the_type_of_activity_if_there_are_calendars(self):
+        organizer = self.get_organizer_client()
+        data = json.dumps({'is_open': True})
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'is_open': ['No se puede cambiar el tipo de horario'
+                                                     ' porque existen calendarios relacionados.']})
+
+    def test_organizer_should_update_the_type_of_activity(self):
+        organizer = Organizer.objects.get(id=self.ORGANIZER_ID)
+        organizer_client = self.get_organizer_client()
+        activity = ActivityFactory(organizer=organizer)
+        url = '/api/activities/%s' % activity.id
+        data = {'is_open': True}
+        response = organizer_client.put(url, data=data)
+        activity = Activity.objects.get(id=activity.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(activity.is_open)
+
 
 class CalendarsByActivityViewTest(BaseViewTest):
     url = '/api/activities/1/calendars'

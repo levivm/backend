@@ -313,7 +313,8 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'rating',
             'wish_list',
             'reviews',
-            'wishlist_count'
+            'wishlist_count',
+            'is_open',
         )
         depth = 1
 
@@ -356,6 +357,14 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             raise serializers.ValidationError(_("Usuario no es organizador"))
 
         data['organizer'] = organizer
+
+        return data
+
+    def validate_is_open(self, data):
+        if self.instance:
+            if self.instance.calendars.count() > 0:
+                raise serializers.ValidationError(_("No se puede cambiar el tipo de horario porque"
+                                                    " existen calendarios relacionados."))
 
         return data
 
