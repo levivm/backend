@@ -225,7 +225,8 @@ class PaymentUtil(object):
     def creditcard(self):
         self.card_association = self.get_creditcard_association()
         self.last_four_digits = self.get_last_four_digits()
-        payu_data = json.dumps(self.get_payu_data())
+        payu_request = self.get_payu_data()
+        payu_data = json.dumps(payu_request)
         # result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         # result = result.json()
         # if settings.PAYU_TEST and self.valid_test_user():
@@ -234,7 +235,7 @@ class PaymentUtil(object):
         else:
             result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
             result = result.json()
-        return self.response(result)
+        return self.response(result), result, payu_request
 
     def get_cookie(self):
         return self.request.auth.key
@@ -381,10 +382,11 @@ class PaymentUtil(object):
 
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
-        payu_data = json.dumps(self.get_payu_pse_data())
+        request_data = self.get_payu_pse_data()
+        payu_data = json.dumps(request_data)
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
-        return self.pse_response(result)
+        return self.pse_response(result), result, request_data
 
     @staticmethod
     def get_bank_list_payu_data():

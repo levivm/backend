@@ -1,6 +1,9 @@
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.response import Response
+from django.core.exceptions import ObjectDoesNotExist
+
+import logging
 
 from django.conf import settings
 from celery import group
@@ -13,13 +16,15 @@ from referrals.models import Redeem
 from balances.tasks import CalculateOrganizerBalanceTask
 from balances.models import BalanceLog
 from referrals.tasks import ReferrerCouponTask, CreateCouponTask, SendCouponEmailTask
-from .models import Order
 from activities.utils import PaymentUtil
-from django.core.exceptions import ObjectDoesNotExist
+from utils.loggers import PaymentLogger
+
+from .models import Order
 
 
 class ProcessPaymentMixin(object):
     coupon = None
+    logger = logging.getLogger('payment')
 
     def proccess_payment(self, request, activity, serializer):
         """ Proccess payments """
@@ -81,7 +86,10 @@ class ProcessPaymentMixin(object):
 
     def proccess_payment_cc(self, payment, serializer):
         """ Process Credit Card Payments """
-        charge = payment.creditcard()
+
+        logger = PaymentLogger()
+
+        charge, raw_response, payu_request = payment.creditcard()
 
         if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
 
@@ -98,26 +106,68 @@ class ProcessPaymentMixin(object):
                 process_payment_task_mixin = ProcessPaymentTaskMixin(order=order,
                                                                      task_data=task_data)
                 process_payment_task_mixin.trigger_approved_tasks()
+            
+            #Loggin CC Payment Success
+            log_data = {
+                'pay_u_parsed_response': charge,
+                'pay_u_raw_response': raw_response,
+                'payment_data':response.data, 
+                'request': self.request,
+                'payu_request': payu_request
+            }
+            logger.log_transaction('CC Payment Success', log_data)
 
             return response
         else:
             error = {'generalError': [charge['error']]}
+
+            #Loggin CC Payment Error
+            log_data = {
+                'payu_response': charge['error'], 
+                'payu_raw_response': raw_response, 
+                'request': self.request,
+                'payu_request': payu_request
+            }
+
+            logger.log_transaction('CC Payment Error', log_data)
+
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def proccess_payment_pse(self, payment, serializer):
         """ Proccess PSE Payments """
+        logger = PaymentLogger()
 
-        charge = payment.pse_payu_payment()
+        charge, raw_response, payu_request = payment.pse_payu_payment()
 
         if charge['status'] == 'PENDING':
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
             serializer.context['coupon'] = self.coupon
-            self.call_create(serializer=serializer)
+            response = self.call_create(serializer=serializer)
+
+            log_data = {
+                'pay_u_parsed_response': charge,
+                'pay_u_raw_response': raw_response,
+                'payment_data': response.data, 
+                'request': self.request,
+                'payu_request': payu_request
+            }
+            logger.log_transaction('PSE Payment Pending', log_data)
+
             return Response({'bank_url': charge['bank_url']}, status=status.HTTP_201_CREATED)
         else:
             error = {'generalError': [charge['error']]}
+
+            log_data = {
+                'payu_response': charge['error'], 
+                'payu_raw_response': raw_response, 
+                'request': self.request,
+                'payu_request': payu_request
+            }
+            logger.log_transaction('PSE Payment Error', log_data)
+
+
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def redeem_coupon(self, student):
