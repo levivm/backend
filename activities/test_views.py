@@ -193,14 +193,12 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            'schedule': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+            'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
                         "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
-            # TODO agregar schedule - FIXED
-            # 'sessions': [{
-            #     'date': now_unix_timestamp,
-            #     'start_time': now_unix_timestamp,
-            #     'end_time': now_unix_timestamp + 100000,
-            # }],
+            'packages': [{
+                'quantity': 16,
+                'price': 100000,
+            }],
             'note': 'This is a note for the calendar!'
         }
 
@@ -268,14 +266,13 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             'activity': 1,
             'enroll_open': True,
             'session_price': 123000,
-            'schedule': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+            'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
                         "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
             # TODO agregar schedule - FIXED
-            # 'sessions': [{
-            #     'date': now_unix_timestamp,
-            #     'start_time': now_unix_timestamp,
-            #     'end_time': now_unix_timestamp + 100000,
-            # }]
+            'packages': [{
+                'quantity': 16,
+                'price': 100000,
+            }]
         }
 
     def test_url_should_resolve_correctly(self):
@@ -305,6 +302,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         calendar.orders.all().delete()
         data = self._get_data_to_create_a_calendar()
         data.update({'available_capacity': 20, 'session_price': calendar.session_price})
+        del data['packages']
         data = json.dumps(data)
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
@@ -1310,9 +1308,9 @@ class ActivityStatsViewTest(BaseAPITestCase):
             points.append({str(date.date() - timedelta(days=1)): {key: data[key] * (i+1) for key in data}})
 
         total_points = {
-            'total_gross': 5400000.0,
-            'total_fee': 432000.0,
-            'total_net': 4968000.0
+            'total_gross': 6750000.0,
+            'total_fee': 540000.0,
+            'total_net': 6210000.0
         }
 
         next_data = {

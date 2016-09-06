@@ -364,6 +364,13 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         self.save(update_fields=['available_capacity'])
 
 
+class CalendarPackage(Updateable, models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    quantity = models.PositiveIntegerField()
+    price = models.FloatField()
+    calendar = models.ForeignKey(Calendar, related_name='packages')
+
+
 class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):
     activity = models.ForeignKey('Activity', related_name='tasks')
 

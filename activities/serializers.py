@@ -10,7 +10,8 @@ from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from activities.mixins import WishListSerializerMixin
-from activities.models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto
+from activities.models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
+    CalendarPackage
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
@@ -126,11 +127,35 @@ class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
         return photo
 
 
+class CalendarPackageSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(label='ID', read_only=False, required=False)
+
+    class Meta:
+        model = CalendarPackage
+        fields = (
+            'id',
+            'quantity',
+            'price',
+        )
+
+    def validate_quantity(self, quantity):
+        if quantity < 1:
+            raise serializers.ValidationError(_('La cantidad no puede ser menor a 1.'))
+
+        return quantity
+
+    def validate_price(self, price):
+        if price < 30000:
+            raise serializers.ValidationError(_('El precio no puede ser menor a 30000.'))
+
+        return price
+
 class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
     schedules = HTMLField()
+    packages = CalendarPackageSerializer(many=True)
 
     class Meta:
         model = Calendar
@@ -146,6 +171,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'available_capacity',
             'note',
             'schedules',
+            'packages',
         )
         depth = 1
 
@@ -193,6 +219,24 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             self._validate_session_price(data)
 
         return data
+
+    def create(self, validated_data):
+        packages = validated_data.pop('packages', list())
+        calendar = Calendar.objects.create(**validated_data)
+        for package in packages:
+            CalendarPackage.objects.create(calendar=calendar, **package)
+        return calendar
+
+    def update(self, instance, validated_data):
+        packages = validated_data.pop('packages', list())
+        instance.update(validated_data)
+
+        for package_data in packages:
+            id = package_data.pop('id')
+            package = instance.packages.get(id=id)
+            package.update(package_data)
+
+        return instance
 
 
 class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):

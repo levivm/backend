@@ -51,8 +51,7 @@ class SendEmailCalendarTaskTest(APITestCase):
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)
         }
-        import pdb
-        pdb.set_trace()
+
         for assistant in self.assistants:
             data = {**context, 'name': assistant.first_name}
             self.assertTrue(EmailTaskRecord.objects.filter(

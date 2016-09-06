@@ -4,9 +4,11 @@ from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from activities.factories import CalendarFactory, ActivityFactory, SubCategoryFactory
-from activities.models import Calendar, Activity
-from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivitiesSerializer
+from activities.factories import CalendarFactory, ActivityFactory, SubCategoryFactory, \
+    CalendarPackageFactory
+from activities.models import Calendar, Activity, CalendarPackage
+from activities.serializers import CalendarSerializer, CategoriesSerializer, ActivitiesSerializer, \
+    CalendarPackageSerializer
 from locations.factories import LocationFactory
 from orders.models import Assistant, Order
 from orders.serializers import AssistantsSerializer
@@ -34,6 +36,7 @@ class CalendarSerializerTest(APITestCase):
         epoch = UnixEpochDateField()
 
         mommy.make(Assistant, order=self.order, enrolled=False)
+        package = CalendarPackageFactory(calendar=self.calendar)
         serializer = CalendarSerializer(self.calendar)
 
         content = {
@@ -48,6 +51,11 @@ class CalendarSerializerTest(APITestCase):
             'is_weekend': self.calendar.is_weekend,
             'is_free': self.calendar.is_free,
             'available_capacity': self.calendar.available_capacity,
+            'packages': [{
+                'id': package.id,
+                'quantity': package.quantity,
+                'price': package.price
+            }],
 
         }
         self.assertTrue(all(item in serializer.data.items() for item in content.items()))
@@ -66,15 +74,44 @@ class CalendarSerializerTest(APITestCase):
             'available_capacity': 10,
             'note': 'Note',
             'schedules': '<p><strong>Lunes - Viernes</strong></p><p>6:00pm - 9:00pm</p>',
+            'packages': [{
+                'quantity': 16,
+                'price': 100000,
+            }]
         }
 
         calendar_counter = Calendar.objects.count()
+        package_counter = CalendarPackage.objects.count()
 
         serializer = CalendarSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         self.assertEqual(Calendar.objects.count(), calendar_counter + 1)
+        self.assertEqual(CalendarPackage.objects.count(), package_counter + 1)
+
+    def test_update(self):
+        """
+        The serializer should update the data even the packages data
+        """
+        package = CalendarPackageFactory(calendar=self.calendar, price=100000, quantity=4)
+
+        data = {
+            'session_price': 500000,
+            'packages': [{
+                'id': package.id,
+                'quantity': 6,
+            }]
+        }
+
+        serializer = CalendarSerializer(self.calendar, data=data, partial=True)
+        self.assertTrue(serializer.is_valid(raise_exception=True))
+        serializer.save()
+        calendar = Calendar.objects.get(id=self.calendar.id)
+        package = CalendarPackage.objects.get(id=package.id)
+        self.assertEqual(calendar.session_price, 500000)
+        self.assertEqual(package.quantity, 6)
+
 
     def test_should_not_update_schedule_if_there_are_orders(self):
         """
@@ -183,4 +220,49 @@ class ActivitySerializerTest(APITestCase):
                                           context={'request': request})
         msg = 'No se puede cambiar el tipo de horario porque existen calendarios relacionados.'
         with self.assertRaisesMessage(ValidationError, "{'is_open': ['%s']}" % msg):
+            serializer.is_valid(raise_exception=True)
+
+
+class CalendarPackageSerializerTest(APITestCase):
+
+    def test_read(self):
+        data = {
+            'quantity': 4,
+            'price': 100000,
+        }
+
+        calendar_package = CalendarPackageFactory(**data)
+
+        serializer = CalendarPackageSerializer(calendar_package)
+        self.assertTrue(all(item in serializer.data.items() for item in data.items()))
+
+    def test_update(self):
+        package = CalendarPackageFactory(price=1000000)
+
+        data = { 'price': 500000 }
+
+        serializer = CalendarPackageSerializer(package, data=data, partial=True)
+        self.assertTrue(serializer.is_valid(raise_exception=True))
+
+        serializer.save()
+        package = CalendarPackage.objects.get(id=package.id)
+
+        self.assertEqual(package.price, 500000)
+
+    def test_quantity_validation(self):
+        package = CalendarPackageFactory()
+        data = { 'quantity': 0 }
+
+        serializer = CalendarPackageSerializer(package, data=data, partial=True)
+        with self.assertRaisesMessage(ValidationError, "{'quantity': ['La cantidad no puede ser "
+                                                       "menor a 1.']}"):
+            serializer.is_valid(raise_exception=True)
+
+    def test_price_validation(self):
+        package = CalendarPackageFactory()
+        data = { 'price': 10000 }
+
+        serializer = CalendarPackageSerializer(package, data=data, partial=True)
+        with self.assertRaisesMessage(ValidationError, "{'price': ['El precio no puede ser menor "
+                                                       "a 30000.']}"):
             serializer.is_valid(raise_exception=True)

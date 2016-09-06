@@ -6,7 +6,7 @@ import factory.fuzzy
 from django.utils.timezone import now
 
 from activities.models import Activity, SubCategory, Category, Tags, ActivityPhoto, Calendar, \
-    ActivityStats
+    ActivityStats, CalendarPackage
 from locations.factories import LocationFactory
 from organizers.factories import OrganizerFactory
 
@@ -123,6 +123,15 @@ class CalendarFactory(factory.django.DjangoModelFactory):
     available_capacity = factory.LazyAttribute(lambda c: random.choice(range(25)))
     schedules = "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;" \
                 "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;"
+
+
+class CalendarPackageFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CalendarPackage
+
+    quantity= factory.LazyAttribute(lambda c: random.choice(range(4, 32)))
+    price = factory.LazyAttribute(lambda c: random.choice(range(100000, 1000000)))
+    calendar = factory.SubFactory(CalendarFactory)
 
 
 class ActivityStatsFactory(factory.django.DjangoModelFactory):
