@@ -155,7 +155,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     initial_date = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
     schedules = HTMLField()
-    packages = CalendarPackageSerializer(many=True)
+    packages = CalendarPackageSerializer(many=True, required=False)
 
     class Meta:
         model = Calendar
@@ -211,12 +211,24 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
                         .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
                 error = {'session_price': msg}
                 raise serializers.ValidationError(error)
+        else:
+            raise serializers.ValidationError({'session_price': _('Este campo es requerido.')})
+
+    def _validate_packages(self, data):
+        packages = data.get('packages')
+        if not packages:
+            raise serializers.ValidationError({'packages': _('Este campo es requerido.')})
 
     def validate(self, data):
 
         is_free = data.get('is_free')
         if not is_free:
-            self._validate_session_price(data)
+            activity = self.instance.activity if self.instance else data['activity']
+            if not activity.is_open:
+                self._validate_session_price(data)
+            else:
+                self._validate_packages(data)
+                pass
 
         return data
 
@@ -230,6 +242,10 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     def update(self, instance, validated_data):
         packages = validated_data.pop('packages', list())
         instance.update(validated_data)
+
+        if packages:
+            ids = [p['id'] for p in packages]
+            instance.packages.exclude(id__in=ids).delete()
 
         for package_data in packages:
             id = package_data.pop('id')
