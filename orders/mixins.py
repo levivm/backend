@@ -61,6 +61,8 @@ class ProcessPaymentMixin(object):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def free_enrollment(self, serializer):
+        logger = PaymentLogger()
+
         serializer.context['status'] = Order.ORDER_APPROVED_STATUS
 
         # New enrollment task 
@@ -74,6 +76,11 @@ class ProcessPaymentMixin(object):
         # Create order
         response = self.call_create(serializer)
 
+        log_data = {
+            'request': self.request,
+            'order': serializer.data
+        }
+        logger.log_transaction('Free enrollment', log_data)
 
         # Asociate activities sent messages to the new student
         group(
