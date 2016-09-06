@@ -330,7 +330,7 @@ class ActivityStockPhoto(models.Model):
 class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
     initial_date = models.DateTimeField()
-    session_price = models.FloatField()
+    session_price = models.FloatField(blank=True, null=True)
     enroll_open = models.BooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)

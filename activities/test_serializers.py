@@ -112,7 +112,6 @@ class CalendarSerializerTest(APITestCase):
         self.assertEqual(calendar.session_price, 500000)
         self.assertEqual(package.quantity, 6)
 
-
     def test_should_not_update_schedule_if_there_are_orders(self):
         """
         The serializer shouldn't allow to update the schedules field
@@ -122,6 +121,48 @@ class CalendarSerializerTest(APITestCase):
         msg = 'No se puede cambiar el horario debido a que existen ordenes relacionadas.'
         serializer = CalendarSerializer(self.calendar, data=data, partial=True)
         with self.assertRaisesMessage(ValidationError, "{'schedules': ['%s']}" % msg):
+            serializer.is_valid(raise_exception=True)
+
+    def test_if_activity_is_closed_session_price_should_be_required(self):
+        """
+        If the activity is_open is False the CalendarSerializer should require
+        the session price and not the packages
+        """
+        today = now()
+        epoch = UnixEpochDateField()
+        activity = ActivityFactory(is_open=False)
+        data = {
+            'activity': activity.id,
+            'initial_date': epoch.to_representation(today),
+            'available_capacity': 10,
+            'note': 'Note',
+            'schedules': '<p><strong>Lunes - Viernes</strong></p><p>6:00pm - 9:00pm</p>',
+        }
+
+        serializer = CalendarSerializer(data=data)
+        with self.assertRaisesMessage(ValidationError, "{'session_price': ['Este campo es"
+                                                       " requerido.']}"):
+            serializer.is_valid(raise_exception=True)
+
+    def test_if_activity_is_open_packages_should_be_required(self):
+        """
+        If the activity is_open is False the CalendarSerializer should require
+        the session price and not the packages
+        """
+        today = now()
+        epoch = UnixEpochDateField()
+        activity = ActivityFactory(is_open=True)
+        data = {
+            'activity': activity.id,
+            'initial_date': epoch.to_representation(today),
+            'available_capacity': 10,
+            'note': 'Note',
+            'schedules': '<p><strong>Lunes - Viernes</strong></p><p>6:00pm - 9:00pm</p>',
+        }
+
+        serializer = CalendarSerializer(data=data)
+        with self.assertRaisesMessage(ValidationError, "{'packages': ['Este campo es"
+                                                       " requerido.']}"):
             serializer.is_valid(raise_exception=True)
 
 
