@@ -283,6 +283,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             'closest_calendar',
             'organizer',
             'wish_list',
+            'is_open'
         )
 
     def get_category(self, obj):

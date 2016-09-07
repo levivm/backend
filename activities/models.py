@@ -195,9 +195,11 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         elif cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
-                query &= Q(session_price__gte=(cost_start))
+                query &= Q(session_price__gte=(cost_start)) |\
+                         Q(packages__price__gte=(cost_start))
             else:
-                query &= Q(session_price__range=(cost_start, cost_end))
+                query &= Q(session_price__range=(cost_start, cost_end)) |\
+                         Q(packages__price__range=(cost_start, cost_end))
 
         if initial_date is not None:
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)

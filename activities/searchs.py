@@ -20,6 +20,7 @@ class ActivitySearchEngine(object):
                  'otro', 'otras', 'otra', 'él', 'tanto', 'esa', 'estos', 'mucho', 'quienes', 'nada', 'muchos', 'cual',
                  'sea', 'poco', 'ella', 'estar', 'haber', 'estas', 'estaba', 'estamos', 'algunas', 'algo', 'nosotros')
 
+    SEARCH_ORDER_OPEN_ATTRIBUTTE = '-is_open'
     SEARCH_ORDER_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MIN_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MAX_PRICE_ATTRIBUTE = '-closest_calendar_price'
@@ -172,9 +173,11 @@ class ActivitySearchEngine(object):
         if cost_start is not None and cost_end is not None and is_free is None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
-                query &= Q(calendars__session_price__gte=(cost_start))
+                query &= Q(calendars__session_price__gte=(cost_start))  |\
+                         Q(calendars__packages__price__gte=(cost_start))
             else:
-                query &= Q(calendars__session_price__range=(cost_start, cost_end))
+                query &= Q(calendars__session_price__range=(cost_start, cost_end)) |\
+                         Q(calendars__packages__price__range=(cost_start, cost_end))
 
         if level is not None and not level == activities_constants.LEVEL_N:
             query &= Q(level=level)
@@ -196,15 +199,15 @@ class ActivitySearchEngine(object):
         order_param = self.order
 
         if order_param == activities_constants.ORDER_MIN_PRICE:
-            order = [self.SEARCH_ORDER_MIN_PRICE_ATTRIBUTE]
+            order = [self.SEARCH_ORDER_OPEN_ATTRIBUTTE, self.SEARCH_ORDER_MIN_PRICE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_MAX_PRICE:
-            order = [self.SEARCH_ORDER_MAX_PRICE_ATTRIBUTE]
+            order = [self.SEARCH_ORDER_OPEN_ATTRIBUTTE, self.SEARCH_ORDER_MAX_PRICE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_SCORE and is_free:
             order = [self.SEARCH_ORDER_SCORE_FREE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_SCORE:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_CLOSEST:
-            order = [self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
+            order = [self.SEARCH_ORDER_OPEN_ATTRIBUTTE, self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
         else:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
 
