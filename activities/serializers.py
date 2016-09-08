@@ -243,16 +243,24 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
         packages = validated_data.pop('packages', list())
         instance.update(validated_data)
 
-        if packages:
-            ids = [p['id'] for p in packages]
-            instance.packages.exclude(id__in=ids).delete()
-
-        for package_data in packages:
-            id = package_data.pop('id')
-            package = instance.packages.get(id=id)
-            package.update(package_data)
-
+        self._handler_packages(calendar=instance, packages=packages)
         return instance
+
+    def _handler_packages(self, calendar, packages):
+        ids = list()
+        for package_data in packages:
+            id = package_data.pop('id', None)
+            if id is not None:
+                # Update package
+                ids.append(id)
+                package = calendar.packages.get(id=id)
+                package.update(package_data)
+            else:
+                # Create package
+                package = CalendarPackage.objects.create(calendar=calendar, **package_data)
+                ids.append(package.id)
+
+        calendar.packages.exclude(id__in=ids).delete()
 
 
 class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):

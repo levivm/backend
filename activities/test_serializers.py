@@ -112,6 +112,35 @@ class CalendarSerializerTest(APITestCase):
         self.assertEqual(calendar.session_price, 500000)
         self.assertEqual(package.quantity, 6)
 
+    def test_create_other_package_in_update(self):
+        """
+        If the serializer receive one more package in the update method
+        the package should be created
+        """
+        calendar = CalendarFactory(activity__is_open=True)
+        packages = CalendarPackageFactory.create_batch(2, calendar=calendar)
+
+        data = {
+            'packages':[{
+                'id': p.id,
+                'quantity': p.quantity,
+                'price': p.price,
+            } for p in packages]
+        }
+
+        # The new package
+        data['packages'].append({
+            'quantity': 16,
+            'price': 183740,
+        })
+
+        packages_counter = CalendarPackage.objects.count()
+
+        serializer = CalendarSerializer(calendar, data=data, partial=True)
+        self.assertTrue(serializer.is_valid(raise_exception=True))
+        serializer.save()
+        self.assertEqual(CalendarPackage.objects.count(), packages_counter + 1)
+
     def test_should_not_update_schedule_if_there_are_orders(self):
         """
         The serializer shouldn't allow to update the schedules field
