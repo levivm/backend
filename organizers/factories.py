@@ -47,7 +47,7 @@ class OrganizerBankInfoFactory(factory.django.DjangoModelFactory):
     beneficiary = factory.Faker('name')
     bank = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.BANKS]))
     document_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.DOCUMENT_TYPES]))
-    person_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.PERSON_TYPES]))
+    type_person = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.PERSON_TYPES]))
     document = factory.Faker('ssn')
     account_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.ACCOUNT_TYPES]))
     account = factory.Faker('credit_card_number')
