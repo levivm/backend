@@ -291,6 +291,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             'closest_calendar',
             'organizer',
             'wish_list',
+            'is_open'
         )
 
     def get_category(self, obj):
@@ -328,6 +329,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     sub_category = serializers.SlugRelatedField(slug_field='id',
                                                 queryset=SubCategory.objects.all(), required=True)
     category = serializers.SerializerMethodField()
+    is_open_display = serializers.SerializerMethodField()
     location = LocationsSerializer(read_only=True)
     pictures = ActivityPhotosSerializer(read_only=True, many=True)
     calendars = CalendarSerializer(read_only=True, many=True)
@@ -383,6 +385,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'reviews',
             'wishlist_count',
             'is_open',
+            'is_open_display',
         )
         depth = 1
 
@@ -415,6 +418,9 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
 
     def get_wishlist_count(self, obj):
         return obj.wishlist_count
+
+    def get_is_open_display(self, obj):
+        return _('Abierto') if obj.is_open else _('Fijo')
 
     def validate(self, data):
         request = self.context['request']

@@ -46,13 +46,15 @@ class ActivityQuerySet(models.QuerySet):
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
-            filter(calendars__initial_date__gte=today, published=True, *args, **kwargs)
+            filter(calendars__initial_date__gte=today, 
+                   calendars__enroll_open=True, published=True, *args, **kwargs).distinct()
 
     def closed(self, *args, **kwargs):
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
-            filter(calendars__initial_date__lt=today, published=True, *args, **kwargs)
+            exclude(calendars__initial_date__gte=today, 
+                   calendars__enroll_open=True, published=True, *args, **kwargs).distinct()
 
     def unpublished(self, *args, **kwargs):
         return self.select_related(*self.select_related_fields).\
