@@ -79,10 +79,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
 
-    # bank = serializers.SerializerMethodField()
     bank = BankField(choices=OrganizerBankInfo.BANKS)
-    # bank_code = serializers.get_
-    # bank_
 
     class Meta:
         model = OrganizerBankInfo
