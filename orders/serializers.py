@@ -93,6 +93,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'total',
             'total_without_coupon',
             'coupon',
+            'package_quantity',
         )
 
     def get_activity(self, obj):

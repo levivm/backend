@@ -28,6 +28,7 @@ class Order(models.Model):
     student = models.ForeignKey(Student, related_name='orders')
     amount = models.FloatField()
     quantity = models.IntegerField()
+    package_quantity = models.PositiveIntegerField(blank=True, null=True)
     status = models.CharField(choices=STATUS, max_length=15, default='pending')
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
