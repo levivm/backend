@@ -1,13 +1,8 @@
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
 
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
-from utils.models import CeleryTaskEditActivity
-from utils.mixins import AssignPermissionsMixin
-
 
 class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     user = models.OneToOneField(User, related_name='organizer_profile')
@@ -115,10 +110,26 @@ class OrganizerBankInfo(models.Model):
         ('corriente', 'Cuenta corriente'),
     )
 
+
+    NATURAL, JURIDICAL = range(1, 3)
+    PERSON_TYPES = (
+        (NATURAL, 'Natural'),
+        (JURIDICAL, 'Jurídica'),
+    )
+
+    COMUN, MAJOR_CONTIBUTOR = range(1, 3)
+    REGIMEN_TYPES = (
+        (COMUN, 'Común'),
+        (MAJOR_CONTIBUTOR, 'Gran Contribuyente'),
+    )
+
     organizer = models.OneToOneField(Organizer, related_name='bank_info')
     beneficiary = models.CharField(max_length=255)
     bank = models.CharField(choices=BANKS, max_length=30)
     document_type = models.CharField(choices=DOCUMENT_TYPES, max_length=5)
+    fiscal_address = models.CharField(max_length=255, blank=True)
+    regimen = models.CharField(choices=REGIMEN_TYPES, max_length=20, blank=True)
+    type_person = models.CharField(choices=PERSON_TYPES, max_length=10)
     document = models.CharField(max_length=100)
     account_type = models.CharField(choices=ACCOUNT_TYPES, max_length=10)
     account = models.CharField(max_length=255)
@@ -129,4 +140,6 @@ class OrganizerBankInfo(models.Model):
             'banks': [{'bank_id': k, 'bank_name': v} for k, v in OrganizerBankInfo.BANKS],
             'documents': [{'document_id': k, 'document_name': v} for k, v in OrganizerBankInfo.DOCUMENT_TYPES],
             'accounts': [{'account_id': k, 'account_name': v} for k, v in OrganizerBankInfo.ACCOUNT_TYPES],
+            'person_type': [{'type_id': k, 'type_name': v} for k, v in OrganizerBankInfo.PERSON_TYPES],
+            'regimen': [{'regimen_id': k, 'regimen_name': v} for k, v in OrganizerBankInfo.REGIMEN_TYPES],
         }
