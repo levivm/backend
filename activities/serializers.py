@@ -220,15 +220,18 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             raise serializers.ValidationError({'packages': _('Este campo es requerido.')})
 
     def validate(self, data):
+        activity = self.instance.activity if self.instance else data['activity']
+
+        if not self.instance and activity.is_open and activity.calendars.count() > 0:
+            raise serializers.ValidationError(_("No se puede crear más de un calendario cuando"
+                                                    " la actividad es de horario abierto"))
 
         is_free = data.get('is_free')
         if not is_free:
-            activity = self.instance.activity if self.instance else data['activity']
             if not activity.is_open:
                 self._validate_session_price(data)
             else:
                 self._validate_packages(data)
-                pass
 
         return data
 

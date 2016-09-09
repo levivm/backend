@@ -194,6 +194,32 @@ class CalendarSerializerTest(APITestCase):
                                                        " requerido.']}"):
             serializer.is_valid(raise_exception=True)
 
+    def test_only_one_calendar_activity_open(self):
+        """
+        If the activity is open the serializer shouldn't let create more than 1 calendar
+        """
+        today = now()
+        epoch = UnixEpochDateField()
+        activity = ActivityFactory(is_open=True)
+        CalendarFactory(activity=activity)
+        data = {
+            'activity': activity.id,
+            'initial_date': epoch.to_representation(today),
+            'available_capacity': 10,
+            'note': 'Note',
+            'schedules': '<p><strong>Lunes - Viernes</strong></p><p>6:00pm - 9:00pm</p>',
+            'packages': [{
+                'quantity': 3,
+                'price': 123843,
+            }]
+        }
+
+        serializer = CalendarSerializer(data=data)
+        with self.assertRaisesMessage(ValidationError, "{'non_field_errors': ['No se puede crear"
+                                                       " más de un calendario cuando la actividad"
+                                                       " es de horario abierto']}"):
+            serializer.is_valid(raise_exception=True)
+
 
 class ActivitySerializerTest(APITestCase):
     """
