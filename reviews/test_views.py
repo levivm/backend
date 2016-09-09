@@ -33,7 +33,7 @@ class ReviewAPITest(BaseAPITestCase):
         # Objects needed
         self.activity = ActivityFactory(organizer=self.organizer, published=True)
         self.calendar = CalendarFactory(activity=self.activity,
-                                   initial_date=now() - timedelta(days=2))
+                                   initial_date=(now() - timedelta(days=2)).date() )
         self.order = OrderFactory(student=self.student, calendar=self.calendar,
                                 status=Order.ORDER_APPROVED_STATUS)
         self.post = {'rating': 4, 'comment': 'First comment!'}

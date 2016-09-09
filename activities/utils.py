@@ -580,7 +580,7 @@ class ActivityStatsUtil(object):
         closest_calendar = self.activity.closest_calendar()
         if closest_calendar:
             data = {
-                'date': str(closest_calendar.initial_date.date()),
+                'date': str(closest_calendar.initial_date),
                 'sold': closest_calendar.num_enrolled,
                 'available_capacity': closest_calendar.available_capacity,
             }

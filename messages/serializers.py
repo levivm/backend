@@ -71,7 +71,8 @@ class OrganizerMessageSerializer(serializers.ModelSerializer):
         return obj.calendar.activity.title
 
     def get_initial_date(self, obj):
-        return obj.calendar.initial_date.isoformat()[:-6] + 'Z'
+        # TODO verificar que pasa con el initial_date
+        return obj.calendar.initial_date.isoformat()
 
 
 class OrganizerMessageStudentRelationSerializer(serializers.ModelSerializer):

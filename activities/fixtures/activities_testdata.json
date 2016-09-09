@@ -107,7 +107,7 @@
     "fields": {
       "available_capacity": 14,
       "session_price": 800000.0,
-      "initial_date": "2015-05-01T14:43:00.601Z",
+      "initial_date": "2015-05-01",
       "activity": 1,
       "enroll_open": true,
       "is_weekend": true
@@ -119,7 +119,7 @@
     "fields": {
       "available_capacity": 14,
       "session_price": 800000.0,
-      "initial_date": "2015-05-01T14:43:00.601Z",
+      "initial_date": "2015-05-01",
       "activity": 2,
       "enroll_open": true,
       "is_weekend": true

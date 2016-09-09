@@ -203,13 +203,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
                          Q(packages__price__range=(cost_start, cost_end))
 
         if initial_date is not None:
-            # TODO arreglar mejor, tomar el timezone establecido por Django en el settings
-            cot = pytz.timezone('America/Bogota')
-            utc = pytz.timezone('UTC')
-
-            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).\
-                replace(second=0).replace(tzinfo=cot).astimezone(utc)
-            query = query & Q(initial_date__date__gte=initial_date)
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).date()
+            query = query & Q(initial_date__gte=initial_date)
 
         query = query & Q(available_capacity__gt=0)
 
@@ -217,18 +212,18 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
 
         if calendars:
             if is_free:
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today and c.is_free]
+                open_calendars = [c for c in calendars if c.initial_date >= today and c.is_free]
             else:
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+                open_calendars = [c for c in calendars if c.initial_date >= today]
 
             if open_calendars:
                 closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
 
                 if is_free:
-                    calendars = [c for c in calendars if c.initial_date.date() < today and c.is_free]
+                    calendars = [c for c in calendars if c.initial_date < today and c.is_free]
                 else:
-                    calendars = [c for c in calendars if c.initial_date.date() < today]
+                    calendars = [c for c in calendars if c.initial_date < today]
 
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
@@ -337,7 +332,7 @@ class ActivityStockPhoto(models.Model):
 
 class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
-    initial_date = models.DateTimeField()
+    initial_date = models.DateField()
     session_price = models.FloatField(blank=True, null=True)
     enroll_open = models.BooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)

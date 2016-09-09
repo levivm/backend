@@ -51,7 +51,7 @@ class OrganizerMessageSerializerTest(APITestCase):
             },
             'calendar': self.calendar.id,
             'activity': self.calendar.activity.title,
-            'initial_date': self.calendar.initial_date.isoformat()[:-6] + 'Z',
+            'initial_date': self.calendar.initial_date.isoformat(),
             'is_read': None 
         }
 
