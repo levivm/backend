@@ -202,6 +202,7 @@ class ActivitySearchEngine(object):
             query = Q(published=True)
 
         if date is not None:
+            # TODO poner date de forma correcto, al igual que en el closest_calendar
             date = datetime.fromtimestamp(int(date) // 1000).replace(second=0)
             query = query & Q(calendars__initial_date__gte=date)
 

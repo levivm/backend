@@ -150,6 +150,7 @@ class CalendarPackageSerializer(serializers.ModelSerializer):
 
         return price
 
+
 class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()

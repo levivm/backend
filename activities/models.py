@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import operator
+import pytz
 import os
 from datetime import datetime, date
 from functools import reduce
@@ -188,6 +189,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
         closest = None
+        if self.id == 117:
+            import pdb;pdb.set_trace()
         query = Q()
         if is_free:
             query &= Q(is_free=True)
@@ -202,8 +205,13 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
                          Q(packages__price__range=(cost_start, cost_end))
 
         if initial_date is not None:
-            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
-            query = query & Q(initial_date__gte=initial_date)
+            # TODO arreglar mejor, tomar el timezone establecido por Django en el settings
+            cot = pytz.timezone('America/Bogota')
+            utc = pytz.timezone('UTC')
+
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).\
+                replace(second=0).replace(tzinfo=cot).astimezone(utc)
+            query = query & Q(initial_date__date__gte=initial_date)
 
         query = query & Q(available_capacity__gt=0)
 

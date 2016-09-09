@@ -13,7 +13,7 @@ from requests.api import post
 
 from activities.models import Calendar, ActivityStats
 from orders.models import Order
-from payments.models import Payment as PaymentModel
+from payments.models import Payment as PaymentModel, Fee
 from payments.serializers import PaymentsPSEDataSerializer
 from utils.exceptions import ServiceUnavailable
 
@@ -141,11 +141,30 @@ class PaymentUtil(object):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
+    def get_payu_amount_values(self):
+        fee_iva = Fee.objects.get(name='IVA').amount
+        amount = self.get_amount()
+        tx_value = amount
+        tx_tax = amount * fee_iva
+        tx_tax_return_base = tx_value - tx_tax
+        return tx_value, tx_tax, tx_tax_return_base
+
     def get_amount(self):
         calendar_id = self.request.data.get('calendar')
+        package_id = self.request.data.get('package')
+
+        # get calendar
         calendar = Calendar.objects.get(id=calendar_id)
+
+        # get base amount based on package price or calendar session price
+        base_amount = calendar.packages.get(id=package_id).price if package_id \
+            else calendar.session_price
+
+        # get amount base on base_amount and assistants amount
         quantity = int(self.request.data['quantity'])
-        amount = calendar.session_price * quantity
+        amount = base_amount * quantity
+
+        # calculate new amount if there is a coupon
         if self.coupon:
             amount -= self.coupon.coupon_type.amount
             amount = 0 if amount < 0 else amount
@@ -185,7 +204,7 @@ class PaymentUtil(object):
         return self.request.data['last_four_digits']
 
     def get_payu_data(self):
-        amount = self.get_amount()
+        total_amount, tax_amount, total_amount_return_base = self.get_payu_amount_values()
         reference_code = self.get_reference_code()
         return {
             'language': 'es',
@@ -201,11 +220,20 @@ class PaymentUtil(object):
                     'description': self.get_payment_description(),
                     'language': 'es',
                     'notifyUrl': settings.PAYU_NOTIFY_URL,
-                    'signature': self.get_signature(reference_code=reference_code, price=amount),
+                    'signature': self.get_signature(reference_code=reference_code,
+                                                    price=total_amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
                         'TX_VALUE': {
-                            'value': amount,
+                            'value': total_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX': {
+                            'value': tax_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX_RETURN_BASE': {
+                            'value': total_amount_return_base,
                             'currency': 'COP'
                         }
                     },
@@ -336,7 +364,7 @@ class PaymentUtil(object):
             }
 
     def get_payu_pse_data(self):
-        amount = self.get_amount()
+        total_amount, tax_amount, total_amount_return_base = self.get_payu_amount_values()
         reference_code = self.get_reference_code()
 
         return {
@@ -352,12 +380,21 @@ class PaymentUtil(object):
                     "referenceCode": reference_code,
                     "description": self.get_payment_description(),
                     "language": "es",
-                    "signature": self.get_signature(reference_code=reference_code, price=amount),
+                    "signature": self.get_signature(reference_code=reference_code,
+                                                    price=total_amount),
                     "notifyUrl": settings.PAYU_NOTIFY_URL,
                     "additionalValues": {
-                        "TX_VALUE": {
-                            "value": amount,
-                            "currency": "COP"
+                        'TX_VALUE': {
+                            'value': total_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX': {
+                            'value': tax_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX_RETURN_BASE': {
+                            'value': total_amount_return_base,
+                            'currency': 'COP'
                         }
                     },
                     "buyer": self.get_payer()
