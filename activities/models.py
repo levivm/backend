@@ -189,8 +189,6 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
         closest = None
-        if self.id == 117:
-            import pdb;pdb.set_trace()
         query = Q()
         if is_free:
             query &= Q(is_free=True)
