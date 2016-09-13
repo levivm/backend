@@ -26,10 +26,10 @@ class ProcessPaymentMixin(object):
     coupon = None
     logger = logging.getLogger('payment')
 
-    def proccess_payment(self, request, activity, serializer):
+    def proccess_payment(self, request, activity, calendar, serializer):
         """ Proccess payments """
         payment_method = request.data.get('payment_method')
-        payment = PaymentUtil(request, activity, self.coupon)
+        payment = PaymentUtil(request, activity, calendar, self.coupon)
 
         if payment_method == Payment.CC_PAYMENT_TYPE:
 

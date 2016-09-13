@@ -180,8 +180,12 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         calendar = order.calendar
 
         package_id = self.context.get('request').data.get('package')
-        base_amount = calendar.packages.get(id=package_id).price if package_id \
+        package = calendar.packages.get(id=package_id) if package_id else None
+
+        base_amount = package.price if package \
             and calendar.activity.is_open else calendar.session_price
+
+        order.package_quantity = package.quantity if package  else None
 
         # base_amount = calendar.session_price if not calendar.activity.is_open else calendar.
         # if calendar.activity.is_open:

@@ -49,7 +49,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
             self.coupon = self.get_coupon(code=request.data.get('coupon_code'))
             self.coupon.is_valid(request.user.student_profile)
 
-        return self.proccess_payment(request, activity, serializer)
+        return self.proccess_payment(request, activity, calendar, serializer)
 
     def list_by_activity(self, request, *args, **kwargs):
         activity_pk = kwargs.get('activity_pk')

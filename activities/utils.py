@@ -109,11 +109,17 @@ class PaymentUtil(object):
     card_association = None
     last_four_digits = None
 
-    def __init__(self, request, activity=None, coupon=None):
+    def __init__(self, request, activity=None, calendar=None, coupon=None):
         super(PaymentUtil, self).__init__()
         self.request = request
+        self.calendar = calendar
         if activity:
             self.activity = activity
+
+        # Set package if there is any
+        package_id = self.request.data.get('package')
+        self.package = calendar.packages.get(id=package_id) if package_id else None
+
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         self.coupon = coupon
 
@@ -150,14 +156,17 @@ class PaymentUtil(object):
         return tx_value, tx_tax, tx_tax_return_base
 
     def get_amount(self):
-        calendar_id = self.request.data.get('calendar')
+        # calendar_id = self.request.data.get('calendar')
         package_id = self.request.data.get('package')
 
         # get calendar
-        calendar = Calendar.objects.get(id=calendar_id)
+        calendar = self.calendar
+
+        # get package 
+        package = self.package
 
         # get base amount based on package price or calendar session price
-        base_amount = calendar.packages.get(id=package_id).price if package_id \
+        base_amount = package.price if package \
             and calendar.activity.is_open else calendar.session_price
 
         # get amount base on base_amount and assistants amount
@@ -284,8 +293,8 @@ class PaymentUtil(object):
         timestamp = calendar.timegm(now().timetuple())
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
-        package_id = self.request.data.get('package')
-        reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_id,
+        package_quantity = self.package.quantity if self.package else 'undefined'
+        reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_quantity,
                                             activity_id, calendar_id)
         return reference
 
