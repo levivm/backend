@@ -179,14 +179,14 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
         assistants_serializer = AssistantsSerializer(assistants, many=True, context=self.context,
-                                                    remove_fields=['student'])
+                                                     remove_fields=['student'])
         return assistants_serializer.data
 
     def validate_activity(self, value):
         return value
 
     def validate_schedules(self, value):
-        if self.instance:
+        if self.instance and not self.instance.schedules == value:
             if self.instance.orders.available().count() > 0:
                 msg = 'No se puede cambiar el horario debido a que existen ordenes relacionadas.'
                 raise serializers.ValidationError(_(msg))
@@ -345,6 +345,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     wishlist_count = serializers.SerializerMethodField()
     content = HTMLField(allow_blank=True, required=False)
     requirements = HTMLField(allow_blank=True, required=False)
+    post_enroll_message = HTMLField(allow_blank=True, required=False)
     extra_info = HTMLField(allow_blank=True, required=False)
     audience = HTMLField(allow_blank=True, required=False)
     goals = HTMLField(allow_blank=True, required=False)
@@ -364,6 +365,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'category',
             'content',
             'requirements',
+            'post_enroll_message',
             'return_policy',
             'extra_info',
             'audience',
@@ -436,11 +438,10 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
         return data
 
     def validate_is_open(self, data):
-        if self.instance:
-            if self.instance.calendars.count() > 0:
-                raise serializers.ValidationError(_("No se puede cambiar el tipo de horario porque"
-                                                    " existen calendarios relacionados."))
-
+        if self.instance and not data == self.instance.is_open\
+            and self.instance.calendars.count() > 0 :
+            raise serializers.ValidationError(_("No se puede cambiar el tipo de horario porque"
+                                                " existen calendarios relacionados."))
         return data
 
     def create(self, validated_data):

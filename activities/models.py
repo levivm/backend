@@ -103,6 +103,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     content = models.TextField(blank=True)
     audience = models.TextField(blank=True)
     requirements = models.TextField(blank=True)
+    post_enroll_message = models.TextField(blank=True)
     return_policy = models.TextField(blank=True)
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length=200, blank=True, null=True)
@@ -206,7 +207,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).date()
             query = query & Q(initial_date__gte=initial_date)
 
-        query = query & Q(available_capacity__gt=0)
+        query = query & Q(available_capacity__gt=0, enroll_open=True)
 
         calendars = self.calendars.filter(query)
 
