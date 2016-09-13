@@ -46,7 +46,7 @@ class SendEmailTaskMixin(Task):
     def sanitize_data(self, data):
         new_data = data.copy()
         for key, value in new_data.items():
-            if isinstance(value, (datetime.datetime, datetime.time)):
+            if isinstance(value, (datetime.datetime, datetime.time, datetime.date)):
                 new_data[key] = value.isoformat()
             elif isinstance(value, dict):
                 new_data[key] = self.sanitize_data(value)

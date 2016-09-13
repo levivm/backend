@@ -109,7 +109,7 @@ class SendEmailShareActivityTaskTest(APITestCase):
         self.user = UserFactory()
         self.activity = ActivityFactory(rating=4)
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=5))
+                                        initial_date=(now() + timedelta(days=5)).date())
         self.cover = ActivityPhotoFactory(activity=self.activity, main_photo=True)
         self.location = LocationFactory(organizer=self.activity.organizer)
 

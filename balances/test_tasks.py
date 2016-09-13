@@ -20,7 +20,7 @@ class BalanceLogToAvailableTaskTest(APITestCase):
         self.organizer = OrganizerFactory()
 
     def test_balance_log_available(self):
-        last_week = now() - timedelta(days=5)
+        last_week = (now() - timedelta(days=5)).date()
         calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=last_week)
         balance_log = BalanceLogFactory(organizer=self.organizer, calendar=calendar)
 
@@ -31,7 +31,7 @@ class BalanceLogToAvailableTaskTest(APITestCase):
         self.assertEqual(result.result, [self.organizer.id])
 
     def test_balance_not_yet_available(self):
-        calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=now())
+        calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=now().date())
         balance_log = BalanceLogFactory(organizer=self.organizer, calendar=calendar)
 
         task = BalanceLogToAvailableTask()

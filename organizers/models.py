@@ -130,7 +130,7 @@ class OrganizerBankInfo(models.Model):
     fiscal_address = models.CharField(max_length=255, blank=True)
     billing_telephone = models.CharField(max_length=100, blank=True)
     regimen = models.CharField(choices=REGIMEN_TYPES, max_length=20, blank=True)
-    type_person = models.CharField(choices=PERSON_TYPES, max_length=10)
+    person_type = models.CharField(choices=PERSON_TYPES, max_length=10)
     document = models.CharField(max_length=100)
     account_type = models.CharField(choices=ACCOUNT_TYPES, max_length=10)
     account = models.CharField(max_length=255)

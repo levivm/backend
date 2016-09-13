@@ -53,8 +53,6 @@ class ProcessPaymentMixin(object):
         calendar = cls.get_calendar(request)
         return calendar.activity.organizer
 
-
-
     def call_create(self, serializer):
         super(ProcessPaymentMixin, self).perform_create(serializer)
         headers = super(ProcessPaymentMixin, self).get_success_headers(serializer.data)

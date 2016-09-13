@@ -81,5 +81,18 @@ class OrganizerBankInfoSerializer(serializers.ModelSerializer):
 
     bank = BankField(choices=OrganizerBankInfo.BANKS)
 
+
     class Meta:
         model = OrganizerBankInfo
+
+
+    def validate(self, validated_data):
+        person_type = validated_data.get('person_type')
+        if person_type ==  OrganizerBankInfo.JURIDICAL:
+            required_fields = ['fiscal_address', 'billing_telephone', 'regimen']
+            missing_fields = [field for field in required_fields if not validated_data.get(field)]
+            first_missing_field, *_ = missing_fields if missing_fields else [None, None]
+            if first_missing_field:
+                raise serializers.ValidationError({first_missing_field: 'Este campo es requerido.'})
+
+        return validated_data

@@ -123,7 +123,7 @@ class ReviewSerializerTest(APITestCase):
         """
 
         # Set the initial_date 10 days ahead
-        self.order.calendar.initial_date = now() + timedelta(days=10)
+        self.order.calendar.initial_date = (now() + timedelta(days=10)).date()
         self.order.calendar.save()
 
         with self.assertRaisesMessage(ValidationError,

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import operator
+import pytz
 import os
 from datetime import datetime, date
 from functools import reduce
@@ -102,6 +103,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     content = models.TextField(blank=True)
     audience = models.TextField(blank=True)
     requirements = models.TextField(blank=True)
+    post_enroll_message = models.TextField(blank=True)
     return_policy = models.TextField(blank=True)
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length=200, blank=True, null=True)
@@ -202,27 +204,27 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
                          Q(packages__price__range=(cost_start, cost_end))
 
         if initial_date is not None:
-            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).replace(second=0)
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).date()
             query = query & Q(initial_date__gte=initial_date)
 
-        query = query & Q(available_capacity__gt=0)
+        query = query & Q(available_capacity__gt=0, enroll_open=True)
 
         calendars = self.calendars.filter(query)
 
         if calendars:
             if is_free:
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today and c.is_free]
+                open_calendars = [c for c in calendars if c.initial_date >= today and c.is_free]
             else:
-                open_calendars = [c for c in calendars if c.initial_date.date() >= today]
+                open_calendars = [c for c in calendars if c.initial_date >= today]
 
             if open_calendars:
                 closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
 
                 if is_free:
-                    calendars = [c for c in calendars if c.initial_date.date() < today and c.is_free]
+                    calendars = [c for c in calendars if c.initial_date < today and c.is_free]
                 else:
-                    calendars = [c for c in calendars if c.initial_date.date() < today]
+                    calendars = [c for c in calendars if c.initial_date < today]
 
                 if calendars:
                     closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
@@ -331,7 +333,7 @@ class ActivityStockPhoto(models.Model):
 
 class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
-    initial_date = models.DateTimeField()
+    initial_date = models.DateField()
     session_price = models.FloatField(blank=True, null=True)
     enroll_open = models.BooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
@@ -358,10 +360,18 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
                 o.assistants.all() if a.enrolled]
 
     def increase_capacity(self, amount):
+        # Dont increase capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity + amount
         self.save(update_fields=['available_capacity'])
 
     def decrease_capacity(self, amount):
+        # Dont decrease capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
 

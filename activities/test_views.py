@@ -806,7 +806,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
             ActivityFactory(sub_category=self.subcategory, tags=[tag], level=activities_constants.LEVEL_A,
                             certification=True, published=True))
 
-        CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10),
+        CalendarFactory(activity=activities[-1], initial_date=(now() - timedelta(days=10)).date(),
                         session_price=self.price,
                         is_weekend=True)
         return activities
@@ -1079,7 +1079,7 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         super(ShareActivityEmailViewTest, self).setUp()
         self.activity = ActivityFactory()
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=20))
+                                        initial_date=(now() + timedelta(days=20)).date())
         ActivityPhotoFactory(activity=self.activity, main_photo=True)
 
         # URLs
@@ -1220,7 +1220,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=1),
+                                        initial_date=(now() + timedelta(days=1)).date(),
                                         available_capacity=15)
         ActivityStatsFactory(activity=self.activity, views_counter=3)
 

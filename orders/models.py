@@ -43,14 +43,14 @@ class Order(models.Model):
             new_status = self.status
             original_order = Order.objects.get(pk=self.pk)
             original_status = original_order.status
-            
+
             if not original_status == new_status:
                 if new_status in [self.ORDER_APPROVED_STATUS, self.ORDER_PENDING_STATUS]:
                     self.calendar.decrease_capacity(self.num_enrolled())
                 elif new_status in [self.ORDER_CANCELLED_STATUS, self.ORDER_DECLINED_STATUS]:
                     self.calendar.increase_capacity(self.num_enrolled())
 
-        super(Order, self).save(*args,**kwargs)
+        super(Order, self).save(*args, **kwargs)
 
     def num_enrolled(self):
         return self.assistants.enrolled().count()
@@ -96,7 +96,7 @@ class Assistant(Tokenizable):
     enrolled = models.BooleanField(default=True)
 
     objects = AssistantQuerySet.as_manager()
-    
+
     def save(self, *args, **kwargs):
         is_enrolled = self.enrolled
         order = self.order
