@@ -14,7 +14,6 @@ from activities.utils import PaymentUtil
 from utils.loggers import PaymentLogger
 
 
-
 class PayUBankList(APIView):
     def get(self, request, *args, **kwargs):
         payment_util = PaymentUtil(request)

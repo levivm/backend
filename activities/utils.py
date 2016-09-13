@@ -158,7 +158,7 @@ class PaymentUtil(object):
 
         # get base amount based on package price or calendar session price
         base_amount = calendar.packages.get(id=package_id).price if package_id \
-            else calendar.session_price
+            and calendar.activity.is_open else calendar.session_price
 
         # get amount base on base_amount and assistants amount
         quantity = int(self.request.data['quantity'])
@@ -284,7 +284,9 @@ class PaymentUtil(object):
         timestamp = calendar.timegm(now().timetuple())
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
-        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
+        package_id = self.request.data.get('package')
+        reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_id,
+                                            activity_id, calendar_id)
         return reference
 
     def valid_test_user(self):

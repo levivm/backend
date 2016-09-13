@@ -360,10 +360,18 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
                 o.assistants.all() if a.enrolled]
 
     def increase_capacity(self, amount):
+        # Dont increase capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity + amount
         self.save(update_fields=['available_capacity'])
 
     def decrease_capacity(self, amount):
+        # Dont decrease capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
 

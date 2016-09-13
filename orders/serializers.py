@@ -166,6 +166,8 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         return data
 
     def create(self, validated_data):
+        TRULII_FEE = 'trulii'
+
         assistants_data = validated_data.pop('assistants')
         student = self.context.get('view').student
         validated_data.update({
@@ -176,10 +178,17 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         })
         order = Order(**validated_data)
         calendar = order.calendar
-        order.amount = calendar.session_price * order.quantity
+
+        package_id = self.context.get('request').data.get('package')
+        base_amount = calendar.packages.get(id=package_id).price if package_id \
+            and calendar.activity.is_open else calendar.session_price
+
+        # base_amount = calendar.session_price if not calendar.activity.is_open else calendar.
+        # if calendar.activity.is_open:
+        order.amount = base_amount * order.quantity
 
         if not calendar.is_free:
-            order.fee = Fee.objects.last()
+            order.fee = Fee.objects.get(name=TRULII_FEE)
 
         order.save()
 
