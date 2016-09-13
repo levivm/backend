@@ -109,7 +109,7 @@ class PaymentUtil(object):
     card_association = None
     last_four_digits = None
 
-    def __init__(self, request, activity=None, calendar=None, coupon=None):
+    def __init__(self, request, activity=None, calendar=None, package=None, coupon=None):
         super(PaymentUtil, self).__init__()
         self.request = request
         self.calendar = calendar
@@ -117,8 +117,7 @@ class PaymentUtil(object):
             self.activity = activity
 
         # Set package if there is any
-        package_id = self.request.data.get('package')
-        self.package = calendar.packages.get(id=package_id) if package_id else None
+        self.package = package
 
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         self.coupon = coupon
@@ -293,7 +292,7 @@ class PaymentUtil(object):
         timestamp = calendar.timegm(now().timetuple())
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
-        package_quantity = self.package.quantity if self.package else 'undefined'
+        package_quantity = self.package.quantity if self.package else 'NA'
         reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_quantity,
                                             activity_id, calendar_id)
         return reference
