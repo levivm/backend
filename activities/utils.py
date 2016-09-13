@@ -293,7 +293,8 @@ class PaymentUtil(object):
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
         package_quantity = self.package.quantity if self.package else 'NA'
-        reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_quantity,
+        package_id = self.package.id if self.package else 'NA'
+        reference = "{}-{}-{}-{}-{}-{}".format(timestamp, user_id, package_id, package_quantity,
                                             activity_id, calendar_id)
         return reference
 
