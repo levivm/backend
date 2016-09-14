@@ -8,3 +8,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         Fee.objects.get_or_create(name='trulii', amount=0.08)
+        Fee.objects.get_or_create(name='IVA', amount=0.16)
