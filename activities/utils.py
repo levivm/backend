@@ -109,11 +109,16 @@ class PaymentUtil(object):
     card_association = None
     last_four_digits = None
 
-    def __init__(self, request, activity=None, coupon=None):
+    def __init__(self, request, activity=None, calendar=None, package=None, coupon=None):
         super(PaymentUtil, self).__init__()
         self.request = request
+        self.calendar = calendar
         if activity:
             self.activity = activity
+
+        # Set package if there is any
+        self.package = package
+
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         self.coupon = coupon
 
@@ -142,7 +147,7 @@ class PaymentUtil(object):
         return ip
 
     def get_payu_amount_values(self):
-        fee_iva = Fee.objects.get(name='IVA').amount
+        fee_iva = Fee.objects.get(type=Fee.IVA).amount
         amount = self.get_amount()
         tx_value = amount
         tx_tax = amount * fee_iva
@@ -150,14 +155,15 @@ class PaymentUtil(object):
         return tx_value, tx_tax, tx_tax_return_base
 
     def get_amount(self):
-        calendar_id = self.request.data.get('calendar')
-        package_id = self.request.data.get('package')
 
         # get calendar
-        calendar = Calendar.objects.get(id=calendar_id)
+        calendar = self.calendar
+
+        # get package
+        package = self.package
 
         # get base amount based on package price or calendar session price
-        base_amount = calendar.packages.get(id=package_id).price if package_id \
+        base_amount = package.price if package \
             and calendar.activity.is_open else calendar.session_price
 
         # get amount base on base_amount and assistants amount
@@ -284,8 +290,9 @@ class PaymentUtil(object):
         timestamp = calendar.timegm(now().timetuple())
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
-        package_id = self.request.data.get('package')
-        reference = "{}-{}-{}-{}-{}".format(timestamp, user_id, package_id,
+        package_quantity = self.package.quantity if self.package else 'NA'
+        package_id = self.package.id if self.package else 'NA'
+        reference = "{}-{}-{}-{}-{}-{}".format(timestamp, user_id, package_id, package_quantity,
                                             activity_id, calendar_id)
         return reference
 
@@ -513,7 +520,6 @@ class ActivityStatsUtil(object):
             data = self._get_data(orders=orders)
             self._sum_points(data=data)
             points.append({str(date.date()): data})
-
         return points
 
     def _get_yearly_points(self, dates):
@@ -539,7 +545,7 @@ class ActivityStatsUtil(object):
         for order in orders:
             gross += order.amount
             if order.fee:
-                fee += order.amount * order.fee.amount
+                fee += int(order.fee)
             else:
                 fee += 0
 

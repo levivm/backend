@@ -10,7 +10,7 @@ from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
 
-from utils.mixins import ImageOptimizable, ListUniqueOrderedElementsMixin
+from utils.mixins import ImageOptimizable
 
 
 class Student(ImageOptimizable, Updateable, models.Model):
@@ -91,22 +91,23 @@ class Student(ImageOptimizable, Updateable, models.Model):
 
         # Proximas
         if status == activities_constants.NEXT:
-            return [o.calendar.activity for o in
+            return list(set(o.calendar.activity for o in
                     self.orders.select_related(*select_related_fields)
                         .prefetch_related(*prefetch_related_fields).filter(
-                        calendar__initial_date__gte=now())]
+                        calendar__initial_date__gte=now())))
         # Por evaluar
         elif status == activities_constants.PAST:
-            return [o.calendar.activity for o in
+            return list(set(o.calendar.activity for o in
                     self.orders.select_related(*select_related_fields)
                         .prefetch_related(*prefetch_related_fields).filter(
-                        calendar__initial_date__lt=now() - timedelta(days=30))]
+                        calendar__initial_date__lt=now() - timedelta(days=30))))
         # Iniciadas
         elif status == activities_constants.CURRENT:
-            return [o.calendar.activity for o in
+            return list(set(o.calendar.activity for o in
                     self.orders.select_related(*select_related_fields)
                         .prefetch_related(*prefetch_related_fields).filter(
-                        calendar__initial_date__lt=now(), calendar__initial_date__gte=now() - timedelta(days=30))]
+                        calendar__initial_date__lt=now(), 
+                        calendar__initial_date__gte=now() - timedelta(days=30))))
         else:
             return self.orders.select_related('calendar__activity').all()
 

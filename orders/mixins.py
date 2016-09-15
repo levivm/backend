@@ -2,6 +2,7 @@ from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 
 import logging
 
@@ -26,10 +27,10 @@ class ProcessPaymentMixin(object):
     coupon = None
     logger = logging.getLogger('payment')
 
-    def proccess_payment(self, request, activity, serializer):
+    def proccess_payment(self, request, activity, calendar, package, serializer):
         """ Proccess payments """
         payment_method = request.data.get('payment_method')
-        payment = PaymentUtil(request, activity, self.coupon)
+        payment = PaymentUtil(request, activity, calendar, package, self.coupon)
 
         if payment_method == Payment.CC_PAYMENT_TYPE:
 
@@ -47,6 +48,12 @@ class ProcessPaymentMixin(object):
         calendar_id = request.data.get('calendar')
         calendar = Calendar.objects.get(id=calendar_id)
         return calendar
+
+    @staticmethod
+    def get_package(request, calendar):
+        package_id = request.data.get('package')
+        package = calendar.packages.get(id=package_id) if package_id else None
+        return package
 
     @classmethod
     def get_organizer(cls, request):
@@ -92,17 +99,20 @@ class ProcessPaymentMixin(object):
     def proccess_payment_cc(self, payment, serializer):
         """ Process Credit Card Payments """
 
+        APPROVED = 'APPROVED'
+        PENDING = 'PENDING'
+
         logger = PaymentLogger()
 
         charge, raw_response, payu_request = payment.creditcard()
 
-        if charge['status'] == 'APPROVED' or charge['status'] == 'PENDING':
+        if charge['status'] == APPROVED or charge['status'] == PENDING:
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
             serializer.context['coupon'] = self.coupon
             response = self.call_create(serializer=serializer)
-            if charge['status'] == 'APPROVED':
+            if charge['status'] == APPROVED:
                 self.redeem_coupon(self.request.user.student_profile)
                 task_data = {
                     'payment_method': settings.CC_METHOD_PAYMENT_ID
@@ -140,11 +150,13 @@ class ProcessPaymentMixin(object):
 
     def proccess_payment_pse(self, payment, serializer):
         """ Proccess PSE Payments """
+        PENDING = 'PENDING'
+
         logger = PaymentLogger()
 
         charge, raw_response, payu_request = payment.pse_payu_payment()
 
-        if charge['status'] == 'PENDING':
+        if charge['status'] == PENDING:
 
             serializer.context['status'] = charge['status'].lower()
             serializer.context['payment'] = charge['payment']
