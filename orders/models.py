@@ -118,7 +118,6 @@ class Order(models.Model):
             payu_total_fee += renta + ica
 
         total_fee = payu_total_fee + trulii_total_fee
-        print(locals())
         return total_fee
 
 

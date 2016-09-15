@@ -520,7 +520,6 @@ class ActivityStatsUtil(object):
             data = self._get_data(orders=orders)
             self._sum_points(data=data)
             points.append({str(date.date()): data})
-
         return points
 
     def _get_yearly_points(self, dates):

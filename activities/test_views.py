@@ -1210,13 +1210,16 @@ class AutoCompleteViewTest(BaseAPITestCase):
 class ActivityStatsViewTest(BaseAPITestCase):
 
     def setUp(self):
+        from django.core import management
+        management.call_command('load_fee')
+
         super(ActivityStatsViewTest, self).setUp()
 
         with mock.patch('django.utils.timezone.now') as mock_now:
             mock_now.return_value = datetime.datetime(2015, 12, 15, tzinfo=utc)
             self.activity = ActivityFactory(organizer=self.organizer)
 
-        self.fee = FeeFactory(amount=0.08)
+        self.fee = 12000
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,
@@ -1238,18 +1241,21 @@ class ActivityStatsViewTest(BaseAPITestCase):
             dates = list(rrule(DAILY, dtstart=datetime.date(2016, 1, 1),
                                until=datetime.date(2016, 1, 31), byweekday=range(7)))
 
+            amount = 50000.0
+            fee = Order.get_total_fee('CC', amount, None)
             for date in dates:
                 mock_now.return_value = date
                 OrderFactory.create_batch(
                     size=2,
                     calendar=self.calendar,
-                    amount=factory.Iterator([50000, 100000]),
-                    fee=self.fee,
+                    amount=amount,
+                    fee=fee,
                     status=Order.ORDER_APPROVED_STATUS)
         points = []
-        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        data = {'gross': 100000.0, 'fee': fee * 2, 'net': 100000.0 - fee * 2}
         for i, date in enumerate(dates):
-            points.append({str(date.date()): {key: data[key] * (i+1) for key in data}})
+            points.append({str(date.date()):
+                          {key: data[key] * (i + 1) for key in data}})
 
         total_points = {
             'total_gross': 74400000,
