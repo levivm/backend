@@ -1222,7 +1222,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
             self.activity = ActivityFactory(organizer=self.organizer)
 
         self.amount = 50000.0
-        self.fee = int(Order.get_total_fee('CC', self.amount, None))
+        self.fee = Order.get_total_fee('CC', self.amount, None).get('total_fee')
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,

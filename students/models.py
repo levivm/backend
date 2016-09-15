@@ -10,7 +10,7 @@ from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
 
-from utils.mixins import ImageOptimizable, ListUniqueOrderedElementsMixin
+from utils.mixins import ImageOptimizable
 
 
 class Student(ImageOptimizable, Updateable, models.Model):

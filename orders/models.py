@@ -36,7 +36,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     fee = models.FloatField()
     is_free = models.BooleanField(default=False)
-    fee_details = JSONField()
+    fee_detail = JSONField()
 
     objects = OrderQuerySet.as_manager()
 
@@ -53,6 +53,14 @@ class Order(models.Model):
                     self.calendar.increase_capacity(self.num_enrolled())
 
         super(Order, self).save(*args, **kwargs)
+
+    def set_fee(self, payment, organizer_regimen):
+        self.fee_detail = Order.get_total_fee(payment.payment_type, 
+                                       self.amount, organizer_regimen)
+        self.fee = self.fee_detail.get('total_fee')
+        self.save(update_fields=['fee', 'fee_detail'])
+
+
 
     def num_enrolled(self):
         return self.assistants.enrolled().count()
@@ -120,7 +128,24 @@ class Order(models.Model):
             payu_total_fee += renta + ica
 
         total_fee = payu_total_fee + trulii_total_fee
-        return total_fee
+
+
+        fee_detail = {
+            'trulii_fee': trulii_fee,
+            'trulii_tax_fee': trulii_tax_fee,
+            'trulii_total_fee': trulii_total_fee,
+            'reteiva': reteiva,
+            'reteica': reteica,
+            'payu_fee': payu_fee,
+            'payu_tax_fee': payu_tax_fee,
+            'payu_trulii_tax_fee': payu_trulii_tax_fee,
+            'payu_total_fee': payu_total_fee,
+            'renta': renta,
+            'ica': ica,  
+            'total_fee': total_fee          
+        }
+
+        return fee_detail
 
 
 class Assistant(Tokenizable):

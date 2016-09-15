@@ -70,6 +70,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentSerializer(read_only=True)
     fee = serializers.FloatField(read_only=True)
+    fee_datail = serializers.JSONField()
     coupon = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
 
@@ -89,6 +90,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'calendar_initial_date',
             'activity_id',
             'fee',
+            'fee_datail',
             'is_free',
             'total',
             'total_without_coupon',
@@ -119,6 +121,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
                 'code': obj.coupon.token
             }
         return None
+
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
@@ -187,12 +190,13 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         # if calendar.activity.is_open:
         order.amount = base_amount * order.quantity
 
-        if not calendar.is_free:
-            # order.fee = Fee.objects.get(type=TRULII_FEE)
-            order.fee = Order.get_total_fee(payment.payment_type,
-                                            order.amount, organizer_regimen)
-
         order.save()
+
+        if not calendar.is_free:
+            order.set_fee(payment, organizer_regimen)
+            # order.fee = Fee.objects.get(type=TRULII_FEE)
+            # order.fee = Order.get_total_fee(payment.payment_type,
+            #                                 order.amount, organizer_regimen)
 
         for assistant in assistants_data:
             instance = Assistant(order=order, **assistant)
