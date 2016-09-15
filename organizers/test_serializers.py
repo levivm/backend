@@ -94,7 +94,7 @@ class OrganizerBankInfoSerializerTest(APITestCase):
             serializer.is_valid(raise_exception=True)
 
 
-class OrganizerSerialiezerTest(TestMixinUtils, APITestCase):
+class OrganizerSerializerTest(TestMixinUtils, APITestCase):
     """
     Test the OrganizerSerializer
     """

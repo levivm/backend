@@ -207,7 +207,7 @@ class ProcessPaymentTaskMixin(object):
         associate_student_to_messages_task = AssociateStudentToMessagesTask()
 
         # Create Balance log to organizer
-        BalanceLog.create(organizer=self.organizer, calendar=self.calendar)
+        BalanceLog.create(organizer=self.organizer, order=self.order)
 
         # Crete task to recalculate organizer unavailable amount
         calculate_organizer_balance_task = CalculateOrganizerBalanceTask()
