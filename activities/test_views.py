@@ -5,6 +5,9 @@ import json
 import tempfile
 import time
 from datetime import timedelta
+from collections import defaultdict
+from django.core import management
+
 
 import factory
 import mock
@@ -1210,7 +1213,6 @@ class AutoCompleteViewTest(BaseAPITestCase):
 class ActivityStatsViewTest(BaseAPITestCase):
 
     def setUp(self):
-        from django.core import management
         management.call_command('load_fee')
 
         super(ActivityStatsViewTest, self).setUp()
@@ -1219,7 +1221,8 @@ class ActivityStatsViewTest(BaseAPITestCase):
             mock_now.return_value = datetime.datetime(2015, 12, 15, tzinfo=utc)
             self.activity = ActivityFactory(organizer=self.organizer)
 
-        self.fee = 12000
+        self.amount = 50000.0
+        self.fee = int(Order.get_total_fee('CC', self.amount, None))
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,
@@ -1241,27 +1244,25 @@ class ActivityStatsViewTest(BaseAPITestCase):
             dates = list(rrule(DAILY, dtstart=datetime.date(2016, 1, 1),
                                until=datetime.date(2016, 1, 31), byweekday=range(7)))
 
-            amount = 50000.0
-            fee = Order.get_total_fee('CC', amount, None)
             for date in dates:
                 mock_now.return_value = date
                 OrderFactory.create_batch(
                     size=2,
                     calendar=self.calendar,
-                    amount=amount,
-                    fee=fee,
+                    amount=self.amount,
+                    fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
         points = []
-        data = {'gross': 100000.0, 'fee': fee * 2, 'net': 100000.0 - fee * 2}
+        data = {'gross': 100000.0, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
         for i, date in enumerate(dates):
             points.append({str(date.date()):
                           {key: data[key] * (i + 1) for key in data}})
 
-        total_points = {
-            'total_gross': 74400000,
-            'total_net': 68448000,
-            'total_fee': 5952000
-        }
+        total_points = defaultdict(int, {
+            'total_gross': data['gross'] * 496,
+            'total_net': data['net'] * 496,
+            'total_fee': data['fee'] * 496
+        })
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
@@ -1302,22 +1303,22 @@ class ActivityStatsViewTest(BaseAPITestCase):
                 OrderFactory.create_batch(
                     size=2,
                     calendar=self.calendar,
-                    amount=factory.Iterator([50000, 100000]),
+                    amount=self.amount,
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
 
         points = []
-        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        data = {'gross': 100000, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
         dates.pop(0)
         dates.append(now() + timedelta(days=1))
         for i, date in enumerate(dates):
             points.append({str(date.date() - timedelta(days=1)): {key: data[key] * (i+1) for key in data}})
 
-        total_points = {
-            'total_gross': 6750000.0,
-            'total_fee': 540000.0,
-            'total_net': 6210000.0
-        }
+        total_points = defaultdict(int, {
+            'total_gross': data['gross'] * 45,
+            'total_net': data['net'] * 45,
+            'total_fee': data['fee'] * 45
+        })
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),

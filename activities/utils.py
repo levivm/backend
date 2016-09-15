@@ -545,7 +545,7 @@ class ActivityStatsUtil(object):
         for order in orders:
             gross += order.amount
             if order.fee:
-                fee += order.fee
+                fee += int(order.fee)
             else:
                 fee += 0
 
