@@ -80,11 +80,40 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
 
     bank = BankField(choices=OrganizerBankInfo.BANKS)
-
+    ERROR_EDIT_NOT_ALLOWED = 'No puede modificar la información bancaria, comuniquese con nosotros'
 
     class Meta:
         model = OrganizerBankInfo
 
+    def validate_beneficiary(self, value):
+        if self.instance and not self.instance.beneficiary == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_bank(self, value):
+        if self.instance and not self.instance.bank == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account_type(self, value):
+        if self.instance and not self.instance.account_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account(self, value):
+        if self.instance and not self.instance.account == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document_type(self, value):
+        if self.instance and not self.instance.document_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document(self, value):
+        if self.instance and not self.instance.document == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
 
     def validate(self, validated_data):
         person_type = validated_data.get('person_type')

@@ -59,7 +59,6 @@ class Order(models.Model):
     def get_fee_detail(cls, order, payment, organizer_regimen):
         fee_detail = Order.get_total_fee(payment.payment_type, 
                                        order.amount, organizer_regimen)
-        # fee = fee_detail.get('total_fee')
         return fee_detail
 
 
@@ -118,8 +117,8 @@ class Order(models.Model):
 
         # If organizer is major contributor, substract reteica and reteiva
         if regimen == OrganizerBankInfo.MAJOR_CONTIBUTOR:
-            reteiva = fees.get('reteica') * trulii_tax_fee
-            reteica = fees.get('reteica_num') * trulii_fee / fees.get('reteica_dem')
+            reteiva = fees.get('reteiva') * trulii_tax_fee
+            reteica = fees.get('reteica_num') * trulii_fee / fees.get('reteica_den')
             trulii_total_fee -= reteica + reteiva
 
         # PayU fee
@@ -154,7 +153,7 @@ class Order(models.Model):
             'regimen': regimen,
             'payment_type': payment_type
         }
-        
+
         fee_detail.update({key: round(value, 2) 
                            for key, value in fee_detail.items() 
                            if  isinstance(value, numbers.Real)})

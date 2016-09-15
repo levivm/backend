@@ -136,6 +136,7 @@ class CalendarPackageSerializer(serializers.ModelSerializer):
             'id',
             'quantity',
             'price',
+            'name'
         )
 
     def validate_quantity(self, quantity):

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
-import operator
-import pytz
 import os
 from datetime import datetime, date
-from functools import reduce
 from random import Random
 
 from django.conf import settings

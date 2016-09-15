@@ -16,7 +16,7 @@ class Command(BaseCommand):
             'renta': 0.015,
             'ica': 0.00414,
             'iva_trulii_payu': 0.15,
-            'reteica_num': 0.1104,
+            'reteica_num': 11.04,
             'reteica_den': 1000,
             'reteiva': 0.15,
         }
