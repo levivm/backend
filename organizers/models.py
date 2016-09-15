@@ -1,11 +1,20 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
 
 
 class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
+    ORGANIZER_NORMAL = 'normal'
+    ORGANIZER_SPECIAL = 'special'
+
+    ORGANIZER_TYPES = (
+        (ORGANIZER_NORMAL, _('Normal')),
+        (ORGANIZER_SPECIAL, _('Especial')),
+    )
+
     user = models.OneToOneField(User, related_name='organizer_profile')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -17,6 +26,7 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     bio = models.TextField(blank=True)
     rating = models.FloatField(default=0)
     verified_email = models.BooleanField(default=True)
+    type = models.CharField(max_length=15, choices=ORGANIZER_TYPES, default='normal')
 
     permissions = ('organizers.change_organizer',)
 

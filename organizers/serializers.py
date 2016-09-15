@@ -56,6 +56,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
             'locations',
             'rating',
             'verified_email',
+            'type',
         )
         read_only_fields = ('id',)
         depth = 1

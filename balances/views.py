@@ -42,7 +42,6 @@ class WithdrawalListCreateView(ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-
         organizer.balance_logs.available().update(status=BalanceLog.STATUS_REQUESTED)
         calculate_organizer_balance_task = CalculateOrganizerBalanceTask()
         calculate_organizer_balance_task.delay([organizer.id])
@@ -51,5 +50,5 @@ class WithdrawalListCreateView(ListCreateAPIView):
         data_response = serializer.data
         data_response.update({
             'new_available_amount': 0
-            })
+        })
         return Response(data_response, status=status.HTTP_201_CREATED, headers=headers)

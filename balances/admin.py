@@ -13,10 +13,10 @@ class BalanceLogAdmin(admin.ModelAdmin):
     search_fields = ['calendar__id', 'organizer__name']
 
     def calendar_initial_date(self, obj):
-        return obj.calendar.initial_date
+        return obj.order.calendar.initial_date
 
     def activity_title(self, obj):
-        return obj.calendar.activity.title
+        return obj.order.calendar.activity.title
 
 
 @admin.register(Withdrawal)

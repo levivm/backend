@@ -1,7 +1,7 @@
 import factory
 
-from activities.factories import CalendarFactory
 from balances.models import Balance, BalanceLog, Withdrawal
+from orders.factories import OrderFactory
 from organizers.factories import OrganizerFactory
 
 
@@ -17,7 +17,7 @@ class BalanceLogFactory(factory.django.DjangoModelFactory):
         model = BalanceLog
 
     organizer = factory.SubFactory(OrganizerFactory)
-    calendar = factory.SubFactory(CalendarFactory)
+    order = factory.SubFactory(OrderFactory)
 
 
 class WithdrawalFactory(factory.django.DjangoModelFactory):
