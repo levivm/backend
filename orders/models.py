@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.postgres.fields import JSONField
 
 from activities.models import Calendar
 from organizers.models import OrganizerBankInfo
@@ -35,6 +36,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     fee = models.FloatField()
     is_free = models.BooleanField(default=False)
+    fee_details = JSONField()
 
     objects = OrderQuerySet.as_manager()
 

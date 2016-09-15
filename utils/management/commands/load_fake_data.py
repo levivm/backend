@@ -236,7 +236,7 @@ class Command(BaseCommand):
 
     def create_fee(self) -> Fee:
         self.stdout.write('Creando fee')
-        return FeeFactory()
+        return 3568.22
 
     def create_referrals(self) -> Referral:
         self.stdout.write('Creando referrals')
