@@ -1,3 +1,4 @@
+import numbers
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
@@ -54,11 +55,12 @@ class Order(models.Model):
 
         super(Order, self).save(*args, **kwargs)
 
-    def set_fee(self, payment, organizer_regimen):
-        self.fee_detail = Order.get_total_fee(payment.payment_type, 
-                                       self.amount, organizer_regimen)
-        self.fee = self.fee_detail.get('total_fee')
-        self.save(update_fields=['fee', 'fee_detail'])
+    @classmethod
+    def get_fee_detail(cls, order, payment, organizer_regimen):
+        fee_detail = Order.get_total_fee(payment.payment_type, 
+                                       order.amount, organizer_regimen)
+        # fee = fee_detail.get('total_fee')
+        return fee_detail
 
 
 
@@ -104,6 +106,11 @@ class Order(models.Model):
 
         IVA = fees.get('iva')
 
+        renta = 0
+        ica = 0
+        reteiva = 0
+        reteica = 0
+
         # Trulii fee
         trulii_fee = base * fees.get('trulii')
         trulii_tax_fee = trulii_fee * IVA
@@ -122,6 +129,7 @@ class Order(models.Model):
         payu_total_fee = payu_fee + payu_tax_fee + payu_trulii_tax_fee
 
         # Add ICA and Renta if the payment was made with credit card
+
         if payment_type == Payment.CC_PAYMENT_TYPE:
             renta = fees.get('renta') * base
             ica = fees.get('ica') * base
@@ -141,9 +149,15 @@ class Order(models.Model):
             'payu_trulii_tax_fee': payu_trulii_tax_fee,
             'payu_total_fee': payu_total_fee,
             'renta': renta,
-            'ica': ica,  
-            'total_fee': total_fee          
+            'ica': ica,
+            'total_fee': total_fee,
+            'regimen': regimen,
+            'payment_type': payment_type
         }
+        
+        fee_detail.update({key: round(value, 2) 
+                           for key, value in fee_detail.items() 
+                           if  isinstance(value, numbers.Real)})
 
         return fee_detail
 

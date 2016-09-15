@@ -70,7 +70,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentSerializer(read_only=True)
     fee = serializers.FloatField(read_only=True)
-    fee_datail = serializers.JSONField()
+    fee_datail = serializers.JSONField(read_only=True)
     coupon = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
 
@@ -190,13 +190,17 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         # if calendar.activity.is_open:
         order.amount = base_amount * order.quantity
 
-        order.save()
-
         if not calendar.is_free:
-            order.set_fee(payment, organizer_regimen)
+            fee_detail = Order.get_fee_detail(order, payment, organizer_regimen)
+            order.fee_detail = fee_detail
+            order.fee = fee_detail.get('total_fee')
             # order.fee = Fee.objects.get(type=TRULII_FEE)
             # order.fee = Order.get_total_fee(payment.payment_type,
             #                                 order.amount, organizer_regimen)
+        order.save()
+
+
+
 
         for assistant in assistants_data:
             instance = Assistant(order=order, **assistant)
