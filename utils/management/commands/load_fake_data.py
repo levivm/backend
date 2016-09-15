@@ -216,7 +216,7 @@ class Command(BaseCommand):
             orders.append(OrderFactory.create_batch(size, calendar=calendar,
                                                     student=factory.Iterator(
                                                         Student.objects.all(), cycle=True),
-                                                    fee=fee, quantity=quantity))
+                                                    fee=fee, fee_detail={}, quantity=quantity))
 
         for o in orders:
             fee_detail = Order.get_fee_detail(o, o.payment, None)
