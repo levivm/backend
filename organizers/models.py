@@ -4,6 +4,7 @@ from django.db import models
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
 
+
 class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     user = models.OneToOneField(User, related_name='organizer_profile')
     name = models.CharField(max_length=100)
@@ -19,13 +20,13 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
 
     permissions = ('organizers.change_organizer',)
 
-
     def __str__(self):
         return '%s' % self.name
 
     def save(self, *args, **kwargs):
         if self.photo and not kwargs.get('update_fields'):
-            self.photo.file.file = self.optimize(bytesio=self.photo.file.file, width=self.photo.width,
+            self.photo.file.file = self.optimize(bytesio=self.photo.file.file,
+                                                 width=self.photo.width,
                                                  height=self.photo.height)
 
         super(Organizer, self).save(user=self.user, obj=self, *args, **kwargs)
@@ -43,8 +44,6 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
         return activities
 
 
-
-# Create your models here.
 class Instructor(AssignPermissionsMixin, models.Model):
     full_name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, null=True)

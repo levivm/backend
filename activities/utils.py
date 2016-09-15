@@ -147,7 +147,7 @@ class PaymentUtil(object):
         return ip
 
     def get_payu_amount_values(self):
-        fee_iva = Fee.objects.get(name='IVA').amount
+        fee_iva = Fee.objects.get(type=Fee.IVA).amount
         amount = self.get_amount()
         tx_value = amount
         tx_tax = amount * fee_iva
@@ -155,13 +155,11 @@ class PaymentUtil(object):
         return tx_value, tx_tax, tx_tax_return_base
 
     def get_amount(self):
-        # calendar_id = self.request.data.get('calendar')
-        package_id = self.request.data.get('package')
 
         # get calendar
         calendar = self.calendar
 
-        # get package 
+        # get package
         package = self.package
 
         # get base amount based on package price or calendar session price
@@ -548,7 +546,7 @@ class ActivityStatsUtil(object):
         for order in orders:
             gross += order.amount
             if order.fee:
-                fee += order.amount * order.fee.amount
+                fee += order.fee
             else:
                 fee += 0
 

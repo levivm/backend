@@ -55,7 +55,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         """
 
         payment = mommy.make(Payment)
-        fee = mommy.make(Fee)
+        fee = 1000
         order = mommy.make(Order, coupon__coupon_type=self.coupon_type, calendar=self.calendar,
                            quantity=1, amount=500,
                            payment=payment, fee=fee)
@@ -75,7 +75,7 @@ class OrdersSerializerTest(BaseAPITestCase):
             'calendar_initial_date': UnixEpochDateField().to_representation(
                 order.calendar.initial_date),
             'activity_id': order.calendar.activity.id,
-            'fee': fee.amount,
+            'fee': fee,
             'is_free': order.is_free,
             'total': order.total,
             'coupon': {

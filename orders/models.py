@@ -1,12 +1,12 @@
-from django.contrib.auth.models import User
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from activities.models import Calendar
+from organizers.models import OrganizerBankInfo
 from orders.querysets import OrderQuerySet, AssistantQuerySet
 from payments.models import Payment, Fee
-from referrals.models import Coupon, Redeem
+from referrals.models import Coupon
 from students.models import Student
 from utils.behaviors import Tokenizable
 
@@ -33,7 +33,7 @@ class Order(models.Model):
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    fee = models.ForeignKey(Fee, blank=True, null=True)
+    fee = models.FloatField()
     is_free = models.BooleanField(default=False)
 
     objects = OrderQuerySet.as_manager()
@@ -68,7 +68,7 @@ class Order(models.Model):
     @cached_property
     def total_net(self):
         if self.fee:
-            return self.amount - (self.amount * self.fee.amount)
+            return self.amount - self.fee
         return self.amount
 
     @cached_property
@@ -86,6 +86,40 @@ class Order(models.Model):
 
     def get_organizer(self):
         return self.calendar.activity.organizer
+
+    @classmethod
+    def get_total_fee(cls, payment_type, base, regimen):
+
+        fees = Fee.get_fees_dict()
+
+        IVA = fees.get('iva')
+
+        # Trulii fee
+        trulii_fee = base * fees.get('trulii')
+        trulii_tax_fee = trulii_fee * IVA
+        trulii_total_fee = trulii_fee + trulii_tax_fee
+
+        # If organizer is major contributor, substract reteica and reteiva
+        if regimen == OrganizerBankInfo.MAJOR_CONTIBUTOR:
+            reteiva = fees.get('reteica') * trulii_tax_fee
+            reteica = fees.get('reteica_num') * trulii_fee / fees.get('reteica_dem')
+            trulii_total_fee -= reteica + reteiva
+
+        # PayU fee
+        payu_fee = base * fees.get('payu_fee_percentage') + fees.get('payu_fee_fixed')
+        payu_tax_fee = IVA * payu_fee
+        payu_trulii_tax_fee = fees.get('iva_trulii_payu') * trulii_tax_fee
+        payu_total_fee = payu_fee + payu_tax_fee + payu_trulii_tax_fee
+
+        # Add ICA and Renta if the payment was made with credit card
+        if payment_type == Payment.CC_PAYMENT_TYPE:
+            renta = fees.get('renta') * base
+            ica = fees.get('ica') * base
+            payu_total_fee += renta + ica
+
+        total_fee = payu_total_fee + trulii_total_fee
+        print(locals())
+        return total_fee
 
 
 class Assistant(Tokenizable):
