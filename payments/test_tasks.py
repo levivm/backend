@@ -47,7 +47,7 @@ class SendNewEnrollmentEmailTaskTest(TestMixinUtils, APITestCase):
             'address': order.calendar.activity.location.address,
             'city': order.calendar.activity.location.city.name,
             'requirements': order.calendar.activity.requirements,
-            'detail_url': self.base_url + 'students/dashboard/history/orders/%s' % order.id,
+            'detail_url': self.base_url + 'estudiante/dashboard/transacciones/ordenes/%s' % order.id,
         }
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
@@ -156,7 +156,7 @@ class SendPaymentEmailTaskTest(TestMixinUtils, APITestCase):
             'address': order.calendar.activity.location.address,
             'city': order.calendar.activity.location.city.name,
             'requirements': order.calendar.activity.requirements,
-            'detail_url': self.base_url + 'students/dashboard/history/orders/%s' % order.id,
+            'detail_url': self.base_url + 'estudiante/dashboard/transacciones/ordenes/%s' % order.id,
         }
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
