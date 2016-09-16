@@ -376,12 +376,12 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
 class CalendarPackage(Updateable, models.Model):
 
     MONTH, CLASS = range(1,3)
-    NAME_CHOICES = (
+    TYPE_CHOICES = (
         (MONTH, 'Mes(es)'),
-        (CLASS, 'Clase(s)')
+        (CLASS, 'Clase(s)'),
     )
 
-    name = models.CharField(choices=NAME_CHOICES, max_length=255, blank=True)
+    type = models.CharField(choices=TYPE_CHOICES, max_length=255, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.FloatField()
     calendar = models.ForeignKey(Calendar, related_name='packages')
