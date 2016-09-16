@@ -130,7 +130,7 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
             'price_range': settings.PRICE_RANGE,
-            'package_options': CalendarPackage.NAME_CHOICES
+            'package_options': CalendarPackage.TYPE_CHOICES
         }
 
         return Response(data)
