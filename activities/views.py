@@ -29,7 +29,7 @@ from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
-    ActivityStockPhoto
+    ActivityStockPhoto, CalendarPackage
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
@@ -129,7 +129,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
-            'price_range': settings.PRICE_RANGE
+            'price_range': settings.PRICE_RANGE,
+            'package_options': CalendarPackage.NAME_CHOICES
         }
 
         return Response(data)
