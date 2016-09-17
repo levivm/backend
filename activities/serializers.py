@@ -3,6 +3,7 @@
 
 import urllib
 import unicodedata
+import requests
 
 
 from django.conf import settings
@@ -18,7 +19,8 @@ from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
-from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField, \
+    AmazonS3FileField
 from . import constants as activities_constants
 
 
@@ -49,10 +51,13 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
 
 class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
+    cover = serializers.SerializerMethodField()
     icon_default = serializers.SerializerMethodField()
     icon_active = serializers.SerializerMethodField()
-    cover = serializers.SerializerMethodField()
+    cover_photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    content_photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
     description = HTMLField()
+    headline = HTMLField()
 
     class Meta:
         model = Category
@@ -61,11 +66,12 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'id',
             'subcategories',
             'color',
+            'cover',
             'icon_default',
             'icon_active',
-            'cover',
             'slug',
             'description',
+            'headline',
             'cover_photo',
             'content_photo',
         )
@@ -89,6 +95,8 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
 
 
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
+    photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+
     class Meta:
         model = ActivityPhoto
         fields = (

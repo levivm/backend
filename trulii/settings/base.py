@@ -56,7 +56,7 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'rest_framework_gis',
     'social.apps.django_app.default',
-    # 'admin_honeypot',
+    'admin_honeypot',
     'authentication.apps.AuthenticationConfig',
     'landing',
     'activities',

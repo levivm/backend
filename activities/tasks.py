@@ -68,11 +68,13 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
         return emails
 
     def get_context_data(self):
+        from html import unescape
+
         return {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
             'initial_date': self.calendar.initial_date,
-            'schedules': self.calendar.schedules,
+            'schedules': unescape(self.calendar.schedules),
             # TODO PROBAR SCHEDULE - FIXED
             # 'sessions': [{
             #                  'date': session.date,

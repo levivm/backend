@@ -42,7 +42,7 @@ class Order(models.Model):
     objects = OrderQuerySet.as_manager()
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
     def save(self, *args, **kwargs):
         if self.pk is not None:

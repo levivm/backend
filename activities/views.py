@@ -46,6 +46,19 @@ class CalendarViewSet(viewsets.ModelViewSet):
         activity = get_object_or_404(Activity, pk=activity_id)
         return activity.calendars.all()
 
+    def perform_update(self, serializer):
+        calendar = self.get_object()
+
+        old_initial_date = calendar.initial_date
+        new_initial_date = serializer.validated_data.get('initial_date').date()
+
+        serializer.save()
+
+        # If the initial date changed, send an email to students
+        if not old_initial_date == new_initial_date:
+            task = SendEmailCalendarTask()
+            task.apply_async((calendar.id,), countdown=1800)
+
     def list(self, request, *args, **kwargs):
         calendars = self.get_queryset().order_by('initial_date')
         if request.GET.get('actives'):
@@ -69,13 +82,6 @@ class CalendarViewSet(viewsets.ModelViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
-    def update(self, request, *args, **kwargs):
-        result = super().update(request, partial=True, *args, **kwargs)
-        calendar = self.get_object()
-        task = SendEmailCalendarTask()
-        task.apply_async((calendar.id,), countdown=1800)
-        return result
-
 
 class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
     serializer_class = ActivitiesSerializer
@@ -91,13 +97,12 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
 
-
     def destroy(self, request, *args, **kwargs):
         activity = self.get_object()
         if activity.calendars.filter(orders__isnull=False).exists():
             return Response({'detail': _('No puede eliminar esta actividad, \
                             tiene estudiantes inscritos, contactanos.')},
-                        status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return super().destroy(request, *args, **kwargs)
 
@@ -106,8 +111,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
 
         if activity.calendars.filter(
                 orders__status=Order.ORDER_APPROVED_STATUS).count() > 0:
-            raise ValidationError({'location': ['No se puede cambiar la ubicación con personas'
-                                               'inscritas.']})
+            raise ValidationError({'location': ['No se puede cambiar la ubicación con personas '
+                                                'inscritas.']})
 
         location_data = request.data.copy()
         location_serializer = LocationsSerializer(data=location_data)

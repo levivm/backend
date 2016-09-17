@@ -58,16 +58,13 @@
                                                                         <tr style="padding: 0;margin: 0;border: 0;">
                                                                             <td class="content-description-table" valign="top" align="center" style="padding: 30px !important;margin: 0;border: 0;text-align: left;">
                                                                                 <div style="font-size: 18px;margin-bottom: 15px;">
-                                                                                    <span style="display: block;margin-bottom: 2px;">Fecha de inicio:</span>
+                                                                                    <span style="display: block;margin-bottom: 2px;">Nueva Fecha de inicio:</span>
                                                                                     <span style="font-weight: bold;margin-bottom: 2px;">{{ initial_date|date:"j b Y" }}</span>
-                                                                                </div>
-                                                                                <div style="font-size: 18px;margin-bottom: 15px;">
-                                                                                    <span style="display: block;margin-bottom: 2px;">Precio</span>
-                                                                                    <span style="font-weight: bold;margin-bottom: 2px;"> COP {{ price|floatformat:"0" }}</span>
                                                                                 </div>
                                                                             </td>
                                                                             <td class="content-description-table" valign="top" align="center" style="padding: 30px 30px 30px 10px !important; margin: 0;border: 0;text-align: left;">
-                                                                                {{schedules}}
+                                                                                <span style="display: block;margin-bottom: 2px;">Horario:</span>
+                                                                                {{schedules|safe}}
                                                                             </td>
                                                                         </tr>
                                                                     </table>

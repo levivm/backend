@@ -24,7 +24,8 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
     slug = models.SlugField(blank=True)
-    description = models.TextField()
+    headline = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     cover_photo = models.ImageField(upload_to='categories/', blank=True)
     content_photo = models.ImageField(upload_to='categories/', blank=True)
 
@@ -309,14 +310,16 @@ class ActivityStockPhoto(models.Model):
     def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         sub_category_pictures = cls.get_random_pictures(queryset,
-                                                        activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                                                        activities_constants.
+                                                        MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         sub_category_pictures_amount = len(sub_category_pictures)
         enough_pictures = False if sub_category_pictures_amount < \
-                                   activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS else True
+            activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS \
+            else True
 
         if not enough_pictures:
-            needed_pictures_amount = abs(sub_category_pictures_amount - \
+            needed_pictures_amount = abs(sub_category_pictures_amount -
                                          activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
             category_pictures = cls.get_random_category_pictures(sub_category,
