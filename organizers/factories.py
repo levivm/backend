@@ -3,6 +3,7 @@ import random
 import factory
 from django.contrib.auth.models import Group
 
+from balances.models import Balance
 from organizers.models import Organizer, Instructor, OrganizerBankInfo
 from users.factories import UserFactory
 
@@ -10,7 +11,7 @@ from users.factories import UserFactory
 class OrganizerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Organizer
-        
+
     def __new__(cls, *args, **kwargs):
         return super(OrganizerFactory, cls).__new__(*args, **kwargs)
 

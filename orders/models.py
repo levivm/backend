@@ -37,9 +37,12 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     fee = models.FloatField()
     is_free = models.BooleanField(default=False)
-    fee_detail = JSONField()
+    fee_detail = JSONField(default={})
 
     objects = OrderQuerySet.as_manager()
+
+    def __str__(self):
+        return self.id
 
     def save(self, *args, **kwargs):
         if self.pk is not None:

@@ -11,7 +11,7 @@ from activities.models import Activity
 from orders.models import Assistant
 from referrals.models import Coupon
 from users.mixins import UserTypeMixin
-from utils.paginations import MediumResultsSetPagination
+from utils.paginations import MediumResultsSetPagination, SmallResultsSetPagination
 from .mixins import ProcessPaymentMixin
 from .models import Order
 from .searchs import OrderSearchEngine
@@ -22,7 +22,7 @@ class OrdersViewSet(UserTypeMixin, ProcessPaymentMixin, viewsets.ModelViewSet):
     serializer_class = OrdersSerializer
     queryset = Order.objects.all()
     permission_classes = (IsAuthenticated, DjangoObjectPermissions)
-    pagination_class = MediumResultsSetPagination
+    pagination_class = SmallResultsSetPagination
 
     @staticmethod
     def get_activity(**kwargs):

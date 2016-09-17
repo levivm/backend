@@ -117,7 +117,10 @@ class Command(BaseCommand):
 
     def create_organizers(self):
         self.stdout.write('Creando organizers')
-        return OrganizerFactory.create_batch(self.get_quantity())
+        organizers = OrganizerFactory.create_batch(self.get_quantity())
+        for o in organizers:
+            Balance.objects.create(organizer=o)
+        return organizers
 
     def create_instructors(self):
         self.stdout.write('Creando instructors')
