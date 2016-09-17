@@ -75,12 +75,6 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
             'activity': self.calendar.activity.title,
             'initial_date': self.calendar.initial_date,
             'schedules': unescape(self.calendar.schedules),
-            # TODO PROBAR SCHEDULE - FIXED
-            # 'sessions': [{
-            #                  'date': session.date,
-            #                  'start_time': session.start_time,
-            #                  'end_time': session.end_time,
-            #              } for session in self.calendar.sessions.all()],
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)

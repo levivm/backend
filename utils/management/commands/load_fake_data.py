@@ -11,6 +11,7 @@ from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Ta
     Calendar
 from locations.factories import CityFactory, LocationFactory
 from locations.models import City, Location
+from balances.models import Balance
 from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Order, Assistant
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
