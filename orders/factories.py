@@ -21,6 +21,8 @@ class OrderFactory(factory.django.DjangoModelFactory):
     status = Order.ORDER_APPROVED_STATUS
     payment = factory.SubFactory(PaymentFactory)
     is_free = factory.Faker('boolean', chance_of_getting_true=20)
+    fee = factory.fuzzy.FuzzyInteger(1000, 5000)
+    fee_detail = dict()
 
 
 class AssistantFactory(factory.django.DjangoModelFactory):
