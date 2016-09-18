@@ -34,7 +34,7 @@ ANONYMOUS_USER_ID = -1
 
 # TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['www.trulii.com', 'staging.trulii.com']
+ALLOWED_HOSTS = ['https://www.trulii.com', 'https://staging.trulii.com']
 
 # Application definition
 
