@@ -20,6 +20,7 @@ class ActivitySearchEngine(object):
                  'otro', 'otras', 'otra', 'él', 'tanto', 'esa', 'estos', 'mucho', 'quienes', 'nada', 'muchos', 'cual',
                  'sea', 'poco', 'ella', 'estar', 'haber', 'estas', 'estaba', 'estamos', 'algunas', 'algo', 'nosotros')
 
+    SEARCH_ORDER_OPEN_ATTRIBUTTE = '-is_open'
     SEARCH_ORDER_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MIN_PRICE_ATTRIBUTE = 'closest_calendar_price'
     SEARCH_ORDER_MAX_PRICE_ATTRIBUTE = '-closest_calendar_price'
@@ -28,7 +29,7 @@ class ActivitySearchEngine(object):
     SEARCH_ORDER_CLOSEST_ATTRIBUTE = 'closest'
     SEARCH_ORDER_SCORE_FREE_SELECT = 'score_free'
     SEARCH_ORDER_PRICE_SELECT = 'session_price'
-    SEARCH_ORDER_CLOSEST_SELECT = 'closing_sale'
+    SEARCH_ORDER_CLOSEST_SELECT = 'initial_date'
     SEARCH_ORDER_SCORE_SELECT = 'score'
 
     query_params = None
@@ -72,6 +73,18 @@ class ActivitySearchEngine(object):
     def extra_query(self):
         order = self.order
         query_params = self.query_params
+
+        price_order = False
+        extra_parameter = None
+        select_parameter = None
+
+        if order == activities_constants.ORDER_MIN_PRICE:
+            price_order = True
+            order_by_param = 'ASC'
+        elif order == activities_constants.ORDER_MAX_PRICE:
+            price_order = True
+            order_by_param = 'DESC'
+
         if order == activities_constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
@@ -99,47 +112,89 @@ class ActivitySearchEngine(object):
                 table_parameter = 'activities_calendar'
             extra = {
                 extra_parameter:
-                    'SELECT "'+table_parameter+'".' + select_parameter + ' '
+                    'SELECT "' + table_parameter + '".' + select_parameter + ' '
                     'FROM "activities_calendar" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                    'AND "activities_calendar"."closing_sale" >= %s '
+                    'AND "activities_calendar"."initial_date" >= %s '
                     'AND "activities_calendar"."is_free" = TRUE '
                     'AND "activities_calendar"."available_capacity" > 0 '
-                    'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                    'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
             }
             params = (date, cost_start)
             return {'select': extra, 'select_params': params}
 
         elif cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
-            if without_limit:
+            if price_order and without_limit:
                 extra = {
                     extra_parameter:
-                        'SELECT "activities_calendar".'+select_parameter+' '
+                    'SELECT GREATEST(COALESCE("activities_calendar".' + select_parameter + ', 0),'
+                    'COALESCE("activities_calendarpackage"."price",0) ) as "final_price" '
+                    'FROM "activities_calendar" LEFT OUTER JOIN "activities_calendarpackage" '
+                    'ON "activities_calendarpackage"."calendar_id" = "activities_calendar"."id" '
+                    'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                    'AND "activities_calendar"."initial_date" >= %s '
+                    'AND ("activities_calendar"."session_price" >= %s OR '
+                    '     "activities_calendarpackage"."price" >= %s) '
+                    'AND "activities_calendar"."available_capacity" > 0 '
+                    'AND "activities_calendar"."enroll_open" = TRUE '
+                    'ORDER BY "activities_calendar"."initial_date" ASC, '
+                    '"final_price" ' + order_by_param + ' LIMIT 1'
+                }
+                params = (date, cost_start, cost_start)
+            elif price_order and not without_limit:
+                extra = {
+                    extra_parameter:
+                    'SELECT GREATEST(COALESCE("activities_calendar".' + select_parameter + ', 0),'
+                    'COALESCE("activities_calendarpackage"."price",0) ) as "final_price" '
+                    'FROM "activities_calendar" LEFT OUTER JOIN "activities_calendarpackage" '
+                    ' ON "activities_calendarpackage"."calendar_id" = "activities_calendar"."id" '
+                    'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
+                    ' AND "activities_calendar"."initial_date" >= %s '
+                    ' AND ( '
+                    '     ( "activities_calendar"."session_price" >= %s AND '
+                    '       "activities_calendar"."session_price" <= %s '
+                    '     ) OR '
+                    '     ("activities_calendarpackage"."price" >= %s AND '
+                    '      "activities_calendarpackage"."price" <= %s) '
+                    '     ) '
+                    ' AND "activities_calendar"."available_capacity" > 0'
+                    'AND "activities_calendar"."enroll_open" = TRUE '
+                    'ORDER BY "activities_calendar"."initial_date" ASC, '
+                    '"final_price" ' + order_by_param + ' LIMIT 1'
+                }
+                params = (date, cost_start, cost_end, cost_start, cost_end)
+
+                return {'select': extra, 'select_params': params}
+            elif not price_order and without_limit:
+                extra = {
+                    extra_parameter:
+                        'SELECT "activities_calendar".' + select_parameter + ' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."closing_sale" >= %s'
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
-                        'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                        'AND "activities_calendar"."enroll_open" = TRUE '
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start)
-            else:
+            elif not price_order and not without_limit:
                 extra = {
                     extra_parameter:
-                        'SELECT "activities_calendar".'+select_parameter+' '
+                        'SELECT "activities_calendar".' + select_parameter + ' '
                         'FROM "activities_calendar" '
                         'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
-                        'AND "activities_calendar"."closing_sale" >= %s'
+                        'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
-                        'ORDER BY "activities_calendar"."closing_sale" ASC LIMIT 1'
+                        'AND "activities_calendar"."enroll_open" = TRUE '
+                        'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start, cost_end)
 
-            return {'select':extra, 'select_params': params}
-
+            return {'select': extra, 'select_params': params}
 
     def filter_query(self):
         query_params = self.query_params
@@ -163,8 +218,9 @@ class ActivitySearchEngine(object):
             query = Q(published=True)
 
         if date is not None:
+            # TODO poner date de forma correcto, al igual que en el closest_calendar
             date = datetime.fromtimestamp(int(date) // 1000).replace(second=0)
-            query = query & Q(calendars__closing_sale__gte=date)
+            query = query & Q(calendars__initial_date__gte=date)
 
         if city is not None:
             query &= Q(location__city=city)
@@ -172,9 +228,11 @@ class ActivitySearchEngine(object):
         if cost_start is not None and cost_end is not None and is_free is None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
-                query &= Q(calendars__session_price__gte=(cost_start))
+                query &= Q(calendars__session_price__gte=(cost_start)) |\
+                    Q(calendars__packages__price__gte=(cost_start))
             else:
-                query &= Q(calendars__session_price__range=(cost_start, cost_end))
+                query &= Q(calendars__session_price__range=(cost_start, cost_end)) |\
+                    Q(calendars__packages__price__range=(cost_start, cost_end))
 
         if level is not None and not level == activities_constants.LEVEL_N:
             query &= Q(level=level)
@@ -204,7 +262,7 @@ class ActivitySearchEngine(object):
         elif order_param == activities_constants.ORDER_SCORE:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
         elif order_param == activities_constants.ORDER_CLOSEST:
-            order = [self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
+            order = [self.SEARCH_ORDER_OPEN_ATTRIBUTTE, self.SEARCH_ORDER_CLOSEST_ATTRIBUTE]
         else:
             order = [self.SEARCH_ORDER_SCORE_ATTRIBUTE]
 

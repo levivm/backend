@@ -1,5 +1,6 @@
 import os
 import dj_database_url
+from distutils import util
 
 from .base import *
 
@@ -63,7 +64,7 @@ PAYU_MERCHANT_ID = os.environ.get('PAYU_MERCHANT_ID')
 PAYU_ACCOUNT_ID = os.environ.get('PAYU_ACCOUNT_ID')
 PAYU_API_LOGIN = os.environ.get('PAYU_API_LOGIN')
 PAYU_URL = os.environ.get('PAYU_URL')
-PAYU_TEST = os.environ.get('PAYU_TEST', False)
+PAYU_TEST = util.strtobool(os.environ.get('PAYU_TEST', 'false'))
 PAYU_NOTIFY_URL = os.environ.get('PAYU_NOTIFY_URL')
 PAYU_RESPONSE_URL = os.environ.get('PAYU_RESPONSE_URL')
 

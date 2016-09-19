@@ -26,4 +26,4 @@ class FeeFactory(factory.django.DjangoModelFactory):
         return super(FeeFactory, cls).__new__(*args, **kwargs)
 
     amount = factory.LazyAttribute(lambda f: random.random())
-    name = factory.LazyAttribute(lambda f: 'fee %d' % (Fee.objects.count() + 1))
+    type = factory.LazyAttribute(lambda f: 'fee %d' % (Fee.objects.count() + 1))

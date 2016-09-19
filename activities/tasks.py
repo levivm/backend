@@ -68,15 +68,13 @@ class SendEmailCalendarTask(CeleryTaskEditActivityMixin):
         return emails
 
     def get_context_data(self):
+        from html import unescape
+
         return {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
-            'closing_sales_date': self.calendar.closing_sale,
-            'sessions': [{
-                             'date': session.date,
-                             'start_time': session.start_time,
-                             'end_time': session.end_time,
-                         } for session in self.calendar.sessions.all()],
+            'initial_date': self.calendar.initial_date,
+            'schedules': unescape(self.calendar.schedules),
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)
@@ -204,7 +202,7 @@ class SendEmailShareActivityTask(SendEmailTaskMixin):
                 'city': organizer_city,
             },
             'rating': rating,
-            'duration': self.activity.closest_calendar().duration // 3600,
+            # TODO quitar duration del template - FIXED
             'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }

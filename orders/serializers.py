@@ -69,7 +69,8 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     status = serializers.SerializerMethodField()
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentSerializer(read_only=True)
-    fee = serializers.SerializerMethodField(read_only=True)
+    fee = serializers.FloatField(read_only=True)
+    fee_datail = serializers.JSONField(read_only=True)
     coupon = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
 
@@ -89,10 +90,12 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'calendar_initial_date',
             'activity_id',
             'fee',
+            'fee_datail',
             'is_free',
             'total',
             'total_without_coupon',
             'coupon',
+            'package_quantity',
         )
 
     def get_activity(self, obj):
@@ -111,11 +114,6 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         initial_date = obj.calendar.initial_date
         return UnixEpochDateField().to_representation(initial_date)
 
-    def get_fee(self, obj):
-        if obj.fee:
-            return obj.fee.amount
-        return None
-
     def get_coupon(self, obj):
         if obj.coupon:
             return {
@@ -123,6 +121,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
                 'code': obj.coupon.token
             }
         return None
+
 
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
@@ -155,7 +154,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             raise serializers.ValidationError({'generalError': msg})
 
         if not calendar.available_capacity or \
-                        calendar.available_capacity < len(assistants_data):
+                calendar.available_capacity < len(assistants_data):
             msg = str(_("El cupo de asistentes está lleno"))
             raise serializers.ValidationError({'generalError': msg})
 
@@ -165,8 +164,10 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         return data
 
     def create(self, validated_data):
+
         assistants_data = validated_data.pop('assistants')
         student = self.context.get('view').student
+        payment = self.context.get('payment')
         validated_data.update({
             'student': student,
             'status': self.context.get('status'),
@@ -175,12 +176,31 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         })
         order = Order(**validated_data)
         calendar = order.calendar
-        order.amount = calendar.session_price * order.quantity
+        organizer_regimen = calendar.activity.organizer.bank_info.regimen
+
+        package_id = self.context.get('request').data.get('package')
+        package = calendar.packages.get(id=package_id) if package_id else None
+
+        base_amount = package.price if package \
+            and calendar.activity.is_open else calendar.session_price
+
+        order.package_quantity = package.quantity if package else None
+
+        # base_amount = calendar.session_price if not calendar.activity.is_open else calendar.
+        # if calendar.activity.is_open:
+        order.amount = base_amount * order.quantity
 
         if not calendar.is_free:
-            order.fee = Fee.objects.last()
-
+            fee_detail = Order.get_fee_detail(order, payment, organizer_regimen)
+            order.fee_detail = fee_detail
+            order.fee = fee_detail.get('total_fee')
+            # order.fee = Fee.objects.get(type=TRULII_FEE)
+            # order.fee = Order.get_total_fee(payment.payment_type,
+            #                                 order.amount, organizer_regimen)
         order.save()
+
+
+
 
         for assistant in assistants_data:
             instance = Assistant(order=order, **assistant)

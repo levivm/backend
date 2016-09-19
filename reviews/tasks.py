@@ -1,10 +1,9 @@
 from collections import defaultdict
 
 from dateutil.relativedelta import relativedelta, MO
-from django.db.models import Max
 from django.utils.timezone import now
 
-from activities.models import Calendar
+from orders.models import Order
 from reviews.models import Review
 from utils.tasks import SendEmailTaskMixin
 
@@ -13,7 +12,7 @@ class SendReportReviewEmailTask(SendEmailTaskMixin):
     def run(self, review_id, *args, **kwargs):
         self.review = Review.objects.get(id=review_id)
         self.template_name = "reviews/email/report_review_cc_message.txt"
-        self.emails = ['contacto@trulii.com']
+        self.emails = ['alo@trulii.com']
         self.subject = 'Denuncia de review!'
         self.global_context = self.get_context_data()
         return super(SendReportReviewEmailTask, self).run(*args, **kwargs)
@@ -89,17 +88,41 @@ class SendReminderReviewEmailTask(SendEmailTaskMixin):
             return super(SendReminderReviewEmailTask, self).run(*args, **kwargs)
 
     def get_data(self):
-        last_monday = now() + relativedelta(weekday=MO(-1), hour=0, minute=0)
-        last_week_monday = last_monday - relativedelta(weeks=1)
-        calendars = Calendar.objects.all().annotate(last_date=Max('sessions__date'))\
-            .filter(last_date__isnull=False, last_date__range=(last_week_monday, last_monday))
-        data = defaultdict(list)
-        for calendar in calendars:
-            students = [o.student for o in calendar.orders.available()
-                        if not Review.objects.filter(activity=calendar.activity, author=o.student)]
+        open = self.get_open_data()
+        closed = self.get_closed_data()
 
-            for student in students:
-                data[student.user.email].append(calendar.activity)
+        return {**open, **closed}
+
+    def get_closed_data(self):
+        last_month_monday = now() - relativedelta(weeks=4, weekday=MO(-1), hour=0, minute=0)
+        next_monday = last_month_monday + relativedelta(weeks=1)
+        orders = Order.objects.filter(
+            calendar__activity__is_open=False,
+            calendar__initial_date__range=(last_month_monday, next_monday),
+            status=Order.ORDER_APPROVED_STATUS)
+
+        data = defaultdict(list)
+        for order in orders:
+            student = order.student
+            if not Review.objects.filter(activity=order.calendar.activity,
+                                         author=student).exists():
+                data[student.user.email].append(order.calendar.activity)
+
+        return data
+
+    def get_open_data(self):
+        last_month_monday = now() - relativedelta(weeks=4, weekday=MO(-1), hour=0, minute=0)
+        next_monday = last_month_monday + relativedelta(weeks=1)
+        orders = Order.objects.filter(
+            calendar__activity__is_open=True,
+            created_at__range=(last_month_monday, next_monday),
+            status=Order.ORDER_APPROVED_STATUS)
+
+        data = defaultdict(list)
+        for order in orders:
+            student = order.student
+            if not Review.objects.filter(activity=order.calendar.activity, author=student).exists():
+                data[student.user.email].append(order.calendar.activity)
 
         return data
 

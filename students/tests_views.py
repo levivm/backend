@@ -10,13 +10,12 @@ from rest_framework import status
 from activities import constants as activities_constants
 from activities.factories import ActivityFactory
 from activities.models import Calendar, Activity
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer,\
+    ActivitiesCardSerializer
 from orders.models import Order
 from students.factories import WishListFactory
 from students.views import StudentViewSet
 from utils.tests import BaseViewTest, BaseAPITestCase
-
-
 
 
 class StudentViewTest(BaseViewTest):
@@ -45,7 +44,7 @@ class StudentViewTest(BaseViewTest):
 
     def test_student_should_update(self):
         student = self.get_student_client()
-        data = json.dumps({ 'gender': 1,'user':{'id':1,'first_name':"pablo"} })
+        data = json.dumps({'gender': 1, 'user': {'id': 1, 'first_name': "pablo"}})
         response = student.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(b'"gender":1', response.content)
@@ -57,89 +56,82 @@ class StudentViewTest(BaseViewTest):
 
 
 class ActivitiesByStudentViewTest(BaseAPITestCase):
-
     def _get_context(self):
         request = Mock()
         request.user = self.student.user
         return {
             'request': request,
-            'show_reviews':True
+            'show_reviews': True
         }
 
     def _order_activities(self, activities):
-        activities = sorted(activities, key = lambda x:x.id)
+        activities = sorted(activities, key=lambda x: x.id)
         return activities
 
-    def _create_calendars(self, activities, date,):
+    def _create_calendars(self, activities, date):
         for activity in activities:
             calendar = mommy.make(Calendar, activity=activity, initial_date=date)
             mommy.make(Order, student=self.student, calendar=calendar)
 
-
     def setUp(self):
         super(ActivitiesByStudentViewTest, self).setUp()
 
-        #get student
+        # get student
         student = self.student
 
-        #create student activities
+        # create student activities
         today = datetime.today().date()
         yesterday = today - timedelta(1)
         tomorrow = today + timedelta(1)
+        month_ago = today - timedelta(days=31)
 
-        #create current activities
+        # create current activities
         self.current_activities = \
-            ActivityFactory.create_batch(2,last_date=tomorrow)
-        self._create_calendars(self.current_activities,yesterday)
+            ActivityFactory.create_batch(2)
+        self._create_calendars(self.current_activities, yesterday)
 
-        #create next activities
+        # create next activities
         self.next_activities = \
             ActivityFactory.create_batch(2)
         self._create_calendars(self.next_activities, tomorrow)
 
-        #create past activities
+        # create past activities
         self.past_activities = \
-            ActivityFactory.create_batch(2, last_date=yesterday)
-        self._create_calendars(self.past_activities, yesterday)
+            ActivityFactory.create_batch(2)
+        self._create_calendars(self.past_activities, month_ago)
 
         self.activities = Activity.objects.filter(calendars__orders__student=student)
 
-
-        self.url = reverse('students:activities', kwargs={'pk':student.id})
+        self.url = reverse('students:activities', kwargs={'pk': student.id})
         self.url_autocomplete = reverse('students:activities_autocomplete',
-                                        kwargs={'pk':student.id})
+                                        kwargs={'pk': student.id})
 
-    def test_student_activities_autocomplete(self):
+    # def test_student_activities_autocomplete(self):
+    #     activities = self._order_activities(self.activities)
+    #     serializer = ActivitiesAutocompleteSerializer(activities, many=True)
 
-        activities = self._order_activities(self.activities)
-        serializer = ActivitiesAutocompleteSerializer(activities, many=True)
+    #     # Anonymous should return forbbiden
+    #     response = self.organizer_client.get(self.url_autocomplete)
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        # Anonymous should return forbbiden
-        response = self.organizer_client.get(self.url_autocomplete)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    #     # Organizer should return forbbiden
+    #     response = self.organizer_client.get(self.url_autocomplete)
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
-        # Organizer should return forbbiden
-        response = self.organizer_client.get(self.url_autocomplete)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # Student should return data
-        response = self.student_client.get(self.url_autocomplete)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
-
+    #     # Student should return data
+    #     response = self.student_client.get(self.url_autocomplete)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.data, serializer.data)
 
     def test_student_current_activities(self):
+        data = {'status': activities_constants.CURRENT}
 
-        data={'status': activities_constants.CURRENT}
         current_activities = self._order_activities(self.current_activities)
-        serializer = ActivitiesSerializer(current_activities, many=True,
-                                          context=self._get_context())
+        serializer = ActivitiesCardSerializer(current_activities, many=True)
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
         # Organizer should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -151,11 +143,9 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_student_next_activities(self):
-
-        data={'status': activities_constants.NEXT}
+        data = {'status': activities_constants.NEXT}
         next_activities = self._order_activities(self.next_activities)
-        serializer = ActivitiesSerializer(next_activities, many=True,
-                                          context=self._get_context())
+        serializer = ActivitiesCardSerializer(next_activities, many=True)
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -171,11 +161,9 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_student_past_activities(self):
-
-        data={'status': activities_constants.PAST}
+        data = {'status': activities_constants.PAST}
         past_activities = self._order_activities(self.past_activities)
-        serializer = ActivitiesSerializer(past_activities, many=True,
-                                          context=self._get_context())
+        serializer = ActivitiesCardSerializer(past_activities, many=True)
 
         # Anonymous should return forbbiden
         response = self.organizer_client.get(self.url, data=data)
@@ -191,9 +179,7 @@ class ActivitiesByStudentViewTest(BaseAPITestCase):
         self.assertEqual(response.data['results'], serializer.data)
 
 
-
 class WishListViewTest(BaseAPITestCase):
-
     def setUp(self):
         super(WishListViewTest, self).setUp()
 

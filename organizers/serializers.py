@@ -56,6 +56,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
             'locations',
             'rating',
             'verified_email',
+            'type',
         )
         read_only_fields = ('id',)
         depth = 1
@@ -79,10 +80,49 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
 
-    # bank = serializers.SerializerMethodField()
     bank = BankField(choices=OrganizerBankInfo.BANKS)
-    # bank_code = serializers.get_
-    # bank_
+    ERROR_EDIT_NOT_ALLOWED = 'No puede modificar la información bancaria, comuniquese con nosotros'
 
     class Meta:
         model = OrganizerBankInfo
+
+    def validate_beneficiary(self, value):
+        if self.instance and not self.instance.beneficiary == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_bank(self, value):
+        if self.instance and not self.instance.bank == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account_type(self, value):
+        if self.instance and not self.instance.account_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account(self, value):
+        if self.instance and not self.instance.account == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document_type(self, value):
+        if self.instance and not self.instance.document_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document(self, value):
+        if self.instance and not self.instance.document == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate(self, validated_data):
+        person_type = validated_data.get('person_type')
+        if person_type ==  OrganizerBankInfo.JURIDICAL:
+            required_fields = ['fiscal_address', 'billing_telephone', 'regimen']
+            missing_fields = [field for field in required_fields if not validated_data.get(field)]
+            first_missing_field, *_ = missing_fields if missing_fields else [None, None]
+            if first_missing_field:
+                raise serializers.ValidationError({first_missing_field: 'Este campo es requerido.'})
+
+        return validated_data

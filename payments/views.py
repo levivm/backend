@@ -1,4 +1,3 @@
-import logging
 import json
 
 from rest_framework.views import APIView
@@ -12,9 +11,7 @@ from .models import Payment
 from .tasks import SendPaymentEmailTask
 from orders.models import Order
 from activities.utils import PaymentUtil
-
-# Create your views here.
-logger = logging.getLogger(__name__)
+from utils.loggers import PaymentLogger
 
 
 class PayUBankList(APIView):
@@ -62,19 +59,34 @@ class PayUNotificationPayment(APIView):
         response_code_pol = data.get('response_code_pol')
 
         if transaction_status == settings.TRANSACTION_APPROVED_CODE:
+            self.logger.log_payu_response('PSE Payment Response Successful', 
+                                          order.student.user, data, self.request)
             self._run_transaction_approved_task(order, data)
 
         elif transaction_status == settings.TRANSACTION_DECLINED_CODE \
                 and response_code_pol == settings.RESPONSE_CODE_POL_FAILED:
+
+            self.logger.log_payu_response('PSE Payment Response failed', 
+                                          order.student.user, data, self.request)
+
             _msg = _('Transacción Fallida')
             self._run_transaction_declined_task(order, data, _msg)
 
         elif transaction_status == settings.TRANSACTION_DECLINED_CODE \
                 and response_code_pol == settings.RESPONSE_CODE_POL_DECLINED:
+
+            self.logger.log_payu_response('PSE Payment Response declined', 
+                                          order.student.user, data, self.request)
+
             _msg = _('Transacción Rechazada')
             self._run_transaction_declined_task(order, data, _msg)
 
         elif transaction_status == settings.TRANSACTION_PENDING_PSE_CODE:
+
+            self.logger.log_payu_response('PSE Payment Response still pending', 
+                                          order.student.user, data, self.request)
+
+
             _msg = 'Transacción pendiente, por favor revisar'
             _msg += 'si el débito fue realizado en el banco.'
             _msg = _(_msg)
@@ -88,16 +100,25 @@ class PayUNotificationPayment(APIView):
 
         if transaction_status == settings.TRANSACTION_APPROVED_CODE:
 
+            self.logger.log_payu_response('CC Payment Response Successful', 
+                                          order.student.user, data, self.request)
             if order.status == Order.ORDER_PENDING_STATUS:
                 self._run_transaction_approved_task(order, data)
 
         elif transaction_status == settings.TRANSACTION_DECLINED_CODE:
+
+            self.logger.log_payu_response('CC Payment Response declined', 
+                                          order.student.user, data, self.request)
+
             if order.status == Order.ORDER_PENDING_STATUS:
                 self._run_transaction_declined_task(order, data)
 
             pass
 
         elif transaction_status == settings.TRANSACTION_EXPIRED_CODE:
+
+            self.logger.log_payu_response('CC Payment Response expired', 
+                                          order.student.user, data, self.request)
             if order.status == Order.ORDER_PENDING_STATUS:
                 self._run_transaction_declined_task(order, data)
 
@@ -105,13 +126,13 @@ class PayUNotificationPayment(APIView):
 
     def post(self, request, *args, **kwargs):
 
-        # The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
+        #Init the logger
+        self.logger = PaymentLogger()
 
+        # The responses code: http://developers.payulatam.com/es/web_checkout/variables.html
         data = request.data
 
         transaction_id = data.get('transaction_id')
-
-        logger.error(json.dumps(request.POST))
 
         try:
             payment = Payment.objects.get(transaction_id=transaction_id)

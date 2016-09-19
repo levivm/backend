@@ -1,15 +1,20 @@
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
-from utils.models import CeleryTaskEditActivity
-from utils.mixins import AssignPermissionsMixin
 
 
 class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
+    ORGANIZER_NORMAL = 'normal'
+    ORGANIZER_SPECIAL = 'special'
+
+    ORGANIZER_TYPES = (
+        (ORGANIZER_NORMAL, _('Normal')),
+        (ORGANIZER_SPECIAL, _('Especial')),
+    )
+
     user = models.OneToOneField(User, related_name='organizer_profile')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,16 +26,17 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     bio = models.TextField(blank=True)
     rating = models.FloatField(default=0)
     verified_email = models.BooleanField(default=True)
+    type = models.CharField(max_length=15, choices=ORGANIZER_TYPES, default='normal')
 
     permissions = ('organizers.change_organizer',)
-
 
     def __str__(self):
         return '%s' % self.name
 
     def save(self, *args, **kwargs):
         if self.photo and not kwargs.get('update_fields'):
-            self.photo.file.file = self.optimize(bytesio=self.photo.file.file, width=self.photo.width,
+            self.photo.file.file = self.optimize(bytesio=self.photo.file.file,
+                                                 width=self.photo.width,
                                                  height=self.photo.height)
 
         super(Organizer, self).save(user=self.user, obj=self, *args, **kwargs)
@@ -48,8 +54,6 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
         return activities
 
 
-
-# Create your models here.
 class Instructor(AssignPermissionsMixin, models.Model):
     full_name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, null=True)
@@ -115,10 +119,27 @@ class OrganizerBankInfo(models.Model):
         ('corriente', 'Cuenta corriente'),
     )
 
+
+    NATURAL, JURIDICAL = range(1, 3)
+    PERSON_TYPES = (
+        (NATURAL, 'Natural'),
+        (JURIDICAL, 'Jurídica'),
+    )
+
+    COMUN, MAJOR_CONTIBUTOR = range(1, 3)
+    REGIMEN_TYPES = (
+        (COMUN, 'Común'),
+        (MAJOR_CONTIBUTOR, 'Gran Contribuyente'),
+    )
+
     organizer = models.OneToOneField(Organizer, related_name='bank_info')
     beneficiary = models.CharField(max_length=255)
     bank = models.CharField(choices=BANKS, max_length=30)
     document_type = models.CharField(choices=DOCUMENT_TYPES, max_length=5)
+    fiscal_address = models.CharField(max_length=255, blank=True)
+    billing_telephone = models.CharField(max_length=100, blank=True)
+    regimen = models.PositiveIntegerField(choices=REGIMEN_TYPES, null=True)
+    person_type = models.CharField(choices=PERSON_TYPES, max_length=10)
     document = models.CharField(max_length=100)
     account_type = models.CharField(choices=ACCOUNT_TYPES, max_length=10)
     account = models.CharField(max_length=255)
@@ -129,4 +150,6 @@ class OrganizerBankInfo(models.Model):
             'banks': [{'bank_id': k, 'bank_name': v} for k, v in OrganizerBankInfo.BANKS],
             'documents': [{'document_id': k, 'document_name': v} for k, v in OrganizerBankInfo.DOCUMENT_TYPES],
             'accounts': [{'account_id': k, 'account_name': v} for k, v in OrganizerBankInfo.ACCOUNT_TYPES],
+            'person_type': [{'type_id': k, 'type_name': v} for k, v in OrganizerBankInfo.PERSON_TYPES],
+            'regimen': [{'regimen_id': k, 'regimen_name': v} for k, v in OrganizerBankInfo.REGIMEN_TYPES],
         }

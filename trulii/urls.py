@@ -7,25 +7,12 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from landing.views import ContactFormView, landing, form_modal
 
 urlpatterns = [
-    # Examples:
 
     url(r'^home$', landing, name='home'),
     url(r'^form_modal$', form_modal, name='form_modal'),
-
-    # url(r'^blog/', include('blog.urls')),
-
-    # (r'^users/logout/$', 'django.contrib.auth.views.logout',
-    #     	{'next_page': '/'}),
-
-    # url('^admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
+    url('^admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
     url(r'^olympus/', include(admin.site.urls)),
-    # url(r'^users/login/', LoginViewTest.as_view()),
     url(r'^api/contact-us/', ContactFormView.as_view(), name='contact_form'),
-    # url(r'^users/email/', ChangeEmailView.as_view()),
-    # url(r'^users/confirm-email/(?P<key>\w+)/', ConfirmEmail.as_view()),
-    # url(r'^users/facebook/signup/', RestFacebookLogin.as_view(), name='facebook_signup_login'),
-    # url(r'^users/password/change/', PasswordChange.as_view()),
-    # url(r'^users/', include('allauth.urls')),
     url(r'^api/auth/', include('authentication.urls', namespace='auth')),
     url(r'^api/users/', include('users.urls', namespace='users')),
     url(r'^api/', include('organizers.urls', namespace='organizers')),
@@ -41,36 +28,16 @@ urlpatterns = [
     url(r'^metrics/', include('metrics.urls', namespace='metrics')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 
-    #    url(r'^organizers/', include('organizers.urls')),
-    #    #url(r'^organizers/', include('allauth.urls')),
-
-    #    #create the views for the detail activity and lists
-    #    #API
-
-    #    url(r'^activities/$', ActivitiesList.as_view()),
-    #    url(r'^activities/(?P<pk>[0-9]+)/$', ActivityDetail.as_view()),
-
-    #    ##create the view for the organizers
-    #    url(r'^organizers/(?P<pk>[0-9]+)/$', OrganizerDetail.as_view()),
-
-    #    ## create the view for the instructor
-    #    url(r'^instructor/(?P<pk>[0-9]+)/$', InstructorDetail.as_view()),
-
-    # url(r'^.*$', 'landing.views.landing', name='home'),
-
 ]
 
 #
 if not settings.DEBUG:
-    # urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [
         url(r'^media/(?P<path>.*)$', 'django.views.static.serve',
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
         url(r'^static/(?P<path>.*)$', 'django.views.static.serve',
             {'document_root': settings.STATIC_ROOT}),
     ]
-
-#
 
 urlpatterns += staticfiles_urlpatterns()
 

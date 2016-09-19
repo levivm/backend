@@ -1,9 +1,8 @@
 from django.contrib import admin, messages
-from django.contrib.admin.filters import DateFieldListFilter
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
-from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, CalendarSession, \
+from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, \
     ActivityStockPhoto, ActivityStats
 from utils.mixins import OperativeModelAdminMixin
 
@@ -69,12 +68,11 @@ class SubCategoryAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 @admin.register(Activity)
 class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'organizer_name', 'next_calendar_initial_date',
-                    'next_calendar_closing_sale', 'last_date', 'next_calendar_price',
-                    'next_calendar_available_capacity', 'id')
+                    'next_calendar_price', 'next_calendar_available_capacity', 'id')
     list_filter = ['published', 'organizer']
     search_fields = ('id', 'title', 'organizer__name')
     raw_id_fields = ('organizer', 'location')
-    operative_readonly_fields = {'score', 'rating', 'last_date'}
+    operative_readonly_fields = {'score', 'rating'}
 
     def organizer_name(self, obj):
         return obj.organizer.name
@@ -82,12 +80,6 @@ class ActivityAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
     def next_calendar_initial_date(self, obj):
         try:
             return obj.closest_calendar().initial_date
-        except:
-            return '-'
-
-    def next_calendar_closing_sale(self, obj):
-        try:
-            return obj.closest_calendar().closing_sale
         except:
             return '-'
 
@@ -121,10 +113,10 @@ class ActivityPhotoAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(Calendar)
 class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('initial_date', 'closing_sale', 'activity_linkable', 'session_price', 'num_enrolled')
+    list_display = ('initial_date', 'enroll_open', 'activity_linkable', 'session_price', 'num_enrolled')
     list_filter = ('initial_date',)
     search_fields = ('activity__title',)
-    operative_readonly_fields = {'number_of_sessions', 'initial_date'}
+    operative_readonly_fields = {'initial_date'}
 
     def num_enrolled(self, obj):
         return obj.num_enrolled
@@ -135,14 +127,6 @@ class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
     activity_linkable.allow_tags = True
     activity_linkable.short_description = 'Activity'
-
-
-@admin.register(CalendarSession)
-class CalendarSessionAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('id', 'calendar', 'date')
-    list_filter = ('date',)
-    raw_id_fields = ('calendar',)
-    operative_readonly_fields = {'date', 'calendar'}
 
 
 @admin.register(ActivityStockPhoto)

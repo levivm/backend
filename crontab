@@ -5,3 +5,4 @@
 # cron (este es el comando)
 
 30 10 * * 4 root python manage.py balance >> /var/logs/cron.log
+0 0 1 * * root python manage.py balance_special >> /var/logs/cron.log

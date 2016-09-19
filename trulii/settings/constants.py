@@ -55,11 +55,6 @@ ORGANIZER_PERMISSIONS = (
         'codenames': ('add', 'change', 'delete'),
     },
     {
-        'app': 'activities',
-        'model': 'calendarsession',
-        'codenames': ('add', 'change', 'delete'),
-    },
-    {
         'app': 'locations',
         'model': 'location',
         'codenames': ('add', 'change', 'delete'),
@@ -105,11 +100,6 @@ OPERATIVE_PERMISSIONS = (
     {
         'app': 'activities',
         'model': 'activity',
-        'codenames': ['change'],
-    },
-    {
-        'app': 'activities',
-        'model': 'calendarsession',
         'codenames': ['change'],
     },
     {

@@ -3,6 +3,7 @@ import random
 import factory
 from django.contrib.auth.models import Group
 
+from balances.models import Balance
 from organizers.models import Organizer, Instructor, OrganizerBankInfo
 from users.factories import UserFactory
 
@@ -10,7 +11,7 @@ from users.factories import UserFactory
 class OrganizerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Organizer
-        
+
     def __new__(cls, *args, **kwargs):
         return super(OrganizerFactory, cls).__new__(*args, **kwargs)
 
@@ -47,6 +48,7 @@ class OrganizerBankInfoFactory(factory.django.DjangoModelFactory):
     beneficiary = factory.Faker('name')
     bank = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.BANKS]))
     document_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.DOCUMENT_TYPES]))
+    person_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.PERSON_TYPES]))
     document = factory.Faker('ssn')
     account_type = factory.LazyAttribute(lambda n: random.choice([k for k, v in OrganizerBankInfo.ACCOUNT_TYPES]))
     account = factory.Faker('credit_card_number')

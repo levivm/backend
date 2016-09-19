@@ -39,7 +39,7 @@ class SendPaymentEmailTaskMixin(SendEmailTaskMixin):
             'address': self.order.calendar.activity.location.address,
             'city': self.order.calendar.activity.location.city.name,
             'requirements': unescape(self.order.calendar.activity.requirements),
-            'detail_url': base_url + 'students/dashboard/history/orders/%s' % self.order.id,
+            'detail_url': base_url + 'estudiante/dashboard/transacciones/ordenes/%s' % self.order.id,
         }
 
         if not self.order.status == Order.ORDER_APPROVED_STATUS:

@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta, MO
 from django.utils.timezone import now
 
 from balances.models import BalanceLog, Withdrawal
+from balances.serializers import WithdrawSerializer
 from organizers.models import Organizer
 from utils.tasks import SendEmailTaskMixin
 
@@ -13,7 +14,8 @@ class BalanceLogToAvailableTask(Task):
         last_monday = now() + relativedelta(weekday=MO(-1), hour=0, minute=0)
         last_week_monday = last_monday - relativedelta(weeks=1)
         balance_logs = BalanceLog.objects.unavailable(
-            calendar__initial_date__range=(last_week_monday, last_monday))
+            order__calendar__initial_date__range=(last_week_monday, last_monday),
+            organizer__type=Organizer.ORGANIZER_NORMAL)
 
         result = []
         if balance_logs:
@@ -35,7 +37,45 @@ class CalculateOrganizerBalanceTask(Task):
 
     def calculate_amount(self, organizer, status):
         balance_logs = organizer.balance_logs.filter(status=status)
-        return sum([o.total_net for log in balance_logs for o in log.calendar.orders.available()])
+        return sum([log.order.total_net for log in balance_logs])
+
+
+class BalanceLogSpecialToAvailableTask(Task):
+
+    def run(self, *args, **kwargs):
+        last_day_month = now().date().replace(day=1)
+        first_day_month = last_day_month - relativedelta(months=1)
+
+        balance_logs = BalanceLog.objects.unavailable(
+            created_at__range=(first_day_month, last_day_month),
+            organizer__type=Organizer.ORGANIZER_SPECIAL)
+
+        result = []
+        if balance_logs:
+            result = list(set(balance_logs.values_list('organizer_id', flat=True)))
+            balance_logs.update(status='available')
+
+        return result
+
+
+class AutoWithdrawalSpecialOrganizerTask(Task):
+
+    def run(self, *args, **kwargs):
+        organizers = Organizer.objects.filter(type=Organizer.ORGANIZER_SPECIAL)
+
+        for organizer in organizers:
+            data = {
+                'organizer': organizer.id,
+                'logs': organizer.balance_logs.available().values_list('id', flat=True),
+                'amount': organizer.balance.available
+            }
+
+            if data['amount'] > 0:
+                serializer = WithdrawSerializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+        return [organizer.id for organizer in organizers]
 
 
 class UpdateWithdrawalLogsStatusTask(Task):

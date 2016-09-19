@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
-import operator
 import os
 from datetime import datetime, date
-from functools import reduce
 from random import Random
 
 from django.conf import settings
@@ -26,7 +24,8 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=20)
     slug = models.SlugField(blank=True)
-    description = models.TextField()
+    headline = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     cover_photo = models.ImageField(upload_to='categories/', blank=True)
     content_photo = models.ImageField(upload_to='categories/', blank=True)
 
@@ -102,6 +101,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     content = models.TextField(blank=True)
     audience = models.TextField(blank=True)
     requirements = models.TextField(blank=True)
+    post_enroll_message = models.TextField(blank=True)
     return_policy = models.TextField(blank=True)
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length=200, blank=True, null=True)
@@ -111,8 +111,8 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     location = models.ForeignKey(Location, null=True)
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
-    last_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_open = models.BooleanField(default=False)
 
     objects = ActivityQuerySet.as_manager()
 
@@ -185,21 +185,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         self.published = False
         self.save(update_fields=['published'])
 
-    def set_last_date(self, last_session):
-        new_last_date = last_session.get('date').date()
-        if new_last_date is not None or self.last_date is not None:
-            self.last_date = new_last_date if not self.last_date or \
-                                              self.last_date < new_last_date else self.last_date
-            self.save(update_fields=['last_date'])
-
-    def last_sale_date(self):
-        dates = [s.date for c in self.calendars.all() for s in c.sessions.all()]
-        if not dates:
-            return None
-
-        return sorted(dates, reverse=True)[0]
-
-    def closest_calendar(self, closing_sale=None, cost_start=None, cost_end=None, is_free=None):
+    def closest_calendar(self, initial_date=None, cost_start=None, cost_end=None, is_free=None):
         today = date.today()
         closest = None
         query = Q()
@@ -209,35 +195,37 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
         elif cost_start is not None and cost_end is not None:
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
-                query &= Q(session_price__gte=(cost_start))
+                query &= Q(session_price__gte=(cost_start)) |\
+                    Q(packages__price__gte=(cost_start))
             else:
-                query &= Q(session_price__range=(cost_start, cost_end))
+                query &= Q(session_price__range=(cost_start, cost_end)) |\
+                    Q(packages__price__range=(cost_start, cost_end))
 
-        if closing_sale is not None:
-            closing_sale = datetime.fromtimestamp(int(closing_sale) // 1000).replace(second=0)
-            query = query & Q(closing_sale__gte=closing_sale)
+        if initial_date is not None:
+            initial_date = datetime.fromtimestamp(int(initial_date) // 1000).date()
+            query = query & Q(initial_date__gte=initial_date)
 
-        query = query & Q(available_capacity__gt=0)
+        query = query & Q(available_capacity__gt=0, enroll_open=True)
 
         calendars = self.calendars.filter(query)
 
         if calendars:
             if is_free:
-                open_calendars = [c for c in calendars if c.closing_sale.date() >= today and c.is_free]
+                open_calendars = [c for c in calendars if c.initial_date >= today and c.is_free]
             else:
-                open_calendars = [c for c in calendars if c.closing_sale.date() >= today]
+                open_calendars = [c for c in calendars if c.initial_date >= today]
 
             if open_calendars:
-                closest = sorted(open_calendars, key=lambda c: c.closing_sale)[0]
+                closest = sorted(open_calendars, key=lambda c: c.initial_date)[0]
             else:
 
                 if is_free:
-                    calendars = [c for c in calendars if c.closing_sale.date() < today and c.is_free]
+                    calendars = [c for c in calendars if c.initial_date < today and c.is_free]
                 else:
-                    calendars = [c for c in calendars if c.closing_sale.date() < today]
+                    calendars = [c for c in calendars if c.initial_date < today]
 
                 if calendars:
-                    closest = sorted(calendars, key=lambda c: c.closing_sale, reverse=True)[0]
+                    closest = sorted(calendars, key=lambda c: c.initial_date, reverse=True)[0]
 
         return closest
 
@@ -322,14 +310,16 @@ class ActivityStockPhoto(models.Model):
     def get_images_by_subcategory(cls, sub_category):
         queryset = cls.objects.filter(sub_category=sub_category)
         sub_category_pictures = cls.get_random_pictures(queryset,
-                                                        activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
+                                                        activities_constants.
+                                                        MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
         sub_category_pictures_amount = len(sub_category_pictures)
         enough_pictures = False if sub_category_pictures_amount < \
-                                   activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS else True
+            activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS \
+            else True
 
         if not enough_pictures:
-            needed_pictures_amount = abs(sub_category_pictures_amount - \
+            needed_pictures_amount = abs(sub_category_pictures_amount -
                                          activities_constants.MAX_ACTIVITY_POOL_STOCK_PHOTOS)
 
             category_pictures = cls.get_random_category_pictures(sub_category,
@@ -343,15 +333,14 @@ class ActivityStockPhoto(models.Model):
 
 class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     activity = models.ForeignKey(Activity, related_name="calendars")
-    initial_date = models.DateTimeField()
-    closing_sale = models.DateTimeField()
-    number_of_sessions = models.IntegerField()
-    session_price = models.FloatField()
-    enroll_open = models.NullBooleanField(default=True)
+    initial_date = models.DateField()
+    session_price = models.FloatField(blank=True, null=True)
+    enroll_open = models.BooleanField(default=True)
     is_weekend = models.NullBooleanField(default=False)
     is_free = models.BooleanField(default=False)
     available_capacity = models.IntegerField()
     note = models.CharField(max_length=200, blank=True)
+    schedules = models.TextField()
 
     permissions = ('activities.change_calendar', 'activities.delete_calendar')
 
@@ -365,36 +354,40 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
     def num_enrolled(self):
         return sum([o.num_enrolled() for o in self.orders.available()])
 
-    @cached_property
-    def duration(self):
-        """Returns calendar duration in ms"""
-        sessions = self.sessions.all()
-        if not sessions:
-            return None
-        get_datetime = lambda time: datetime.combine(datetime(1, 1, 1, 0, 0, 0), time)
-        timedeltas = map(lambda s: get_datetime(s.end_time) - get_datetime(s.start_time), sessions)
-        duration = reduce(operator.add, timedeltas).total_seconds()
-        return duration
-
     def get_assistants(self):
         orders_qs = self.orders.all()
         return [a for o in orders_qs if o.status == 'approved' or o.status == 'pending' for a in
                 o.assistants.all() if a.enrolled]
 
     def increase_capacity(self, amount):
+        # Dont increase capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity + amount
         self.save(update_fields=['available_capacity'])
 
     def decrease_capacity(self, amount):
+        # Dont decrease capacity over open activities
+        if self.activity.is_open:
+            return
+
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
 
 
-class CalendarSession(models.Model):
-    date = models.DateTimeField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    calendar = models.ForeignKey(Calendar, related_name="sessions")
+class CalendarPackage(Updateable, models.Model):
+
+    MONTH, CLASS = range(1, 3)
+    TYPE_CHOICES = (
+        (MONTH, 'Mes(es)'),
+        (CLASS, 'Clase(s)'),
+    )
+
+    type = models.PositiveIntegerField(choices=TYPE_CHOICES, max_length=255, blank=True)
+    quantity = models.PositiveIntegerField()
+    price = models.FloatField()
+    calendar = models.ForeignKey(Calendar, related_name='packages')
 
 
 class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):

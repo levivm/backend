@@ -9,7 +9,7 @@ from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -29,11 +29,10 @@ from organizers.models import Organizer
 from utils.paginations import SmallResultsSetPagination
 from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
-    ActivityStockPhoto
+    ActivityStockPhoto, CalendarPackage
 from .permissions import IsActivityOwner
 from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
     TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
-
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -46,6 +45,19 @@ class CalendarViewSet(viewsets.ModelViewSet):
         activity_id = self.kwargs.get('activity_pk', None)
         activity = get_object_or_404(Activity, pk=activity_id)
         return activity.calendars.all()
+
+    def perform_update(self, serializer):
+        calendar = self.get_object()
+
+        old_initial_date = calendar.initial_date
+        new_initial_date = serializer.validated_data.get('initial_date').date()
+
+        serializer.save()
+
+        # If the initial date changed, send an email to students
+        if not old_initial_date == new_initial_date:
+            task = SendEmailCalendarTask()
+            task.apply_async((calendar.id,), countdown=1800)
 
     def list(self, request, *args, **kwargs):
         calendars = self.get_queryset().order_by('initial_date')
@@ -68,17 +80,7 @@ class CalendarViewSet(viewsets.ModelViewSet):
                             primero debe desactivar la actividad.')},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
         return super().destroy(request, *args, **kwargs)
-
-
-
-    def update(self, request, *args, **kwargs):
-        result = super().update(request, *args, **kwargs)
-        calendar = self.get_object()
-        task = SendEmailCalendarTask()
-        task.apply_async((calendar.id,), countdown=1800)
-        return result
 
 
 class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
@@ -95,13 +97,12 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
         self.calculate_score(kwargs[self.lookup_url_kwarg])
         return response
 
-
     def destroy(self, request, *args, **kwargs):
         activity = self.get_object()
         if activity.calendars.filter(orders__isnull=False).exists():
             return Response({'detail': _('No puede eliminar esta actividad, \
                             tiene estudiantes inscritos, contactanos.')},
-                        status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return super().destroy(request, *args, **kwargs)
 
@@ -110,8 +111,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
 
         if activity.calendars.filter(
                 orders__status=Order.ORDER_APPROVED_STATUS).count() > 0:
-            raise ValidationError({'location': ['No se puede cambiar la ubicación con personas'
-                                               'inscritas.']})
+            raise ValidationError({'location': ['No se puede cambiar la ubicación con personas '
+                                                'inscritas.']})
 
         location_data = request.data.copy()
         location_serializer = LocationsSerializer(data=location_data)
@@ -133,7 +134,8 @@ class ActivitiesViewSet(ActivityMixin, viewsets.ModelViewSet):
             'subcategories': SubCategoriesSerializer(sub_categories, many=True).data,
             'levels': levels,
             'tags': TagsSerializer(tags, many=True).data,
-            'price_range': settings.PRICE_RANGE
+            'price_range': settings.PRICE_RANGE,
+            'package_options': CalendarPackage.TYPE_CHOICES
         }
 
         return Response(data)
@@ -287,8 +289,8 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
     def list(self, request, **kwargs):
         query_string = request.query_params.get('q')
         order = request.query_params.get('o')
-        search = ActivitySearchEngine(query_params=request.query_params, 
-                                      query_string=query_string, 
+        search = ActivitySearchEngine(query_params=request.query_params,
+                                      query_string=query_string,
                                       search_fields=self.search_fields)
         filters = search.filter_query()
         order_by = search.get_order()

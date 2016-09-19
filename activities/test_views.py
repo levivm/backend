@@ -4,16 +4,15 @@ import datetime
 import json
 import tempfile
 import time
-import mock
 from datetime import timedelta
-from itertools import cycle
+from collections import defaultdict
+from django.core import management
+
 
 import factory
 import mock
 from PIL import Image
-from dateutil.relativedelta import relativedelta
-from dateutil.rrule import rrule, WEEKLY, DAILY, MONTHLY
-from django.conf import settings
+from dateutil.rrule import rrule, DAILY, MONTHLY
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -25,13 +24,12 @@ from rest_framework import status
 
 from activities import constants as activities_constants
 from activities.factories import ActivityFactory, SubCategoryFactory, CalendarFactory, TagsFactory, \
-    ActivityPhotoFactory, CalendarSessionFactory, ActivityStatsFactory, CategoryFactory
+    ActivityPhotoFactory, ActivityStatsFactory, CategoryFactory
 from activities.models import Activity, ActivityPhoto, Tags, Calendar, ActivityStockPhoto, \
     SubCategory
 from activities.models import Category
 from activities.serializers import ActivitiesSerializer, CalendarSerializer, \
     ActivitiesCardSerializer
-from activities.tasks import SendEmailCalendarTask
 from activities.views import ActivitiesViewSet, CalendarViewSet, TagsViewSet
 from locations.factories import CityFactory, LocationFactory
 from orders.factories import OrderFactory, AssistantFactory
@@ -39,7 +37,7 @@ from orders.models import Assistant, Order
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
 from payments.factories import FeeFactory
-from utils.models import CeleryTaskEditActivity, EmailTaskRecord
+from utils.models import EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
 
@@ -166,6 +164,25 @@ class GetActivityViewTest(BaseViewTest):
         response = organizer.put(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_organizer_should_not_update_the_type_of_activity_if_there_are_calendars(self):
+        organizer = self.get_organizer_client()
+        data = json.dumps({'is_open': True})
+        response = organizer.put(self.url, data=data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'is_open': ['No se puede cambiar el tipo de horario'
+                                                     ' porque existen calendarios relacionados.']})
+
+    def test_organizer_should_update_the_type_of_activity(self):
+        organizer = Organizer.objects.get(id=self.ORGANIZER_ID)
+        organizer_client = self.get_organizer_client()
+        activity = ActivityFactory(organizer=organizer)
+        url = '/api/activities/%s' % activity.id
+        data = {'is_open': True}
+        response = organizer_client.put(url, data=data)
+        activity = Activity.objects.get(id=activity.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(activity.is_open)
+
 
 class CalendarsByActivityViewTest(BaseViewTest):
     url = '/api/activities/1/calendars'
@@ -175,15 +192,15 @@ class CalendarsByActivityViewTest(BaseViewTest):
         now_unix_timestamp = int(now().timestamp()) * 1000
         return {
             'initial_date': now_unix_timestamp,
-            'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
-            'closing_sale': now_unix_timestamp,
+            'enroll_open': True,
             'session_price': 123000,
-            'sessions': [{
-                'date': now_unix_timestamp,
-                'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100000,
+            'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+            'packages': [{
+                'quantity': 16,
+                'price': 100000,
             }],
             'note': 'This is a note for the calendar!'
         }
@@ -248,15 +265,16 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         self.now =  now_unix_timestamp
         return {
             'initial_date': now_unix_timestamp,
-            'number_of_sessions': 1,
             'available_capacity': 10,
             'activity': 1,
-            'closing_sale': now_unix_timestamp,
+            'enroll_open': True,
             'session_price': 123000,
-            'sessions': [{
-                'date': now_unix_timestamp,
-                'start_time': now_unix_timestamp,
-                'end_time': now_unix_timestamp + 100000,
+            'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
+                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+            # TODO agregar schedule - FIXED
+            'packages': [{
+                'quantity': 16,
+                'price': 100000,
             }]
         }
 
@@ -287,18 +305,20 @@ class GetCalendarByActivityViewTest(BaseViewTest):
         calendar.orders.all().delete()
         data = self._get_data_to_create_a_calendar()
         data.update({'available_capacity': 20, 'session_price': calendar.session_price})
+        del data['packages']
         data = json.dumps(data)
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertIn(b'"available_capacity":20', response.content)
 
-    def test_organizer_shouldnt_update_calendar_session_with_orders(self):
+    # TODO agregar test schedule - FIXED
+    def test_organizer_shouldnt_update_calendar_schedules_with_orders(self):
         calendar = Calendar.objects.get(id=self.CALENDAR_ID)
         OrderFactory(calendar=calendar, status=Order.ORDER_APPROVED_STATUS)
         organizer = self.get_organizer_client()
         data = self._get_data_to_create_a_calendar()
-        data.update({'sessions': [{'date': self.now + 15000, 'start_time': self.now,
-                                   'end_time': self.now + 100000}]})
+        data.update({'schedules': "&lt;p&gt;&lt;strong&gt;Lunes -"
+                                  "Viernes&lt;/strong&gt;&lt;/p&gt;"})
         data = json.dumps(data)
         response = organizer.put(self.url, data=data, content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -789,7 +809,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
             ActivityFactory(sub_category=self.subcategory, tags=[tag], level=activities_constants.LEVEL_A,
                             certification=True, published=True))
 
-        CalendarFactory(activity=activities[-1], initial_date=now() - timedelta(days=10),
+        CalendarFactory(activity=activities[-1], initial_date=(now() - timedelta(days=10)).date(),
                         session_price=self.price,
                         is_weekend=True)
         return activities
@@ -952,7 +972,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
             queryset=Activity.objects.filter(title__icontains=self.query_keyword),
-            order_by=['calendars__initial_date', '-calendars__session_price'])
+            order_by=['-calendars__session_price'])
         serializer = ActivitiesCardSerializer(self.unique(activities), many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -1062,9 +1082,8 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         super(ShareActivityEmailViewTest, self).setUp()
         self.activity = ActivityFactory()
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=20))
+                                        initial_date=(now() + timedelta(days=20)).date())
         ActivityPhotoFactory(activity=self.activity, main_photo=True)
-        CalendarSessionFactory(calendar=self.calendar)
 
         # URLs
         self.share_url = reverse('activities:share_email_activity',
@@ -1194,17 +1213,20 @@ class AutoCompleteViewTest(BaseAPITestCase):
 class ActivityStatsViewTest(BaseAPITestCase):
 
     def setUp(self):
+        management.call_command('load_fee')
+
         super(ActivityStatsViewTest, self).setUp()
 
         with mock.patch('django.utils.timezone.now') as mock_now:
             mock_now.return_value = datetime.datetime(2015, 12, 15, tzinfo=utc)
             self.activity = ActivityFactory(organizer=self.organizer)
 
-        self.fee = FeeFactory(amount=0.08)
+        self.amount = 50000.0
+        self.fee = int(Order.get_total_fee('CC', self.amount, None).get('total_fee'))
         self.url = reverse('activities:stats', args=(self.activity.id,))
 
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=1),
+                                        initial_date=(now() + timedelta(days=1)).date(),
                                         available_capacity=15)
         ActivityStatsFactory(activity=self.activity, views_counter=3)
 
@@ -1227,19 +1249,20 @@ class ActivityStatsViewTest(BaseAPITestCase):
                 OrderFactory.create_batch(
                     size=2,
                     calendar=self.calendar,
-                    amount=factory.Iterator([50000, 100000]),
+                    amount=self.amount,
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
         points = []
-        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        data = {'gross': 100000.0, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
         for i, date in enumerate(dates):
-            points.append({str(date.date()): {key: data[key] * (i+1) for key in data}})
+            points.append({str(date.date()):
+                          {key: data[key] * (i + 1) for key in data}})
 
-        total_points = {
-            'total_gross': 74400000,
-            'total_net': 68448000,
-            'total_fee': 5952000
-        }
+        total_points = defaultdict(int, {
+            'total_gross': data['gross'] * 496,
+            'total_net': data['net'] * 496,
+            'total_fee': data['fee'] * 496
+        })
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
@@ -1280,22 +1303,22 @@ class ActivityStatsViewTest(BaseAPITestCase):
                 OrderFactory.create_batch(
                     size=2,
                     calendar=self.calendar,
-                    amount=factory.Iterator([50000, 100000]),
+                    amount=self.amount,
                     fee=self.fee,
                     status=Order.ORDER_APPROVED_STATUS)
 
         points = []
-        data = {'gross': 150000, 'fee': 12000, 'net': 138000}
+        data = {'gross': 100000, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
         dates.pop(0)
         dates.append(now() + timedelta(days=1))
         for i, date in enumerate(dates):
             points.append({str(date.date() - timedelta(days=1)): {key: data[key] * (i+1) for key in data}})
 
-        total_points = {
-            'total_gross': 5400000.0,
-            'total_fee': 432000.0,
-            'total_net': 4968000.0
-        }
+        total_points = defaultdict(int, {
+            'total_gross': data['gross'] * 45,
+            'total_net': data['net'] * 45,
+            'total_fee': data['fee'] * 45
+        })
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),

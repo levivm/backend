@@ -8,8 +8,7 @@ from rest_framework.test import APITestCase
 from django.utils.timezone import now, timedelta
 from django.test import override_settings
 
-from activities.factories import CalendarFactory, ActivityFactory, CalendarSessionFactory, \
-    ActivityPhotoFactory
+from activities.factories import CalendarFactory, ActivityFactory, ActivityPhotoFactory
 from activities.models import ActivityCeleryTaskEditActivity, \
     CalendarCeleryTaskEditActivity, ActivityStats
 from activities.tasks import SendEmailShareActivityTask, SendEmailCalendarTask, \
@@ -28,7 +27,6 @@ class SendEmailCalendarTaskTest(APITestCase):
 
     def setUp(self):
         self.calendar = CalendarFactory()
-        self.sessions = CalendarSessionFactory.create_batch(2, calendar=self.calendar)
         self.order = OrderFactory(calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
         self.assistants = AssistantFactory.create_batch(2, order=self.order)
 
@@ -46,12 +44,9 @@ class SendEmailCalendarTaskTest(APITestCase):
         context = {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
-            'closing_sales_date': self.calendar.closing_sale.isoformat(),
-            'sessions': [{
-                'date': session.date.isoformat(),
-                'start_time': session.start_time.isoformat(),
-                'end_time': session.end_time.isoformat(),
-            } for session in self.calendar.sessions.all()],
+            'initial_date': self.calendar.initial_date.isoformat(),
+            'schedules': self.calendar.schedules,
+            # TODO PROBAR SCHEDULE - FIXED
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)
@@ -114,9 +109,8 @@ class SendEmailShareActivityTaskTest(APITestCase):
         self.user = UserFactory()
         self.activity = ActivityFactory(rating=4)
         self.calendar = CalendarFactory(activity=self.activity,
-                                        initial_date=now() + timedelta(days=5))
+                                        initial_date=(now() + timedelta(days=5)).date())
         self.cover = ActivityPhotoFactory(activity=self.activity, main_photo=True)
-        self.session = CalendarSessionFactory(calendar=self.calendar)
         self.location = LocationFactory(organizer=self.activity.organizer)
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
@@ -154,7 +148,8 @@ class SendEmailShareActivityTaskTest(APITestCase):
                 'city': self.location.city.name,
             },
             'rating': self.activity.rating,
-            'duration': self.activity.closest_calendar().duration // 3600,
+            # TODO quitar duration del template - FIXED
+            # 'duration': self.activity.closest_calendar().duration // 3600,
             'price': self.activity.closest_calendar().session_price,
             'url': '%sactivities/%s/' % (settings.FRONT_SERVER_URL, self.activity.id),
         }
@@ -247,7 +242,6 @@ class SendEmailLocationTaskTest(APITestCase):
     def setUp(self):
         self.activity = ActivityFactory()
         self.calendar = CalendarFactory(activity=self.activity)
-        self.sessions = CalendarSessionFactory.create_batch(2, calendar=self.calendar)
         self.order = OrderFactory(calendar=self.calendar, status=Order.ORDER_APPROVED_STATUS)
         self.assistants = AssistantFactory.create_batch(2, order=self.order)
 
