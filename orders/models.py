@@ -138,7 +138,7 @@ class Order(models.Model):
             payu_total_fee += renta + ica
 
         total_fee = payu_total_fee + trulii_total_fee
-
+        final_total = base - total_fee
 
         fee_detail = {
             'trulii_fee': trulii_fee,
@@ -154,7 +154,8 @@ class Order(models.Model):
             'ica': ica,
             'total_fee': total_fee,
             'regimen': regimen,
-            'payment_type': payment_type
+            'payment_type': payment_type,
+            'final_total': final_total
         }
 
         fee_detail.update({key: round(value, 2) 

@@ -1,6 +1,6 @@
 from activities.models import SubCategory, ActivityStockPhoto
 from django.core.management.base import BaseCommand
-
+import unicodedata
 
 class Command(BaseCommand):
     help = "Create categories and subcategories covers photo"
@@ -159,10 +159,12 @@ class Command(BaseCommand):
 
                 pass
             for index in range(1, self.MAPPING[category.name][subcategory.name] + 1):
+
+                
                 data = {
                     'category': category.name,
                     'subcategory': subcategory.name,
                     'filename': '%s %02i.jpg' % (subcategory.name.lower(), index)
                 }
-                filepath = 'activities_stock/%(category)s/%(subcategory)s/%(filename)s' % data
+                filepath = unicodedata.normalize('NFD', 'activities_stock/%(category)s/%(subcategory)s/%(filename)s' % data)
                 ActivityStockPhoto.objects.create(sub_category=subcategory, photo=filepath)

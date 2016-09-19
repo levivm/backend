@@ -70,7 +70,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
     created_at = UnixEpochDateField(read_only=True)
     payment = PaymentSerializer(read_only=True)
     fee = serializers.FloatField(read_only=True)
-    fee_datail = serializers.JSONField(read_only=True)
+    fee_detail = serializers.JSONField(read_only=True)
     coupon = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
 
@@ -90,7 +90,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'calendar_initial_date',
             'activity_id',
             'fee',
-            'fee_datail',
+            'fee_detail',
             'is_free',
             'total',
             'total_without_coupon',
