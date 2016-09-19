@@ -1,14 +1,15 @@
 import time as time_a
 import unicodedata
+
 from html import unescape
 from datetime import time, date, datetime
 from requests.utils import quote
 from rest_framework import serializers
+from rest_framework.fields import ImageField
 from django.utils.html import escape
-from django.conf import settings
 
 
-class AmazonS3FileField(serializers.Field):
+class AmazonS3FileField(ImageField):
 
     def __init__(self, base_path=None, *args, **kwargs):
         self._base_path = base_path
@@ -18,7 +19,7 @@ class AmazonS3FileField(serializers.Field):
         """ Return correct URL Encode S3 path from a file"""
         if not file:
             return
-        
+
         file_name = quote(unicodedata.normalize('NFD', file.name).encode('utf-8'))
         return "{}{}".format(self._base_path, file_name)
 

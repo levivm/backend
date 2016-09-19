@@ -12,7 +12,7 @@ class SendReportReviewEmailTask(SendEmailTaskMixin):
     def run(self, review_id, *args, **kwargs):
         self.review = Review.objects.get(id=review_id)
         self.template_name = "reviews/email/report_review_cc_message.txt"
-        self.emails = ['contacto@trulii.com']
+        self.emails = ['alo@trulii.com']
         self.subject = 'Denuncia de review!'
         self.global_context = self.get_context_data()
         return super(SendReportReviewEmailTask, self).run(*args, **kwargs)

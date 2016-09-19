@@ -18,7 +18,7 @@ class SendReportReviewEmailTaskTest(APITestCase):
     def setUp(self):
         # Arrangement
         self.review = ReviewFactory(rating=3)
-        self.email = 'contacto@trulii.com'
+        self.email = 'alo@trulii.com'
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):

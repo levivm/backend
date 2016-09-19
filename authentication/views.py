@@ -241,6 +241,7 @@ class ForgotPasswordView(InvalidateTokenMixin, GenericAPIView):
         user = User.objects.get(email=self.request.data.get('email'))
         return user
 
+
 class ResetPasswordView(ValidateTokenMixin, GenericAPIView):
     model = ResetPasswordToken
 

@@ -73,8 +73,18 @@ class ActivitySearchEngine(object):
     def extra_query(self):
         order = self.order
         query_params = self.query_params
-        price_order = order == activities_constants.ORDER_MIN_PRICE or\
-            order == activities_constants.ORDER_MAX_PRICE
+
+        price_order = False
+        extra_parameter = None
+        select_parameter = None
+
+        if order == activities_constants.ORDER_MIN_PRICE:
+            price_order = True
+            order_by_param = 'ASC'
+        elif order == activities_constants.ORDER_MAX_PRICE:
+            price_order = True
+            order_by_param = 'DESC'
+
         if order == activities_constants.ORDER_CLOSEST:
             extra_parameter = self.SEARCH_ORDER_CLOSEST_ATTRIBUTE
             select_parameter = self.SEARCH_ORDER_CLOSEST_SELECT
@@ -118,8 +128,8 @@ class ActivitySearchEngine(object):
             if price_order and without_limit:
                 extra = {
                     extra_parameter:
-                    'SELECT greatest(COALESCE("activities_calendar".' + select_parameter + ', 0),'
-                    'COALESCE("activities_calendarpackage"."price",0) ) '
+                    'SELECT GREATEST(COALESCE("activities_calendar".' + select_parameter + ', 0),'
+                    'COALESCE("activities_calendarpackage"."price",0) ) as "final_price" '
                     'FROM "activities_calendar" LEFT OUTER JOIN "activities_calendarpackage" '
                     'ON "activities_calendarpackage"."calendar_id" = "activities_calendar"."id" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
@@ -127,14 +137,16 @@ class ActivitySearchEngine(object):
                     'AND ("activities_calendar"."session_price" >= %s OR '
                     '     "activities_calendarpackage"."price" >= %s) '
                     'AND "activities_calendar"."available_capacity" > 0 '
-                    'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1 '
+                    'AND "activities_calendar"."enroll_open" = TRUE '
+                    'ORDER BY "activities_calendar"."initial_date" ASC, '
+                    '"final_price" ' + order_by_param + ' LIMIT 1'
                 }
                 params = (date, cost_start, cost_start)
             elif price_order and not without_limit:
                 extra = {
                     extra_parameter:
-                    'SELECT greatest(COALESCE("activities_calendar".' + select_parameter + ', 0),'
-                    'COALESCE("activities_calendarpackage"."price",0) ) '
+                    'SELECT GREATEST(COALESCE("activities_calendar".' + select_parameter + ', 0),'
+                    'COALESCE("activities_calendarpackage"."price",0) ) as "final_price" '
                     'FROM "activities_calendar" LEFT OUTER JOIN "activities_calendarpackage" '
                     ' ON "activities_calendarpackage"."calendar_id" = "activities_calendar"."id" '
                     'WHERE "activities_calendar"."activity_id" = "activities_activity"."id" '
@@ -147,7 +159,9 @@ class ActivitySearchEngine(object):
                     '      "activities_calendarpackage"."price" <= %s) '
                     '     ) '
                     ' AND "activities_calendar"."available_capacity" > 0'
-                    'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
+                    'AND "activities_calendar"."enroll_open" = TRUE '
+                    'ORDER BY "activities_calendar"."initial_date" ASC, '
+                    '"final_price" ' + order_by_param + ' LIMIT 1'
                 }
                 params = (date, cost_start, cost_end, cost_start, cost_end)
 
@@ -161,6 +175,7 @@ class ActivitySearchEngine(object):
                         'AND "activities_calendar"."initial_date" >= %s'
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
+                        'AND "activities_calendar"."enroll_open" = TRUE '
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start)
@@ -174,6 +189,7 @@ class ActivitySearchEngine(object):
                         'AND "activities_calendar"."session_price" >= %s '
                         'AND "activities_calendar"."session_price" <= %s '
                         'AND "activities_calendar"."available_capacity" > 0'
+                        'AND "activities_calendar"."enroll_open" = TRUE '
                         'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
                 }
                 params = (date, cost_start, cost_end)

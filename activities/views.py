@@ -289,8 +289,8 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
     def list(self, request, **kwargs):
         query_string = request.query_params.get('q')
         order = request.query_params.get('o')
-        search = ActivitySearchEngine(query_params=request.query_params, 
-                                      query_string=query_string, 
+        search = ActivitySearchEngine(query_params=request.query_params,
+                                      query_string=query_string,
                                       search_fields=self.search_fields)
         filters = search.filter_query()
         order_by = search.get_order()

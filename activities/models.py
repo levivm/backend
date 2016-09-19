@@ -196,10 +196,10 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
             without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
             if without_limit:
                 query &= Q(session_price__gte=(cost_start)) |\
-                         Q(packages__price__gte=(cost_start))
+                    Q(packages__price__gte=(cost_start))
             else:
                 query &= Q(session_price__range=(cost_start, cost_end)) |\
-                         Q(packages__price__range=(cost_start, cost_end))
+                    Q(packages__price__range=(cost_start, cost_end))
 
         if initial_date is not None:
             initial_date = datetime.fromtimestamp(int(initial_date) // 1000).date()
@@ -378,13 +378,13 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
 
 class CalendarPackage(Updateable, models.Model):
 
-    MONTH, CLASS = range(1,3)
+    MONTH, CLASS = range(1, 3)
     TYPE_CHOICES = (
         (MONTH, 'Mes(es)'),
         (CLASS, 'Clase(s)'),
     )
 
-    type = models.CharField(choices=TYPE_CHOICES, max_length=255, blank=True)
+    type = models.PositiveIntegerField(choices=TYPE_CHOICES, max_length=255, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.FloatField()
     calendar = models.ForeignKey(Calendar, related_name='packages')

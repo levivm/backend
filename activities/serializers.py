@@ -137,6 +137,7 @@ class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
 
 class CalendarPackageSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(label='ID', read_only=False, required=False)
+    type_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CalendarPackage
@@ -144,8 +145,12 @@ class CalendarPackageSerializer(serializers.ModelSerializer):
             'id',
             'quantity',
             'price',
-            'type'
+            'type',
+            'type_name'
         )
+
+    def get_type_name(self, obj):
+        return obj.get_type_display()
 
     def validate_quantity(self, quantity):
         if quantity < 1:
@@ -154,7 +159,7 @@ class CalendarPackageSerializer(serializers.ModelSerializer):
         return quantity
 
     def validate_price(self, price):
-        if price < 30000:
+        if price < settings.MIN_ALLOWED_CALENDAR_PRICE:
             raise serializers.ValidationError(_('El precio no puede ser menor a 30000.'))
 
         return price
@@ -290,6 +295,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
     category = serializers.SerializerMethodField()
     pictures = serializers.SerializerMethodField()
     organizer = serializers.SerializerMethodField()
+    cloest_calendar_package = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -302,6 +308,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             'organizer',
             'published',
             'closest_calendar',
+            'cloest_calendar_package',
             'organizer',
             'wish_list',
             'is_open'
@@ -315,15 +322,50 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         request = self.context.get('request')
         if not request:
             instance = obj.closest_calendar()
+            self.selected_closest_calendar = instance
         else:
             cost_start = request.query_params.get('cost_start')
             cost_end = request.query_params.get('cost_end')
             initial_date = request.query_params.get('date')
             is_free = request.query_params.get('is_free')
             instance = obj.closest_calendar(initial_date, cost_start, cost_end, is_free)
+            self.selected_closest_calendar = instance
         return CalendarSerializer(instance,
                                   remove_fields=['assistants', 'activity',
                                                  'available_capacity', 'is_weekend']).data
+
+    def get_cloest_calendar_package(self, obj):
+
+        request = self.context.get('request')
+
+        closest_calendar = obj.closest_calendar() if not self.selected_closest_calendar else\
+            self.selected_closest_calendar
+
+        if not closest_calendar:
+            return
+
+        if not request:
+            closest_calendar_packages = closest_calendar.packages.order_by('price')
+            if not closest_calendar_packages:
+                return
+            return CalendarPackageSerializer(closest_calendar_packages[0]).data
+
+        cost_start = request.query_params.get('cost_start')
+        cost_end = request.query_params.get('cost_end')
+        is_free = request.query_params.get('is_free')
+        order = request.query_params.get('o')
+        packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))
+
+        if is_free:
+            closest_calendar_package = packages[0]
+            return CalendarPackageSerializer(closest_calendar_package).data
+
+        order_by = ['-price'] if order == activities_constants.ORDER_MAX_PRICE else ['price']
+        closest_calendar_packages = packages.order_by(*order_by)
+        if not packages:
+            return
+
+        return CalendarPackageSerializer(closest_calendar_packages[0]).data
 
     def get_pictures(self, obj):
         pictures = [p for p in obj.pictures.all() if p.main_photo]

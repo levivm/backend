@@ -1,7 +1,7 @@
 Datos del review
 
 
-ReviewID:{{review.id}}
-Organizador:{{review.activity.organizer.name}}
-Comentario:{{review.comment}}
-Respuesta:{{review.reply}}
+ReviewID:{{id}}<br/>
+Organizador:{{organizer}}<br/>
+Comentario:{{comment}}<br/>
+Respuesta:{{reply}}<br/>

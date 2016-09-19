@@ -87,7 +87,7 @@ class SendEmailTaskMixin(Task):
                 result.append(send_mail(
                     subject=self.subject,
                     message='',
-                    from_email='contacto@trulii.com',
+                    from_email='alo@trulii.com',
                     recipient_list=[email],
                     html_message=html_message))
             except Exception:
