@@ -384,7 +384,7 @@ class CalendarPackage(Updateable, models.Model):
         (CLASS, 'Clase(s)'),
     )
 
-    type = models.PositiveIntegerField(choices=TYPE_CHOICES, max_length=255, blank=True)
+    type = models.PositiveIntegerField(choices=TYPE_CHOICES)
     quantity = models.PositiveIntegerField()
     price = models.FloatField()
     calendar = models.ForeignKey(Calendar, related_name='packages')
