@@ -31,8 +31,9 @@ from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer
 from .models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
     ActivityStockPhoto, CalendarPackage
 from .permissions import IsActivityOwner
-from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer, \
-    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer
+from .serializers import ActivitiesSerializer, CategoriesSerializer, SubCategoriesSerializer,\
+    TagsSerializer, CalendarSerializer, ActivityPhotosSerializer, ActivitiesCardSerializer,\
+    ActivityStockPhotosSerializer
 
 
 class CalendarViewSet(viewsets.ModelViewSet):
@@ -246,7 +247,7 @@ class SubCategoriesViewSet(viewsets.ModelViewSet):
     def get_pool_from_stock(self, request, *args, **kwargs):
         sub_category = self.get_object()
         pictures = ActivityStockPhoto.get_images_by_subcategory(sub_category)
-        serializer = ActivityPhotosSerializer(pictures, many=True)
+        serializer = ActivityStockPhotosSerializer(pictures, many=True)
 
         return Response(
             data={'pictures': serializer.data},

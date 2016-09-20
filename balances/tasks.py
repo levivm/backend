@@ -24,6 +24,7 @@ class BalanceLogToAvailableTask(Task):
 
         return result
 
+
 class CalculateOrganizerBalanceTask(Task):
 
     def run(self, organizer_ids=[], *args, **kwargs):
@@ -86,16 +87,40 @@ class UpdateWithdrawalLogsStatusTask(Task):
         for withdrawal in self.withdrawals:
             BalanceLog.objects.filter(id__in=withdrawal.logs.values_list('id', flat=True))\
                 .update(status=status)
- 
+
+
 class NotifyWithdrawalOrganizerTask(SendEmailTaskMixin):
 
     def run(self, withdrawal_id, status, *args, **kwargs):
         self.withdrawal = Withdrawal.objects.get(id=withdrawal_id)
         self.template_name = 'balances/email/notify_withdraw.html'
         self.emails = [self.withdrawal.organizer.user.email]
-        self.subject = 'Notificación acerca de tu retiro'
+        self.subject = 'Notificación acerca de tu retiro #{}'.format(withdrawal_id)
         self.global_context = self.get_context_data()
         return super(NotifyWithdrawalOrganizerTask, self).run(*args, **kwargs)
 
     def get_context_data(self):
-        return {}
+        return {
+            'withdrawal': self.withdrawal.id,
+            'status': self.withdrawal.get_status_display()
+        }
+
+
+class NotifyWithdrawalRequestOrganizerTask(SendEmailTaskMixin):
+
+    def run(self, withdrawal_id, *args, **kwargs):
+        import pdb
+        pdb.set_trace()
+        self.withdrawal = Withdrawal.objects.get(id=withdrawal_id)
+        self.template_name = 'balances/email/notify_withdraw_request.html'
+        self.emails = ['alo@trulii.com']
+        self.subject = 'Un organizador ha solicitado un retiro #{}'.format(withdrawal_id)
+        self.global_context = self.get_context_data()
+        return super(NotifyWithdrawalRequestOrganizerTask, self).run(*args, **kwargs)
+
+    def get_context_data(self):
+        return {
+            'withdrawal': self.withdrawal.id,
+            'organizer_name': self.withdrawal.organizer.name,
+            'organizer_id': self.withdrawal.organizer.id,
+        }

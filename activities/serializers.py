@@ -3,8 +3,6 @@
 
 import urllib
 import unicodedata
-import requests
-
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -12,7 +10,7 @@ from rest_framework import serializers
 
 from activities.mixins import WishListSerializerMixin
 from activities.models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
-    CalendarPackage
+    CalendarPackage, ActivityStockPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
@@ -94,14 +92,27 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
 
+class ActivityStockPhotosSerializer(serializers.ModelSerializer):
+    photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+
+    class Meta:
+        model = ActivityStockPhoto
+        fields = (
+            'photo',
+            'id',
+        )
+
+
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL)
 
     class Meta:
         model = ActivityPhoto
         fields = (
             'photo',
             'main_photo',
+            'thumbnail',
             'id',
         )
 
@@ -239,7 +250,7 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
         if not self.instance and activity.is_open and activity.calendars.count() > 0:
             raise serializers.ValidationError(_("No se puede crear más de un calendario cuando"
-                                                    " la actividad es de horario abierto"))
+                                                " la actividad es de horario abierto"))
 
         is_free = data.get('is_free')
         if not is_free:

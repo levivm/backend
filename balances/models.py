@@ -34,6 +34,9 @@ class BalanceLog(models.Model):
 
     objects = BalanceLogQuerySet.as_manager()
 
+    def __str__(self):
+        return "Order:{}-Status:{}".format(self.order.id, self.status)
+
     @classmethod
     def create(cls, organizer=None, order=None):
         instance, created = cls.objects.get_or_create(organizer=organizer, order=order)
