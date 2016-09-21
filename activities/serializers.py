@@ -105,7 +105,7 @@ class ActivityStockPhotosSerializer(serializers.ModelSerializer):
 
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
-    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL, read_only=True)
 
     class Meta:
         model = ActivityPhoto
