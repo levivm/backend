@@ -122,7 +122,6 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             }
         return None
 
-
     def validate_amount(self, obj):
         return obj.calendar.session_price * obj.quantity
 
@@ -186,21 +185,14 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
 
         order.package_quantity = package.quantity if package else None
 
-        # base_amount = calendar.session_price if not calendar.activity.is_open else calendar.
-        # if calendar.activity.is_open:
         order.amount = base_amount * order.quantity
 
         if not calendar.is_free:
             fee_detail = Order.get_fee_detail(order, payment, organizer_regimen)
             order.fee_detail = fee_detail
             order.fee = fee_detail.get('total_fee')
-            # order.fee = Fee.objects.get(type=TRULII_FEE)
-            # order.fee = Order.get_total_fee(payment.payment_type,
-            #                                 order.amount, organizer_regimen)
+
         order.save()
-
-
-
 
         for assistant in assistants_data:
             instance = Assistant(order=order, **assistant)

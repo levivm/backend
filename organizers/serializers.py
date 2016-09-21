@@ -30,13 +30,15 @@ class InstructorsSerializer(serializers.ModelSerializer):
         return super(InstructorsSerializer, self).create(validated_data)
 
 
-class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, serializers.ModelSerializer):
+class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
+                           serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, read_only=True)
     locations = serializers.SerializerMethodField()
     verified_email = serializers.BooleanField(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Organizer
@@ -60,6 +62,9 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
         )
         read_only_fields = ('id',)
         depth = 1
+
+    def get_rating(self, obj):
+        return round(obj.rating, 2)
 
     def validate_photo(self, file):
         return self.clean_file(file)
