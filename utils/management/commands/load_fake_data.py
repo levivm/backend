@@ -1,27 +1,19 @@
 import random
-from typing import Optional, Any, List
+from typing import List
 
 import factory
 from django.core.management.base import BaseCommand
 from rest_framework.authtoken.models import Token
 
-
 from activities.factories import ActivityFactory, ActivityPhotoFactory, CalendarFactory
-from activities.models import SubCategory, ActivityStockPhoto, ActivityPhoto, Tags, Activity, \
-    Calendar
-from locations.factories import CityFactory, LocationFactory
-from locations.models import City, Location
+from activities.models import SubCategory, ActivityStockPhoto, Tags, Activity
 from balances.models import Balance
+from locations.factories import CityFactory, LocationFactory
 from orders.factories import OrderFactory, AssistantFactory
-from orders.models import Order, Assistant
+from orders.models import Order
 from organizers.factories import OrganizerFactory, InstructorFactory, OrganizerBankInfoFactory
-from organizers.models import Organizer, Instructor, OrganizerBankInfo
-from payments.factories import FeeFactory
-from payments.models import Fee
 from referrals.factories import ReferralFactory, RedeemFactory, CouponTypeFactory
-from referrals.models import Referral, Redeem
 from reviews.factories import ReviewFactory
-from reviews.models import Review
 from students.factories import StudentFactory
 from students.models import Student
 from utils.management.commands import load_data

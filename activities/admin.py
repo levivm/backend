@@ -3,7 +3,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
 from activities.models import Activity, Tags, Category, SubCategory, ActivityPhoto, Calendar, \
-    ActivityStockPhoto, ActivityStats
+    ActivityStockPhoto, ActivityStats, CalendarPackage
 from utils.mixins import OperativeModelAdminMixin
 
 
@@ -127,6 +127,10 @@ class CalendarAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
     activity_linkable.allow_tags = True
     activity_linkable.short_description = 'Activity'
+
+@admin.register(CalendarPackage)
+class CalendarPackageAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(ActivityStockPhoto)
