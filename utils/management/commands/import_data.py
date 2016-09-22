@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
+from rest_framework.authtoken.models import Token
 from guardian.shortcuts import assign_perm
 
 from activities import constants as activities_constants
@@ -99,6 +100,7 @@ class Command(BaseCommand):
             username += str(counter + 1)
 
         user = User.objects.create_user(username=username, email=email, password=password)
+        Token.objects.create(user=user)
         self.passwords.append(
             self.OrganizerPassword(id=user.id, name=name, email=email, password=password))
 
@@ -129,7 +131,6 @@ class Command(BaseCommand):
                 return_policy = row[28]
                 title = row[29]
                 post_enroll_message = row[30]
-
                 levels = {
                     'principiante': activities_constants.LEVEL_P,
                     'intermedio': activities_constants.LEVEL_I,
