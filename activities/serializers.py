@@ -105,7 +105,7 @@ class ActivityStockPhotosSerializer(serializers.ModelSerializer):
 
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
     photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
-    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL, read_only=True)
 
     class Meta:
         model = ActivityPhoto
@@ -366,6 +366,9 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         is_free = request.query_params.get('is_free')
         order = request.query_params.get('o')
         packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))
+
+        if not packages:
+            return
 
         if is_free:
             closest_calendar_package = packages[0]

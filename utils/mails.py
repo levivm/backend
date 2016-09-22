@@ -17,6 +17,7 @@ class SendGridEmailBackend(BaseEmailBackend):
             subject=email_message.subject,
             html=email_message.alternatives[0][0],
             from_email=email_message.from_email,
+            from_name=self.get_from_name(email_message.from_email),
         )
 
         for attachment in email_message.attachments:
@@ -34,6 +35,9 @@ class SendGridEmailBackend(BaseEmailBackend):
                     'status': 'sent',
                     'reject_reason': None,
                 }
+
+    def get_from_name(self, from_email):
+        return from_email.split('<')[0].strip() if from_email.split('<') else from_email
 
 
 class ConsoleSendGridEmailBackend(SendGridEmailBackend):

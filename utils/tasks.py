@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import datetime
 
 from celery import Task
+from django.conf import settings
 from django.core.mail import send_mail
 from django.template import loader, Context
 
@@ -87,7 +88,7 @@ class SendEmailTaskMixin(Task):
                 result.append(send_mail(
                     subject=self.subject,
                     message='',
-                    from_email='alo@trulii.com',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
                     html_message=html_message))
             except Exception:

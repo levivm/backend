@@ -118,6 +118,7 @@ class ActivitySearchEngine(object):
                     'AND "activities_calendar"."initial_date" >= %s '
                     'AND "activities_calendar"."is_free" = TRUE '
                     'AND "activities_calendar"."available_capacity" > 0 '
+                    'AND "activities_calendar"."enroll_open" = TRUE '
                     'ORDER BY "activities_calendar"."initial_date" ASC LIMIT 1'
             }
             params = (date, cost_start)

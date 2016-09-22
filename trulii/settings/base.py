@@ -116,7 +116,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
 EMAIL_BACKEND = 'utils.mails.SendGridEmailBackend'
-
+DEFAULT_FROM_EMAIL = 'Rodrigo de Trulii <alo@trulii.com>'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
