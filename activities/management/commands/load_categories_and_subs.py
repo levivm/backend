@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def get_data():
         return {
             "Arte": {'color': '#46416D',
-                     'subcategories': ['Dibujo y Pintura', 'Moda', 'Fotografia', 'Diseño gráfico', 'Modelaje', 'Otros' ]},
+                     'subcategories': ['Dibujo y Pintura', 'Moda', 'Fotografía', 'Diseño gráfico', 'Modelaje', 'Otros' ]},
             "Danza": {'color': '#38DBC7', 
                       'subcategories': ['Ballet', 'Arabe',  'Salsa', 'Hip Hop', 'Moderna y Contemporánea', 'Bachata', 'Rumba', 
                                         'Flamenco', 'Tap', 'Social', 'Espiritual', 'Otros Urbanos', 'Otros']
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                         'subcategories': ['Inglés', 'Portugues', 'Español', 'Italiano', 'Francés', 'Alemán', 'Otros']},
             "Música": {'color': '#FF7E60',
                        'subcategories': ['Composición', 'Producción', 'DJ', 'Otros']},
-            "Infantiles": {'color': '#0084B4',
+            "Infantil": {'color': '#0084B4',
                       'subcategories': ['Yoga', 'Cocina', 'Danza', 'Otros']},
             "Profesional": {'color': '#FFC971',
                             'subcategories': ['Redes Sociales', 'Marketing', 'Contabilidad', 'Oratoria', 'Locución', 'Administración', 'Ventas', 'Otros']},

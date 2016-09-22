@@ -114,8 +114,8 @@ class Command(BaseCommand):
                 is_open = row[2]
                 certification = row[4]
                 level = row[5]
-                category = row[6]
-                subcategory = row[7]
+                category = row[6].strip()
+                subcategory = row[7].strip()
                 short_description = row[8]
                 audience = row[9]
                 goals = row[10]
