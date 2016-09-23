@@ -23,7 +23,8 @@ class SendEmailMessageNotificationTask(SendEmailTaskMixin):
         base_url = settings.FRONT_SERVER_URL
         return {
             'organizer': self.organizer_message.organizer.name,
-            'url': '{base}student/dashboard/messages/{id}'.format(
+            'activity': self.organizer_message.calendar.activity.title,
+            'url': '{base}estudiante/dashboard/notificaciones/{id}'.format(
                 base=base_url,
                 id=self.organizer_message.id)
         }
@@ -43,6 +44,8 @@ class SendEmailOrganizerMessageAssistantsTask(SendEmailTaskMixin):
         self.calendar = self.organizer_message.calendar
         self.template_name = 'messages/email/assistant_message.html'
         self.emails = self.get_emails()
+        if not self.emails:
+            return
         self.subject = self.organizer_message.subject
         self.global_context = self.get_context_data()
         self.recipient_context = self.get_recipient_data()
@@ -50,13 +53,14 @@ class SendEmailOrganizerMessageAssistantsTask(SendEmailTaskMixin):
 
     def get_emails(self):
         self.assistants = [assistant for o in self.calendar.orders.available() for assistant in
-                           o.assistants.enrolled()]
+                           o.assistants.enrolled() if assistant.email == o.student.user.email]
         return [a.email for a in self.assistants]
 
     def get_context_data(self):
         return {
             'organizer': self.organizer_message.organizer.name,
             'message': self.organizer_message.message,
+            'activity': self.organizer_message.calendar.activity.title,
         }
 
     def get_recipient_data(self):

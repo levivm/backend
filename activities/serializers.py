@@ -348,7 +348,6 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
     def get_cloest_calendar_package(self, obj):
 
         request = self.context.get('request')
-
         closest_calendar = obj.closest_calendar() if not self.selected_closest_calendar else\
             self.selected_closest_calendar
 
@@ -365,7 +364,8 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         cost_end = request.query_params.get('cost_end')
         is_free = request.query_params.get('is_free')
         order = request.query_params.get('o')
-        packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))
+        packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))\
+            if cost_start and cost_end else closest_calendar.packages.all()
 
         if not packages:
             return

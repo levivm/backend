@@ -389,6 +389,9 @@ class CalendarPackage(Updateable, models.Model):
     price = models.FloatField()
     calendar = models.ForeignKey(Calendar, related_name='packages')
 
+    class Meta:
+        ordering = ['price']
+
 
 class ActivityCeleryTaskEditActivity(CeleryTaskEditActivity):
     activity = models.ForeignKey('Activity', related_name='tasks')

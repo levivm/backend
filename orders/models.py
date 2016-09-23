@@ -4,13 +4,14 @@ from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.postgres.fields import JSONField
 
-from activities.models import Calendar
+from activities.models import Calendar, CalendarPackage
 from organizers.models import OrganizerBankInfo
 from orders.querysets import OrderQuerySet, AssistantQuerySet
 from payments.models import Payment, Fee
 from referrals.models import Coupon
 from students.models import Student
 from utils.behaviors import Tokenizable
+from utils import currency_utils
 
 
 class Order(models.Model):
@@ -26,11 +27,14 @@ class Order(models.Model):
         (ORDER_CANCELLED_STATUS, _('Cancelada')),
         (ORDER_DECLINED_STATUS, _('Declinada')),
     )
+
     calendar = models.ForeignKey(Calendar, related_name='orders')
     student = models.ForeignKey(Student, related_name='orders')
     amount = models.FloatField()
     quantity = models.IntegerField()
     package_quantity = models.PositiveIntegerField(blank=True, null=True)
+    package_type = models.PositiveIntegerField(choices=CalendarPackage.TYPE_CHOICES,
+                                               blank=True, null=True)
     status = models.CharField(choices=STATUS, max_length=15, default='pending')
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
@@ -163,12 +167,13 @@ class Order(models.Model):
             'total_fee': total_fee,
             'regimen': regimen,
             'payment_type': payment_type,
-            'final_total': final_total
+            'final_total': final_total,
+            'final_total_words': currency_utils.to_word(final_total)
         }
 
-        fee_detail.update({key: round(value, 2) 
-                           for key, value in fee_detail.items() 
-                           if  isinstance(value, numbers.Real)})
+        fee_detail.update({key: round(value, 2)
+                           for key, value in fee_detail.items()
+                           if isinstance(value, numbers.Real)})
 
         return fee_detail
 

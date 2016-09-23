@@ -92,6 +92,12 @@
                                 <span style="display: block;margin-bottom: 2px;">Cupos:</span>
                                 <span style="font-weight: bold;margin-bottom: 2px;"> {{ quantity }} cupos</span>
                               </div>
+                              {% if package_quantity and package_type%}
+                              <div style="font-size: 18px;margin-bottom: 15px;">
+                                <span style="display: block;margin-bottom: 2px;">Paquete:</span>
+                                <span style="font-weight: bold;margin-bottom: 2px;"> {{ package_quantity }} {{package_type}}</span>
+                              </div>
+                              {% endif %}
                               {% if card_type %}
                                 <div style="font-size: 18px;margin-bottom: 15px;">
                                   <span style="display: block;margin-bottom: 2px;">Tipo:</span>
