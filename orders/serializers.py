@@ -187,10 +187,11 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
 
         order.amount = base_amount * order.quantity
 
-        if not calendar.is_free:
-            fee_detail = Order.get_fee_detail(order, payment, organizer_regimen)
-            order.fee_detail = fee_detail
-            order.fee = fee_detail.get('total_fee')
+        # if not calendar.is_free:
+        is_free = calendar.is_free
+        fee_detail = Order.get_fee_detail(order, is_free, payment, organizer_regimen)
+        order.fee_detail = fee_detail
+        order.fee = fee_detail.get('total_fee')
 
         order.save()
 

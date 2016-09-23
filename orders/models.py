@@ -35,7 +35,7 @@ class Order(models.Model):
     payment = models.OneToOneField(Payment, null=True)
     coupon = models.ForeignKey(Coupon, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    fee = models.FloatField()
+    fee = models.FloatField(default=0)
     is_free = models.BooleanField(default=False)
     fee_detail = JSONField(default={})
 
@@ -59,12 +59,13 @@ class Order(models.Model):
         super(Order, self).save(*args, **kwargs)
 
     @classmethod
-    def get_fee_detail(cls, order, payment, organizer_regimen):
-        fee_detail = Order.get_total_fee(payment.payment_type, 
-                                       order.amount, organizer_regimen)
+    def get_fee_detail(cls, order, is_free, payment, organizer_regimen):
+
+        fee_detail = cls.get_total_fee(payment.payment_type,
+                                       order.amount, organizer_regimen)\
+            if not is_free else cls.get_total_free_fee(order)
+
         return fee_detail
-
-
 
     def num_enrolled(self):
         return self.assistants.enrolled().count()
@@ -100,6 +101,13 @@ class Order(models.Model):
 
     def get_organizer(self):
         return self.calendar.activity.organizer
+
+    @classmethod
+    def get_total_free_fee(cls, order):
+        return {
+            'final_total': order.amount,
+            'total_fee': 0,
+        }
 
     @classmethod
     def get_total_fee(cls, payment_type, base, regimen):
