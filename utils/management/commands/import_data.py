@@ -9,10 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
-<<<<<<< be636e081d13c3ce141adc97c187dad74c2dd92a
 from rest_framework.authtoken.models import Token
-=======
->>>>>>> #comment Agrega el comando import_data para importar organizadores, actividades y calendarios desde csv
 from guardian.shortcuts import assign_perm
 
 from activities import constants as activities_constants
@@ -103,10 +100,7 @@ class Command(BaseCommand):
             username += str(counter + 1)
 
         user = User.objects.create_user(username=username, email=email, password=password)
-<<<<<<< be636e081d13c3ce141adc97c187dad74c2dd92a
         Token.objects.create(user=user)
-=======
->>>>>>> #comment Agrega el comando import_data para importar organizadores, actividades y calendarios desde csv
         self.passwords.append(
             self.OrganizerPassword(id=user.id, name=name, email=email, password=password))
 
@@ -120,13 +114,8 @@ class Command(BaseCommand):
                 is_open = row[2]
                 certification = row[4]
                 level = row[5]
-<<<<<<< be636e081d13c3ce141adc97c187dad74c2dd92a
                 category = row[6].strip()
                 subcategory = row[7].strip()
-=======
-                category = row[6]
-                subcategory = row[7]
->>>>>>> #comment Agrega el comando import_data para importar organizadores, actividades y calendarios desde csv
                 short_description = row[8]
                 audience = row[9]
                 goals = row[10]
@@ -142,10 +131,6 @@ class Command(BaseCommand):
                 return_policy = row[28]
                 title = row[29]
                 post_enroll_message = row[30]
-<<<<<<< be636e081d13c3ce141adc97c187dad74c2dd92a
-=======
-
->>>>>>> #comment Agrega el comando import_data para importar organizadores, actividades y calendarios desde csv
                 levels = {
                     'principiante': activities_constants.LEVEL_P,
                     'intermedio': activities_constants.LEVEL_I,
