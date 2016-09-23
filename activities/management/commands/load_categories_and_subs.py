@@ -2,9 +2,9 @@ from django.core.management.base import BaseCommand
 
 from activities.models import Category, SubCategory
 
-
 class Command(BaseCommand):
     help = "Create categories and subcategories"
+
 
     def handle(self, *args, **options):
         self.load_categories_and_subcategories()
@@ -21,39 +21,35 @@ class Command(BaseCommand):
     @staticmethod
     def get_data():
         return {
-            "Arte y Manualidades": {'color': '#46416D',
-                     'subcategories': ['Actuación', 'Cinematografía', 'Costura', 'Dibujo y Pintura', 'Diseño',
-                                       'Fotografía', 'Manualidades', 'Moda', 'Otros']},
-            "Danza": {'color': '#38DBC7',
-                      'subcategories': ['Bailes de Salón', 'Ballet', 'Contemporáneo', 'Exótico', 'Folklórico',
-                                        'Latinas', 'Oriental', 'Step', 'Urbano', 'Otros']},
-            "Vida Cotidiana": {'color': '#00AAD1',
-                               'subcategories': ['Amor y Sexo', 'Belleza', 'Paternidad', 'Espiritual', 'Habilidades',
-                                                 'Manejo',
-                                                 'Mascotas', 'Relaciones Sociales', 'Yoga', 'Otros']},
+            "Arte": {'color': '#46416D',
+                     'subcategories': ['Dibujo y Pintura', 'Moda', 'Fotografía', 'Diseño gráfico', 'Modelaje', 'Otros' ]},
+            "Danza": {'color': '#38DBC7', 
+                      'subcategories': ['Ballet', 'Arabe',  'Salsa', 'Hip Hop', 'Moderna y Contemporánea', 'Bachata', 'Rumba', 
+                                        'Flamenco', 'Tap', 'Social', 'Espiritual', 'Otros Urbanos', 'Otros']
+                     },
+            "Manualidades": {'color': '#6B10C9', 
+                      'subcategories': ['Joyería', 'Bisutería',  'Bordado', 'Costura', 'Otros']
+                     },
             "Deportes": {'color': '#C177EF',
-                         'subcategories': ['Boxeo', 'Fitness', 'Gimnasia', 'Golf', 'Natación', 'Tennis',
-                                           'Otros']},
-            "Gastronomía": {'color': '#EB5369',
-                            'subcategories': ['Bebidas', 'Criolla', 'Internacional', 'Degustación', 'En pareja',
-                                              'Panadería', 'Repostería', 'Otros']},
-            "Idiomas": {'color': '#00AA79',
-                        'subcategories': ['Alemán', 'Chino', 'Español', 'Francés', 'Inglés', 'Italiano', 'Japonés',
-                                          'Lengua de señas', 'Portugués', 'Otros']},
+                         'subcategories': ['Fútbol', 'Combate', 'Aventura', 'Otros']
+                        },
+            "Gastronomía": {'color': '#EB5369', 
+                            'subcategories': ['Italiana', 'Vegetariana', 'Japonesa',  'Tailandesa',  'Mexicana',  'Hindú',  'Peruana',  'Repostería', 'Otros']
+                           },
+            "Idiomas": {'color': '#00AA79', 
+                        'subcategories': ['Inglés', 'Portugues', 'Español', 'Italiano', 'Francés', 'Alemán', 'Otros']},
             "Música": {'color': '#FF7E60',
-                       'subcategories': ['Acordeón', 'Armónica', 'Audio y Producción', 'Bajo', 'Batería', 'Canto', 'DJ',
-                                         'Guitarra', 'Piano', 'Saxofón', 'Teclado', 'Teoría', 'Trompeta', 'Violín',
-                                         'Violonchelo', 'Otros']},
-            "Infantiles": {'color': '#0084B4 ',
-                      'subcategories': ['Académico', 'Actuación', 'Arte', 'Bailes', 'Campamentos', 'Cocina', 'Deportes',
-                                        'Habilidades', 'Idiomas', 'Tecnología', 'Otros']},
+                       'subcategories': ['Composición', 'Producción', 'DJ', 'Otros']},
+            "Infantil": {'color': '#0084B4',
+                      'subcategories': ['Yoga', 'Cocina', 'Danza', 'Otros']},
             "Profesional": {'color': '#FFC971',
-                            'subcategories': ['Académico', 'Arquitectura', 'Comunicación', 'Derecho', 'Docencia',
-                                              'Entrenamiento', 'Finanzas', 'Ingeniería', 'Liderazgo', 'Management',
-                                              'Marketing', 'Recursos Humanos', 'Medicina', 'Startups', 'Otros']},
+                            'subcategories': ['Redes Sociales', 'Marketing', 'Contabilidad', 'Oratoria', 'Locución', 'Administración', 'Ventas', 'Otros']},
             "Tecnología": {'color': '#EB9F61',
-                           'subcategories': ['Animación', 'Desarrollo Web y Móvil', 'Diseño Web y Móvil', 'Juegos',
-                                             'Microsoft', 'Modelado', 'Programación', 'Otros']},
-            "Fitness": {'color': '#222222',
-                         'subcategories': ['Zumba', 'Yoga']},
+                           'subcategories': ['Desarrollo Web', 'Desarrollo Móvil', 'Modelado', 'Microsoft', 'Programación', 
+                                             'Telecomunicaciones', 'Base de Datos', 'Otros']},
+            "Fitness": {'color': '#222222', 
+                         'subcategories': ['Yoga', 'Crossfit',' Zumba', 'Otros']},
+            "Vida cotidiana":{'color': '#2981FB', 
+                         'subcategories': ['Meditación', 'Otros']
+            }
         }

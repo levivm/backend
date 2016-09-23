@@ -20,9 +20,5 @@ class Command(BaseCommand):
                 "name": "Bogotá",
                 "point": "POINT(4.5980478 -74.0760867)"
             },
-            {
-                "name": "Barranquilla",
-                "point": "POINT(10.979932 -74.7957384)"
-            },
 
         ]
