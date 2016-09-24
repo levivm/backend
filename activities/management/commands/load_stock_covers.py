@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 data = {
                     'category': category.name,
                     'subcategory': subcategory.name,
-                    'filename': '%s %02i.jpg' % (subcategory.name.lower(), index)
+                    'filename': '%s %02i.jpg' % (subcategory.name, index)
                 }
                 filepath = unicodedata.normalize('NFD', 'activities_stock/%(category)s/%(subcategory)s/%(filename)s' % data)
                 ActivityStockPhoto.objects.create(sub_category=subcategory, photo=filepath)
