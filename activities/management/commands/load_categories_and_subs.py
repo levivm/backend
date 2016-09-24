@@ -30,7 +30,7 @@ class Command(BaseCommand):
             "Manualidades": {'color': '#6B10C9', 
                       'subcategories': ['Joyería', 'Bisutería',  'Bordado', 'Costura', 'Otros']
                      },
-            "Deportes": {'color': '#C177EF',
+            "Deporte": {'color': '#C177EF',
                          'subcategories': ['Fútbol', 'Combate', 'Aventura', 'Otros']
                         },
             "Gastronomía": {'color': '#EB5369', 
@@ -43,13 +43,14 @@ class Command(BaseCommand):
             "Infantil": {'color': '#0084B4',
                       'subcategories': ['Yoga', 'Cocina', 'Danza', 'Otros']},
             "Profesional": {'color': '#FFC971',
-                            'subcategories': ['Redes Sociales', 'Marketing', 'Contabilidad', 'Oratoria', 'Locución', 'Administración', 'Ventas', 'Otros']},
+                            'subcategories': ['Redes Sociales', 'Marketing', 'Contabilidad', 'Oratoria', 'Locución', 'Administración', 'Ventas', 
+                                              'Finanzas', 'Otros']},
             "Tecnología": {'color': '#EB9F61',
                            'subcategories': ['Desarrollo Web', 'Desarrollo Móvil', 'Modelado', 'Microsoft', 'Programación', 
-                                             'Telecomunicaciones', 'Base de Datos', 'Otros']},
+                                             'Telecomunicaciones', 'Base de datos', 'Otros']},
             "Fitness": {'color': '#222222', 
                          'subcategories': ['Yoga', 'Crossfit',' Zumba', 'Otros']},
-            "Vida cotidiana":{'color': '#2981FB', 
+            "Vida Cotidiana":{'color': '#2981FB', 
                          'subcategories': ['Meditación', 'Otros']
             }
         }

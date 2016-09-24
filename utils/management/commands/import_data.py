@@ -75,8 +75,10 @@ class Command(BaseCommand):
         for id, data in self.organizers.items():
             self.stdout.write('Creating organizer "%s"...' % data['name'], ending='')
             email = data.pop('email')
-
             if User.objects.filter(email=email).exists():
+                user = User.objects.get(email=email)
+                organizer = Organizer.objects.get(user__email=email)
+                self.organizers[id].update({'instance': organizer})
                 self.stdout.write(self.style.ERROR('DUPLICATED'))
                 continue
 
@@ -109,7 +111,8 @@ class Command(BaseCommand):
     def read_activities(self, filename):
         with open(filename, newline='') as csvfile:
             reader = csv.reader(csvfile)
-            for row in reader:
+            for index, row in enumerate(reader):
+                print("fila", index)
                 organizer_id = row[0]
                 is_open = row[2]
                 certification = row[4]
@@ -137,7 +140,6 @@ class Command(BaseCommand):
                     'avanzado': activities_constants.LEVEL_A,
                     'no aplica': activities_constants.LEVEL_N,
                 }
-
                 organizer = self.organizers[str(organizer_id)]['instance']
                 request = mock.MagicMock()
                 request.user = organizer.user
@@ -168,7 +170,8 @@ class Command(BaseCommand):
                 })
 
     def create_activities(self):
-        for data in self.activities:
+        for index, data in enumerate(self.activities):
+            print('file', index)
             self.stdout.write('Creating activity "%s"...' % data['title'], ending='')
             open_calendar = data.pop('open_calendar')
             closed_calendar = data.pop('closed_calendar')
