@@ -20,8 +20,9 @@ class AmazonS3FileField(ImageField):
         if not file:
             return
 
-        file_name = quote(unicodedata.normalize('NFD', file.name).encode('utf-8'))
-        return "{}{}".format(self._base_path, file_name)
+        # file_name = quote(unicodedata.normalize('NFD', file.name).encode('utf-8'))
+        return file.url
+
 
 
 class BankField(serializers.Field):
