@@ -25,7 +25,7 @@ class Command(BaseCommand):
                      'subcategories': ['Dibujo y Pintura', 'Moda', 'Fotografía', 'Diseño gráfico', 'Modelaje', 'Otros' ]},
             "Danza": {'color': '#38DBC7', 
                       'subcategories': ['Ballet', 'Arabe',  'Salsa', 'Hip Hop', 'Moderna y Contemporánea', 'Bachata', 'Rumba', 
-                                        'Flamenco', 'Tap', 'Social', 'Espiritual', 'Otros Urbanos', 'Otros']
+                                        'Flamenco', 'Tap', 'Social', 'Otros Urbanos', 'Otros']
                      },
             "Manualidades": {'color': '#6B10C9', 
                       'subcategories': ['Joyería', 'Bisutería',  'Bordado', 'Costura', 'Otros']

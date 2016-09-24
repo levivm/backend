@@ -256,15 +256,18 @@
                         <div style="margin-bottom:10px; width: 420px;margin: 0 auto;">
                           <h1 style="margin: 0 auto; font-size: 20px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; margin-bottom: 20px;">
                             Recuerda que</h1>
+
+                          {% if initial_date %}
                           <div>
                             <h1 style="margin: 0 auto; font-size: 17px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; margin-bottom:15px;">
                               Inicio</h1>
                             <span
                                 style="font-size:19px;  font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">{{ initial_date|date:"l j \d\e F \a \l\a\s P" }}</span>
                           </div>
+                          {% endif %}
                           <div>
                             <h1 style="margin: 0 auto; font-size: 17px; font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center; margin-bottom:15px; margin-top:15px;">
-                              Ubicación</h1>
+                              Ubicación de la clase</h1>
                             <span
                                 style="font-size:19px;  font-family: 'Helvetica Neue','Helvetica',Helvetica,Arial,sans-serif; text-align: center;">{{ address }}, {{ city }}</span>
                           </div>
