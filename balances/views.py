@@ -8,7 +8,7 @@ from utils.paginations import SmallResultsSetPagination
 from utils.permissions import IsOrganizer
 from .models import BalanceLog
 from .serializers import WithdrawSerializer
-from .tasks import CalculateOrganizerBalanceTask
+from .tasks import CalculateOrganizerBalanceTask, NotifyWithdrawalRequestOrganizerTask
 
 
 class BalanceRetrieveView(APIView):
@@ -40,16 +40,18 @@ class WithdrawalListCreateView(ListCreateAPIView):
         }
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-
+        withdrawal = serializer.save()
 
         organizer.balance_logs.available().update(status=BalanceLog.STATUS_REQUESTED)
         calculate_organizer_balance_task = CalculateOrganizerBalanceTask()
         calculate_organizer_balance_task.delay([organizer.id])
 
+        notify_organizer_request_task = NotifyWithdrawalRequestOrganizerTask()
+        notify_organizer_request_task.delay(withdrawal.id)
+
         headers = self.get_success_headers(serializer.data)
         data_response = serializer.data
         data_response.update({
             'new_available_amount': 0
-            })
+        })
         return Response(data_response, status=status.HTTP_201_CREATED, headers=headers)

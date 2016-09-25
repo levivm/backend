@@ -4,8 +4,12 @@ from django.utils.timezone import timedelta, now, utc
 from model_mommy import mommy
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
+
+from activities.factories import ActivityFactory
 from activities.models import Activity, Calendar
+from orders.factories import OrderFactory
 from orders.models import Order
+from reviews.factories import ReviewFactory
 from reviews.models import Review
 from reviews.serializers import ReviewSerializer
 from students.models import Student
@@ -17,9 +21,9 @@ class ReviewSerializerTest(APITestCase):
     """
 
     def setUp(self):
-        self.activity = mommy.make(Activity)
+        self.activity = ActivityFactory()
         self.author = mommy.make(Student)
-        self.order = mommy.make(Order, status=Order.ORDER_APPROVED_STATUS, calendar__activity=self.activity,
+        self.order = OrderFactory(status=Order.ORDER_APPROVED_STATUS, calendar__activity=self.activity,
                                 calendar__initial_date=now() - timedelta(days=3), student=self.author)
         self.data = {
             'rating': 5,
@@ -119,7 +123,7 @@ class ReviewSerializerTest(APITestCase):
         """
 
         # Set the initial_date 10 days ahead
-        self.order.calendar.initial_date = now() + timedelta(days=10)
+        self.order.calendar.initial_date = (now() + timedelta(days=10)).date()
         self.order.calendar.save()
 
         with self.assertRaisesMessage(ValidationError,
@@ -135,7 +139,7 @@ class ReviewSerializerTest(APITestCase):
         """
 
         replied_at = datetime.datetime(2015, 11, 8, 3, 30, 0, tzinfo=utc)
-        review = mommy.make(Review, reply='Replied', replied_at=replied_at)
+        review = ReviewFactory(reply='Replied', replied_at=replied_at)
 
         serializer = ReviewSerializer(review, data={'rating': 2}, partial=True)
         serializer.is_valid(raise_exception=True)

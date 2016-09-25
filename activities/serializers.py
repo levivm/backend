@@ -2,21 +2,23 @@
 # "Content-Type: text/plain; charset=UTF-8\n"
 
 import urllib
+import unicodedata
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from activities.mixins import WishListSerializerMixin
-from activities.models import Activity, Category, SubCategory, Tags, Calendar, \
-    CalendarSession, ActivityPhoto
+from activities.models import Activity, Category, SubCategory, Tags, Calendar, ActivityPhoto, \
+    CalendarPackage, ActivityStockPhoto
 from locations.serializers import LocationsSerializer
 from orders.serializers import AssistantsSerializer
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer, InstructorsSerializer
 from reviews.serializers import ReviewSerializer
 from utils.mixins import FileUploadMixin
-from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField
+from utils.serializers import UnixEpochDateField, RemovableSerializerFieldMixin, HTMLField, \
+    AmazonS3FileField
 from . import constants as activities_constants
 
 
@@ -47,10 +49,13 @@ class SubCategoriesSerializer(serializers.ModelSerializer):
 
 class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
     subcategories = SubCategoriesSerializer(many=True, read_only=True, source='subcategory_set')
+    cover = serializers.SerializerMethodField()
     icon_default = serializers.SerializerMethodField()
     icon_active = serializers.SerializerMethodField()
-    cover = serializers.SerializerMethodField()
+    cover_photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    content_photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
     description = HTMLField()
+    headline = HTMLField()
 
     class Meta:
         model = Category
@@ -59,11 +64,12 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'id',
             'subcategories',
             'color',
+            'cover',
             'icon_default',
             'icon_active',
-            'cover',
             'slug',
             'description',
+            'headline',
             'cover_photo',
             'content_photo',
         )
@@ -79,9 +85,6 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
     def get_cover(self, obj):
-        import unicodedata
-        import pdb
-        pdb.set_trace()
         file = unicodedata.normalize('NFD', obj.name.lower())
         url = 'static/img/categories/cover/'
         file_name = "%s.jpg" % file
@@ -89,12 +92,27 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
         return "%s%s" % (url, file_name)
 
 
+class ActivityStockPhotosSerializer(serializers.ModelSerializer):
+    photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+
+    class Meta:
+        model = ActivityStockPhoto
+        fields = (
+            'photo',
+            'id',
+        )
+
+
 class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
+    photo = AmazonS3FileField(base_path=settings.MEDIA_URL)
+    thumbnail = AmazonS3FileField(base_path=settings.MEDIA_URL, read_only=True)
+
     class Meta:
         model = ActivityPhoto
         fields = (
             'photo',
             'main_photo',
+            'thumbnail',
             'id',
         )
 
@@ -128,27 +146,42 @@ class ActivityPhotosSerializer(FileUploadMixin, serializers.ModelSerializer):
         return photo
 
 
-class CalendarSessionSerializer(serializers.ModelSerializer):
-    date = UnixEpochDateField()
-    start_time = UnixEpochDateField()
-    end_time = UnixEpochDateField()
+class CalendarPackageSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(label='ID', read_only=False, required=False)
+    type_name = serializers.SerializerMethodField()
 
     class Meta:
-        model = CalendarSession
+        model = CalendarPackage
         fields = (
             'id',
-            'date',
-            'start_time',
-            'end_time',
+            'quantity',
+            'price',
+            'type',
+            'type_name'
         )
+
+    def get_type_name(self, obj):
+        return obj.get_type_display()
+
+    def validate_quantity(self, quantity):
+        if quantity < 1:
+            raise serializers.ValidationError(_('La cantidad no puede ser menor a 1.'))
+
+        return quantity
+
+    def validate_price(self, price):
+        if price < settings.MIN_ALLOWED_CALENDAR_PRICE:
+            raise serializers.ValidationError(_('El precio no puede ser menor a 30000.'))
+
+        return price
 
 
 class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSerializer):
-    sessions = CalendarSessionSerializer(many=True)
     activity = serializers.PrimaryKeyRelatedField(queryset=Activity.objects.all())
     initial_date = UnixEpochDateField()
-    closing_sale = UnixEpochDateField()
     assistants = serializers.SerializerMethodField()
+    schedules = HTMLField()
+    packages = CalendarPackageSerializer(many=True, required=False)
 
     class Meta:
         model = Calendar
@@ -156,64 +189,35 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             'id',
             'activity',
             'initial_date',
-            'closing_sale',
-            'number_of_sessions',
+            'enroll_open',
             'session_price',
-            'sessions',
             'assistants',
             'is_weekend',
-            'duration',
             'is_free',
             'available_capacity',
             'note',
+            'schedules',
+            'packages',
         )
         depth = 1
 
     def get_assistants(self, obj):
         assistants = obj.get_assistants()
-        assistants_serialzer = AssistantsSerializer(assistants, many=True, context=self.context,
-                                                    remove_fields=['student'])
-        return assistants_serialzer.data
+        assistants_serializer = AssistantsSerializer(assistants, many=True, context=self.context,
+                                                     remove_fields=['student'])
+        return assistants_serializer.data
 
     def validate_activity(self, value):
         return value
 
     def validate_schedules(self, value):
+        if self.instance and not self.instance.schedules == value:
+            if self.instance.orders.available().count() > 0:
+                msg = 'No se puede cambiar el horario debido a que existen ordenes relacionadas.'
+                raise serializers.ValidationError(_(msg))
         return value
 
     def validate_initial_date(self, value):
-        return value
-
-    def validate_sessions(self, value):
-        if len(value) <= 0:
-            raise serializers.ValidationError(_("Deber haber mínimo una sesión."))
-
-        if not self.instance:
-            return value
-
-        def get_time(item):
-            return {
-            'date': item['date'],
-            'start_time': item['start_time'].time(),
-            'end_time': item['end_time'].time()}
-
-        values = map(get_time, value)
-
-        sessions = [{
-            'date': s.date.replace(tzinfo=None, second=0, microsecond=0),
-            'start_time': s.start_time.replace(second=0, microsecond=0),
-            'end_time': s.end_time.replace(second=0, microsecond=0)}
-            for s in self.instance.sessions.all()]
-
-        for item in values:
-            if item in sessions:
-                continue
-            else:
-                if self.instance and self.instance.orders.available().count() > 0:
-                    raise serializers.ValidationError(_("No se puede cambiar la sessión con estudiantes "
-                                                        "inscritos."))
-                break
-
         return value
 
     def validate_available_capacity(self, value):
@@ -221,123 +225,71 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
             raise serializers.ValidationError(_("La capacidad no puede ser negativa."))
         return value
 
-    def validate_number_of_sessions(self, value):
-        if value < 1:
-            raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
-        return value
-
     def _validate_session_price(self, data):
         value = data.get('session_price')
-        if value < 1:
-            error = {'session_price': _("Introduzca un monto valido")}
-            raise serializers.ValidationError(error)
+        if value is not None:
+            if value < 1:
+                error = {'session_price': _("Introduzca un monto valido")}
+                raise serializers.ValidationError(error)
 
-        if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
-            msg = _("El precio no puede ser menor de {:d}"
-                    .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
-            error = {'session_price': msg}
-            raise serializers.ValidationError(error)
+            if value < settings.MIN_ALLOWED_CALENDAR_PRICE:
+                msg = _("El precio no puede ser menor de {:d}"
+                        .format(settings.MIN_ALLOWED_CALENDAR_PRICE))
+                error = {'session_price': msg}
+                raise serializers.ValidationError(error)
+        else:
+            raise serializers.ValidationError({'session_price': _('Este campo es requerido.')})
 
-    def _set_initial_date(self, data):
-        sessions = data.get('sessions')
-        first_session = (sessions[:1] or [None])[0]
-        data['initial_date'] = first_session.get('date')
-        return data
-
-    def _validate_session(self, sessions_amount, index, session):
-
-        start_time = session['start_time']
-        end_time = session['end_time']
-        if start_time >= end_time:
-            msg = _(u"La hora de inicio debe ser menor a la hora final")
-            errors = [{}] * sessions_amount
-            errors[index] = {'start_time_' + str(index): [msg]}
-            raise serializers.ValidationError({'sessions': errors})
-
-    def _proccess_sessions(self, data):
-
-        sessions_data = data['sessions']
-        data['is_weekend'] = True
-
-        sessions_amount = len(sessions_data)
-        if not sessions_amount:
-            raise serializers.ValidationError(_(u"Debe especificar por lo menos una sesión"))
-
-        for i in range(sessions_amount):
-
-            session = sessions_data[i]
-            n_session = sessions_data[i + 1] if i + 1 < sessions_amount else None
-
-            self._validate_session(sessions_amount, i, session)
-
-            date = session['date'].date()
-
-            weekday = date.weekday()
-            if weekday < 5:
-                data['is_weekend'] = False
-
-            if not n_session:
-                continue
-
-            n_date = n_session['date'].date()
-
-            if date > n_date:
-                msg = _(u'La fecha su sesión debe ser mayor a la anterior')
-                errors = [{}] * sessions_amount
-                errors[i + 1] = {'date_' + str(0): [msg]}
-                raise serializers.ValidationError({'sessions': errors})
-
-            elif date == n_date:
-                if session['end_time'].time() > n_session['start_time'].time():
-                    msg = _(
-                        u'La hora de inicio de su sesión debe ser después de la sesión anterior')
-                    errors = [{}] * sessions_amount
-                    errors[i + 1] = {'start_time_' + str(i + 1): [msg]}
-                    raise serializers.ValidationError({'sessions': errors})
-
-        return data
+    def _validate_packages(self, data):
+        packages = data.get('packages')
+        if not packages:
+            raise serializers.ValidationError({'packages': _('Este campo es requerido.')})
 
     def validate(self, data):
+        activity = self.instance.activity if self.instance else data['activity']
+
+        if not self.instance and activity.is_open and activity.calendars.count() > 0:
+            raise serializers.ValidationError(_("No se puede crear más de un calendario cuando"
+                                                " la actividad es de horario abierto"))
 
         is_free = data.get('is_free')
         if not is_free:
-            self._validate_session_price(data)
-
-        data = self._set_initial_date(data)
-        data = self._proccess_sessions(data)
-        initial_date = data['initial_date']
-        closing_sale = data['closing_sale']
-        if initial_date < closing_sale:
-            raise serializers.ValidationError(
-                {'closing_sale': _("La fecha de cierre de ventas no puede ser mayor \
-                                        a la fecha de inicio.")})
+            if not activity.is_open:
+                self._validate_session_price(data)
+            else:
+                self._validate_packages(data)
 
         return data
 
     def create(self, validated_data):
-        sessions_data = validated_data.get('sessions')
-        last_session = sessions_data[-1]
-        del (validated_data['sessions'])
+        packages = validated_data.pop('packages', list())
         calendar = Calendar.objects.create(**validated_data)
-        calendar.activity.set_last_date(last_session)
-        _sessions = [CalendarSession(calendar=calendar, **data) for data in sessions_data]
-        CalendarSession.objects.bulk_create(_sessions)
-
+        for package in packages:
+            CalendarPackage.objects.create(calendar=calendar, **package)
         return calendar
 
     def update(self, instance, validated_data):
-        sessions_data = validated_data.get('sessions')
-        last_session = sessions_data[-1]
-        instance.activity.set_last_date(last_session)
-        del (validated_data['sessions'])
+        packages = validated_data.pop('packages', list())
         instance.update(validated_data)
-        sessions = instance.sessions.all()
-        sessions.delete()
 
-        _sessions = [CalendarSession(calendar=instance, **data) for data in sessions_data]
-        CalendarSession.objects.bulk_create(_sessions)
-
+        self._handler_packages(calendar=instance, packages=packages)
         return instance
+
+    def _handler_packages(self, calendar, packages):
+        ids = list()
+        for package_data in packages:
+            id = package_data.pop('id', None)
+            if id is not None:
+                # Update package
+                ids.append(id)
+                package = calendar.packages.get(id=id)
+                package.update(package_data)
+            else:
+                # Create package
+                package = CalendarPackage.objects.create(calendar=calendar, **package_data)
+                ids.append(package.id)
+
+        calendar.packages.exclude(id__in=ids).delete()
 
 
 class ActivitiesAutocompleteSerializer(serializers.ModelSerializer):
@@ -354,6 +306,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
     category = serializers.SerializerMethodField()
     pictures = serializers.SerializerMethodField()
     organizer = serializers.SerializerMethodField()
+    cloest_calendar_package = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -366,8 +319,10 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
             'organizer',
             'published',
             'closest_calendar',
+            'cloest_calendar_package',
             'organizer',
             'wish_list',
+            'is_open'
         )
 
     def get_category(self, obj):
@@ -378,16 +333,53 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         request = self.context.get('request')
         if not request:
             instance = obj.closest_calendar()
+            self.selected_closest_calendar = instance
         else:
             cost_start = request.query_params.get('cost_start')
             cost_end = request.query_params.get('cost_end')
-            closing_sale = request.query_params.get('date')
+            initial_date = request.query_params.get('date')
             is_free = request.query_params.get('is_free')
-            instance = obj.closest_calendar(closing_sale, cost_start, cost_end, is_free)
+            instance = obj.closest_calendar(initial_date, cost_start, cost_end, is_free)
+            self.selected_closest_calendar = instance
         return CalendarSerializer(instance,
-                                  remove_fields=['sessions', 'assistants', 'activity',
-                                                 'number_of_sessions',
+                                  remove_fields=['assistants', 'activity',
                                                  'available_capacity', 'is_weekend']).data
+
+    def get_cloest_calendar_package(self, obj):
+
+        request = self.context.get('request')
+        closest_calendar = obj.closest_calendar() if not self.selected_closest_calendar else\
+            self.selected_closest_calendar
+
+        if not closest_calendar:
+            return
+
+        if not request:
+            closest_calendar_packages = closest_calendar.packages.order_by('price')
+            if not closest_calendar_packages:
+                return
+            return CalendarPackageSerializer(closest_calendar_packages[0]).data
+
+        cost_start = request.query_params.get('cost_start')
+        cost_end = request.query_params.get('cost_end')
+        is_free = request.query_params.get('is_free')
+        order = request.query_params.get('o')
+        packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))\
+            if cost_start and cost_end else closest_calendar.packages.all()
+
+        if not packages:
+            return
+
+        if is_free:
+            closest_calendar_package = packages[0]
+            return CalendarPackageSerializer(closest_calendar_package).data
+
+        order_by = ['-price'] if order == activities_constants.ORDER_MAX_PRICE else ['price']
+        closest_calendar_packages = packages.order_by(*order_by)
+        if not packages:
+            return
+
+        return CalendarPackageSerializer(closest_calendar_packages[0]).data
 
     def get_pictures(self, obj):
         pictures = [p for p in obj.pictures.all() if p.main_photo]
@@ -406,10 +398,10 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     sub_category = serializers.SlugRelatedField(slug_field='id',
                                                 queryset=SubCategory.objects.all(), required=True)
     category = serializers.SerializerMethodField()
+    is_open_display = serializers.SerializerMethodField()
     location = LocationsSerializer(read_only=True)
     pictures = ActivityPhotosSerializer(read_only=True, many=True)
     calendars = CalendarSerializer(read_only=True, many=True)
-    last_date = serializers.SerializerMethodField()
     organizer = OrganizersSerializer(read_only=True)
     sub_category_display = serializers.SerializerMethodField()
     level_display = serializers.SerializerMethodField()
@@ -421,6 +413,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     wishlist_count = serializers.SerializerMethodField()
     content = HTMLField(allow_blank=True, required=False)
     requirements = HTMLField(allow_blank=True, required=False)
+    post_enroll_message = HTMLField(allow_blank=True, required=False)
     extra_info = HTMLField(allow_blank=True, required=False)
     audience = HTMLField(allow_blank=True, required=False)
     goals = HTMLField(allow_blank=True, required=False)
@@ -440,6 +433,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'category',
             'content',
             'requirements',
+            'post_enroll_message',
             'return_policy',
             'extra_info',
             'audience',
@@ -450,7 +444,6 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'youtube_video_url',
             'published',
             'certification',
-            'last_date',
             'calendars',
             'closest_calendar',
             'required_steps',
@@ -461,7 +454,9 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
             'rating',
             'wish_list',
             'reviews',
-            'wishlist_count'
+            'wishlist_count',
+            'is_open',
+            'is_open_display',
         )
         depth = 1
 
@@ -470,9 +465,6 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
 
     def get_steps(self, obj):
         return activities_constants.ACTIVITY_STEPS
-
-    def get_last_date(self, obj):
-        return UnixEpochDateField().to_representation(obj.last_date)
 
     def get_sub_category_display(self, obj):
         return obj.sub_category.name
@@ -498,6 +490,9 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     def get_wishlist_count(self, obj):
         return obj.wishlist_count
 
+    def get_is_open_display(self, obj):
+        return _('Abierto') if obj.is_open else _('Fijo')
+
     def validate(self, data):
         request = self.context['request']
         user = request.user
@@ -508,6 +503,13 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
 
         data['organizer'] = organizer
 
+        return data
+
+    def validate_is_open(self, data):
+        if self.instance and not data == self.instance.is_open\
+            and self.instance.calendars.count() > 0 :
+            raise serializers.ValidationError(_("No se puede cambiar el tipo de horario porque"
+                                                " existen calendarios relacionados."))
         return data
 
     def create(self, validated_data):

@@ -1,8 +1,27 @@
 import time as time_a
+import unicodedata
+
 from html import unescape
 from datetime import time, date, datetime
+from requests.utils import quote
 from rest_framework import serializers
+from rest_framework.fields import ImageField
 from django.utils.html import escape
+
+
+class AmazonS3FileField(ImageField):
+
+    def __init__(self, base_path=None, *args, **kwargs):
+        self._base_path = base_path
+        super(AmazonS3FileField, self).__init__(**kwargs)
+
+    def to_representation(self, file):
+        """ Return correct URL Encode S3 path from a file"""
+        if not file:
+            return
+
+        # file_name = quote(unicodedata.normalize('NFD', file.name).encode('utf-8'))
+        return file.url
 
 
 
@@ -23,23 +42,21 @@ class UnixEpochDateField(serializers.DateTimeField):
     def to_representation(self, value):
 
         """ Return epoch time for a datetime object or ``None``"""
-        #return int(time.mktime(value.timetuple()))
 
         if type(value) is time:
             d = date.today()
-            value = datetime.combine(d,value)
+            value = datetime.combine(d, value)
 
         try:
-            return time_a.mktime(value.timetuple())*1000
+            return time_a.mktime(value.timetuple()) * 1000
         except (AttributeError, TypeError):
             return None
 
     def to_internal_value(self, value):
-        return datetime.fromtimestamp(value//1000).replace(second=0)
+        return datetime.fromtimestamp(value // 1000).replace(second=0)
 
 
 class HTMLField(serializers.CharField):
-
 
     def to_representation(self, value):
         """ Return HTML code escaped """
@@ -52,9 +69,7 @@ class HTMLField(serializers.CharField):
         return escape(value)
 
 
-
 class RemovableSerializerFieldMixin(object):
-
 
     def __init__(self, *args, **kwargs):
         remove_fields = kwargs.pop('remove_fields', None)

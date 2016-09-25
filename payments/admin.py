@@ -21,5 +21,5 @@ class PaymentAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(Fee)
 class FeeAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('name', 'amount')
-    operative_readonly_fields = {'amount', 'name'}
+    list_display = ('type', 'amount')
+    operative_readonly_fields = {'amount', 'type'}

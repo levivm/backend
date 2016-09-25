@@ -1,15 +1,12 @@
 import mock
 from django.utils.timezone import now, timedelta
-from model_mommy import mommy
 from rest_framework.test import APITestCase
 
-from activities.factories import CalendarFactory, CalendarSessionFactory
+from activities.factories import CalendarFactory
 from orders.factories import OrderFactory
 from reviews.factories import ReviewFactory
-from reviews.models import Review
 from reviews.tasks import SendReportReviewEmailTask, SendCommentToOrganizerEmailTask, \
     SendReplyToStudentEmailTask, SendReminderReviewEmailTask
-from students.factories import StudentFactory
 from utils.models import EmailTaskRecord
 
 
@@ -20,8 +17,8 @@ class SendReportReviewEmailTaskTest(APITestCase):
 
     def setUp(self):
         # Arrangement
-        self.review = mommy.make(Review, rating=3)
-        self.email = 'contacto@trulii.com'
+        self.review = ReviewFactory(rating=3)
+        self.email = 'alo@trulii.com'
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
@@ -133,7 +130,6 @@ class SendReminderReviewEmailTaskTest(APITestCase):
     def setUp(self):
         self.calendar = CalendarFactory()
         self.order = OrderFactory(calendar=self.calendar, status='approved')
-        CalendarSessionFactory(calendar=self.calendar, date=now() - timedelta(days=5))
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):

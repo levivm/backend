@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 
 from activities.factories import ActivityFactory, ActivityPhotoFactory, \
     CalendarFactory
-from activities.models import Calendar, Activity, CalendarSession
+from activities.models import Calendar
 from orders.models import Order, Assistant
 from reviews.models import Review
 from users.factories import UserFactory
@@ -28,7 +28,6 @@ class CalendarTestCase(APITestCase):
                     Order.ORDER_DECLINED_STATUS, Order.ORDER_CANCELLED_STATUS]
         orders = mommy.make(Order, calendar=self.calendar, status=cycle(statuses), quantity=4, _quantity=4)
         return orders
-        # return mommy.make(Order, calendar=self.calendar, status=cycle(statuses), quantity=4, _quantity=4)
 
     def create_assistants(self):
         enrolled = [True, False]
@@ -142,16 +141,6 @@ class ActivityTestCase(APITestCase):
 
         user = self.activity.organizer.user
         self.assertTrue(user.has_perm('activities.change_activity', self.activity))
-
-    def test_last_sale_date(self):
-        """
-        Test the last sale date of the calendar's sessions associated
-        """
-
-        calendars = mommy.make(Calendar, _quantity=3, activity=self.activity)
-        sessions = mommy.make(CalendarSession, _quantity=6, calendar=cycle(calendars), date=now())
-
-        self.assertEqual(self.activity.last_sale_date(), sessions[-1].date)
 
 
 class ActivityPhotoTestCase(APITestCase):

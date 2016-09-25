@@ -63,6 +63,8 @@ class CreateCouponTask(Task):
     """ Task to create a coupon and its relation with the student """
 
     def run(self, params, *args, **kwargs):
+        if not params:
+            return
         student_id = params.get('student_id')
         coupon_type_name = params.get('coupon_type_name')
         referral_id = params.get('referral_id')

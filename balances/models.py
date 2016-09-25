@@ -3,6 +3,7 @@ from django.utils.translation import ugettext as _
 
 from activities.models import Calendar
 from balances.querysets import BalanceLogQuerySet
+from orders.models import Order
 from organizers.models import Organizer
 
 
@@ -27,16 +28,19 @@ class BalanceLog(models.Model):
     )
 
     organizer = models.ForeignKey(Organizer, related_name='balance_logs')
-    calendar = models.ForeignKey(Calendar, related_name='balance_logs')
+    order = models.ForeignKey(Order, related_name='balance_logs')
     status = models.CharField(choices=STATUS, max_length=15, default='unavailable')
+    created_at = models.DateTimeField(auto_now_add=True)
 
     objects = BalanceLogQuerySet.as_manager()
 
-    @classmethod
-    def create(cls, organizer=None, calendar=None):
-        instance, created = cls.objects.get_or_create(organizer=organizer, calendar=calendar)
-        return instance
+    def __str__(self):
+        return "Order:{}-Status:{}".format(self.order.id, self.status)
 
+    @classmethod
+    def create(cls, organizer=None, order=None):
+        instance, created = cls.objects.get_or_create(organizer=organizer, order=order)
+        return instance
 
 
 class Withdrawal(models.Model):

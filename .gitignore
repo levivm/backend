@@ -9,3 +9,4 @@ celerybeat-schedule
 */.cache
 *.swp
 node_modules
+*.csv

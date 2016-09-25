@@ -26,14 +26,15 @@ class ActivitySearchEngineTest(APITestCase):
             'cost_end': settings.PRICE_RANGE.get('max'),
         }
 
-        search = ActivitySearchEngine()
-        query = search.filter_query(query_params=query_params)
-        content = Q(published=True) & Q(calendars__session_price__gte=self.initial_price)
+        search = ActivitySearchEngine(query_params=query_params)
+        query = search.filter_query()
+        content = Q(published=True) & (Q(calendars__session_price__gte=self.initial_price) | Q(calendars__packages__price__gte=50000))
 
         self.assertEqual(str(query), str(content))
 
         # With limit
-        query = search.filter_query(query_params={**query_params, 'cost_end': self.final_price})
-        content = Q(published=True) & Q(calendars__session_price__range=(self.initial_price, self.final_price))
+        search = ActivitySearchEngine(query_params={**query_params, 'cost_end': self.final_price})
+        query = search.filter_query()
+        content = Q(published=True) & (Q(calendars__session_price__range=(self.initial_price, self.final_price)) | Q(calendars__packages__price__range=(50000, 100000)))
 
         self.assertEqual(str(query), str(content))

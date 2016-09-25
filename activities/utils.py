@@ -13,7 +13,7 @@ from requests.api import post
 
 from activities.models import Calendar, ActivityStats
 from orders.models import Order
-from payments.models import Payment as PaymentModel
+from payments.models import Payment as PaymentModel, Fee
 from payments.serializers import PaymentsPSEDataSerializer
 from utils.exceptions import ServiceUnavailable
 
@@ -109,11 +109,16 @@ class PaymentUtil(object):
     card_association = None
     last_four_digits = None
 
-    def __init__(self, request, activity=None, coupon=None):
+    def __init__(self, request, activity=None, calendar=None, package=None, coupon=None):
         super(PaymentUtil, self).__init__()
         self.request = request
+        self.calendar = calendar
         if activity:
             self.activity = activity
+
+        # Set package if there is any
+        self.package = package
+
         self.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         self.coupon = coupon
 
@@ -141,11 +146,31 @@ class PaymentUtil(object):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
+    def get_payu_amount_values(self):
+        fee_iva = Fee.objects.get(type=Fee.IVA).amount
+        amount = self.get_amount()
+        tx_value = amount
+        tx_tax = amount * fee_iva
+        tx_tax_return_base = tx_value - tx_tax
+        return tx_value, tx_tax, tx_tax_return_base
+
     def get_amount(self):
-        calendar_id = self.request.data.get('calendar')
-        calendar = Calendar.objects.get(id=calendar_id)
+
+        # get calendar
+        calendar = self.calendar
+
+        # get package
+        package = self.package
+
+        # get base amount based on package price or calendar session price
+        base_amount = package.price if package \
+            and calendar.activity.is_open else calendar.session_price
+
+        # get amount base on base_amount and assistants amount
         quantity = int(self.request.data['quantity'])
-        amount = calendar.session_price * quantity
+        amount = base_amount * quantity
+
+        # calculate new amount if there is a coupon
         if self.coupon:
             amount -= self.coupon.coupon_type.amount
             amount = 0 if amount < 0 else amount
@@ -185,7 +210,7 @@ class PaymentUtil(object):
         return self.request.data['last_four_digits']
 
     def get_payu_data(self):
-        amount = self.get_amount()
+        total_amount, tax_amount, total_amount_return_base = self.get_payu_amount_values()
         reference_code = self.get_reference_code()
         return {
             'language': 'es',
@@ -201,11 +226,20 @@ class PaymentUtil(object):
                     'description': self.get_payment_description(),
                     'language': 'es',
                     'notifyUrl': settings.PAYU_NOTIFY_URL,
-                    'signature': self.get_signature(reference_code=reference_code, price=amount),
+                    'signature': self.get_signature(reference_code=reference_code,
+                                                    price=total_amount),
                     'buyer': self.get_buyer(),
                     'additionalValues': {
                         'TX_VALUE': {
-                            'value': amount,
+                            'value': total_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX': {
+                            'value': tax_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX_RETURN_BASE': {
+                            'value': total_amount_return_base,
                             'currency': 'COP'
                         }
                     },
@@ -225,7 +259,8 @@ class PaymentUtil(object):
     def creditcard(self):
         self.card_association = self.get_creditcard_association()
         self.last_four_digits = self.get_last_four_digits()
-        payu_data = json.dumps(self.get_payu_data())
+        payu_request = self.get_payu_data()
+        payu_data = json.dumps(payu_request)
         # result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         # result = result.json()
         # if settings.PAYU_TEST and self.valid_test_user():
@@ -234,7 +269,7 @@ class PaymentUtil(object):
         else:
             result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
             result = result.json()
-        return self.response(result)
+        return self.response(result), result, payu_request
 
     def get_cookie(self):
         return self.request.auth.key
@@ -255,7 +290,11 @@ class PaymentUtil(object):
         timestamp = calendar.timegm(now().timetuple())
         user_id = self.request.user.id
         calendar_id = self.request.data.get('calendar')
-        reference = "{}-{}-{}-{}".format(timestamp, user_id, activity_id, calendar_id)
+        package_quantity = self.package.quantity if self.package else 'NA'
+        package_id = self.package.id if self.package else 'NA'
+        package_type = self.package.get_type_display() if self.package else 'NA'
+        reference = "{}-{}-{}-{}-{}-{}-{}".format(timestamp, user_id, package_type, package_id, package_quantity,
+                                            activity_id, calendar_id)
         return reference
 
     def valid_test_user(self):
@@ -335,7 +374,7 @@ class PaymentUtil(object):
             }
 
     def get_payu_pse_data(self):
-        amount = self.get_amount()
+        total_amount, tax_amount, total_amount_return_base = self.get_payu_amount_values()
         reference_code = self.get_reference_code()
 
         return {
@@ -351,12 +390,21 @@ class PaymentUtil(object):
                     "referenceCode": reference_code,
                     "description": self.get_payment_description(),
                     "language": "es",
-                    "signature": self.get_signature(reference_code=reference_code, price=amount),
+                    "signature": self.get_signature(reference_code=reference_code,
+                                                    price=total_amount),
                     "notifyUrl": settings.PAYU_NOTIFY_URL,
                     "additionalValues": {
-                        "TX_VALUE": {
-                            "value": amount,
-                            "currency": "COP"
+                        'TX_VALUE': {
+                            'value': total_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX': {
+                            'value': tax_amount,
+                            'currency': 'COP'
+                        },
+                        'TX_TAX_RETURN_BASE': {
+                            'value': total_amount_return_base,
+                            'currency': 'COP'
                         }
                     },
                     "buyer": self.get_payer()
@@ -381,10 +429,11 @@ class PaymentUtil(object):
 
     def pse_payu_payment(self):
         self.validate_pse_payment_data()
-        payu_data = json.dumps(self.get_payu_pse_data())
+        request_data = self.get_payu_pse_data()
+        payu_data = json.dumps(request_data)
         result = post(url=settings.PAYU_URL, data=payu_data, headers=self.headers)
         result = result.json()
-        return self.pse_response(result)
+        return self.pse_response(result), result, request_data
 
     @staticmethod
     def get_bank_list_payu_data():
@@ -423,7 +472,7 @@ class ActivityStatsUtil(object):
         self.activity = activity
         self.year = year
         self.month = month
-        self.total_points = defaultdict(int)
+        self.total_points = dict()
         self.total_views = self._get_total_views()
         self.total_seats_sold = self._get_total_seats_sold()
         self.next_data = self._get_next_data()
@@ -446,7 +495,14 @@ class ActivityStatsUtil(object):
         dates = iter(rrule(DAILY, dtstart=start_date, until=until,
                            byweekday=range(7)))
 
-        return self._get_monthly_points(dates=dates)
+        points = self._get_monthly_points(dates=dates)
+        last_point = points[-1][str(until)]
+        self.total_points = {
+            'total_gross': last_point['gross'],
+            'total_fee': last_point['fee'],
+            'total_net': last_point['net'],
+        }
+        return points
 
     def yearly(self):
         self.last_point = None
@@ -458,11 +514,18 @@ class ActivityStatsUtil(object):
                            bymonth=range(13)))
         dates.append(now() + datetime.timedelta(days=1))
 
-        return self._get_yearly_points(dates=dates)
+        points = self._get_yearly_points(dates=dates)
+        last_point = points[-1][str(until)]
+        self.total_points = {
+            'total_gross': last_point['gross'],
+            'total_fee': last_point['fee'],
+            'total_net': last_point['net'],
+        }
+        return points
 
     def _get_monthly_points(self, dates):
         points = []
-        last_point = {}
+        # last_point = {}
         for date in dates:
             orders = Order.objects.filter(
                 status=Order.ORDER_APPROVED_STATUS,
@@ -470,9 +533,8 @@ class ActivityStatsUtil(object):
                 created_at__date=date.date())
 
             data = self._get_data(orders=orders)
-            self._sum_points(data=data)
+            # self._sum_points(data=data)
             points.append({str(date.date()): data})
-
         return points
 
     def _get_yearly_points(self, dates):
@@ -486,7 +548,7 @@ class ActivityStatsUtil(object):
                 created_at__range=(start_date, end_date.replace(hour=23, minute=59)))
 
             data = self._get_data(orders=orders)
-            self._sum_points(data=data)
+            # self._sum_points(data=data)
             points.append({str(end_date.date()): data})
             start_date = date.date()
 
@@ -498,7 +560,7 @@ class ActivityStatsUtil(object):
         for order in orders:
             gross += order.amount
             if order.fee:
-                fee += order.amount * order.fee.amount
+                fee += int(order.fee)
             else:
                 fee += 0
 
@@ -521,10 +583,10 @@ class ActivityStatsUtil(object):
 
         return point
 
-    def _sum_points(self, data):
-        self.total_points['total_gross'] += data['gross']
-        self.total_points['total_fee'] += data['fee']
-        self.total_points['total_net'] += data['net']
+    # def _sum_points(self, data):
+    #     self.total_points['total_gross'] += data['gross']
+    #     self.total_points['total_fee'] += data['fee']
+    #     self.total_points['total_net'] += data['net']
 
     def _get_total_views(self):
         try:
@@ -541,7 +603,7 @@ class ActivityStatsUtil(object):
         closest_calendar = self.activity.closest_calendar()
         if closest_calendar:
             data = {
-                'date': str(closest_calendar.initial_date.date()),
+                'date': str(closest_calendar.initial_date),
                 'sold': closest_calendar.num_enrolled,
                 'available_capacity': closest_calendar.available_capacity,
             }

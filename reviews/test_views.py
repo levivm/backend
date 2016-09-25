@@ -11,7 +11,9 @@ from model_mommy import mommy
 from rest_framework import status
 from rest_framework.reverse import reverse
 
+from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Activity, Calendar
+from orders.factories import OrderFactory
 from orders.models import Order
 from reviews.models import Review
 from utils.models import EmailTaskRecord
@@ -29,10 +31,10 @@ class ReviewAPITest(BaseAPITestCase):
         super(ReviewAPITest, self).setUp()
 
         # Objects needed
-        self.activity = mommy.make(Activity, organizer=self.organizer, published=True)
-        self.calendar = mommy.make(Calendar, activity=self.activity,
-                                   initial_date=now() - timedelta(days=2))
-        self.order = mommy.make(Order, student=self.student, calendar=self.calendar, 
+        self.activity = ActivityFactory(organizer=self.organizer, published=True)
+        self.calendar = CalendarFactory(activity=self.activity,
+                                   initial_date=(now() - timedelta(days=2)).date() )
+        self.order = OrderFactory(student=self.student, calendar=self.calendar,
                                 status=Order.ORDER_APPROVED_STATUS)
         self.post = {'rating': 4, 'comment': 'First comment!'}
         self.read_review_post = {'rating': 4, 'comment': 'Im a read review!'}

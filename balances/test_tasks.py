@@ -20,9 +20,10 @@ class BalanceLogToAvailableTaskTest(APITestCase):
         self.organizer = OrganizerFactory()
 
     def test_balance_log_available(self):
-        last_week = now() - timedelta(days=5)
+        last_week = (now() - timedelta(days=5)).date()
         calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=last_week)
-        balance_log = BalanceLogFactory(organizer=self.organizer, calendar=calendar)
+        order = OrderFactory(calendar=calendar)
+        balance_log = BalanceLogFactory(organizer=self.organizer, order=order)
 
         task = BalanceLogToAvailableTask()
         result = task.delay()
@@ -31,8 +32,9 @@ class BalanceLogToAvailableTaskTest(APITestCase):
         self.assertEqual(result.result, [self.organizer.id])
 
     def test_balance_not_yet_available(self):
-        calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=now())
-        balance_log = BalanceLogFactory(organizer=self.organizer, calendar=calendar)
+        calendar = CalendarFactory(activity__organizer=self.organizer, initial_date=now().date())
+        order = OrderFactory(calendar=calendar)
+        balance_log = BalanceLogFactory(organizer=self.organizer, order=order)
 
         task = BalanceLogToAvailableTask()
         result = task.delay()
@@ -49,24 +51,28 @@ class CalculateOrganizerBalanceTaskTest(APITestCase):
 
     def test_calculate_balance(self):
         available_calendar = CalendarFactory(activity__organizer=self.organizer)
-        OrderFactory.create_batch(
+        available_orders = OrderFactory.create_batch(
             size=3,
             calendar=available_calendar,
             status='approved',
+            fee=0,
             amount=factory.Iterator([20000, 30000]))
 
         unavailable_calendar = CalendarFactory(activity__organizer=self.organizer)
-        OrderFactory.create_batch(
+        unavailable_orders = OrderFactory.create_batch(
             size=4,
             calendar=unavailable_calendar,
             status='approved',
+            fee=0,
             amount=factory.Iterator([20000, 30000]))
 
+        status = [*['available'] * 3, *['unavailable'] * 4]
+
         BalanceLogFactory.create_batch(
-            size=2,
-            calendar=factory.Iterator([available_calendar, unavailable_calendar]),
+            size=7,
+            order=factory.Iterator([*available_orders, *unavailable_orders]),
             organizer=self.organizer,
-            status=factory.Iterator(['available', 'unavailable']))
+            status=factory.Iterator(status))
 
         task = CalculateOrganizerBalanceTask()
         task.delay(organizer_ids=[self.organizer.id])

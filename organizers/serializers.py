@@ -30,13 +30,15 @@ class InstructorsSerializer(serializers.ModelSerializer):
         return super(InstructorsSerializer, self).create(validated_data)
 
 
-class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, serializers.ModelSerializer):
+class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
+                           serializers.ModelSerializer):
     user_type = serializers.SerializerMethodField()
     user = UsersSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
     instructors = InstructorsSerializer(many=True, read_only=True)
-    locations = LocationsSerializer(many=True, read_only=True)
+    locations = serializers.SerializerMethodField()
     verified_email = serializers.BooleanField(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Organizer
@@ -56,9 +58,13 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
             'locations',
             'rating',
             'verified_email',
+            'type',
         )
         read_only_fields = ('id',)
         depth = 1
+
+    def get_rating(self, obj):
+        return round(obj.rating, 2)
 
     def validate_photo(self, file):
         return self.clean_file(file)
@@ -69,13 +75,59 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin, seria
     def get_created_at(self, obj):
         return UnixEpochDateField().to_representation(obj.created_at)
 
+    def get_locations(self, obj):
+        locations = obj.locations.all()
+        if not locations:
+            activity = obj.activity_set.last()
+            locations = [activity.location] if activity else []
+        return LocationsSerializer(locations, many=True).data
+
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
 
-    # bank = serializers.SerializerMethodField()
     bank = BankField(choices=OrganizerBankInfo.BANKS)
-    # bank_code = serializers.get_
-    # bank_
+    ERROR_EDIT_NOT_ALLOWED = 'No puede modificar la información bancaria, comuniquese con nosotros'
 
     class Meta:
         model = OrganizerBankInfo
+
+    def validate_beneficiary(self, value):
+        if self.instance and not self.instance.beneficiary == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_bank(self, value):
+        if self.instance and not self.instance.bank == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account_type(self, value):
+        if self.instance and not self.instance.account_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_account(self, value):
+        if self.instance and not self.instance.account == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document_type(self, value):
+        if self.instance and not self.instance.document_type == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate_document(self, value):
+        if self.instance and not self.instance.document == value:
+            raise serializers.ValidationError(self.ERROR_EDIT_NOT_ALLOWED)
+        return value
+
+    def validate(self, validated_data):
+        person_type = validated_data.get('person_type')
+        if person_type ==  OrganizerBankInfo.JURIDICAL:
+            required_fields = ['fiscal_address', 'billing_telephone', 'regimen']
+            missing_fields = [field for field in required_fields if not validated_data.get(field)]
+            first_missing_field, *_ = missing_fields if missing_fields else [None, None]
+            if first_missing_field:
+                raise serializers.ValidationError({first_missing_field: 'Este campo es requerido.'})
+
+        return validated_data

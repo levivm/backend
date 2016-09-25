@@ -20,9 +20,11 @@ class OpenedActivitiesListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         today = datetime.datetime.today().date()
         if self.value() == 'opened':
-            return queryset.filter(activity__last_date__gte=today, activity__published=True)
+            return queryset.filter(activity__calendars__initial_date__gte=today,
+                                   activity__published=True)
         elif self.value() == 'closed':
-            return queryset.filter(activity__last_date__lt=today, activity__published=True)
+            return queryset.filter(activity__calendars__initial_date__lt=today,
+                                   activity__published=True)
         elif self.value() == 'unpublished':
             return queryset.filter(activity__published=False)
 

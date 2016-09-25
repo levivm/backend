@@ -34,7 +34,7 @@ ANONYMOUS_USER_ID = -1
 
 # TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.trulii.com']
 
 # Application definition
 
@@ -56,7 +56,7 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'rest_framework_gis',
     'social.apps.django_app.default',
-    # 'admin_honeypot',
+    'admin_honeypot',
     'authentication.apps.AuthenticationConfig',
     'landing',
     'activities',
@@ -116,7 +116,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
 EMAIL_BACKEND = 'utils.mails.SendGridEmailBackend'
-
+DEFAULT_FROM_EMAIL = 'Levi de Trulii <alo@trulii.com>'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/

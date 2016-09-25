@@ -2,8 +2,10 @@ from django.core import signing
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.timezone import now, timedelta
 from django.utils.translation import ugettext_lazy as _
 
+import activities.constants as activities_constants
 from activities.models import Activity
 from locations.models import City
 from utils.behaviors import Updateable
@@ -20,7 +22,7 @@ class Student(ImageOptimizable, Updateable, models.Model):
     )
 
     user = models.OneToOneField(User, related_name='student_profile')
-    gender = models.PositiveIntegerField(choices=GENDER_CHOICES, default=MALE)
+    gender = models.PositiveIntegerField(choices=GENDER_CHOICES, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     photo = models.ImageField(null=True, blank=True, upload_to="avatars")
     birth_date = models.DateTimeField(null=True)
@@ -78,6 +80,36 @@ class Student(ImageOptimizable, Updateable, models.Model):
             return self.photo.url
 
         return None
+
+    def activities(self, status=None):
+
+        select_related_fields = ['calendar__activity__sub_category__category',
+                                 'calendar__activity__organizer',
+                                 'student__user'
+                                 ]
+        prefetch_related_fields = ['calendar__activity__pictures']
+
+        # Proximas
+        if status == activities_constants.NEXT:
+            return list(set(o.calendar.activity for o in
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
+                        calendar__initial_date__gte=now())))
+        # Por evaluar
+        elif status == activities_constants.PAST:
+            return list(set(o.calendar.activity for o in
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
+                        calendar__initial_date__lt=now() - timedelta(days=30))))
+        # Iniciadas
+        elif status == activities_constants.CURRENT:
+            return list(set(o.calendar.activity for o in
+                    self.orders.select_related(*select_related_fields)
+                        .prefetch_related(*prefetch_related_fields).filter(
+                        calendar__initial_date__lt=now(), 
+                        calendar__initial_date__gte=now() - timedelta(days=30))))
+        else:
+            return self.orders.select_related('calendar__activity').all()
 
 
 class WishList(models.Model):
