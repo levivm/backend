@@ -96,6 +96,7 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
             'total_without_coupon',
             'coupon',
             'package_quantity',
+            'package_type',
         )
 
     def get_activity(self, obj):
@@ -183,14 +184,16 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         base_amount = package.price if package \
             and calendar.activity.is_open else calendar.session_price
 
-        order.package_quantity = package.quantity if package else None
+        order.package_quantity, order.package_type = [package.quantity, package.type] if package \
+            else [None, None]
 
         order.amount = base_amount * order.quantity
 
-        if not calendar.is_free:
-            fee_detail = Order.get_fee_detail(order, payment, organizer_regimen)
-            order.fee_detail = fee_detail
-            order.fee = fee_detail.get('total_fee')
+        # if not calendar.is_free:
+        is_free = calendar.is_free
+        fee_detail = Order.get_fee_detail(order, is_free, payment, organizer_regimen)
+        order.fee_detail = fee_detail
+        order.fee = fee_detail.get('total_fee')
 
         order.save()
 

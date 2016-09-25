@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
+from rest_framework.authtoken.models import Token
 from guardian.shortcuts import assign_perm
 
 from activities import constants as activities_constants
@@ -74,8 +75,10 @@ class Command(BaseCommand):
         for id, data in self.organizers.items():
             self.stdout.write('Creating organizer "%s"...' % data['name'], ending='')
             email = data.pop('email')
-
             if User.objects.filter(email=email).exists():
+                user = User.objects.get(email=email)
+                organizer = Organizer.objects.get(user__email=email)
+                self.organizers[id].update({'instance': organizer})
                 self.stdout.write(self.style.ERROR('DUPLICATED'))
                 continue
 
@@ -99,6 +102,7 @@ class Command(BaseCommand):
             username += str(counter + 1)
 
         user = User.objects.create_user(username=username, email=email, password=password)
+        Token.objects.create(user=user)
         self.passwords.append(
             self.OrganizerPassword(id=user.id, name=name, email=email, password=password))
 
@@ -107,13 +111,14 @@ class Command(BaseCommand):
     def read_activities(self, filename):
         with open(filename, newline='') as csvfile:
             reader = csv.reader(csvfile)
-            for row in reader:
+            for index, row in enumerate(reader):
+                print("fila", index)
                 organizer_id = row[0]
                 is_open = row[2]
                 certification = row[4]
                 level = row[5]
-                category = row[6]
-                subcategory = row[7]
+                category = row[6].strip()
+                subcategory = row[7].strip()
                 short_description = row[8]
                 audience = row[9]
                 goals = row[10]
@@ -129,14 +134,12 @@ class Command(BaseCommand):
                 return_policy = row[28]
                 title = row[29]
                 post_enroll_message = row[30]
-
                 levels = {
                     'principiante': activities_constants.LEVEL_P,
                     'intermedio': activities_constants.LEVEL_I,
                     'avanzado': activities_constants.LEVEL_A,
                     'no aplica': activities_constants.LEVEL_N,
                 }
-
                 organizer = self.organizers[str(organizer_id)]['instance']
                 request = mock.MagicMock()
                 request.user = organizer.user
@@ -167,7 +170,8 @@ class Command(BaseCommand):
                 })
 
     def create_activities(self):
-        for data in self.activities:
+        for index, data in enumerate(self.activities):
+            print('file', index)
             self.stdout.write('Creating activity "%s"...' % data['title'], ending='')
             open_calendar = data.pop('open_calendar')
             closed_calendar = data.pop('closed_calendar')

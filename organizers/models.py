@@ -25,6 +25,7 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     headline = models.TextField(blank=True)
     bio = models.TextField(blank=True)
     rating = models.FloatField(default=0)
+    feature = models.BooleanField(default=False)
     verified_email = models.BooleanField(default=True)
     type = models.CharField(max_length=15, choices=ORGANIZER_TYPES, default='normal')
 
