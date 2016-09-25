@@ -108,7 +108,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     instructors = models.ManyToManyField(Instructor, related_name="activities")
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
-    location = models.ForeignKey(Location, null=True)
+    location = models.ForeignKey(Location, null=True, on_delete=models.SET_NULL)
     score = models.FloatField(default=0)
     rating = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
