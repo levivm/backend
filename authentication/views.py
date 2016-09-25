@@ -17,7 +17,7 @@ from authentication.permissions import IsNotAuthenticated
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
     ChangePasswordSerializer, ForgotPasswordSerializer, ChangeEmailSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
-    SendEmailConfirmEmailTask, SendEmailHasChangedTask
+    SendEmailConfirmEmailTask, SendEmailHasChangedTask, SendEmailSignUpRequestNotificationTask
 from balances.models import Balance
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -353,3 +353,8 @@ class VerifyResetPasswordTokenView(ValidateTokenMixin, GenericAPIView):
 class RequestSignupViewSet(viewsets.ModelViewSet):
     queryset = RequestSignup.objects.all()
     serializer_class = RequestSignUpSerializer
+
+    def perform_create(self, serializer):
+        request_signup = serializer.save()
+        task = SendEmailSignUpRequestNotificationTask()
+        task.delay(request_signup.id)
