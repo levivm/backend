@@ -8,11 +8,13 @@ from .models import Organizer
 from .models import Instructor
 from locations.serializers import LocationsSerializer
 from utils.mixins import FileUploadMixin
+from utils.serializers import HTMLField
 
 
 class InstructorsSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     organizer = serializers.PrimaryKeyRelatedField(read_only=True)
+    bio = HTMLField(allow_blank=True, required=False)
 
     class Meta:
         model = Instructor
@@ -39,6 +41,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
     locations = serializers.SerializerMethodField()
     verified_email = serializers.BooleanField(read_only=True)
     rating = serializers.SerializerMethodField()
+    bio = HTMLField(allow_blank=True, required=False)
 
     class Meta:
         model = Organizer
