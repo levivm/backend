@@ -109,8 +109,6 @@ class NotifyWithdrawalOrganizerTask(SendEmailTaskMixin):
 class NotifyWithdrawalRequestOrganizerTask(SendEmailTaskMixin):
 
     def run(self, withdrawal_id, *args, **kwargs):
-        import pdb
-        pdb.set_trace()
         self.withdrawal = Withdrawal.objects.get(id=withdrawal_id)
         self.template_name = 'balances/email/notify_withdraw_request.html'
         self.emails = ['alo@trulii.com']

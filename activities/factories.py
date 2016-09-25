@@ -129,6 +129,7 @@ class CalendarPackageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CalendarPackage
 
+    type = factory.fuzzy.FuzzyInteger(1,2)
     quantity= factory.LazyAttribute(lambda c: random.choice(range(4, 32)))
     price = factory.LazyAttribute(lambda c: random.choice(range(100000, 1000000)))
     calendar = factory.SubFactory(CalendarFactory)

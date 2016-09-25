@@ -55,6 +55,7 @@ class CalculateOrganizerBalanceTaskTest(APITestCase):
             size=3,
             calendar=available_calendar,
             status='approved',
+            fee=0,
             amount=factory.Iterator([20000, 30000]))
 
         unavailable_calendar = CalendarFactory(activity__organizer=self.organizer)
@@ -62,6 +63,7 @@ class CalculateOrganizerBalanceTaskTest(APITestCase):
             size=4,
             calendar=unavailable_calendar,
             status='approved',
+            fee=0,
             amount=factory.Iterator([20000, 30000]))
 
         status = [*['available'] * 3, *['unavailable'] * 4]

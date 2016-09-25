@@ -3,6 +3,7 @@ import mock
 from celery import states
 from django.conf import settings
 from model_mommy import mommy
+from psycopg2.tests.test_types_extras import JsonbTestCase
 from rest_framework.test import APITestCase
 
 from django.utils.timezone import now, timedelta
@@ -18,6 +19,7 @@ from orders.factories import AssistantFactory, OrderFactory
 from orders.models import Order
 from users.factories import UserFactory
 from utils.models import EmailTaskRecord
+from utils.serializers import HTMLField
 
 
 class SendEmailCalendarTaskTest(APITestCase):
@@ -40,13 +42,13 @@ class SendEmailCalendarTaskTest(APITestCase):
 
         task = SendEmailCalendarTask()
         task_id = task.delay(self.calendar.id)
+        html_field = HTMLField()
 
         context = {
             'organizer': self.calendar.activity.organizer.name,
             'activity': self.calendar.activity.title,
             'initial_date': self.calendar.initial_date.isoformat(),
-            'schedules': self.calendar.schedules,
-            # TODO PROBAR SCHEDULE - FIXED
+            'schedules': html_field.to_representation(self.calendar.schedules),
             'price': self.calendar.session_price,
             'url_activity_id': '%sactivities/%s' % (settings.FRONT_SERVER_URL,
                                                     self.calendar.activity_id)

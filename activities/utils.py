@@ -472,7 +472,7 @@ class ActivityStatsUtil(object):
         self.activity = activity
         self.year = year
         self.month = month
-        self.total_points = defaultdict(int)
+        self.total_points = dict()
         self.total_views = self._get_total_views()
         self.total_seats_sold = self._get_total_seats_sold()
         self.next_data = self._get_next_data()
@@ -495,7 +495,14 @@ class ActivityStatsUtil(object):
         dates = iter(rrule(DAILY, dtstart=start_date, until=until,
                            byweekday=range(7)))
 
-        return self._get_monthly_points(dates=dates)
+        points = self._get_monthly_points(dates=dates)
+        last_point = points[-1][str(until)]
+        self.total_points = {
+            'total_gross': last_point['gross'],
+            'total_fee': last_point['fee'],
+            'total_net': last_point['net'],
+        }
+        return points
 
     def yearly(self):
         self.last_point = None
@@ -507,11 +514,18 @@ class ActivityStatsUtil(object):
                            bymonth=range(13)))
         dates.append(now() + datetime.timedelta(days=1))
 
-        return self._get_yearly_points(dates=dates)
+        points = self._get_yearly_points(dates=dates)
+        last_point = points[-1][str(until)]
+        self.total_points = {
+            'total_gross': last_point['gross'],
+            'total_fee': last_point['fee'],
+            'total_net': last_point['net'],
+        }
+        return points
 
     def _get_monthly_points(self, dates):
         points = []
-        last_point = {}
+        # last_point = {}
         for date in dates:
             orders = Order.objects.filter(
                 status=Order.ORDER_APPROVED_STATUS,
@@ -519,7 +533,7 @@ class ActivityStatsUtil(object):
                 created_at__date=date.date())
 
             data = self._get_data(orders=orders)
-            self._sum_points(data=data)
+            # self._sum_points(data=data)
             points.append({str(date.date()): data})
         return points
 
@@ -534,7 +548,7 @@ class ActivityStatsUtil(object):
                 created_at__range=(start_date, end_date.replace(hour=23, minute=59)))
 
             data = self._get_data(orders=orders)
-            self._sum_points(data=data)
+            # self._sum_points(data=data)
             points.append({str(end_date.date()): data})
             start_date = date.date()
 
@@ -569,10 +583,10 @@ class ActivityStatsUtil(object):
 
         return point
 
-    def _sum_points(self, data):
-        self.total_points['total_gross'] += data['gross']
-        self.total_points['total_fee'] += data['fee']
-        self.total_points['total_net'] += data['net']
+    # def _sum_points(self, data):
+    #     self.total_points['total_gross'] += data['gross']
+    #     self.total_points['total_fee'] += data['fee']
+    #     self.total_points['total_net'] += data['net']
 
     def _get_total_views(self):
         try:

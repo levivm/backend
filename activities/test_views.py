@@ -5,16 +5,13 @@ import json
 import tempfile
 import time
 from datetime import timedelta
-from collections import defaultdict
-from django.core import management
-
 
 import factory
 import mock
 from PIL import Image
-from dateutil.rrule import rrule, DAILY, MONTHLY
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
+from django.core import management
 from django.core.urlresolvers import reverse
 from django.http.request import HttpRequest
 from django.utils.timezone import now, utc
@@ -36,7 +33,6 @@ from orders.factories import OrderFactory, AssistantFactory
 from orders.models import Assistant, Order
 from organizers.factories import OrganizerFactory
 from organizers.models import Organizer
-from payments.factories import FeeFactory
 from utils.models import EmailTaskRecord
 from utils.tests import BaseViewTest, BaseAPITestCase
 
@@ -201,6 +197,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'packages': [{
                 'quantity': 16,
                 'price': 100000,
+                'type': 1,
             }],
             'note': 'This is a note for the calendar!'
         }
@@ -243,7 +240,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
     def test_organizer_permissions_of_calendar(self):
         request = HttpRequest()
         request.user = User.objects.get(id=self.ORGANIZER_ID)
-        request.data = request.data = self._get_data_to_create_a_calendar()
+        request.data = self._get_data_to_create_a_calendar()
         serializer = CalendarSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         calendar = serializer.create(validated_data=serializer.validated_data)
@@ -1095,6 +1092,9 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         Test the sending email
         """
 
+        self.calendar.initial_date = now().date() + timedelta(days=20)
+        self.calendar.save(update_fields=['initial_date'])
+
         emails = ['email1@example.com', 'email2@example.com']
 
         send_mail.return_value = [{
@@ -1240,34 +1240,46 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should be able to get the data
-        with mock.patch('django.utils.timezone.now') as mock_now:
-            dates = list(rrule(DAILY, dtstart=datetime.date(2016, 1, 1),
-                               until=datetime.date(2016, 1, 31), byweekday=range(7)))
+        mock_now = mock.MagicMock(side_effect = [
+            datetime.date(2016, 1, 1),
+            datetime.date(2016, 1, 8),
+            datetime.date(2016, 1, 15),
+            datetime.date(2016, 1, 29),
+        ])
 
-            for date in dates:
-                mock_now.return_value = date
-                OrderFactory.create_batch(
-                    size=2,
-                    calendar=self.calendar,
-                    amount=self.amount,
-                    fee=self.fee,
-                    status=Order.ORDER_APPROVED_STATUS)
+        orders = OrderFactory.create_batch(
+            size=4,
+            calendar=self.calendar,
+            amount=self.amount,
+            fee=self.fee,
+            status=Order.ORDER_APPROVED_STATUS,
+        )
+
+        for order in orders:
+            order.created_at = mock_now()
+            order.save()
+
         points = []
-        data = {'gross': 100000.0, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
-        for i, date in enumerate(dates):
-            points.append({str(date.date()):
-                          {key: data[key] * (i + 1) for key in data}})
+        dates = ['2016-01-01', '2016-01-08', '2016-01-15', '2016-01-29']
+        for i in range(1, 5):
+            points.append({
+                dates.pop(0): {
+                    'gross': self.amount * i,
+                    'fee': self.fee * i,
+                    'net': (self.amount * i) - (self.fee * i)
+                }
+            })
 
-        total_points = defaultdict(int, {
-            'total_gross': data['gross'] * 496,
-            'total_net': data['net'] * 496,
-            'total_fee': data['fee'] * 496
-        })
+        total_points = {
+            'total_gross': self.amount * 4,
+            'total_fee': self.fee * 4,
+            'total_net': (self.amount * 4) - (self.fee * 4),
+        }
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
-            'available_capacity': 5
+            'available_capacity': 11
         }
 
         orders = Order.objects.all()
@@ -1275,7 +1287,8 @@ class ActivityStatsViewTest(BaseAPITestCase):
 
         response = self.organizer_client.get(self.url, data={'year': 2016, 'month': 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['points'], points)
+        self.assertEqual(len(response.data['points']), 31)
+        self.assertTrue(all(point in response.data['points'] for point in points))
         self.assertEqual(response.data['total_points'], total_points)
         self.assertEqual(response.data['total_views'], 3)
         self.assertEqual(response.data['total_seats_sold'], 10)
@@ -1291,46 +1304,53 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should be able to get the data
-        with mock.patch('django.utils.timezone.now') as mock_now:
-            until = datetime.date(2016, 12, 31)
-            if until > now().date():
-                until = now().date()
-            dates = list(rrule(MONTHLY, dtstart=datetime.date(2016, 1, 1),
-                               until=until, bymonth=range(13)))
+        mock_now = mock.MagicMock(side_effect=[
+            datetime.date(2016, 1, 1),
+            datetime.date(2016, 2, 8),
+            datetime.date(2016, 5, 15),
+            datetime.date(2016, 7, 29),
+        ])
 
-            for date in dates:
-                mock_now.return_value = date
-                OrderFactory.create_batch(
-                    size=2,
-                    calendar=self.calendar,
-                    amount=self.amount,
-                    fee=self.fee,
-                    status=Order.ORDER_APPROVED_STATUS)
+        orders = OrderFactory.create_batch(
+            size=4,
+            calendar=self.calendar,
+            amount=self.amount,
+            fee=self.fee,
+            status=Order.ORDER_APPROVED_STATUS,
+        )
+
+        for order in orders:
+            order.created_at = mock_now()
+            order.save()
 
         points = []
-        data = {'gross': 100000, 'fee': self.fee * 2, 'net': 100000.0 - self.fee * 2}
-        dates.pop(0)
-        dates.append(now() + timedelta(days=1))
-        for i, date in enumerate(dates):
-            points.append({str(date.date() - timedelta(days=1)): {key: data[key] * (i+1) for key in data}})
+        dates = ['2016-01-31', '2016-02-29', '2016-05-31', '2016-07-31']
+        for i in range(1, 5):
+            points.append({
+                dates.pop(0): {
+                    'gross': self.amount * i,
+                    'fee': self.fee * i,
+                    'net': (self.amount * i) - (self.fee * i)
+                }
+            })
 
-        total_points = defaultdict(int, {
-            'total_gross': data['gross'] * 45,
-            'total_net': data['net'] * 45,
-            'total_fee': data['fee'] * 45
-        })
+        total_points = {
+            'total_gross': self.amount * 4,
+            'total_fee': self.fee * 4,
+            'total_net': (self.amount * 4) - (self.fee * 4),
+        }
 
         next_data = {
             'date': str(now().date() + timedelta(days=1)),
             'sold': 10,
-            'available_capacity': 5
+            'available_capacity': 5,
         }
         orders = Order.objects.all()
         AssistantFactory.create_batch(10, order=orders[0], enrolled=True)
 
         response = self.organizer_client.get(self.url, data={'year': 2016})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['points'], points)
+        self.assertTrue(all(point in response.data['points'] for point in points))
         self.assertEqual(response.data['total_points'], total_points)
         self.assertEqual(response.data['total_views'], 3)
         self.assertEqual(response.data['total_seats_sold'], 10)

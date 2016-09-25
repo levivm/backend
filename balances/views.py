@@ -47,7 +47,7 @@ class WithdrawalListCreateView(ListCreateAPIView):
         calculate_organizer_balance_task.delay([organizer.id])
 
         notify_organizer_request_task = NotifyWithdrawalRequestOrganizerTask()
-        notify_organizer_request_task.delay(withdrawal.id,)
+        notify_organizer_request_task.delay(withdrawal.id)
 
         headers = self.get_success_headers(serializer.data)
         data_response = serializer.data

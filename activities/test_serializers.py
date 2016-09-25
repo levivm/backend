@@ -36,7 +36,7 @@ class CalendarSerializerTest(APITestCase):
         epoch = UnixEpochDateField()
 
         mommy.make(Assistant, order=self.order, enrolled=False)
-        package = CalendarPackageFactory(calendar=self.calendar)
+        package = CalendarPackageFactory(calendar=self.calendar, type=1)
         serializer = CalendarSerializer(self.calendar)
 
         content = {
@@ -54,7 +54,9 @@ class CalendarSerializerTest(APITestCase):
             'packages': [{
                 'id': package.id,
                 'quantity': package.quantity,
-                'price': package.price
+                'price': package.price,
+                'type': 1,
+                'type_name': 'Mes(es)',
             }],
 
         }
@@ -77,6 +79,7 @@ class CalendarSerializerTest(APITestCase):
             'packages': [{
                 'quantity': 16,
                 'price': 100000,
+                'type': 1,
             }]
         }
 
@@ -132,6 +135,7 @@ class CalendarSerializerTest(APITestCase):
         data['packages'].append({
             'quantity': 16,
             'price': 183740,
+            'type': 1,
         })
 
         packages_counter = CalendarPackage.objects.count()
@@ -211,6 +215,7 @@ class CalendarSerializerTest(APITestCase):
             'packages': [{
                 'quantity': 3,
                 'price': 123843,
+                'type': 1,
             }]
         }
 
