@@ -30,7 +30,7 @@ urlpatterns = [
     url(r'^subcategories/(?P<subcategory_id>\d+)/covers/?$', SubCategoriesViewSet.as_view({'get': 'get_pool_from_stock'}),name='get_covers_photos'),
 
     # {% url activities:category_detail %}
-    url(regex=r'^categories/(?P<slug>\w+)/?$',
+    url(regex=r'^categories/(?P<slug>[-\w]+)/?$',
         view=CategoryRetrieveAPIView.as_view(),
         name='category_detail'),
 
