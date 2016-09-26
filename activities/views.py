@@ -436,3 +436,8 @@ class ActivityViewsCounterView(GenericViewSet):
         task = ActivityViewsCounterTask()
         task.delay(activity_id=activity.id, user_id=request.user.id)
         return Response('OK')
+
+
+class ActivityFeatureListView(ListAPIView):
+    queryset = Activity.objects.featured()
+    serializer_class = ActivitiesCardSerializer

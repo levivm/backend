@@ -1355,3 +1355,22 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.assertEqual(response.data['total_views'], 3)
         self.assertEqual(response.data['total_seats_sold'], 10)
         self.assertEqual(response.data['next_data'], next_data)
+
+
+class ActivityFeatureListViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        # Non-featured activities
+        self.non_featured = ActivityFactory.create_batch(2)
+
+        # Featured activities
+        self.featured = ActivityFactory.create_batch(2, featured=True)
+
+        # URL
+        self.url = reverse('activities:featured')
+
+    def test_list(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, ActivitiesCardSerializer(self.featured, many=True).data)

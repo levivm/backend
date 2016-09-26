@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from activities.views import ActivitiesSearchView, ShareActivityEmailView, AutoCompleteView, \
-    ActivityStatsView, ActivityViewsCounterView, CategoryRetrieveAPIView
+    ActivityStatsView, ActivityViewsCounterView, CategoryRetrieveAPIView, ActivityFeatureListView
 from .views import ActivitiesViewSet, CategoriesViewSet, \
     SubCategoriesViewSet, TagsViewSet, CalendarViewSet, \
     ActivityPhotosViewSet
@@ -66,6 +66,13 @@ urlpatterns = [
         regex=r'^(?P<pk>\d+)/views_counter/?$',
         view=ActivityViewsCounterView.as_view({'put': 'put'}),
         name='views_counter',
+    ),
+
+    # activities:featured - api/activities/featured
+    url(
+        regex=r'^featured/?$',
+        view=ActivityFeatureListView.as_view(),
+        name='featured'
     ),
 
 ]
