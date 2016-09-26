@@ -89,7 +89,9 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
 
     def get_current_location(self, obj):
         locations = obj.locations.filter(activity__isnull=True)
-        return locations.first()
+        first = locations.first()
+        if first is not None:
+            return LocationsSerializer(first).data
 
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):
