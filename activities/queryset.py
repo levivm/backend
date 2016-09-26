@@ -27,7 +27,6 @@ class NullsLastQuery(models.sql.query.Query):
         return NullsLastSQLCompiler(self, connection, using)
 
 
-
 class ActivityQuerySet(models.QuerySet):
 
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
@@ -42,7 +41,6 @@ class ActivityQuerySet(models.QuerySet):
 
 
     def opened(self, *args, **kwargs):
-        # TODO hacer prueba de esto
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\

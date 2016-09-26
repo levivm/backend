@@ -1,16 +1,18 @@
 import json
 from datetime import datetime, timedelta
 
+import factory
 import mock
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.http.request import HttpRequest
+from django.utils.timezone import now
 from guardian.shortcuts import assign_perm
 from model_mommy import mommy
 from rest_framework import status
 
 from activities import constants as activities_constants
-from activities.factories import ActivityFactory
+from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Activity
 from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from locations.serializers import LocationsSerializer
@@ -73,15 +75,20 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
         organizer = self.organizer
 
         # create organizer activities
-        today = datetime.today().date()
+        today = now()
         yesterday = today - timedelta(1)
 
         self.unpublished_activities = \
             ActivityFactory.create_batch(2, organizer=organizer)
 
+        # Open activities
         self.opened_activities = \
             ActivityFactory.create_batch(2, published=True,
                                          organizer=organizer)
+        CalendarFactory.create_batch(size=2,
+                                     initial_date=now() + timedelta(days=20),
+                                     enroll_open=True,
+                                     activity=factory.Iterator(self.opened_activities))
 
         self.closed_activities = \
             ActivityFactory.create_batch(2, published=True,
@@ -118,18 +125,17 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
     def test_organizer_closed_activities(self):
         data = {'status': activities_constants.CLOSED}
-        closed_activities = self._order_activities(self.closed_activities)
         request = mock.MagicMock()
 
         # Anonymous should return data
         response = self.client.get(self.url, data=data)
-        serializer = ActivitiesSerializer(closed_activities, many=True)
+        serializer = ActivitiesSerializer(self.closed_activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Student should return data
         request.user = self.student.user
-        serializer = ActivitiesSerializer(closed_activities, many=True,
+        serializer = ActivitiesSerializer(self.closed_activities, many=True,
                                           context={'request': request})
         response = self.student_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -137,7 +143,7 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
         # Organizer should return data
         request.user = self.organizer.user
-        serializer = ActivitiesSerializer(closed_activities, many=True,
+        serializer = ActivitiesSerializer(self.closed_activities, many=True,
                                           context={'request': request})
         response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -145,18 +151,17 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
     def test_organizer_opened_activities(self):
         data = {'status': activities_constants.OPENED}
-        opened_activities = self._order_activities(self.opened_activities)
         request = mock.MagicMock()
 
         # Anonymous should return data
         response = self.client.get(self.url, data=data)
-        serializer = ActivitiesSerializer(opened_activities, many=True)
+        serializer = ActivitiesSerializer(self.opened_activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
         # Student should return data
         request.user = self.student.user
-        serializer = ActivitiesSerializer(opened_activities, many=True,
+        serializer = ActivitiesSerializer(self.opened_activities, many=True,
                                           context={'request': request})
         response = self.student_client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -164,7 +169,7 @@ class OrganizerActivitiesViewTest(BaseAPITestCase):
 
         # Organizer should return data
         request.user = self.organizer.user
-        serializer = ActivitiesSerializer(opened_activities, many=True,
+        serializer = ActivitiesSerializer(self.opened_activities, many=True,
                                           context={'request': request})
         response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -529,6 +534,7 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
             'document': '123456789',
             'account_type': 'ahorros',
             'account': '987654321-0',
+            'person_type': 1,
         }
 
         # Permissions
@@ -618,7 +624,9 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
 
         # Organizer shouldn't update
         response = self.organizer_client.put(self.bank_info_api_url, post_data)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        # Validation error (400)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # response = self.organizer_client.put(self.bank_info_api_url, post_data)
         # bank_info = OrganizerBankInfo.objects.get(id=bank_info.id)
         # self.assertEqual(response.status_code, status.HTTP_200_OK)
