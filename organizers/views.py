@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
+from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
@@ -13,10 +14,11 @@ from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer,\
+    ActivitiesCardSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
-from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer, \
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer,\
                               UnpublishedActivitiesOnlyForOwner
 from utils.paginations import SmallResultsSetPagination
 
@@ -46,11 +48,11 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
         activities = organizer.get_activities_by_status(status)
         page = self.paginate_queryset(activities)
         if page is not None:
-            serializer = ActivitiesSerializer(page, many=True,
+            serializer = ActivitiesCardSerializer(page, many=True,
                                               context=self.get_serializer_context())
             return self.get_paginated_response(serializer.data)
 
-        serializer = ActivitiesSerializer(activities, many=True, 
+        serializer = ActivitiesCardSerializer(activities, many=True, 
                                           context=self.get_serializer_context())
         result = serializer.data
         return Response(result)
@@ -180,3 +182,8 @@ class OrganizerBankInfoChoicesViewSet(viewsets.GenericViewSet):
 
     def choices(self, request, *args, **kwargs):
         return Response(OrganizerBankInfo.get_choices())
+
+
+class OrganizerFeatureListView(ListAPIView):
+    queryset = Organizer.objects.featured()
+    serializer_class = OrganizersSerializer

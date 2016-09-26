@@ -28,6 +28,7 @@ class OrganizerBankInfoSerializerTest(APITestCase):
             'document': '123456789',
             'account_type': 'ahorros',
             'account': '987654321-0',
+            'person_type': 1,
         }
         self.content = self.data.copy()
         self.content['organizer_id'] = self.content.pop('organizer')
@@ -76,11 +77,8 @@ class OrganizerBankInfoSerializerTest(APITestCase):
         }
 
         serializer = OrganizerBankInfoSerializer(bank_info, data=update_data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        self.assertTrue(
-            OrganizerBankInfo.objects.filter(organizer=self.organizer, **update_data).exists())
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
 
     def test_validation_all_fields_required(self):
         """

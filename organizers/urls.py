@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
-from organizers.views import InstructorViewSet, ActivityInstructorViewSet, OrganizerBankInfoViewSet
+from organizers.views import InstructorViewSet, ActivityInstructorViewSet, OrganizerBankInfoViewSet, \
+    OrganizerFeatureListView
 from .views import OrganizerSignupView, OrganizerViewSet, OrganizerInstructorViewSet, OrganizerLocationViewSet, \
     OrganizerBankInfoChoicesViewSet
 
@@ -37,5 +38,12 @@ urlpatterns = [
         regex=r'^bankinfo/choices/?$',
         view=OrganizerBankInfoChoicesViewSet.as_view({'get': 'choices'}),
         name='bank_choices',
+    ),
+
+    # {% url organizers:featured %}
+    url(
+        regex=r'^organizers/featured/?$',
+        view=OrganizerFeatureListView.as_view(),
+        name='featured',
     ),
 ]
