@@ -118,6 +118,8 @@ class SendCouponEmailTask(SendEmailTaskMixin):
 
     def run(self, redeem_id, *args, **kwargs):
         self.redeem = Redeem.objects.get(id=redeem_id)
+        if not self.redeem:
+            return
         self.type = self.redeem.coupon.coupon_type.name
         self.template_name = self.get_template_name()
         self.emails = [self.redeem.student.user.email]
