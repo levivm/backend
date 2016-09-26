@@ -23,7 +23,8 @@ DATABASE_URL = "postgis://{user}:{password}@{host}:{port}/{db}".format(host=POST
                                                                        db=PG_DB, user=PG_USER,
                                                                        password=PG_PW)
 
-EMAIL_BACKEND = 'utils.mails.ConsoleSendGridEmailBackend'
+# EMAIL_BACKEND = 'utils.mails.ConsoleSendGridEmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 

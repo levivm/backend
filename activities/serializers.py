@@ -348,6 +348,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
     def get_cloest_calendar_package(self, obj):
 
         request = self.context.get('request')
+
         closest_calendar = obj.closest_calendar() if not self.selected_closest_calendar else\
             self.selected_closest_calendar
 
@@ -364,8 +365,8 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
         cost_end = request.query_params.get('cost_end')
         is_free = request.query_params.get('is_free')
         order = request.query_params.get('o')
-        packages = closest_calendar.packages.filter(price__range=(cost_start, cost_end))\
-            if cost_start and cost_end else closest_calendar.packages.all()
+
+        packages = closest_calendar.filter_packages_by_price(cost_start=cost_start, cost_end=cost_end)
 
         if not packages:
             return
@@ -376,7 +377,7 @@ class ActivitiesCardSerializer(WishListSerializerMixin, serializers.ModelSeriali
 
         order_by = ['-price'] if order == activities_constants.ORDER_MAX_PRICE else ['price']
         closest_calendar_packages = packages.order_by(*order_by)
-        if not packages:
+        if not closest_calendar_packages:
             return
 
         return CalendarPackageSerializer(closest_calendar_packages[0]).data
@@ -418,6 +419,7 @@ class ActivitiesSerializer(WishListSerializerMixin, serializers.ModelSerializer)
     audience = HTMLField(allow_blank=True, required=False)
     goals = HTMLField(allow_blank=True, required=False)
     methodology = HTMLField(allow_blank=True, required=False)
+    return_policy = HTMLField(allow_blank=True, required=False)
 
     class Meta:
         model = Activity

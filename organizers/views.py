@@ -14,10 +14,11 @@ from activities.permissions import IsActivityOwner
 
 from locations.serializers import LocationsSerializer
 from locations.models import Location
-from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
+from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer,\
+    ActivitiesCardSerializer
 from organizers.models import Instructor, OrganizerBankInfo
 from organizers.serializers import OrganizerBankInfoSerializer
-from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer, \
+from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsOrganizer,\
                               UnpublishedActivitiesOnlyForOwner
 from utils.paginations import SmallResultsSetPagination
 
@@ -47,11 +48,11 @@ class OrganizerViewSet(ActivityCardMixin, viewsets.ModelViewSet):
         activities = organizer.get_activities_by_status(status)
         page = self.paginate_queryset(activities)
         if page is not None:
-            serializer = ActivitiesSerializer(page, many=True,
+            serializer = ActivitiesCardSerializer(page, many=True,
                                               context=self.get_serializer_context())
             return self.get_paginated_response(serializer.data)
 
-        serializer = ActivitiesSerializer(activities, many=True, 
+        serializer = ActivitiesCardSerializer(activities, many=True, 
                                           context=self.get_serializer_context())
         result = serializer.data
         return Response(result)

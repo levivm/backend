@@ -376,6 +376,18 @@ class Calendar(Updateable, AssignPermissionsMixin, models.Model):
         self.available_capacity = self.available_capacity - amount
         self.save(update_fields=['available_capacity'])
 
+    # TODO hacer test de esto
+    def filter_packages_by_price(self, cost_start=None, cost_end=None):
+        query = Q()
+        if cost_start is not None and cost_end is not None:
+            without_limit = True if int(cost_end) == settings.PRICE_RANGE.get('max') else False
+            if without_limit:
+                query &= Q(price__gte=cost_start)
+            else:
+                query &= Q(price__range=(cost_start, cost_end))
+
+        return self.packages.filter(query) if query else self.packages.all()
+
 
 class CalendarPackage(Updateable, models.Model):
 
