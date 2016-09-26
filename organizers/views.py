@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, status
+from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, DjangoObjectPermissions
 from rest_framework.response import Response
@@ -180,3 +181,8 @@ class OrganizerBankInfoChoicesViewSet(viewsets.GenericViewSet):
 
     def choices(self, request, *args, **kwargs):
         return Response(OrganizerBankInfo.get_choices())
+
+
+class OrganizerFeatureListView(ListAPIView):
+    queryset = Organizer.objects.featured()
+    serializer_class = OrganizersSerializer

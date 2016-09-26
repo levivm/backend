@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from organizers.queryset import OrganizerQuerySet
 from utils.mixins import ImageOptimizable, AssignPermissionsMixin
 from activities import constants as activities_constants
 
@@ -30,6 +31,8 @@ class Organizer(AssignPermissionsMixin, ImageOptimizable, models.Model):
     type = models.CharField(max_length=15, choices=ORGANIZER_TYPES, default='normal')
 
     permissions = ('organizers.change_organizer',)
+
+    objects = OrganizerQuerySet.as_manager()
 
     def __str__(self):
         return '%s' % self.name

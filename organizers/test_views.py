@@ -14,7 +14,9 @@ from activities.factories import ActivityFactory
 from activities.models import Activity
 from activities.serializers import ActivitiesSerializer, ActivitiesAutocompleteSerializer
 from locations.serializers import LocationsSerializer
+from organizers.factories import OrganizerFactory
 from organizers.models import Instructor, Organizer, OrganizerBankInfo
+from organizers.serializers import OrganizersSerializer
 from organizers.views import OrganizerViewSet, OrganizerInstructorViewSet, \
     OrganizerLocationViewSet, InstructorViewSet, \
     ActivityInstructorViewSet
@@ -663,3 +665,22 @@ class OrganizerBankInfoAPITest(BaseAPITestCase):
         response = self.organizer_client.get(self.bank_choices)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, OrganizerBankInfo.get_choices())
+
+
+class OrganizerFeatureListViewTest(BaseAPITestCase):
+
+    def setUp(self):
+        # Non-featured organizers
+        self.non_featured = OrganizerFactory.create_batch(2)
+
+        # Featured organizers
+        self.featured = OrganizerFactory.create_batch(2, feature=True)
+
+        # URL
+        self.url = reverse('organizers:featured')
+
+    def test_list(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, OrganizersSerializer(self.featured, many=True).data)
