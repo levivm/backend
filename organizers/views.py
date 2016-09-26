@@ -83,7 +83,7 @@ class OrganizerLocationViewSet(viewsets.ModelViewSet):
                                                   context={'request': request,
                                                            'organizer_location': True})
         if location_serializer.is_valid(raise_exception=True):
-            organizer.locations.all().delete()
+            organizer.locations.filter(activity__isnull=True).delete()
             location = location_serializer.save()
             organizer.locations.add(location)
         return Response(location_serializer.data)
