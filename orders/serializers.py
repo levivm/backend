@@ -3,6 +3,7 @@ from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from orders.models import Order, Assistant
+from organizers.models import OrganizerBankInfo
 from payments.models import Fee
 from payments.serializers import PaymentSerializer
 from students.models import Student
@@ -176,7 +177,11 @@ class OrdersSerializer(RemovableSerializerFieldMixin, serializers.ModelSerialize
         })
         order = Order(**validated_data)
         calendar = order.calendar
-        organizer_regimen = calendar.activity.organizer.bank_info.regimen
+        try:
+            organizer_regimen = calendar.activity.organizer.bank_info.regimen \
+                if calendar.activity.organizer.bank_info else None
+        except OrganizerBankInfo.DoesNotExist:
+            organizer_regimen = None
 
         package_id = self.context.get('request').data.get('package')
         package = calendar.packages.get(id=package_id) if package_id else None
