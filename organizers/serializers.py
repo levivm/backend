@@ -42,6 +42,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
     verified_email = serializers.BooleanField(read_only=True)
     rating = serializers.SerializerMethodField()
     bio = HTMLField(allow_blank=True, required=False)
+    current_location = serializers.SerializerMethodField()
 
     class Meta:
         model = Organizer
@@ -62,6 +63,7 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
             'rating',
             'verified_email',
             'type',
+            'current_location',
         )
         read_only_fields = ('id',)
         depth = 1
@@ -84,6 +86,10 @@ class OrganizersSerializer(RemovableSerializerFieldMixin, FileUploadMixin,
             activity = obj.activity_set.last()
             locations = [activity.location] if activity else []
         return LocationsSerializer(locations, many=True).data
+
+    def get_current_location(self, obj):
+        locations = obj.locations.filter(activity__isnull=True)
+        return locations.first()
 
 
 class OrganizerBankInfoSerializer(serializers.ModelSerializer):

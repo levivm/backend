@@ -27,7 +27,6 @@ class NullsLastQuery(models.sql.query.Query):
         return NullsLastSQLCompiler(self, connection, using)
 
 
-
 class ActivityQuerySet(models.QuerySet):
 
     select_related_fields = ['organizer__user', 'sub_category__category', 'location__city']
@@ -42,7 +41,6 @@ class ActivityQuerySet(models.QuerySet):
 
 
     def opened(self, *args, **kwargs):
-        # TODO hacer prueba de esto
         today = datetime.datetime.today().date()
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
@@ -54,8 +52,8 @@ class ActivityQuerySet(models.QuerySet):
         return self.select_related(*self.select_related_fields).\
             prefetch_related(*self.prefetch_related_fields).\
             exclude(calendars__initial_date__gte=today, 
-                   calendars__enroll_open=True, published=True, *args, **kwargs).\
-            filter(published=True).distinct()
+                   calendars__enroll_open=True, published=True).\
+            filter(published=True, *args, **kwargs).distinct()
 
     def unpublished(self, *args, **kwargs):
         return self.select_related(*self.select_related_fields).\
@@ -78,3 +76,6 @@ class ActivityQuerySet(models.QuerySet):
             activities = activities_q.all()
 
         return activities
+
+    def featured(self, *args, **kwargs):
+        return self.filter(featured=True, *args, **kwargs)
