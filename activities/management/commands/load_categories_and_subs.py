@@ -21,36 +21,36 @@ class Command(BaseCommand):
     @staticmethod
     def get_data():
         return {
-            "Arte": {'color': '#46416D',
+            "Arte": {'color': '#FF5A5F',
                      'subcategories': ['Dibujo y Pintura', 'Moda', 'Fotografía', 'Diseño gráfico', 'Modelaje', 'Otros' ]},
-            "Danza": {'color': '#38DBC7', 
+            "Danza": {'color': '#00E2AA',
                       'subcategories': ['Ballet', 'Arabe',  'Salsa', 'Hip Hop', 'Moderna y Contemporánea', 'Bachata', 'Rumba', 
                                         'Flamenco', 'Tap', 'Social', 'Otros Urbanos', 'Otros']
                      },
-            "Manualidades": {'color': '#6B10C9', 
+            "Manualidades": {'color': '#6B10C9',
                       'subcategories': ['Joyería', 'Bisutería',  'Bordado', 'Costura', 'Otros']
                      },
-            "Deporte": {'color': '#C177EF',
+            "Deporte": {'color': '#32CDDA',
                          'subcategories': ['Fútbol', 'Combate', 'Aventura', 'Otros']
                         },
-            "Gastronomía": {'color': '#EB5369', 
+            "Gastronomía": {'color': '#E5CB52',
                             'subcategories': ['Italiana', 'Vegetariana', 'Japonesa',  'Tailandesa',  'Mexicana',  'Hindú',  'Peruana',  'Repostería', 'Otros']
                            },
-            "Idiomas": {'color': '#00AA79', 
+            "Idiomas": {'color': '#B75C8B',
                         'subcategories': ['Inglés', 'Portugues', 'Español', 'Italiano', 'Francés', 'Alemán', 'Otros']},
-            "Música": {'color': '#FF7E60',
+            "Música": {'color': '#B0CA64',
                        'subcategories': ['Composición', 'Producción', 'DJ', 'Otros']},
-            "Infantil": {'color': '#0084B4',
+            "Infantil": {'color': '#D3304E',
                       'subcategories': ['Yoga', 'Cocina', 'Danza', 'Otros']},
-            "Profesional": {'color': '#FFC971',
+            "Profesional": {'color': '#173770',
                             'subcategories': ['Redes Sociales', 'Marketing', 'Contabilidad', 'Oratoria', 'Locución', 'Administración', 'Ventas', 
                                               'Finanzas', 'Otros']},
-            "Tecnología": {'color': '#EB9F61',
+            "Tecnología": {'color': '#32A3D7',
                            'subcategories': ['Desarrollo Web', 'Desarrollo Móvil', 'Modelado', 'Microsoft', 'Programación', 
                                              'Telecomunicaciones', 'Base de datos', 'Otros']},
-            "Fitness": {'color': '#222222', 
+            "Fitness": {'color': '#808CD1',
                          'subcategories': ['Yoga', 'Crossfit',' Zumba', 'Otros']},
-            "Vida Cotidiana":{'color': '#2981FB', 
+            "Vida Cotidiana":{'color': '#2981FB',
                          'subcategories': ['Meditación', 'Otros']
             }
         }
