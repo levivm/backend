@@ -4,6 +4,7 @@
 import urllib
 import unicodedata
 
+import datetime
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
@@ -263,6 +264,11 @@ class CalendarSerializer(RemovableSerializerFieldMixin, serializers.ModelSeriali
 
     def create(self, validated_data):
         packages = validated_data.pop('packages', list())
+        activity = validated_data['activity']
+
+        if activity.is_open:
+            validated_data['initial_date'] = datetime.datetime.max.date()
+
         calendar = Calendar.objects.create(**validated_data)
         for package in packages:
             CalendarPackage.objects.create(calendar=calendar, **package)
