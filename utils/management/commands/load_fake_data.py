@@ -215,7 +215,7 @@ class Command(BaseCommand):
                                                     fee=fee, fee_detail={}, quantity=quantity))
 
         for o in self.flat_list(orders):
-            fee_detail = Order.get_fee_detail(o, o.payment, None)
+            fee_detail = Order.get_fee_detail(o, False, o.payment, None)
             fee = fee_detail.get('total_fee')
             o.fee, o.fee_detail = o.fee, fee_detail
             o.save()
