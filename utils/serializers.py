@@ -65,8 +65,7 @@ class HTMLField(serializers.CharField):
 
     def to_internal_value(self, value):
         """ Return HTML code from escaped HTML value """
-
-        return escape(value)
+        return escape(value.rstrip('</p><p><br/>'))
 
 
 class RemovableSerializerFieldMixin(object):
