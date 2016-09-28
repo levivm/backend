@@ -97,5 +97,10 @@ LOGGING = {
             'handlers': ['sentry'],
             'propagate': False
         },
+        'balance': {
+            'level': 'INFO',
+            'handlers': ['sentry'],
+            'propagate': False,
+        },
     },
 }

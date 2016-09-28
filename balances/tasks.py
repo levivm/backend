@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from balances.models import BalanceLog, Withdrawal
 from balances.serializers import WithdrawSerializer
 from organizers.models import Organizer
+from utils.loggers import BalanceLogger
 from utils.tasks import SendEmailTaskMixin
 
 
@@ -28,6 +29,7 @@ class BalanceLogToAvailableTask(Task):
 class CalculateOrganizerBalanceTask(Task):
 
     def run(self, organizer_ids=[], *args, **kwargs):
+        self.logger = BalanceLogger()
         organizers = Organizer.objects.filter(id__in=organizer_ids)
         for organizer in organizers:
             organizer.balance.available = self.calculate_amount(organizer=organizer,
@@ -35,6 +37,7 @@ class CalculateOrganizerBalanceTask(Task):
             organizer.balance.unavailable = self.calculate_amount(organizer=organizer,
                                                                   status='unavailable')
             organizer.balance.save()
+            self.logger.log_balance(organizer)
 
     def calculate_amount(self, organizer, status):
         balance_logs = organizer.balance_logs.filter(status=status)
