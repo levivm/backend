@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from raven.contrib.django.models import get_client
-    
+
 class PaymentLogger(object):
     logger = None
     client = None
@@ -38,3 +38,32 @@ class PaymentLogger(object):
         })
         message = "{}-{}".format(message, datetime.now())
         self.logger.info(message, exc_info=True, extra=log_data)
+
+
+class BalanceLogger(object):
+
+    def __init__(self):
+        self.client = get_client()
+        self.logger = logging.getLogger('balance')
+
+    def log_balance(self, organizer):
+        log_data = {
+            'organizer': {
+                'id': organizer.id,
+                'name': organizer.name,
+            },
+            'balance': {
+                'available': {
+                    'ids': organizer.balance_logs.filter(status='available') \
+                                                 .values_list('id', flat=True),
+                    'total': organizer.balance.available,
+                },
+                'unavailable': {
+                    'ids': organizer.balance_logs.filter(status='unavailable') \
+                                                 .values_list('id', flat=True),
+                    'total': organizer.balance.unavailable,
+                }
+            }
+        }
+
+        self.logger.info('Balance de Organizer', exc_info=True, extra=log_data)
