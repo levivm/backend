@@ -105,7 +105,7 @@ class Activity(Updateable, AssignPermissionsMixin, models.Model):
     return_policy = models.TextField(blank=True)
     extra_info = models.TextField(blank=True)
     youtube_video_url = models.CharField(max_length=200, blank=True, null=True)
-    instructors = models.ManyToManyField(Instructor, related_name="activities")
+    instructors = models.ManyToManyField(Instructor, related_name="activities", blank=True)
     published = models.NullBooleanField(default=False)
     certification = models.NullBooleanField(default=False)
     location = models.ForeignKey(Location, null=True, on_delete=models.SET_NULL)
