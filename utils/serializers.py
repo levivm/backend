@@ -1,9 +1,8 @@
+import re
 import time as time_a
-import unicodedata
 
 from html import unescape
 from datetime import time, date, datetime
-from requests.utils import quote
 from rest_framework import serializers
 from rest_framework.fields import ImageField
 from django.utils.html import escape
@@ -65,7 +64,10 @@ class HTMLField(serializers.CharField):
 
     def to_internal_value(self, value):
         """ Return HTML code from escaped HTML value """
-        return escape(value.rstrip('</p><p><br/>'))
+        # remove trailing p tags
+        PAGRAPH_PATTERN = r'(<p><br/></p>)+$'
+        clean_value = re.sub(PAGRAPH_PATTERN, '', value)
+        return escape(clean_value)
 
 
 class RemovableSerializerFieldMixin(object):
