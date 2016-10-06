@@ -53,3 +53,19 @@ class RequestSignUpSerializerTest(APITestCase):
         serializer = RequestSignUpSerializer(data=data)
         with self.assertRaisesMessage(ValidationError, 'Este correo ya existe.'):
             serializer.is_valid(raise_exception=True)
+
+    def test_validate_email_upper_case(self):
+        UserFactory(email='big.boss@example.com')
+
+        data = {
+            'email': 'Big.Boss@example.com',
+            'name': 'Diamond Dogs',
+            'telephone': '+98(8)0832533372',
+            'city': self.city.id,
+            'document_type': 'nit',
+            'document': '496-81-7893',
+        }
+
+        serializer = RequestSignUpSerializer(data=data)
+        with self.assertRaisesMessage(ValidationError, 'Este correo ya existe.'):
+            serializer.is_valid(raise_exception=True)

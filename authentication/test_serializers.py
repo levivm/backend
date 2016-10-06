@@ -119,6 +119,22 @@ class SignUpStudentSerializerTest(APITestCase):
         with self.assertRaisesMessage(ValidationError, message):
             serializer.is_valid(raise_exception=True)
 
+    def test_validate_email_upper_case(self):
+        UserFactory(email='jack.bauer@ctu.com')
+        data = {
+            'email': 'Jack.Bauer@CTU.com',
+            'first_name': 'Jack',
+            'last_name': 'Bauer',
+            'password1': 'jackisthebest',
+            'user_type': 'S',
+        }
+
+        serializer = SignUpStudentSerializer(data=data)
+
+        message = "Ya existe un usuario registrado con este correo electrónico."
+        with self.assertRaisesMessage(ValidationError, message):
+            serializer.is_valid(raise_exception=True)
+
     def test_generate_username(self):
         """
         Test the username generation
