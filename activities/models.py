@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils.functional import cached_property
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.postgres.fields import JSONField
 
 from locations.models import Location
 from organizers.models import Organizer, Instructor
@@ -28,6 +29,7 @@ class Category(models.Model):
     description = models.TextField(blank=True)
     cover_photo = models.ImageField(upload_to='categories/', blank=True)
     content_photo = models.ImageField(upload_to='categories/', blank=True)
+    seo_data = JSONField(default={})
 
     def __str__(self):
         return self.name
