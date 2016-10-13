@@ -47,7 +47,7 @@ class LoginView(GenericAPIView):
         return Response(data)
 
 
-class SignUpStudentView(SignUpMixin, ReferralMixin):
+class SignUpStudentView(SignUpMixin, GenericAPIView): #, ReferralMixin):
     """
     Class to register students
     """
@@ -68,7 +68,7 @@ class SignUpStudentView(SignUpMixin, ReferralMixin):
         self.confirm_email_handler(user)
         token = self.create_token(user)
 
-        self.referral_handler(referred_id=profile.id)
+        #self.referral_handler(referred_id=profile.id)
         return Response({'user': profile_data, 'token': token.key})
 
     def create_user(self, serializer):
