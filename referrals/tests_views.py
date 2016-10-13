@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from social.apps.django_app.default.models import UserSocialAuth
 
+from referrals.factories import CouponFactory, RedeemFactory
 from referrals.models import Referral, CouponType, Coupon, Redeem
 from students.factories import StudentFactory
 from students.models import Student
@@ -343,3 +344,28 @@ class ValidateCouponTest(BaseAPITestCase):
 
         response = self.student_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_signup_success(self):
+        """
+        Test the global signup coupon
+        """
+        coupon = CouponFactory(coupon_type__type='global')
+        coupon.token = 'GLOBAL-SIGNUP'
+        coupon.save(update_fields=['token'])
+
+        url = reverse('referrals:validate_coupon', kwargs={'coupon_code': 'GLOBAL-SIGNUP'})
+        response = self.student_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_signup_used(self):
+        """
+        Test the used global signup coupon
+        """
+        coupon = CouponFactory(coupon_type__type='global')
+        coupon.token = 'GLOBAL-SIGNUP'
+        coupon.save(update_fields=['token'])
+        RedeemFactory(coupon=coupon, student=self.student, used=True)
+
+        url = reverse('referrals:validate_coupon', kwargs={'coupon_code': 'GLOBAL-SIGNUP'})
+        response = self.student_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
