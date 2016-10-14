@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
+from students.models import Student
 from users.models import RequestSignup
 from utils.tasks import SendEmailTaskMixin
 
@@ -95,3 +96,17 @@ class SendEmailHasChangedTask(SendEmailTaskMixin):
         self.subject = 'Tu email en Trulii ha cambiado'
         self.global_context = {}
         return super(SendEmailHasChangedTask, self).run(*args, **kwargs)
+
+
+class SendEmailSignUpCouponTask(SendEmailTaskMixin):
+    """
+    Task to send the coupon for signup
+    """
+
+    def run(self, student_id, *args, **kwargs):
+        self.student = Student.objects.get(id=student_id)
+        self.template_name = 'authentication/email/send_global_signup_coupon.html'
+        self.emails = [self.student.user.email]
+        self.subject = 'Tienes un cupón en Trulii!'
+        self.global_context = {}
+        return super(SendEmailSignUpCouponTask, self).run(*args, **kwargs)
