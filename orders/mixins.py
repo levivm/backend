@@ -231,18 +231,18 @@ class ProcessPaymentTaskMixin(object):
         send_new_enrollment_email_task = SendNewEnrollmentEmailTask()
 
         # Referral coupon task
-        referral_coupon_task = ReferrerCouponTask()
-        create_coupon_task = CreateCouponTask()
-        send_coupon_email_task = SendCouponEmailTask()
-
+        #referral_coupon_task = ReferrerCouponTask()
+        #create_coupon_task = CreateCouponTask()
+        # send_coupon_email_task = SendCouponEmailTask()
+        #
         group(
             associate_student_to_messages_task.s(self.calendar.id, self.student_id),
             calculate_organizer_balance_task.s([self.organizer.id]),
             send_payment_email_task.s(self.order.id, self.task_data),
             send_new_enrollment_email_task.s(self.order.id, self.task_data),
-            (
-                referral_coupon_task.s(self.student_id, self.order.id) |
-                create_coupon_task.s() |
-                send_coupon_email_task.s()
-            ),
+        #     (
+        #         referral_coupon_task.s(self.student_id, self.order.id) |
+        #         create_coupon_task.s() |
+        #         send_coupon_email_task.s()
+        #     ),
         )()
