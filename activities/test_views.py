@@ -8,6 +8,7 @@ from datetime import timedelta
 
 import factory
 import mock
+import mongomock
 from PIL import Image
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User
@@ -193,7 +194,7 @@ class CalendarsByActivityViewTest(BaseViewTest):
             'enroll_open': True,
             'session_price': 123000,
             'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
-                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+                         "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
             'packages': [{
                 'quantity': 16,
                 'price': 100000,
@@ -259,7 +260,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
 
     def _get_data_to_create_a_calendar(self):
         now_unix_timestamp = int(now().timestamp()) * 1000
-        self.now =  now_unix_timestamp
+        self.now = now_unix_timestamp
         return {
             'initial_date': now_unix_timestamp,
             'available_capacity': 10,
@@ -267,7 +268,7 @@ class GetCalendarByActivityViewTest(BaseViewTest):
             'enroll_open': True,
             'session_price': 123000,
             'schedules': "&lt;p&gt;&lt;strong&gt;Lunes - Viernes&lt;/strong&gt;&lt;/p&gt;"
-                        "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
+                         "&lt;p&gt;6:00pm - 9:00pm&lt;/p&gt;",
             # TODO agregar schedule - FIXED
             'packages': [{
                 'quantity': 16,
@@ -379,7 +380,8 @@ class PublishActivityViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='post',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_organizer_should_publish_the_activity(self):
         activity = Activity.objects.get(id=self.ACTIVITY_ID)
@@ -470,9 +472,9 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Objects
         self.another_activity = ActivityFactory(organizer=self.organizer,
-                                           published=True, score=4.8)
+                                                published=True, score=4.8)
         self.activity = ActivityFactory(organizer=self.organizer,
-                                   published=True)
+                                        published=True)
 
         self.sub_category = SubCategoryFactory()
         self.activity_stock_photo = mommy.make(ActivityStockPhoto,
@@ -529,8 +531,8 @@ class ActivityGalleryAPITest(BaseAPITestCase):
         # Organizer should not create a photo if he is not activity owner
         with open(self.tmp_file.name, 'rb') as fp:
             response = self.another_organizer_client.post(
-                    self.upload_activity_photo_url,
-                    {'photo': fp, 'main_photo': False})
+                self.upload_activity_photo_url,
+                {'photo': fp, 'main_photo': False})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should create a photo from existing stock
@@ -553,7 +555,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
                          self.activity_photos_count + 1)
         self.assertEqual(Activity.objects.latest('pk').score, 65.8)
         self.assertTrue(self.organizer.user.has_perm(
-                perm='activities.delete_activityphoto', obj=activity_photo))
+            perm='activities.delete_activityphoto', obj=activity_photo))
 
     def test_create_from_stock(self):
         """
@@ -581,8 +583,8 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Organizer should not create a photo if he is not activity owner
         response = self.another_organizer_client.post(
-                self.set_cover_from_stock_url,
-                self.set_from_cover_post)
+            self.set_cover_from_stock_url,
+            self.set_from_cover_post)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should create a photo from existing stock
@@ -624,7 +626,7 @@ class ActivityGalleryAPITest(BaseAPITestCase):
 
         # Organizer should not delete a photo if he is not activity owner
         response = self.another_organizer_client.post(
-                self.delete_activity_photo_url)
+            self.delete_activity_photo_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(ActivityPhoto.objects.count(),
                          self.activity_photos_count)
@@ -662,7 +664,8 @@ class ActivityInfoViewTest(BaseViewTest):
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
         self.method_should_be(clients=organizer, method='put',
                               status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.method_should_be(clients=organizer, method='delete', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.method_should_be(clients=organizer, method='delete',
+                              status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ActivityTagsViewTest(BaseViewTest):
@@ -798,12 +801,14 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         titles = ['%s de %s' % (t, self.query_keyword.capitalize()) for t in ['Clases', 'Curso']]
         activities = ActivityFactory.create_batch(2, title=factory.Iterator(titles),
                                                   location__city=self.city,
-                                                  level=activities_constants.LEVEL_P, published=True)
+                                                  level=activities_constants.LEVEL_P,
+                                                  published=True)
         activities.append(ActivityFactory(title='Curso de Cocina', organizer=self.organizer,
                                           level=activities_constants.LEVEL_I,
                                           published=True))
         activities.append(
-            ActivityFactory(sub_category=self.subcategory, tags=[tag], level=activities_constants.LEVEL_A,
+            ActivityFactory(sub_category=self.subcategory, tags=[tag],
+                            level=activities_constants.LEVEL_A,
                             certification=True, published=True))
 
         CalendarFactory(activity=activities[-1], initial_date=(now() - timedelta(days=10)).date(),
@@ -851,7 +856,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
     def test_search_category(self):
         response = self.client.get(self.url, data={'category': self.subcategory.category.id})
         activities = self._get_activities_ordered(
-                queryset=Activity.objects.filter(sub_category__category=self.subcategory.category))
+            queryset=Activity.objects.filter(sub_category__category=self.subcategory.category))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -897,8 +902,8 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         }
         response = self.client.get(self.url, data=data)
         activities = self._get_activities_ordered(
-                queryset=Activity.objects.filter(
-                    calendars__session_price__range=(self.price, self.price + 100000)))
+            queryset=Activity.objects.filter(
+                calendars__session_price__range=(self.price, self.price + 100000)))
         serializer = ActivitiesCardSerializer(activities, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -937,7 +942,7 @@ class SearchActivitiesViewTest(BaseAPITestCase):
         ActivityFactory.create_batch(50, location__city=self.city, published=True, score=scores)
         response = self.client.get(self.url, data={'city': self.city.id})
         activities = self._get_activities_ordered(
-                queryset=Activity.objects.filter(location__city=self.city, published=True))
+            queryset=Activity.objects.filter(location__city=self.city, published=True))
         serializer = ActivitiesCardSerializer(activities[:10], many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
@@ -1000,10 +1005,10 @@ class SearchActivitiesViewTest(BaseAPITestCase):
                                 a: a.closest_calendar().initial_date if a.closest_calendar() else unix_epoch)
         request = mock.MagicMock()
         request.query_params = {
-                'cost_start': self.price,
-                'cost_end': self.price + 100000,
-            }
-        serializer = ActivitiesCardSerializer(activities, many=True,context={'request':request})
+            'cost_start': self.price,
+            'cost_end': self.price + 100000,
+        }
+        serializer = ActivitiesCardSerializer(activities, many=True, context={'request': request})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], serializer.data)
 
@@ -1098,10 +1103,10 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         emails = ['email1@example.com', 'email2@example.com']
 
         send_mail.return_value = [{
-            'email': email,
-            'status': 'sent',
-            'reject_reason': None
-        } for email in emails]
+                                      'email': email,
+                                      'status': 'sent',
+                                      'reject_reason': None
+                                  } for email in emails]
 
         data = {'emails': ', '.join(emails)}
 
@@ -1131,10 +1136,10 @@ class ShareActivityEmailViewTest(BaseAPITestCase):
         emails = ['email@example.com']
 
         send_mail.return_value = [{
-            'email': email,
-            'status': 'sent',
-            'reject_reason': None
-        } for email in emails]
+                                      'email': email,
+                                      'status': 'sent',
+                                      'reject_reason': None
+                                  } for email in emails]
 
         data = {'emails': ', '.join(emails)}
         response = self.client.post(self.share_url, data)
@@ -1211,7 +1216,6 @@ class AutoCompleteViewTest(BaseAPITestCase):
 
 
 class ActivityStatsViewTest(BaseAPITestCase):
-
     def setUp(self):
         management.call_command('load_fee')
 
@@ -1240,7 +1244,7 @@ class ActivityStatsViewTest(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Organizer should be able to get the data
-        mock_now = mock.MagicMock(side_effect = [
+        mock_now = mock.MagicMock(side_effect=[
             datetime.date(2016, 1, 1),
             datetime.date(2016, 1, 8),
             datetime.date(2016, 1, 15),
@@ -1358,7 +1362,6 @@ class ActivityStatsViewTest(BaseAPITestCase):
 
 
 class ActivityFeatureListViewTest(BaseAPITestCase):
-
     def setUp(self):
         # Non-featured activities
         self.non_featured = ActivityFactory.create_batch(2)
@@ -1374,3 +1377,51 @@ class ActivityFeatureListViewTest(BaseAPITestCase):
 
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data, ActivitiesCardSerializer(self.featured, many=True).data)
+
+
+class CategoryLeadCreateViewTest(BaseAPITestCase):
+    def setUp(self):
+        super(CategoryLeadCreateViewTest, self).setUp()
+
+        self.category = CategoryFactory()
+        self.url = reverse('activities:category_lead', args=(self.category.slug,))
+        self.data = {
+            'email': 'justice.young@nba2k17.com',
+            'category': self.category.id,
+        }
+
+    @mock.patch('activities.tasks.SendEmailSignUpLeadCouponTask.delay')
+    @mock.patch('activities.mixins.MongoMixin._get_client', return_value=mongomock.MongoClient())
+    def test_create(self, mongo_client, email_task):
+        # Organizer shouldn't be allowed to post
+        response = self.organizer_client.post(self.url, data=self.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Student shouldn't be allowed to post
+        response = self.student_client.post(self.url, data=self.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Anonymous should create the lead
+        response = self.client.post(self.url, data=self.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        client = mongo_client()
+        leads = client.trulii.leads
+        self.assertEqual(leads.find({'email': 'justice.young@nba2k17.com'}).count(), 1)
+
+        email_task.assert_called_once_with(email='justice.young@nba2k17.com')
+
+    def test_validate_email(self):
+        data = {**self.data, 'email': 'NON_VALID_EMAIL'}
+
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['email'],
+                         ['Introduzca una dirección de correo electrónico válida'])
+
+    def test_validate_category(self):
+        data = {**self.data, 'category': '-1'}
+
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['category'], ['La categoría seleccionada no existe'])
