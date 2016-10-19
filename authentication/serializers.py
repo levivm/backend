@@ -44,11 +44,12 @@ class SignUpStudentSerializer(serializers.Serializer):
         return '{:.20}'.format(value)
 
     def validate_email(self, data):
-        if User.objects.filter(email=data).exists():
+        email = data.lower()
+        if User.objects.filter(email=email).exists():
             msg = _("Ya existe un usuario registrado con este correo electrónico.")
             raise exceptions.ValidationError(msg)
 
-        return data
+        return email
 
     def validate(self, data):
         first_name = data['first_name']

@@ -1,14 +1,18 @@
+from datetime import timedelta
+
 import mock
 
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
+from django.utils.timezone import now
 from model_mommy import mommy
 from rest_framework import status
 
-from activities.factories import ActivityFactory
+from activities.factories import ActivityFactory, CalendarFactory
 from activities.models import Activity, Calendar
 from orders.factories import OrderFactory
 from orders.models import Order
+from referrals.factories import CouponFactory
 from utils.tests import BaseAPITestCase
 
 

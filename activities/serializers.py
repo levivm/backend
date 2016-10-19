@@ -73,6 +73,7 @@ class CategoriesSerializer(RemovableSerializerFieldMixin, serializers.ModelSeria
             'headline',
             'cover_photo',
             'content_photo',
+            'seo_data'
         )
 
     def get_icon_default(self, obj):

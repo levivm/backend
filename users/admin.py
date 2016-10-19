@@ -45,7 +45,7 @@ class RequestSignupAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
 
 @admin.register(OrganizerConfirmation)
 class OrganizerConfirmationAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('id', 'organizer', 'email', 'organizer_exists', 'used')
+    list_display = ('id', 'organizer', 'email', 'organizer_exists', 'used', 'created')
     list_filter = (OrganizerConfirmationStatusListFilter,)
     operative_readonly_fields = {'requested_signup', 'created', 'key', 'sent', 'used'}
 

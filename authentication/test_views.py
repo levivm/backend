@@ -692,7 +692,8 @@ class RequestSignupTestView(BaseAPITestCase):
             'approved': True,
         }
 
-    def test_create(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_create(self, send_mail):
         """
         Create an instance request_signup
         """

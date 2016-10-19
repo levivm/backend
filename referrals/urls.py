@@ -3,11 +3,11 @@ from referrals.views import InviteView, AcceptInvitation, GetCouponView
 
 urlpatterns = [
     # {% url referrals:invite - api/referrals/invite %}
-    url(
-        regex=r'^invite/?$',
-        view=InviteView.as_view(),
-        name='invite',
-    ),
+    # url(
+    #     regex=r'^invite/?$',
+    #     view=InviteView.as_view(),
+    #     name='invite',
+    # ),
 
     # {% url referrals:validate_coupon - api/referrals/coupons/<code> %}
     url(

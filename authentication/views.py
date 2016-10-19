@@ -17,7 +17,8 @@ from authentication.permissions import IsNotAuthenticated
 from authentication.serializers import AuthTokenSerializer, SignUpStudentSerializer, \
     ChangePasswordSerializer, ForgotPasswordSerializer, ChangeEmailSerializer
 from authentication.tasks import ChangePasswordNoticeTask, SendEmailResetPasswordTask, \
-    SendEmailConfirmEmailTask, SendEmailHasChangedTask, SendEmailSignUpRequestNotificationTask
+    SendEmailConfirmEmailTask, SendEmailHasChangedTask, SendEmailSignUpRequestNotificationTask, \
+    SendEmailSignUpCouponTask
 from balances.models import Balance
 from organizers.models import Organizer
 from organizers.serializers import OrganizersSerializer
@@ -47,7 +48,7 @@ class LoginView(GenericAPIView):
         return Response(data)
 
 
-class SignUpStudentView(SignUpMixin, ReferralMixin):
+class SignUpStudentView(SignUpMixin, GenericAPIView): #, ReferralMixin):
     """
     Class to register students
     """
@@ -68,7 +69,10 @@ class SignUpStudentView(SignUpMixin, ReferralMixin):
         self.confirm_email_handler(user)
         token = self.create_token(user)
 
-        self.referral_handler(referred_id=profile.id)
+        #self.referral_handler(referred_id=profile.id)
+        task = SendEmailSignUpCouponTask()
+        task.delay(student_id=profile.id)
+
         return Response({'user': profile_data, 'token': token.key})
 
     def create_user(self, serializer):
