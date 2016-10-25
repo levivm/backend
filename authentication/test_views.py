@@ -2,6 +2,7 @@ import json
 import urllib
 
 import mock
+import mongomock
 from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse
 from django.utils.timezone import now
@@ -12,6 +13,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 from social.apps.django_app.default.models import UserSocialAuth
 
+from activities.factories import CategoryFactory
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from balances.models import Balance
 from locations.models import City
@@ -93,8 +95,10 @@ class SignUpStudentViewTest(APITestCase):
         self.url = reverse('auth:signup_student')
         self.student_group = Group.objects.create(name='Students')
 
+    @mock.patch('activities.mixins.MongoMixin._get_client', return_value=mongomock.MongoClient())
+    @mock.patch('authentication.tasks.SendEmailSignUpCouponTask.delay')
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
-    def test_student_signup_success(self, send_mail):
+    def test_student_signup_success(self, send_mail, coupon_task, mongo_client):
         """
         Test case success for a student sign up
         """
@@ -132,6 +136,41 @@ class SignUpStudentViewTest(APITestCase):
         self.assertTrue(EmailTaskRecord.objects.filter(
             to='jack.bauer@example.com',
             status='sent').exists())
+
+        coupon_task.assert_called_once_with(student_id=student.id)
+
+    @mock.patch('activities.mixins.MongoMixin._get_client', return_value=mongomock.MongoClient())
+    @mock.patch('authentication.tasks.SendEmailSignUpCouponTask.delay')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_no_repeat_send_coupon_lead(self, send_mail, coupon_task, mongo_client):
+        """
+        If a student was a lead should not send the coupon email again
+        """
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'jack.bauer@example.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        data = {
+            'email': 'jack.bauer@example.com',
+            'first_name': 'Jack',
+            'last_name': 'Bauer',
+            'password1': 'jackisthebest',
+        }
+
+        client = mongo_client()
+        leads = client.trulii.leads
+        leads.insert_one({
+            'email': 'jack.bauer@example.com',
+            'category': CategoryFactory().id,
+        })
+
+        self.client.post(self.url, urllib.parse.urlencode(data),
+                         content_type='application/x-www-form-urlencoded')
+
+        coupon_task.assert_not_called()
 
 
 class SignUpOrganizerViewTest(APITestCase):
@@ -224,8 +263,9 @@ class SocialAuthViewTest(APITestCase):
     def setUp(self):
         self.url = reverse('auth:social_login_signup', kwargs={'provider': 'facebook'})
 
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_login_success(self, get_json):
+    def test_login_success(self, get_json, send_mail):
         """
         Test social login for student
         """
@@ -270,9 +310,11 @@ class SocialAuthViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @mock.patch('pymongo.MongoClient', return_value=mongomock.MongoClient())
+    @mock.patch('authentication.tasks.SendEmailSignUpCouponTask.delay')
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_signup_success(self, get_json, send_mail):
+    def test_signup_success(self, get_json, send_mail, signup_coupon, mongo_client):
         user_counter = User.objects.count()
         student_group = Group.objects.create(name='Students')
 
@@ -318,9 +360,12 @@ class SocialAuthViewTest(APITestCase):
             to='derivia@witcher.com',
             status='sent').exists())
 
+        signup_coupon.assert_called_once_with(student_id=student.id)
+
     @mock.patch('authentication.tasks.SendEmailConfirmEmailTask.delay')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
-    def test_signup_username_already_exists(self, get_json, delay):
+    def test_signup_username_already_exists(self, get_json, send_mail, delay):
         StudentFactory(user__username='geralt.derivia')
         user_counter = User.objects.count()
 
@@ -349,6 +394,45 @@ class SocialAuthViewTest(APITestCase):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {'error': 'The access_token parameter is required'})
+
+    @mock.patch('pymongo.MongoClient', return_value=mongomock.MongoClient())
+    @mock.patch('authentication.tasks.SendEmailSignUpCouponTask.delay')
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    @mock.patch('social.backends.facebook.FacebookOAuth2.get_json')
+    def test_no_repeat_signup_coupon_email(self, get_json, send_mail, signup_coupon, mongo_client):
+        Group.objects.create(name='Students')
+
+        get_json.return_value = {
+            'email': 'derivia@witcher.com',
+            'first_name': 'Geralt',
+            'last_name': 'De Rivia',
+            'gender': 'male',
+            'id': '123456789',
+            'link': 'https://www.facebook.com/app_scoped_user_id/123456789',
+            'locale': 'en_US',
+            'name': 'Geralt De Rivia',
+            'timezone': -5,
+            'verified': True,
+        }
+
+        send_mail.return_value = [{
+            '_id': '042a8219744b4b40998282fcd50e678e',
+            'email': 'derivia@witcher.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        client = mongo_client()
+        leads = client.trulii.leads
+        leads.insert_one({
+            'email': 'derivia@witcher.com',
+            'category': CategoryFactory().id,
+        })
+
+        self.client.post(self.url, data={
+            'access_token': 'CAAYLX4HwZA38BAGjNLbUWhkBZBFR0HSDn9criXoxNUzjT'})
+
+        signup_coupon.assert_not_called()
 
 
 class ChangePasswordViewTest(BaseAPITestCase):
