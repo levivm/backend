@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from social.apps.django_app.utils import psa
 
+from activities.mixins import MongoMixin
 from authentication.mixins import SignUpMixin, ValidateTokenMixin, InvalidateTokenMixin
 from authentication.models import ResetPasswordToken, ConfirmEmailToken
 from authentication.permissions import IsNotAuthenticated
@@ -48,7 +49,7 @@ class LoginView(GenericAPIView):
         return Response(data)
 
 
-class SignUpStudentView(SignUpMixin, GenericAPIView): #, ReferralMixin):
+class SignUpStudentView(MongoMixin, SignUpMixin, GenericAPIView): #, ReferralMixin):
     """
     Class to register students
     """
@@ -70,8 +71,7 @@ class SignUpStudentView(SignUpMixin, GenericAPIView): #, ReferralMixin):
         token = self.create_token(user)
 
         #self.referral_handler(referred_id=profile.id)
-        task = SendEmailSignUpCouponTask()
-        task.delay(student_id=profile.id)
+        self.send_coupon(student=profile)
 
         return Response({'user': profile_data, 'token': token.key})
 
@@ -91,6 +91,12 @@ class SignUpStudentView(SignUpMixin, GenericAPIView): #, ReferralMixin):
         confirm_email_token = ConfirmEmailToken.objects.create(user=user, email=user.email)
         task = SendEmailConfirmEmailTask()
         task.delay(confirm_email_token.id)
+
+    def send_coupon(self, student):
+        leads = self.get_collection(name='leads')
+        if leads.find({'email': student.user.email}).count() == 0:
+            task = SendEmailSignUpCouponTask()
+            task.delay(student_id=student.id)
 
 class VerifySignupOrganizerToken(APIView):
 

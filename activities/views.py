@@ -9,7 +9,7 @@ from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,12 +17,13 @@ from rest_framework.viewsets import GenericViewSet
 
 from activities import constants as activities_constants
 from activities.mixins import ActivityMixin, \
-    ActivityCardMixin
+    ActivityCardMixin, MongoMixin
 from activities.permissions import IsActivityOwnerOrReadOnly
 from activities.searchs import ActivitySearchEngine
 from activities.tasks import SendEmailCalendarTask, \
-    SendEmailShareActivityTask, ActivityViewsCounterTask
+    SendEmailShareActivityTask, ActivityViewsCounterTask, SendEmailSignUpLeadCouponTask
 from activities.utils import ActivityStatsUtil
+from authentication.permissions import IsNotAuthenticated
 from locations.serializers import LocationsSerializer
 from orders.models import Order
 from organizers.models import Organizer
@@ -441,3 +442,34 @@ class ActivityViewsCounterView(GenericViewSet):
 class ActivityFeatureListView(ListAPIView):
     queryset = Activity.objects.featured()
     serializer_class = ActivitiesCardSerializer
+
+
+class CategoryLeadCreateView(MongoMixin, GenericAPIView):
+    email_validator = EmailValidator()
+    permission_classes = [IsNotAuthenticated]
+    error = None
+
+    def post(self, request, *args, **kwargs):
+        self.validate_data()
+
+        if self.error:
+            return Response(self.error, status=status.HTTP_400_BAD_REQUEST)
+
+        leads = self.get_collection(name='leads')
+        leads.insert_one(request.data)
+
+        task = SendEmailSignUpLeadCouponTask()
+        task.delay(email=request.data['email'])
+        return Response(status=status.HTTP_201_CREATED)
+
+    def validate_data(self):
+        email = self.request.data.get('email')
+
+        try:
+            self.email_validator(email)
+        except DjangoValidationError:
+            self.error = {'email': [_('Introduzca una dirección de correo electrónico válida')]}
+
+        category = self.request.data.get('category')
+        if not Category.objects.filter(id=category).exists():
+            self.error = {'category': [_('La categoría seleccionada no existe')]}
