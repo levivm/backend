@@ -7,6 +7,7 @@ from activities.models import Calendar
 from activities.factories import CalendarFactory
 from orders.models import Order, Assistant
 from orders.serializers import OrdersSerializer, AssistantsSerializer
+from payments.factories import PaymentFactory
 from payments.models import Fee, Payment
 from payments.serializers import PaymentSerializer
 from referrals.models import Referral, CouponType, Redeem
@@ -44,9 +45,13 @@ class OrdersSerializerTest(BaseAPITestCase):
 
     def get_context(self):
         view = Mock(student=self.another_student)
+        request = mock.MagicMock()
+        request.data = {}
         return {
             'view': view,
             'status': Order.ORDER_APPROVED_STATUS,
+            'request': request,
+            'payment': PaymentFactory(),
         }
 
     def test_read(self):
@@ -95,7 +100,6 @@ class OrdersSerializerTest(BaseAPITestCase):
 
         # Counter
         order_counter = Order.objects.count()
-        redeem_counter = Redeem.objects.count()
 
         serializer = OrdersSerializer(data=self.data)
         serializer.context = self.context
@@ -139,7 +143,7 @@ class OrdersSerializerTest(BaseAPITestCase):
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
 
-        self.assertIsNone(order.fee)
+        self.assertEqual(order.fee, 0)
 
     @mock.patch('referrals.tasks.SendCouponEmailTask.delay')
     def test_fee(self, delay):

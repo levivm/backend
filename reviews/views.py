@@ -1,17 +1,21 @@
+from django.http.response import JsonResponse, Http404
+from django.views.generic.base import View
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
+from rest_framework.permissions import DjangoModelPermissions, \
+    DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
 from rest_framework.response import Response
 
+from activities.mixins import MongoMixin
 from activities.models import Activity
-from .models import Review
 from organizers.models import Organizer
 from reviews.permissions import CanReportReview, CanReplyReview, CanReadReview
 from reviews.tasks import SendReportReviewEmailTask, SendReplyToStudentEmailTask
-from .serializers import ReviewSerializer
 from students.models import Student
 from utils.paginations import PaginationBySize
+from .models import Review
+from .serializers import ReviewSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -134,3 +138,21 @@ class ReportReviewView(viewsets.ModelViewSet):
         task = SendReportReviewEmailTask()
         task.delay(review.id)
         return Response()
+
+
+class GhostReviewListView(MongoMixin, View):
+    def get(self, *args, **kwargs):
+        reviews = self.get_collection(name='reviews')
+        activity_pk = int(kwargs['activity_pk'])
+        try:
+            activity = Activity.objects.get(id=activity_pk)
+            data = []
+            for review in reviews.find({'activity': activity_pk}, {'_id': False}):
+                data.append({**review, 'activity_data': {
+                    'id': activity.id,
+                    'title': activity.title
+                }})
+
+            return JsonResponse(data, safe=False)
+        except Activity.DoesNotExist:
+            raise Http404

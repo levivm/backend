@@ -22,6 +22,8 @@ class LoadStockCoverTestCase(APITestCase):
 
         subcategories = SubCategory.objects.all()
 
+        MAPPING = LoadStockCoversCommand.get_data()
+
         for subcategory in subcategories:
             self.assertEqual(ActivityStockPhoto.objects.filter(sub_category=subcategory).count(),
-                             LoadStockCoversCommand.MAPPING[subcategory.category.name][subcategory.name])
+                             MAPPING[subcategory.category.name][subcategory.name])
