@@ -1,9 +1,11 @@
+import pymongo
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from guardian.shortcuts import assign_perm
 from rest_framework.authtoken.models import Token
 
 from authentication.models import ConfirmEmailToken
-from authentication.tasks import SendEmailConfirmEmailTask
+from authentication.tasks import SendEmailConfirmEmailTask, SendEmailSignUpCouponTask
 from students.models import Student
 
 
@@ -75,3 +77,11 @@ def send_mail_validation(is_new, confirm_email_token=None, *args, **kwargs):
     if is_new:
         task = SendEmailConfirmEmailTask()
         task.delay(confirm_email_token.id)
+
+
+def send_signup_coupon_email(profile, *args, **kwargs):
+    mongo_client = pymongo.MongoClient(settings.MONGO_URL)
+    leads = mongo_client.trulii.leads
+    if leads.find({'email': profile.user.email}).count() == 0:
+        task = SendEmailSignUpCouponTask()
+        task.delay(student_id=profile.id)

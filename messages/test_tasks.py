@@ -8,7 +8,7 @@ from messages.tasks import SendEmailMessageNotificationTask, \
     SendEmailOrganizerMessageAssistantsTask, AssociateStudentToMessagesTask
 from messages.models import OrganizerMessageStudentRelation
 from students.factories import StudentFactory
-from orders.factories import AssistantFactory
+from orders.factories import AssistantFactory, OrderFactory
 from orders.models import Order
 from organizers.factories import OrganizerFactory
 from utils.models import EmailTaskRecord
@@ -36,8 +36,9 @@ class SendEmailMessageNotificationTaskTest(APITestCase):
             organizer_message_id=self.organizer_message.id)
 
         context = {
+            'activity': self.organizer_message.calendar.activity.title,
             'organizer': self.organizer.name,
-            'url': '{base}student/dashboard/messages/{id}'.format(
+            'url': '{base}estudiante/dashboard/notificaciones/{id}'.format(
                 base=settings.FRONT_SERVER_URL,
                 id=self.organizer_message.id)
         }
@@ -58,11 +59,18 @@ class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
         self.organizer = OrganizerFactory()
         self.calendar = CalendarFactory(activity__organizer=self.organizer)
         self.organizer_message = OrganizerMessageFactory(calendar=self.calendar)
-        self.assistants = AssistantFactory.create_batch(
+        self.orders = OrderFactory.create_batch(
             size=3,
-            order__calendar=self.calendar,
-            order__status=Order.ORDER_APPROVED_STATUS,
-            enrolled=True)
+            calendar=self.calendar,
+            status=Order.ORDER_APPROVED_STATUS)
+
+        self.assistants = []
+        for order in self.orders:
+            self.assistants.append(AssistantFactory(
+                order=order,
+                email=order.student.user.email,
+                enrolled=True
+            ))
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
@@ -78,6 +86,7 @@ class SendEmailOrganizerMessageAssistantsTaskTest(APITestCase):
             organizer_message_id=self.organizer_message.id)
 
         context = {
+            'activity': self.calendar.activity.title,
             'organizer': self.organizer_message.organizer.name,
             'message': self.organizer_message.message,
         }

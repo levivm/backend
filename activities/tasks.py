@@ -216,3 +216,13 @@ class ActivityViewsCounterTask(Task):
             stats, _ = ActivityStats.objects.get_or_create(activity=activity)
             stats.views_counter += 1
             stats.save(update_fields=['views_counter'])
+
+
+class SendEmailSignUpLeadCouponTask(SendEmailTaskMixin):
+
+    def run(self, email, *args, **kwargs):
+        self.template_name = 'activities/email/new_lead_signup_coupon.html'
+        self.emails = [email]
+        self.subject = 'Tienes un cupón en Trulii!'
+        self.global_context = {}
+        return super(SendEmailSignUpLeadCouponTask, self).run(*args, **kwargs)

@@ -1,3 +1,4 @@
+import mock
 from django.core.urlresolvers import reverse
 from rest_framework import status
 
@@ -39,7 +40,8 @@ class WithdrawalListCreateViewTest(BaseAPITestCase):
                                           amount=300000)
         BalanceFactory(organizer=self.organizer, available=300000)
 
-    def test_create(self):
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_create(self, send_mail):
         # Anonymous should get unauthorized 401
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

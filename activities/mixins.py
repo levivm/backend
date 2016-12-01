@@ -1,3 +1,5 @@
+import pymongo
+from django.conf import settings
 from rest_framework import serializers
 
 from activities.tasks import ActivityScoreTask
@@ -35,3 +37,16 @@ class WishListSerializerMixin(serializers.Serializer):
                 return WishList.objects.filter(student=profile, activity=obj).exists()
 
         return False
+
+
+class MongoMixin(object):
+
+    def __init__(self):
+        self.client = self._get_client()
+        self.db = self.client.trulii
+
+    def _get_client(self):
+        return pymongo.MongoClient(settings.MONGO_URL)
+
+    def get_collection(self, name):
+        return self.db[name]

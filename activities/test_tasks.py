@@ -13,7 +13,7 @@ from activities.factories import CalendarFactory, ActivityFactory, ActivityPhoto
 from activities.models import ActivityCeleryTaskEditActivity, \
     CalendarCeleryTaskEditActivity, ActivityStats
 from activities.tasks import SendEmailShareActivityTask, SendEmailCalendarTask, \
-    SendEmailLocationTask, ActivityViewsCounterTask
+    SendEmailLocationTask, ActivityViewsCounterTask, SendEmailSignUpLeadCouponTask
 from locations.factories import LocationFactory
 from orders.factories import AssistantFactory, OrderFactory
 from orders.models import Order
@@ -333,3 +333,24 @@ class ActivityViewsCounterTaskTest(APITestCase):
             task = ActivityViewsCounterTask()
             task.delay(activity_id=self.activity.id, user_id=self.activity.organizer.user.id)
             self.assertEqual(self.activity.stats.views_counter, 0)
+
+
+class SendEmailSignUpLeadCouponTaskTest(APITestCase):
+
+    @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
+    def test_run(self, send_mail):
+        send_mail.return_value = [{
+            'email': 'kratos@godofwar.com',
+            'status': 'sent',
+            'reject_reason': None
+        }]
+
+        task = SendEmailSignUpLeadCouponTask()
+        task_id = task.delay(email='kratos@godofwar.com')
+
+        self.assertTrue(EmailTaskRecord.objects.filter(
+            task_id=task_id,
+            to='kratos@godofwar.com',
+            status='sent',
+            template_name='activities/email/new_lead_signup_coupon.html',
+        ).exists())

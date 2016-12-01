@@ -190,6 +190,7 @@ SOCIAL_AUTH_PIPELINE = [
     'utils.pipelines.assign_permissions',
     'utils.pipelines.create_confirm_email_token',
     'utils.pipelines.send_mail_validation',
+    'utils.pipelines.send_signup_coupon_email',
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
     'social.pipeline.user.user_details',

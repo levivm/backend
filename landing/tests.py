@@ -68,7 +68,7 @@ class SendContactFormEmailTaskTest(APITestCase):
         }
 
     def setUp(self):
-        self.email = 'contact@trulii.com'
+        self.email = 'alo@trulii.com'
 
     @mock.patch('utils.tasks.SendEmailTaskMixin.send_mail')
     def test_run(self, send_mail):
