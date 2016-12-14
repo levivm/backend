@@ -15,7 +15,7 @@ from utils.permissions import DjangoObjectPermissionsOrAnonReadOnly, IsStudent
 class StudentViewSet(ModelViewSet):
     serializer_class = StudentsSerializer
     queryset = Student.objects.all()
-    permission_classes = (DjangoObjectPermissionsOrAnonReadOnly, )
+    permission_classes = (IsAuthenticated, DjangoObjectPermissionsOrAnonReadOnly, )
 
 
 class StudentActivitiesViewSet(ModelViewSet):
