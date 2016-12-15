@@ -14,6 +14,8 @@ TEMPLATE_DEBUG = False
 DATABASE_URL  = os.environ.get('RDS_DATABASE_URL')
 DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
+MONGO_URL = os.environ.get('MONGO_DB_URL')
+
 ################ / DATABASE CONFIG #############
 
 
