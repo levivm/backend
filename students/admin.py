@@ -6,7 +6,7 @@ from utils.mixins import OperativeModelAdminMixin
 
 @admin.register(Student)
 class StudentAdmin(OperativeModelAdminMixin, admin.ModelAdmin):
-    list_display = ('email', 'name', 'telephone')
+    list_display = ('email', 'name', 'telephone', 'created_at')
     operative_readonly_fields = {'user', 'referrer_code'}
 
     def email(self, obj):

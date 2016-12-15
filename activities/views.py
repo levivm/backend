@@ -286,7 +286,7 @@ class ActivitiesSearchView(ActivityCardMixin, ListAPIView):
     serializer_class = ActivitiesCardSerializer
     pagination_class = SmallResultsSetPagination
     queryset = Activity.objects.all()
-    search_fields = ['title', 'short_description', 'content', 'tags__name', 'organizer__name',
+    search_fields = ['title', 'tags__name', 'organizer__name',
                      'sub_category__name', 'sub_category__category__name']
 
     def list(self, request, **kwargs):
